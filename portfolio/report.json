@@ -1,8 +1,8 @@
 {
   "project_id": "kurashi-base",
   "mode": "production",
-  "as_of": "2026-11-21T16:39:46+09:00",
-  "phase": "生活管理の10領域の箱を追加（7領域は登録・編集・削除が動作、共有・AI・外部連携は準備中）。今日のナビ・繰り返し予定・日本語の見直しも完了。iPhone実機での再確認待ち",
+  "as_of": "2026-11-21T17:43:25+09:00",
+  "phase": "旧くらしカレンダーの使い勝手へ寄せる改修（データ保護・＋で選ぶ追加・振り返り画面・今日のナビ・カレンダーの期限）を実装。受入はiPhone実機以外PASS、友人βはNO-GO",
   "progress_pct": null,
   "quality": "UNKNOWN",
   "revenue_yen": null,
@@ -10,6 +10,6 @@
   "period": "2026-11",
   "blockers": 0,
   "approvals": 2,
-  "next_action": "iPhone実機で新しい画面を確認し、直す点を集める",
-  "evidence_ref": "FEATURE_BOX_STATUS@2026-11-21"
+  "next_action": "iPhone実機で新しい画面を確認する",
+  "evidence_ref": "UX_AUTONOMOUS_REPORT@2026-11-21"
 }

@@ -1,9 +1,9 @@
 {
   "project_id": "kurashi-base",
-  "as_of": "2026-11-21T16:39:46+09:00",
+  "as_of": "2026-11-21T17:43:25+09:00",
   "blocker_items": [],
   "approval_items": [
-    "OCR（tesseract.js）を入れるか（外部から言語データを取得）",
-    "公開・PWA化するか（いつでもiPhoneで使うため）"
+    "iPhone実機での新しい画面の確認（ユーザー操作）",
+    "OCR・公開（PWA）を進めるかの判断"
   ]
 }
