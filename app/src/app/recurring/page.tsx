@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { OpenFromQuery } from "@/components/OpenFromQuery";
 import { useData, useStore, type RecurringInput } from "@/lib/store";
 import { clampDay, formatDateJa, isValidDateStr, parseDateStr, todayStr } from "@/lib/date";
 import { formatYen, parseAmount } from "@/lib/money";
@@ -14,6 +15,8 @@ export default function RecurringPage() {
   const data = useData();
   const ui = useUI();
   const [editing, setEditing] = useState<{ id?: string; key: number } | null>(null);
+  const ids = useMemo(() => data.recurring.map((r) => r.id), [data.recurring]);
+  const openById = useCallback((id: string) => setEditing({ id, key: Date.now() }), [setEditing]);
   const today = todayStr();
   const list = [...data.recurring].sort((a, b) => Number(b.active) - Number(a.active) || a.nextDueDate.localeCompare(b.nextDueDate));
   // 月あたりの目安：毎週は ×52÷12、毎年は ÷12
@@ -87,6 +90,7 @@ export default function RecurringPage() {
           })}
         </ul>
       )}
+      <OpenFromQuery ids={ids} onOpen={openById} />
       {editing && <RecurringSheet key={editing.key} id={editing.id} onClose={() => setEditing(null)} />}
     </main>
   );

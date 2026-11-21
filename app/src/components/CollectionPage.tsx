@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { OpenFromQuery } from "./OpenFromQuery";
 import { Sheet } from "./Sheet";
 import { Button, Card, Empty, Field, PageHeader, inputCls } from "./ui";
 import { useUI } from "./UIContext";
@@ -46,8 +47,8 @@ export interface CollectionConfig<K extends CollectionKey> {
   intro?: ReactNode;
   emptyText: string;
   fields: FieldDef[] | ((ctx: { data: AppData }) => FieldDef[]);
-  /** 削除の確認文（既定：元に戻せません） */
-  removeBody?: string;
+  /** 削除の確認文（既定：元に戻せません）。消える関連記録の件数などを書く */
+  removeBody?: string | ((item: ItemOf<K>, data: AppData) => string);
   /** 削除の処理を差し替える（例：資格を消すと勉強記録も消す） */
   removeFn?: (store: ReturnType<typeof useStore>, id: string) => SaveResult;
   /** 追加できない理由（例：先に資格を登録してください）。あれば追加ボタンを押せない */
@@ -134,6 +135,8 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
 
   const blocked = config.addBlocked?.(data) ?? null;
   const add = () => setEditing({ key: Date.now() });
+  const ids = useMemo(() => list.map((x) => (x as { id: string }).id), [list]);
+  const openById = useCallback((id: string) => setEditing({ id, key: Date.now() }), [setEditing]);
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -189,6 +192,7 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
           </Card>
         ))
       )}
+      <OpenFromQuery ids={ids} onOpen={openById} />
       {editing && <ItemSheet key={editing.key} config={config} id={editing.id} onClose={() => setEditing(null)} />}
     </section>
   );
@@ -237,7 +241,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
 
   const remove = async () => {
     if (!cur) return;
-    const ok = await ui.confirm({ title: `この${config.noun}を削除しますか？`, body: config.removeBody ?? "削除すると元に戻せません。", ok: "削除する", danger: true });
+    const ok = await ui.confirm({ title: `この${config.noun}を削除しますか？`, body: typeof config.removeBody === "function" ? config.removeBody(cur, data) : (config.removeBody ?? "削除すると元に戻せません。"), ok: "削除する", danger: true });
     if (!ok) return;
     const cid = (cur as { id: string }).id;
     const r = config.removeFn ? config.removeFn(store, cid) : store.removeItem(config.key, cid);

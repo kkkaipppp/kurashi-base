@@ -1,0 +1,87 @@
+[
+  {
+    "path": "01_COPY_PASTE_TO_CLAUDE.txt",
+    "size": 4361,
+    "sha256": "6917881f9a86409b751559ed827e94bebf113c7c05f46c5b870338d90b89079c"
+  },
+  {
+    "path": "02_PRODUCT_VISION.md",
+    "size": 1944,
+    "sha256": "8f5866be06048cace51c12ed9f74b0216c87c2da0a7724a0ba324d8228e4cad0"
+  },
+  {
+    "path": "03_OLD_UI_REFERENCE_AND_USER_FLOWS.md",
+    "size": 2962,
+    "sha256": "b5310655d12b7c58d0d4ae8217e400b870c4504304667c7e1059aee30848a1dc"
+  },
+  {
+    "path": "04_GAP_BACKLOG.md",
+    "size": 8788,
+    "sha256": "649d253bc4c63da3800fe5bd73e74978f2f148471835f41f88e857d619b904ee"
+  },
+  {
+    "path": "05_SAFETY_REVIEW.md",
+    "size": 4455,
+    "sha256": "64a8101eba989da2276f817d14abd5670e7fff09f1dd0c035d549d7d5be40d83"
+  },
+  {
+    "path": "06_ACCEPTANCE_SCENARIOS.md",
+    "size": 3416,
+    "sha256": "1507a9d8c0f34a1e09b0b4dc28a0aa390cbfcab8d31b0cbbbf0ee4afd42902da"
+  },
+  {
+    "path": "07_JAPANESE_COPY.md",
+    "size": 2757,
+    "sha256": "32ff1de8c5616a0babdb2d50ddb9430384879c403e6d808bc0da2b323ab81ce7"
+  },
+  {
+    "path": "08_AUTONOMOUS_WORKFLOW.md",
+    "size": 2642,
+    "sha256": "42a958c4ef30be79b4a74b161f7d296be8a8da62a502a297b5784b3606141b48"
+  },
+  {
+    "path": "09_RELEASE_ROADMAP.md",
+    "size": 2822,
+    "sha256": "58a925b18ad76b89e2783d10f61de03860fd3ea510dfb18e470635f4037d58b0"
+  },
+  {
+    "path": "10_PARENT_WBS.csv",
+    "size": 6359,
+    "sha256": "ef3ae13abed76d0815409d354ef6bc495d6feee716e425658c6928ae6ed08bff"
+  },
+  {
+    "path": "11_STATUS_TEMPLATE.md",
+    "size": 736,
+    "sha256": "792f593e12afe47a8f3bd4f65166298b9fc6878c2b3c4cc7d8b7692c70777133"
+  },
+  {
+    "path": "12_CURRENT_REVIEW_SCORE.md",
+    "size": 1251,
+    "sha256": "b05982a89f84f820cbe6746f1d88ebdb2513846d12b0a7812be51b645cea0721"
+  },
+  {
+    "path": "README.md",
+    "size": 2689,
+    "sha256": "57947d55b2de97402d67702e0e0b6add00595d8667865fe917b80d81de564850"
+  },
+  {
+    "path": "reference_ui/01_old_ui_showcase.webp",
+    "size": 1046122,
+    "sha256": "ebbf8a8984c80fe02463c68b9b594ee2bd730248d7928bfdf051ce39aa00dd28"
+  },
+  {
+    "path": "reference_ui/02_v45_ui_showcase.webp",
+    "size": 1273420,
+    "sha256": "65cce0bcf70aaba5fa0960e3a8ea4b3a38b161627991dd85b052f2b7754a2466"
+  },
+  {
+    "path": "reference_ui/03_v51_ui_complete.webp",
+    "size": 1326910,
+    "sha256": "51d6f85f7416ee67a79bd5fdf1902715a47d05e7747350eae727cece9ac91bb1"
+  },
+  {
+    "path": "reference_ui/04_life_platform_concept.webp",
+    "size": 1361118,
+    "sha256": "fd7b368774e1b32ab0ec802ffb6784b84092a4b74a0f85d651582d27d250eae8"
+  }
+]

@@ -1,0 +1,72 @@
+
+> app@0.1.0 check
+> npm run typecheck && npm run lint && npm run test && npm run build
+
+
+> app@0.1.0 typecheck
+> tsc --noEmit
+
+
+> app@0.1.0 lint
+> eslint
+
+
+> app@0.1.0 test
+> vitest run
+
+
+ RUN  v5.1.1 C:/Users/kamik/AI開発/暮らしベース/app
+
+
+ Test Files  3 passed (3)
+      Tests  50 passed (50)
+   Start at  17:25:41
+   Duration  346ms (import 51%, transform 26%, tests 14%, worker 9%)
+
+
+> app@0.1.0 build
+> next build
+
+▲ Next.js 16.4.6 (Turbopack)
+✓ Running next.config.ts took 52ms
+- Cache Components enabled
+- Partial Prefetching enabled
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 708ms
+  Running TypeScript ...
+  Finished TypeScript in 2.4s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/23) ...
+  Generating static pages using 15 workers (5/23) 
+  Generating static pages using 15 workers (11/23) 
+  Generating static pages using 15 workers (17/23) 
+✓ Generating static pages using 15 workers (23/23) in 962ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /ai
+├ ○ /assets
+├ ○ /calendar
+├ ○ /contracts
+├ ○ /documents
+├ ○ /goals
+├ ○ /health
+├ ○ /history
+├ ○ /import
+├ ○ /integrations
+├ ○ /menu
+├ ○ /nisa
+├ ○ /notes
+├ ○ /recurring
+├ ○ /settings
+├ ○ /share
+├ ○ /study
+├ ○ /tasks
+└ ○ /widget
+
+
+○  (Static)  prerendered as static content
+

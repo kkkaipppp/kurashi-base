@@ -99,43 +99,98 @@ export function parseBackup(text: string): { ok: true; preview: RestorePreview }
   };
 }
 
+export type RestoreResult =
+  | {
+      ok: true;
+      data: AppData;
+      added: number; // 新しく取り込む記録
+      duplicates: number; // まったく同じ記録（取り込まない）
+      conflicts: number; // 同じIDで中身が違う記録（今のものを残す）
+      dependentSkipped: number; // 参照先（カテゴリ・資格）が食い違うため取り込まない記録
+    }
+  | { ok: false; error: string };
+
+type WithId = { id: string };
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
 /**
- * 復元。replace = 全置き換え。merge = 既存に追加（同じIDは既存を優先してスキップ）。
- * 新しいオブジェクトを返すだけで、保存は呼び出し側がまとめて1回行う（途中失敗で半端な状態を残さない）。
+ * 復元。replace = 全置き換え。merge = 今のデータに追加する。
+ * merge の規則：
+ *  - 同じIDで中身も同じ → 取り込まない（同じ記録）
+ *  - 同じIDで中身が違う → 今の記録を残す（競合）
+ *  - カテゴリは「名前と種別」、資格は「名前」が同じなら同じものとみなす。意味が違えば競合とし、
+ *    それを参照する取引・固定費・勉強記録は取り込まない（別の意味のものへ紐づくのを防ぐ）
+ *  - 最後に結果全体を検証し、通らなければ何も返さない（呼び出し側は保存しない）
+ * 新しいオブジェクトを返すだけで、保存は呼び出し側がまとめて1回行う。
  */
-export function applyRestore(current: AppData, incoming: AppData, mode: "replace" | "merge"): { data: AppData; added: number; skipped: number } {
+export function applyRestore(current: AppData, incoming: AppData, mode: "replace" | "merge"): RestoreResult {
   if (mode === "replace") {
-    const c = countData(incoming);
+    const data = structuredClone(incoming);
+    const v = validateAppData(data);
+    if (!v.ok) return { ok: false, error: `復元できませんでした。バックアップの中身に問題があります（${v.error}）` };
+    const c = countData(data);
     const total = Object.entries(c).filter(([k]) => k !== "categories").reduce((s, [, n]) => s + n, 0);
-    return { data: structuredClone(incoming), added: total, skipped: 0 };
+    return { ok: true, data: v.data, added: total, duplicates: 0, conflicts: 0, dependentSkipped: 0 };
   }
+
   let added = 0;
-  let skipped = 0;
-  const mergeList = <T extends { id: string }>(a: T[], b: T[]): T[] => {
-    const ids = new Set(a.map((x) => x.id));
+  let duplicates = 0;
+  let conflicts = 0;
+  let dependentSkipped = 0;
+
+  // 意味が食い違うカテゴリ・資格のID
+  const curCat = new Map(current.categories.map((c) => [c.id, c]));
+  const badCat = new Set(
+    incoming.categories.filter((c) => curCat.has(c.id) && (curCat.get(c.id)!.name !== c.name || curCat.get(c.id)!.kind !== c.kind)).map((c) => c.id),
+  );
+  const curSubj = new Map(current.studySubjects.map((s) => [s.id, s]));
+  const badSubj = new Set(incoming.studySubjects.filter((s) => curSubj.has(s.id) && curSubj.get(s.id)!.name !== s.name).map((s) => s.id));
+
+  /** 一覧を合成する。sameMeaning は「IDが同じとき、同じものとみなすか」（既定：中身が完全に同じ） */
+  const mergeList = <T extends WithId>(a: T[], b: T[], opts: { skipIf?: (x: T) => boolean; sameMeaning?: (x: T, y: T) => boolean } = {}): T[] => {
+    const byId = new Map(a.map((x) => [x.id, x]));
     const out = [...a];
     for (const x of b) {
-      if (ids.has(x.id)) skipped++;
-      else {
-        out.push(x);
-        ids.add(x.id);
-        added++;
+      const cur = byId.get(x.id);
+      if (cur) {
+        if (same(cur, x) || opts.sameMeaning?.(cur, x)) duplicates++;
+        else conflicts++;
+        continue;
       }
+      if (opts.skipIf?.(x)) {
+        dependentSkipped++;
+        continue;
+      }
+      out.push(x);
+      byId.set(x.id, x);
+      added++;
     }
     return out;
   };
-  const catIds = new Set(current.categories.map((c) => c.id));
+
+  const categories = mergeList(current.categories, incoming.categories, { sameMeaning: (x, y) => x.name === y.name && x.kind === y.kind });
+  // 初期カテゴリはどのバックアップにも入っているので、「同じ記録」の件数には数えない
+  duplicates = 0;
   const data: AppData = {
     ...current,
-    transactions: mergeList(current.transactions, incoming.transactions),
+    categories,
+    transactions: mergeList(current.transactions, incoming.transactions, { skipIf: (t) => badCat.has(t.categoryId) }),
     events: mergeList(current.events, incoming.events),
-    recurring: mergeList(current.recurring, incoming.recurring),
-    categories: [...current.categories, ...incoming.categories.filter((c) => !catIds.has(c.id))],
+    recurring: mergeList(current.recurring, incoming.recurring, { skipIf: (r) => badCat.has(r.categoryId) }),
+    studySubjects: mergeList(current.studySubjects, incoming.studySubjects, { sameMeaning: (x, y) => x.name === y.name }),
+    studyLogs: mergeList(current.studyLogs, incoming.studyLogs, { skipIf: (l) => badSubj.has(l.subjectId) }),
   };
   for (const k of COLLECTION_KEYS) {
-    (data as unknown as Record<string, { id: string }[]>)[k] = mergeList(current[k] as { id: string }[], incoming[k] as { id: string }[]);
+    if (k === "studySubjects" || k === "studyLogs") continue;
+    (data as unknown as Record<string, WithId[]>)[k] = mergeList(current[k] as WithId[], incoming[k] as WithId[]);
   }
-  return { data, added, skipped };
+  // カテゴリは件数の数え方から外す（合計の「記録」にカテゴリを含めない）
+  const catAdded = categories.length - current.categories.length;
+  added -= catAdded;
+
+  const v = validateAppData(data);
+  if (!v.ok) return { ok: false, error: `復元できませんでした。合わせた結果に問題があります（${v.error}）。今のデータは変更していません` };
+  return { ok: true, data: v.data, added, duplicates, conflicts, dependentSkipped };
 }
 
 export function backupFileName(nowIso: string): string {

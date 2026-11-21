@@ -76,7 +76,9 @@ describe("バックアップ・復元", () => {
       expect(r.preview.counts.transactions).toBe(1);
       expect(r.preview.counts.events).toBe(1);
       expect(r.preview.period).toEqual({ from: "2026-11-21", to: "2026-11-21" });
-      const restored = applyRestore(emptyData(), r.preview.data, "replace").data;
+      const rr = applyRestore(emptyData(), r.preview.data, "replace");
+      expect(rr.ok).toBe(true);
+      const restored = rr.ok ? rr.data : null;
       expect(restored).toEqual(d);
     }
   });
@@ -93,8 +95,10 @@ describe("バックアップ・復元", () => {
   it("追加モードは同じIDを二重取込しない", () => {
     const d = sample();
     const r = applyRestore(d, structuredClone(d), "merge");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
     expect(r.data.transactions).toHaveLength(1);
-    expect(r.skipped).toBe(2);
+    expect(r.duplicates).toBe(2); // 取引1件・予定1件（カテゴリは数えない）
     expect(r.added).toBe(0);
   });
 });

@@ -17,7 +17,10 @@ const subjects: CollectionConfig<"studySubjects"> = {
     { name: "targetHours", label: "目標時間（時間）", optional: true, type: "number", half: true },
     { name: "archived", label: "学習を終了（一覧の下へ移す）", type: "checkbox" },
   ],
-  removeBody: "この資格・科目の勉強の記録も、すべて削除されます。元に戻せません。",
+  removeBody: (s, data) => {
+    const n = data.studyLogs.filter((l) => l.subjectId === s.id).length;
+    return n > 0 ? `この資格の勉強記録${n}件も、一緒に削除されます。元に戻せません。` : "削除すると元に戻せません。";
+  },
   removeFn: (store, id) => store.removeStudySubject(id),
   initial: () => ({ name: "", examDate: "", targetHours: "", archived: false }),
   toDraft: (s) => ({ name: s.name, examDate: s.examDate, targetHours: numStr(s.targetHours), archived: s.archived }),

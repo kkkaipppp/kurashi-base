@@ -87,22 +87,28 @@ export default function SettingsPage() {
     if (!r.ok) return setRestoreErr(`${r.error}。今のデータは変更していません。`);
     setPreview(r.preview);
   };
+  // 確定前に、合成した結果（何件入る・入らない）を計算して見せる。ここではまだ保存しない
+  const plan = preview ? applyRestore(data, preview.data, mode) : null;
+
   const doRestore = async () => {
-    if (!preview) return;
+    if (!preview || !plan) return;
+    if (!plan.ok) return ui.toast(plan.error, "error");
     const ok = await ui.confirm({
-      title: mode === "replace" ? "今のデータを置き換えますか？" : "バックアップのデータを追加しますか？",
+      title: mode === "replace" ? "すべての記録をバックアップの内容に置き換えますか？" : "バックアップの記録を追加しますか？",
       body:
         mode === "replace"
-          ? "今のすべての記録と設定が、バックアップの内容に置き換わります。先に今のデータを書き出しておくと安心です。"
-          : "すでにある記録は今のものを残し、バックアップの同じ記録は取り込みません。",
+          ? "今のすべての記録と設定が、バックアップの内容に置き換わります。元に戻せないので、先に今のデータを書き出しておくと安心です。"
+          : `${plan.added}件を追加します。すでにある記録はそのまま残ります。`,
       ok: mode === "replace" ? "置き換える" : "追加する",
       danger: mode === "replace",
     });
     if (!ok) return;
-    const res = applyRestore(data, preview.data, mode);
+    // 確定の直前にもう一度、今のデータから計算し直す（確認中に別のタブで変わった場合に備える）
+    const res = applyRestore(store.data ?? data, preview.data, mode);
+    if (!res.ok) return ui.toast(res.error, "error");
     const r = store.replaceAll(res.data); // 1回の保存で反映（失敗時は元のまま）
     if (!r.ok) return ui.toast(`${r.error.replace("保存できませんでした", "復元できませんでした")}（今のデータは変更していません）`, "error");
-    ui.toast(mode === "replace" ? "バックアップから復元しました" : `${res.added}件を追加しました（${res.skipped}件はすでにあるため取り込みませんでした）`);
+    ui.toast(mode === "replace" ? "バックアップから復元しました" : `${res.added}件を追加しました`);
     setPreview(null);
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -259,6 +265,25 @@ export default function SettingsPage() {
                 今のデータをすべて置き換える
               </label>
             </fieldset>
+            {plan && !plan.ok && (
+              <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[13px] font-medium text-danger">
+                {plan.error}
+              </p>
+            )}
+            {plan && plan.ok && mode === "merge" && (
+              <ul className="space-y-0.5 rounded-xl bg-surface px-3 py-2 text-[13px]" aria-label="追加したときの結果">
+                <li>
+                  追加する記録：<strong className="num">{plan.added}件</strong>
+                </li>
+                {plan.duplicates > 0 && <li className="text-ink-2">すでに同じものがある記録：{plan.duplicates}件（取り込みません）</li>}
+                {plan.conflicts > 0 && (
+                  <li className="text-warn">同じ記録なのに内容が違うもの：{plan.conflicts}件（今の内容を残します）</li>
+                )}
+                {plan.dependentSkipped > 0 && (
+                  <li className="text-warn">カテゴリや資格の内容が今と違うため取り込まない記録：{plan.dependentSkipped}件</li>
+                )}
+              </ul>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="secondary"
@@ -269,7 +294,7 @@ export default function SettingsPage() {
               >
                 やめる
               </Button>
-              <Button variant={mode === "replace" ? "danger" : "primary"} onClick={doRestore}>
+              <Button variant={mode === "replace" ? "danger" : "primary"} onClick={doRestore} disabled={!plan?.ok}>
                 復元する
               </Button>
             </div>

@@ -24,7 +24,11 @@ export interface NisaSummary {
 
 const yearOf = (date: string) => Number(date.slice(0, 4));
 
-export function summarizeNisa(entries: NisaEntry[], year: number): NisaSummary {
+/** 今の制度（2024年から）の記録だけを数える。それより前の日付は入力の誤りとして無視する */
+export const NISA_START_YEAR = 2024;
+
+export function summarizeNisa(all: NisaEntry[], year: number): NisaSummary {
+  const entries = all.filter((e) => yearOf(e.date) >= NISA_START_YEAR);
   const sum = (f: (e: NisaEntry) => boolean) => entries.filter(f).reduce((s, e) => s + e.amount, 0);
   const upToYear = (e: NisaEntry) => yearOf(e.date) <= year;
   const annualUsed = {

@@ -27,7 +27,8 @@ export function migrate(raw: unknown): unknown {
   let d: Record<string, unknown> = raw;
   if (d.schemaVersion === 1) {
     d = { ...d, schemaVersion: 2 };
-    for (const k of COLLECTION_KEYS) d[k] = [];
+    // 通常の v1 には新しい一覧がないので空で足す。すでに値があれば消さずに残し、後の検証に任せる
+    for (const k of COLLECTION_KEYS) if (d[k] === undefined) d[k] = [];
   }
   return d;
 }

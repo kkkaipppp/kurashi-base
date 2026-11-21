@@ -90,6 +90,8 @@ describe("v1 → v2 の移行（既存データを守る）", () => {
     if (!r.ok) return;
     expect(r.preview.counts.tasks).toBe(1);
     const merged = applyRestore(d, r.preview.data, "merge");
+    expect(merged.ok).toBe(true);
+    if (!merged.ok) return;
     expect(merged.data.tasks).toHaveLength(1);
     expect(merged.data.studyLogs).toHaveLength(1);
   });
