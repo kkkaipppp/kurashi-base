@@ -1,9 +1,8 @@
 {
   "project_id": "kurashi-base",
-  "as_of": "2026-11-21T16:07:48+09:00",
+  "as_of": "2026-11-21T16:08:33+09:00",
   "blocker_items": [],
   "approval_items": [
-    "OCR（tesseract.js・端末内処理）を入れるかの判断",
-    "iPhone実機での残りの確認（画像取込・データ保持）"
+    "OCR（tesseract.js・端末内処理）を入れるかの判断"
   ]
 }
