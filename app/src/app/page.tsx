@@ -103,29 +103,27 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* 主要操作 */}
+      {/* 主要操作（アイコンを上、名前を下にそろえる） */}
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={() => ui.openTx({ mode: "new", type: "expense" })}
-          className="flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-surface text-[15px] font-bold shadow-sm ring-1 ring-line hover:bg-surface-2"
+          className="flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl bg-surface px-2 shadow-sm ring-1 ring-line hover:bg-surface-2"
         >
           <span className="inline-flex size-8 items-center justify-center rounded-full bg-expense-soft text-expense">
             <IconPlus />
           </span>
-          支出を追加
+          <span className="text-[15px] font-bold">支出を追加</span>
         </button>
         <Link
           href="/import"
-          className="flex min-h-16 flex-col items-center justify-center rounded-2xl bg-surface px-2 text-center shadow-sm ring-1 ring-line hover:bg-surface-2"
+          className="flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl bg-surface px-2 text-center shadow-sm ring-1 ring-line hover:bg-surface-2"
         >
-          <span className="flex items-center gap-1.5 text-[14px] font-bold">
-            <span className="inline-flex size-7 items-center justify-center rounded-full bg-brand-soft text-brand">
-              <IconImage className="size-4" />
-            </span>
-            画像を見ながら記録
+          <span className="inline-flex size-8 items-center justify-center rounded-full bg-brand-soft text-brand">
+            <IconImage />
           </span>
-          <span className="text-[11px] text-ink-3">自動の読み取りはまだありません</span>
+          <span className="text-[15px] font-bold">画像を見ながら記録</span>
+          <span className="text-[11px] leading-tight text-ink-3">自動読み取りは未対応</span>
         </Link>
       </div>
 
