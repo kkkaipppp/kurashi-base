@@ -53,7 +53,7 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="min-w-0 space-y-1">
       <label htmlFor={htmlFor} className="block text-[13px] font-semibold text-ink-2">
         {label}
       </label>
@@ -70,7 +70,7 @@ export function Field({
 }
 
 export const inputCls =
-  "block w-full min-h-11 rounded-xl border border-line bg-surface px-3 py-2 text-ink placeholder:text-ink-3 aria-[invalid=true]:border-danger aria-[invalid=true]:bg-expense-soft/40";
+  "block w-full min-w-0 max-w-full min-h-11 rounded-xl border border-line bg-surface px-3 py-2 text-ink placeholder:text-ink-3 aria-[invalid=true]:border-danger aria-[invalid=true]:bg-expense-soft/40";
 
 export function PageHeader({ title, right, sub }: { title: string; right?: ReactNode; sub?: ReactNode }) {
   return (

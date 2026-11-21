@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { IconX } from "./ui";
 
 /** 下から出るシート（スマホ）／中央モーダル（PC）。Esc・背景タップで onRequestClose */
@@ -22,6 +22,22 @@ export function Sheet({
   useEffect(() => {
     closeRef.current = onRequestClose;
   });
+
+  // iOS ではキーボードが画面に重なるだけで、固定配置の要素は隠れてしまう。
+  // 見えている範囲（visualViewport）に合わせて、シートをキーボードの上に置く。
+  const [vp, setVp] = useState<{ top: number; height: number } | null>(null);
+  useEffect(() => {
+    const v = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!open || !v) return;
+    const update = () => setVp({ top: v.offsetTop, height: v.height });
+    update();
+    v.addEventListener("resize", update);
+    v.addEventListener("scroll", update);
+    return () => {
+      v.removeEventListener("resize", update);
+      v.removeEventListener("scroll", update);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -63,14 +79,17 @@ export function Sheet({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center">
+    <div
+      className="fixed inset-x-0 top-0 bottom-0 z-40 flex items-end justify-center sm:items-center"
+      style={vp ? { top: vp.top, height: vp.height, bottom: "auto" } : undefined}
+    >
       <div className="absolute inset-0 bg-black/35" onClick={() => closeRef.current()} aria-hidden="true" />
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative flex max-h-[92dvh] w-full max-w-[480px] flex-col rounded-t-3xl bg-bg shadow-xl sm:rounded-3xl"
+        className="relative flex max-h-[92%] w-full max-w-[480px] flex-col rounded-t-3xl bg-bg shadow-xl sm:rounded-3xl"
       >
         <div className="flex min-h-14 items-center justify-between border-b border-line px-4">
           <h2 className="text-[17px] font-bold">{title}</h2>
