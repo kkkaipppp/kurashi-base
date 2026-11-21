@@ -1,15 +1,15 @@
 {
   "project_id": "kurashi-base",
   "mode": "production",
-  "as_of": "2026-11-21T17:43:25+09:00",
-  "phase": "旧くらしカレンダーの使い勝手へ寄せる改修（データ保護・＋で選ぶ追加・振り返り画面・今日のナビ・カレンダーの期限）を実装。受入はiPhone実機以外PASS、友人βはNO-GO",
+  "as_of": "2026-11-22T00:26:36+09:00",
+  "phase": "友人β版の準備（復元の安全化・別タブ競合・直前の操作の取り消し・はじめての案内・公開手順）。自動テスト111件PASS、友人βはiPhone実機と公開承認待ちでNO-GO",
   "progress_pct": null,
   "quality": "UNKNOWN",
   "revenue_yen": null,
   "cost_yen": null,
   "period": "2026-11",
   "blockers": 0,
-  "approvals": 2,
-  "next_action": "iPhone実機で新しい画面を確認する",
-  "evidence_ref": "UX_AUTONOMOUS_REPORT@2026-11-21"
+  "approvals": 3,
+  "next_action": "iPhone実機で公開前の確認R1〜R8を行う",
+  "evidence_ref": "BETA_RELEASE_REPORT@2026-11-22"
 }
