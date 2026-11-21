@@ -130,7 +130,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         setSaveError(r.error); // 入力は保持したまま
         return;
       }
-      ui.toast(editing ? "取引を更新しました" : `${draft.type === "expense" ? "支出" : "収入"}を登録しました`);
+      ui.toast(editing ? "保存しました" : `${draft.type === "expense" ? "支出" : "収入"}を追加しました`);
       saved.current = true; // 保存後はロックを解除しない（閉じる前の連打で2件目を作らない）
       if (req.mode === "new") req.onSaved?.();
       onClose();
@@ -145,7 +145,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   const remove = async () => {
     if (!editing) return;
     const ok = await ui.confirm({
-      title: "この取引を削除しますか？",
+      title: `この${editing.type === "expense" ? "支出" : "収入"}を削除しますか？`,
       body: `${formatDateJa(editing.date)} ${formatYen(editing.amount)}（${catName(editing.categoryId)}）\n削除すると元に戻せません。`,
       ok: "削除する",
       danger: true,
@@ -153,19 +153,19 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (!ok) return;
     const r = store.deleteTx(editing.id);
     if (!r.ok) return ui.toast(r.error, "error");
-    ui.toast("取引を削除しました");
+    ui.toast("削除しました");
     onClose();
   };
 
   if (req.mode === "edit" && !editing) {
     return (
       <Sheet title="取引" open onRequestClose={onClose}>
-        <p className="text-ink-2">この取引は見つかりません（削除された可能性があります）。</p>
+        <p className="text-ink-2">この記録は見つかりません（削除された可能性があります）。</p>
       </Sheet>
     );
   }
 
-  const title = editing ? "取引を編集" : req.mode === "new" && req.title ? req.title : draft.type === "expense" ? "支出を追加" : "収入を追加";
+  const title = editing ? `${editing.type === "expense" ? "支出" : "収入"}を編集` : req.mode === "new" && req.title ? req.title : draft.type === "expense" ? "支出を追加" : "収入を追加";
 
   return (
     <Sheet
@@ -292,7 +292,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
 
         {saveError && (
           <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[14px] font-medium text-danger">
-            保存できませんでした：{saveError}（入力内容は残っています）
+            {saveError}（入力した内容は残っています）
           </p>
         )}
 
@@ -300,7 +300,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           <div role="alert" className="space-y-3 rounded-2xl border border-warn/40 bg-warn-soft p-3">
             <p className="flex items-center gap-1.5 font-bold text-warn">
               <IconAlert className="size-5" />
-              重複の可能性があります
+              同じ内容の記録がある可能性があります
             </p>
             <ul className="space-y-1.5">
               {dups.slice(0, 3).map((d) => (
@@ -313,7 +313,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
                 </li>
               ))}
             </ul>
-            <p className="text-[12px] text-ink-2">別の取引なら、そのまま登録できます。既存の取引は変更・削除しません。</p>
+            <p className="text-[12px] text-ink-2">別の支出・収入なら、そのまま保存できます。前に登録した記録は変更・削除しません。</p>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="secondary" onClick={() => setDups(null)}>
                 戻って確認

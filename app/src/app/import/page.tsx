@@ -67,7 +67,7 @@ export default function ImportPage() {
 
   return (
     <main className="space-y-4">
-      <PageHeader title="画像から取り込み" />
+      <PageHeader title="画像から取り込む" />
 
       <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3">
         <p className="text-[13px] text-ink-2">
@@ -109,7 +109,7 @@ export default function ImportPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-1 text-ink-2">別の取引として登録する場合だけ進んでください。</p>
+                <p className="mt-1 text-ink-2">別の支出として登録するときだけ、先に進んでください。</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">

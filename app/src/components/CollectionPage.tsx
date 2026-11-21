@@ -225,7 +225,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
     const r = cur ? store.updateItem(config.key, (cur as { id: string }).id, item) : store.addItem(config.key, item);
     if (!r.ok) {
       lock.current = false;
-      ui.toast(`保存できませんでした。${r.error}`, "error");
+      ui.toast(r.error, "error");
       return;
     }
     ui.toast("保存しました");
@@ -238,7 +238,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
     if (!ok) return;
     const cid = (cur as { id: string }).id;
     const r = config.removeFn ? config.removeFn(store, cid) : store.removeItem(config.key, cid);
-    if (!r.ok) return ui.toast(`削除できませんでした。${r.error}`, "error");
+    if (!r.ok) return ui.toast(r.error.replace("保存できませんでした", "削除できませんでした"), "error");
     ui.toast("削除しました");
     onClose();
   };

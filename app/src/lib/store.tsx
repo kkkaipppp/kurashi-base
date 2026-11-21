@@ -84,7 +84,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // 先に保存し、成功したときだけ画面の状態を更新する
   const commit = useCallback((fn: (d: AppData) => AppData): SaveResult => {
     const cur = dataRef.current;
-    if (!cur) return { ok: false, error: "データを読み込めていないため保存できません" };
+    if (!cur) return { ok: false, error: "保存できませんでした。データを読み込めていません。再読み込みしてください" };
     const next = fn(cur);
     const r = saveData(next);
     if (r.ok) {

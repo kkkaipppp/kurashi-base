@@ -138,22 +138,22 @@ export default function CalendarPage() {
           <span className="flex items-center gap-1">
             <span className="size-1.5 rounded-full bg-income" />収入
           </span>
-          <span className="flex items-center gap-1 text-expense">123 = 支出</span>
+          <span className="flex items-center gap-1 text-expense">赤い数字＝その日の支出</span>
         </div>
       </Card>
 
-      <section className="mt-4 space-y-3" aria-label="選択日の予定と支出">
+      <section className="mt-4 space-y-3" aria-label="選んだ日の予定とお金">
         <div className="space-y-2">
           <h2 className="text-[17px] font-bold">{formatDateJa(selected, true)}</h2>
           <div className="grid grid-cols-3 gap-2 whitespace-nowrap">
             <button type="button" onClick={() => ui.openEvent({ mode: "new", date: selected })} className="min-h-10 rounded-lg bg-event-soft px-3 text-[13px] font-semibold text-event">
-              ＋予定
+              ＋ 予定
             </button>
             <button type="button" onClick={() => ui.openTx({ mode: "new", type: "expense", date: selected })} className="min-h-10 rounded-lg bg-expense-soft px-3 text-[13px] font-semibold text-expense">
-              ＋支出
+              ＋ 支出
             </button>
             <button type="button" onClick={() => ui.openTx({ mode: "new", type: "income", date: selected })} className="min-h-10 rounded-lg bg-income-soft px-3 text-[13px] font-semibold text-income">
-              ＋収入
+              ＋ 収入
             </button>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function CalendarPage() {
               ))}
             </ul>
           ) : (
-            <p className="py-1 text-[14px] text-ink-3">この日の取引はありません</p>
+            <p className="py-1 text-[14px] text-ink-3">この日の支出・収入はありません</p>
           )}
         </Card>
       </section>

@@ -77,7 +77,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
         return;
       }
       saved.current = true;
-      ui.toast(editing ? "予定を更新しました" : "予定を追加しました");
+      ui.toast(editing ? "保存しました" : "予定を追加しました");
       onClose();
     } finally {
       if (!saved.current) {
@@ -98,7 +98,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
     if (!ok) return;
     const r = store.deleteEvent(editing.id);
     if (!r.ok) return ui.toast(r.error, "error");
-    ui.toast("予定を削除しました");
+    ui.toast("削除しました");
     onClose();
   };
 
@@ -206,7 +206,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
 
         {saveError && (
           <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[14px] font-medium text-danger">
-            保存できませんでした：{saveError}（入力内容は残っています）
+            {saveError}（入力した内容は残っています）
           </p>
         )}
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} />

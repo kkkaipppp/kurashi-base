@@ -64,8 +64,8 @@ export default function RecurringPage() {
                     <button type="button" onClick={() => setEditing({ id: r.id, key: Date.now() })} className="min-w-0 flex-1 text-left">
                       <p className="truncate text-[15px] font-bold">{r.name}</p>
                       <p className="text-[12px] text-ink-3">
-                        {cycleLabel(r.cycle)}{r.cycle === "weekly" ? "" : ` ${r.anchorDay}日`} · {data.categories.find((c) => c.id === r.categoryId)?.name ?? "（不明）"}
-                        {!r.active && " · 停止中"}
+                        {cycleLabel(r.cycle)}{r.cycle === "weekly" ? "" : ` ${r.anchorDay}日`} ・ {data.categories.find((c) => c.id === r.categoryId)?.name ?? "（不明）"}
+                        {!r.active && "・停止中"}
                       </p>
                       {r.active && (
                         <p className={`mt-1 text-[13px] font-semibold ${overdue ? "text-warn" : "text-ink-2"}`}>
@@ -135,7 +135,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
       lock.current = false;
       return ui.toast(r.error, "error");
     }
-    ui.toast(cur ? "固定費を更新しました" : "固定費を追加しました");
+    ui.toast(cur ? "保存しました" : "固定費を追加しました");
     onClose();
   };
 
@@ -144,7 +144,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
     if (!(await ui.confirm({ title: `「${cur.name}」を削除しますか？`, body: "これまでに記録した支出は残ります。", ok: "削除する", danger: true }))) return;
     const r = store.deleteRecurring(cur.id);
     if (!r.ok) return ui.toast(r.error, "error");
-    ui.toast("固定費を削除しました");
+    ui.toast("削除しました");
     onClose();
   };
 
@@ -204,7 +204,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
           </select>
         </Field>
         <label className="flex min-h-11 items-center justify-between rounded-xl border border-line bg-surface px-3">
-          <span className="text-[15px] font-medium">有効（停止中はホームに出しません）</span>
+          <span className="text-[15px] font-medium">有効にする（止めている間はホームに出しません）</span>
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="size-5 accent-[var(--brand)]" />
         </label>
       </div>

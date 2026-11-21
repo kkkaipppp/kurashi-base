@@ -8,8 +8,8 @@ export function parseAmount(input: string): AmountResult {
     .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
     .replace(/[,，\s¥￥円]/g, "");
   if (normalized === "") return { ok: false, error: "金額を入力してください" };
-  if (/^[-−ー]/.test(normalized)) return { ok: false, error: "金額は正の数で入力してください（収入・支出は種別で選びます）" };
-  if (!/^\d+$/.test(normalized)) return { ok: false, error: "金額は数字（整数・円）で入力してください" };
+  if (/^[-−ー]/.test(normalized)) return { ok: false, error: "金額はマイナスを付けずに入力してください（支出か収入かは上で選びます）" };
+  if (!/^\d+$/.test(normalized)) return { ok: false, error: "金額は円単位の数字で入力してください（小数は使えません）" };
   const value = Number(normalized);
   if (value <= 0) return { ok: false, error: "金額は1円以上で入力してください" };
   if (value > MAX_AMOUNT) return { ok: false, error: "金額が大きすぎます" };

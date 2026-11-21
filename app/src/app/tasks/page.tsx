@@ -20,7 +20,7 @@ function DoneToggle({ task }: { task: Task }) {
       aria-label={task.done ? `「${task.title}」を未完了に戻す` : `「${task.title}」を完了にする`}
       onClick={() => {
         const r = store.updateItem("tasks", task.id, { done: !task.done });
-        if (!r.ok) ui.toast(`保存できませんでした。${r.error}`, "error");
+        if (!r.ok) ui.toast(r.error, "error");
       }}
       className="inline-flex size-11 shrink-0 items-center justify-center"
     >

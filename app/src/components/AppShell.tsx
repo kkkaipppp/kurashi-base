@@ -70,12 +70,12 @@ function CorruptScreen() {
       <Button
         variant="danger"
         onClick={() => {
-          if (!confirm("壊れたデータを別の場所に退避して、空の状態から始めます。よろしいですか？")) return;
+          if (!confirm("壊れたデータを別の場所に移して、空の状態から始めます。よろしいですか？")) return;
           const r = s.resetCorrupt();
           if (!r.ok) setMsg(r.error);
         }}
       >
-        退避して新しく始める
+        別の場所に移して最初から始める
       </Button>
       {msg && (
         <p role="alert" className="text-danger">

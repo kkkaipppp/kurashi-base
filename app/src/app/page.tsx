@@ -134,7 +134,7 @@ export default function HomePage() {
         <div className="grid gap-3">
           {prefs.todaySpent && (
             <Card className="flex items-center justify-between py-3">
-              <h2 className="text-[14px] font-semibold text-ink-2">今日の使用分</h2>
+              <h2 className="text-[14px] font-semibold text-ink-2">今日の支出</h2>
               <p className="num text-lg font-bold">{formatYen(todaySpent)}</p>
             </Card>
           )}

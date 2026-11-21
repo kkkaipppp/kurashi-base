@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { useData, useStore } from "@/lib/store";
 import { parseAmount, formatYen } from "@/lib/money";
-import { applyRestore, backupFileName, buildBackup, parseBackup, type RestorePreview } from "@/lib/backup";
+import { applyRestore, backupFileName, buildBackup, countData, COUNT_LABELS, parseBackup, type RestorePreview } from "@/lib/backup";
 import { emptyData } from "@/lib/defaults";
 import { formatDateJa } from "@/lib/date";
 import type { HomePrefs, TxType } from "@/lib/types";
@@ -36,7 +36,7 @@ export default function SettingsPage() {
 
   // --- ホーム表示 ---
   const toggles: { key: keyof HomePrefs; label: string }[] = [
-    { key: "todaySpent", label: "今日の使用分" },
+    { key: "todaySpent", label: "今日の支出" },
     { key: "nextRecurring", label: "固定費の次回予定" },
     { key: "needsReview", label: "今日のナビ（期限・支払日・試験日など）" },
   ];
@@ -65,7 +65,7 @@ export default function SettingsPage() {
     a.click();
     URL.revokeObjectURL(url);
     const r = store.commit((d) => ({ ...d, meta: { ...d.meta, lastBackupAt: now } }));
-    ui.toast(r.ok ? "バックアップファイルを書き出しました" : `書き出しましたが、記録の保存に失敗しました：${r.error}`, r.ok ? "ok" : "error");
+    ui.toast(r.ok ? "バックアップファイルを書き出しました" : `ファイルは書き出しましたが、書き出した日を記録できませんでした。${r.error}`, r.ok ? "ok" : "error");
   };
 
   // --- 復元（S09 プレビュー） ---
@@ -94,16 +94,16 @@ export default function SettingsPage() {
       title: mode === "replace" ? "今のデータを置き換えますか？" : "バックアップのデータを追加しますか？",
       body:
         mode === "replace"
-          ? "今の取引・予定・固定費・設定は、バックアップの内容にすべて置き換わります。先に今のデータを書き出しておくと安心です。"
-          : "同じIDのデータは今のものを残し、バックアップ側はスキップします。",
+          ? "今のすべての記録と設定が、バックアップの内容に置き換わります。先に今のデータを書き出しておくと安心です。"
+          : "すでにある記録は今のものを残し、バックアップの同じ記録は取り込みません。",
       ok: mode === "replace" ? "置き換える" : "追加する",
       danger: mode === "replace",
     });
     if (!ok) return;
     const res = applyRestore(data, preview.data, mode);
     const r = store.replaceAll(res.data); // 1回の保存で反映（失敗時は元のまま）
-    if (!r.ok) return ui.toast(`復元できませんでした：${r.error}（今のデータは変更していません）`, "error");
-    ui.toast(mode === "replace" ? "バックアップから復元しました" : `${res.added}件を追加しました（${res.skipped}件は既にあるためスキップ）`);
+    if (!r.ok) return ui.toast(`${r.error.replace("保存できませんでした", "復元できませんでした")}（今のデータは変更していません）`, "error");
+    ui.toast(mode === "replace" ? "バックアップから復元しました" : `${res.added}件を追加しました（${res.skipped}件はすでにあるため取り込みませんでした）`);
     setPreview(null);
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -112,7 +112,10 @@ export default function SettingsPage() {
   const wipe = async () => {
     const ok = await ui.confirm({
       title: "すべてのデータを削除しますか？",
-      body: `取引${data.transactions.length}件・予定${data.events.length}件・固定費${data.recurring.length}件と設定を、この端末から削除します。元に戻せません。`,
+      body: `${Object.entries(countData(data))
+        .filter(([k, n]) => k !== "categories" && n > 0)
+        .map(([k, n]) => `${COUNT_LABELS[k as keyof typeof COUNT_LABELS]}${n}件`)
+        .join("・") || "記録"}と設定を、この端末から削除します。元に戻せません。`,
       ok: "すべて削除",
       danger: true,
     });
@@ -144,7 +147,7 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>ホームに表示する項目</SectionTitle>
-        <p className="mb-2 text-[13px] text-ink-3">「今月の残り」「今日の予定」「支出追加」「画像取込」は常に表示します。下の項目はデータがあるときだけ表示します。</p>
+        <p className="mb-2 text-[13px] text-ink-3">「今月の残り」「今日の予定」「支出を追加」「画像から取り込む」は、いつも表示します。下の項目は、表示する内容があるときだけ出ます。</p>
         <ul className="divide-y divide-line">
           {toggles.map((t) => (
             <li key={t.key}>
@@ -225,7 +228,7 @@ export default function SettingsPage() {
           {data.meta.lastBackupAt ? ` 前回の書き出し：${formatDateJa(data.meta.lastBackupAt.slice(0, 10), true)}` : " まだ書き出していません。"}
         </p>
         <div className="grid gap-2">
-          <Button onClick={exportBackup}>バックアップを書き出す（JSON）</Button>
+          <Button onClick={exportBackup}>バックアップを書き出す（ファイルに保存）</Button>
           <Button variant="secondary" onClick={() => fileRef.current?.click()}>
             バックアップから復元…
           </Button>
@@ -242,12 +245,14 @@ export default function SettingsPage() {
             <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[14px]">
               <dt className="text-ink-2">書き出し日時</dt>
               <dd>{preview.exportedAt ? new Date(preview.exportedAt).toLocaleString("ja-JP") : "不明"}</dd>
-              <dt className="text-ink-2">取引</dt>
-              <dd>{preview.counts.transactions}件</dd>
-              <dt className="text-ink-2">予定</dt>
-              <dd>{preview.counts.events}件</dd>
-              <dt className="text-ink-2">固定費</dt>
-              <dd>{preview.counts.recurring}件</dd>
+              {(Object.keys(COUNT_LABELS) as (keyof typeof COUNT_LABELS)[])
+                .filter((k) => k !== "categories" && (preview.counts[k] > 0 || ["transactions", "events"].includes(k)))
+                .map((k) => (
+                  <Fragment key={k}>
+                    <dt className="text-ink-2">{COUNT_LABELS[k]}</dt>
+                    <dd>{preview.counts[k]}件</dd>
+                  </Fragment>
+                ))}
               <dt className="text-ink-2">期間</dt>
               <dd>{preview.period ? `${preview.period.from} 〜 ${preview.period.to}` : "なし"}</dd>
             </dl>
@@ -288,9 +293,9 @@ export default function SettingsPage() {
       <Card>
         <SectionTitle>データとプライバシー</SectionTitle>
         <ul className="mb-3 list-disc space-y-1 pl-5 text-[13px] text-ink-2">
-          <li>入力したデータは、この端末のブラウザ（localStorage）にだけ保存します。外部のサーバーへは送信しません。</li>
+          <li>入力したデータは、この端末のブラウザの中にだけ保存します。外部のサーバーへは送りません。</li>
           <li>端末どうしの同期、アカウント、共有には対応していません。</li>
-          <li>取り込んだ画像は保存しません（重複確認用の指紋だけを保存します）。</li>
+          <li>取り込んだ画像は保存しません（同じ画像かどうかを確かめるために、画像から計算した値だけを保存します）。</li>
         </ul>
         <Button variant="danger" onClick={wipe} className="w-full">
           すべてのデータを削除
@@ -299,13 +304,13 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>このアプリについて</SectionTitle>
-        <p className="text-[13px] text-ink-2">暮らしベース 開発版（Phase 1）</p>
+        <p className="text-[13px] text-ink-2">暮らしベース 開発版</p>
         <p className="mt-2 text-[13px] font-semibold text-ink-2">まだ対応していないこと</p>
         <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
           <li>画像の文字の自動読み取り（OCR）— 画像を見ながら手で入力します</li>
-          <li>繰り返し予定、返金・振替・分割の取引</li>
+          <li>繰り返し予定の1回分だけの変更、振替・分割払いの記録</li>
           <li>通知、ホーム画面ウィジェット、iOSショートカット連携</li>
-          <li>クラウド同期・共有</li>
+          <li>クラウド同期・共有・AI・外部サービス連携（メニューの「準備中」）</li>
         </ul>
       </Card>
     </main>

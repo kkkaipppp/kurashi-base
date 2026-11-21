@@ -24,7 +24,7 @@ export function validateTx(
   if (!isValidDateStr(draft.date)) errors.date = "正しい日付を入力してください";
   const cat = categories.find((c) => c.id === draft.categoryId);
   if (!cat) errors.categoryId = "カテゴリを選んでください";
-  else if (cat.kind !== draft.type) errors.categoryId = "種別に合うカテゴリを選んでください";
+  else if (cat.kind !== draft.type) errors.categoryId = "支出・収入に合うカテゴリを選んでください";
   if (draft.merchant.length > 100) errors.merchant = "店名・相手先は100文字以内にしてください";
   if (draft.note.length > 500) errors.note = "メモは500文字以内にしてください";
   if (Object.keys(errors).length > 0 || !amt.ok) return { ok: false, errors };

@@ -47,7 +47,7 @@ export default function HistoryPage() {
 
   return (
     <main>
-      <PageHeader title="履歴" />
+      <PageHeader title="取引履歴" />
 
       <Card className="py-3">
         <div className="flex items-center justify-between">
@@ -105,7 +105,7 @@ export default function HistoryPage() {
             <option value="income">収入</option>
           </select>
           <select value={cat} onChange={(e) => setCat(e.target.value)} aria-label="カテゴリで絞り込み" className={`${inputCls} px-2 text-[14px]`}>
-            <option value="">全カテゴリ</option>
+            <option value="">すべてのカテゴリ</option>
             {data.categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -113,7 +113,7 @@ export default function HistoryPage() {
             ))}
           </select>
           <select value={pay} onChange={(e) => setPay(e.target.value)} aria-label="支払方法で絞り込み" className={`${inputCls} px-2 text-[14px]`}>
-            <option value="all">全支払方法</option>
+            <option value="all">すべての支払方法</option>
             {PAYMENT_METHODS.map((p) => (
               <option key={p.id || "none"} value={p.id}>
                 {p.label}
