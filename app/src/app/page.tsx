@@ -127,12 +127,36 @@ export default function HomePage() {
         </Link>
       </div>
 
+      {/* はじめての方へ（記録が1件もない間だけ） */}
       {data.transactions.length === 0 && data.events.length === 0 && (
         <Card>
-          <h2 className="text-[15px] font-bold">はじめての暮らしベース</h2>
-          <p className="mt-1 text-[13px] text-ink-2">① 予算を決める（任意） → ② 支出か予定を1件登録 → ③ カレンダーで確認。記録はこのブラウザ内に保存されます。</p>
-          <Link href="/guide" className="mt-2 inline-flex min-h-11 items-center text-[14px] font-semibold text-brand">
-            使い方とデータの保存について
+          <h2 className="text-[15px] font-bold">まずは3つだけ</h2>
+          <ol className="mt-2 space-y-2">
+            <li>
+              <Link href="/settings#budget" className="flex min-h-11 items-center gap-2 rounded-xl px-1 text-[14px] hover:bg-surface-2">
+                <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand">1</span>
+                <span className="flex-1">1か月の予算を決める<span className="ml-1 text-[12px] text-ink-3">あとでも大丈夫</span></span>
+                <IconChevronR className="size-4 shrink-0 text-ink-3" />
+              </Link>
+            </li>
+            <li>
+              <button type="button" onClick={() => ui.openAdd()} className="flex min-h-11 w-full items-center gap-2 rounded-xl px-1 text-left text-[14px] hover:bg-surface-2">
+                <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand">2</span>
+                <span className="flex-1">画面下の「＋」から、支出か予定を1件追加する</span>
+                <IconChevronR className="size-4 shrink-0 text-ink-3" />
+              </button>
+            </li>
+            <li>
+              <Link href="/calendar" className="flex min-h-11 items-center gap-2 rounded-xl px-1 text-[14px] hover:bg-surface-2">
+                <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-soft text-[12px] font-bold text-brand">3</span>
+                <span className="flex-1">カレンダーで、その日の記録を見る</span>
+                <IconChevronR className="size-4 shrink-0 text-ink-3" />
+              </Link>
+            </li>
+          </ol>
+          <p className="mt-2 text-[13px] text-ink-2">記録は、この端末のこのブラウザの中だけに保存されます。</p>
+          <Link href="/guide" className="mt-1 inline-flex min-h-11 items-center text-[14px] font-semibold text-brand">
+            使い方とデータの守り方
             <IconChevronR className="ml-1 size-4" />
           </Link>
         </Card>

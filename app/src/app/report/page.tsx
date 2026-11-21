@@ -115,7 +115,7 @@ export default function ReportPage() {
                 <dd className={`text-[14px] font-bold ${r.balance < 0 ? "text-expense" : ""}`}>{formatSignedYen(r.balance)}</dd>
               </div>
               <div className="rounded-xl bg-surface-2 py-2">
-                <dt className="text-[11px] font-semibold text-ink-2">先月の支出</dt>
+                <dt className="text-[11px] font-semibold text-ink-2">{month === monthKey(today) ? "先月の支出" : "前月の支出"}</dt>
                 <dd className="text-[14px] font-bold">{r.hasPrev ? formatYen(r.prevExpense) : "記録なし"}</dd>
               </div>
             </dl>

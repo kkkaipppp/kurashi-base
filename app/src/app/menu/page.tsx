@@ -44,7 +44,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "アプリ",
     items: [
-      { href: "/guide", label: "はじめての方へ・データ保存", desc: "使い方、バックアップ、端末ごとの保存について" },
+      { href: "/guide", label: "使い方", desc: "はじめての方へ・記録の保存場所とバックアップ" },
       { href: "/settings", label: "設定", desc: "予算・表示・カテゴリ・データの削除" },
     ],
   },

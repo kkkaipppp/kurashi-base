@@ -60,6 +60,10 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   }, []);
 
   const [draft, setDraft] = useState<TxDraft>(initialDraft);
+  // 「続けて追加」のあとは、その時点の空の入力を基準にする（何も入力していなければ閉じるときに確認しない）
+  const [base, setBase] = useState<TxDraft>(initialDraft);
+  // 手入力の新規追加のときだけ「続けて追加」を出す（画像・固定費からの記録は1件ずつ）
+  const canContinue = req.mode === "new" && !req.previewUrl && !req.recurringId;
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [dups, setDups] = useState<DupCandidate[] | null>(null);
@@ -67,7 +71,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   const lock = useRef(false); // 連続タップでの二重保存防止
   const saved = useRef(false);
 
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initialDraft);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(base);
   const cats = data.categories.filter((c) => c.kind === draft.type && (!c.archived || c.id === draft.categoryId));
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "（削除済みカテゴリ）";
 
@@ -91,7 +95,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     onClose();
   };
 
-  const save = async (force = false) => {
+  const save = async (force = false, keepOpen = false) => {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
@@ -131,6 +135,16 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         return;
       }
       ui.toast(editing ? "保存しました" : `${draft.type === "expense" ? "支出" : "収入"}を追加しました`);
+      if (keepOpen && canContinue) {
+        // 日付・種別・カテゴリ・支払方法はそのまま、金額・店名・メモだけ空にして次の1件へ
+        const next: TxDraft = { ...draft, amount: "", merchant: "", note: "" };
+        setDraft(next);
+        setBase(next);
+        setErrors({});
+        setDups(null);
+        requestAnimationFrame(() => document.getElementById("tx-amount")?.focus());
+        return;
+      }
       saved.current = true; // 保存後はロックを解除しない（閉じる前の連打で2件目を作らない）
       if (req.mode === "new") req.onSaved?.();
       onClose();
@@ -178,6 +192,11 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
             {editing && (
               <Button variant="danger" onClick={remove} disabled={busy}>
                 削除
+              </Button>
+            )}
+            {canContinue && (
+              <Button variant="secondary" onClick={() => save(false, true)} disabled={busy}>
+                続けて追加
               </Button>
             )}
             <Button className="flex-1" onClick={() => save()} disabled={busy} aria-busy={busy}>

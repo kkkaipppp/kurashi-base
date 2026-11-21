@@ -43,3 +43,19 @@ describe("LESSONS L-04：選択肢が並列になっていない", () => {
     }
   });
 });
+
+describe("友人β：初めて使う人に保存場所とバックアップが伝わる（U01・U08）", () => {
+  it("ホームのはじめての案内と使い方の画面に「このブラウザの中だけ」と、バックアップへの入口がある", () => {
+    expect(src("app/page.tsx")).toContain("このブラウザの中だけ");
+    const guide = src("app/guide/page.tsx");
+    expect(guide).toContain("このブラウザの中だけ");
+    expect(guide).toContain("/settings#backup");
+    expect(src("app/settings/page.tsx")).toContain('id="backup"');
+  });
+  it("Safari でバックアップの書き出しが始まらない問題の回避（URL をすぐに無効にしない）が残っている", () => {
+    expect(src("app/settings/page.tsx")).not.toMatch(/a\.click\(\);\s*\n\s*URL\.revokeObjectURL/);
+  });
+  it("復元・置き換えは前の状態を控える経路（理由つきの replaceAll）を通る", () => {
+    expect(src("app/settings/page.tsx")).toMatch(/store\.replaceAll\([^)]*,\s*mode === "replace"/);
+  });
+});
