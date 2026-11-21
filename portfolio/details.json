@@ -1,0 +1,6 @@
+{
+  "project_id": "kurashi-base",
+  "as_of": "2026-11-21T15:56:17+09:00",
+  "blocker_items": [],
+  "approval_items": ["OCR（tesseract.js・端末内処理）を入れるかの判断", "iPhone実機での使い心地の確認（ユーザー操作が必要）"]
+}

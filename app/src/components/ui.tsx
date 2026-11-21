@@ -26,7 +26,8 @@ export function Button({
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-line bg-surface p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${className}`}>{children}</section>;
+  const pad = /(^|\s)p-0(\s|$)/.test(className) ? "" : "p-4";
+  return <section className={`rounded-2xl border border-line bg-surface ${pad} shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${className}`}>{children}</section>;
 }
 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {

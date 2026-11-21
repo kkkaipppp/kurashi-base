@@ -1,0 +1,10 @@
+画面ID,画面,参考モック,実装,判定,差分メモ
+S01,ホーム,assets/reference_mocks/01_home.svg,app/src/app/page.tsx,意図的差分,残額カード・今日の予定・支出追加/画像取込・補助カード（今日の使用分/固定費の次回予定/確認したいこと）を実装。最近の取引を追加。予算未設定時は「未設定」と設定導線。
+S02,カレンダー,assets/reference_mocks/02_calendar.svg,app/src/app/calendar/page.tsx,意図的差分,月切替・今日へ戻る・日付選択・予定（紫点）と支出額（赤字）と収入（青点）を区別表示。選択日の予定とお金を分けて一覧。
+S03,取引一覧・詳細,なし（モック未提供）,app/src/app/history/page.tsx,未確認,月別集計・カテゴリ別・検索・種別/カテゴリ/支払方法で絞り込み。モック未提供のため仮UI。
+S04,取引登録・編集,assets/reference_mocks/03_expense.svg,app/src/components/TxSheet.tsx,意図的差分,下から出るシートで実装。支出/収入の切替・支払方法を追加。保存失敗時は入力を保持。重複候補の警告。
+S05,予定登録・詳細,なし（モック未提供）,app/src/components/EventSheet.tsx,未確認,終日・日跨ぎ対応。繰り返し予定は未対応と明記。
+S06,画像取込・確認,assets/reference_mocks/04_import.svg,app/src/app/import/page.tsx,意図的差分,OCRなし。画像プレビュー→見ながら手入力→確認して登録。同一画像の再取込を警告。
+S07,固定費,なし（モック未提供）,app/src/app/recurring/page.tsx,未確認,一覧・追加・編集・停止・削除・支払いを記録（記録時に次回予定日を進める）。
+S08,設定,なし（モック未提供）,app/src/app/settings/page.tsx,未確認,予算・ホーム表示ON/OFF・カテゴリ追加/非表示・バックアップ・全削除・未対応機能の一覧。
+S09,復元プレビュー,なし（モック未提供）,app/src/app/settings/page.tsx,未確認,設定画面内に表示。件数・期間・書き出し日時・警告・追加/置き換えの選択。

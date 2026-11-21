@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 暮らしベース（app）
 
-## Getting Started
+予定とお金（家計）を1つの場所で管理する、スマホ優先・ローカルファーストのWebアプリです（Phase 1 開発版）。
 
-First, run the development server:
+## 動かし方
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| コマンド | 内容 |
+|---|---|
+| `npm run typecheck` | TypeScript 型チェック |
+| `npm run lint` | ESLint |
+| `npm run test` | vitest 単体テスト（`tests/`） |
+| `npm run build` | 本番ビルド |
+| `npm run check` | 上の4つをまとめて実行 |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 構成
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/lib/` 画面から独立したロジック（型・日付・金額・検証・集計・固定費・重複判定・保存・バックアップ）
+- `src/components/` 共通部品（下部ナビ、取引/予定の入力シート、確認ダイアログ、トースト）
+- `src/app/` 画面（`/` ホーム、`/calendar`、`/history`、`/settings`、`/recurring`、`/import`）
+- `tests/` 単体テスト
 
-## Learn More
+## データの保存について（既知の制約）
 
-To learn more about Next.js, take a look at the following resources:
+- データはブラウザの localStorage（キー `kurashi-base:data:v1`）に、端末内だけで保存します。外部送信はしません。
+- ブラウザのサイトデータを消す、別のブラウザ・端末で開く、プライベートモードで使う、のいずれでもデータは引き継がれません。設定画面から JSON バックアップを書き出してください。
+- 保存データが壊れていた場合は、上書きせずに案内画面を出します（壊れたデータの書き出し／退避して初期化）。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 未対応（Phase 1 では作っていません）
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+OCR（文字の自動読み取り）、繰り返し予定、返金・振替・分割、通知、ウィジェット、iOS ショートカット連携、同期・共有、ダークモード。

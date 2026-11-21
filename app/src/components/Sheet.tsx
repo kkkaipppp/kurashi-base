@@ -27,7 +27,10 @@ export function Sheet({
     if (!open) return;
     const prev = document.activeElement as HTMLElement | null;
     const el = ref.current;
-    const first = el?.querySelector<HTMLElement>("input, select, textarea, button:not([data-close])");
+    // 最初の入力欄（金額・タイトル）にフォーカス。なければ最初のボタン
+    const first =
+      el?.querySelector<HTMLElement>("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea") ??
+      el?.querySelector<HTMLElement>("button:not([data-close])");
     first?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {

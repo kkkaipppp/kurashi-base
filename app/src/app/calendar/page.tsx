@@ -138,9 +138,9 @@ export default function CalendarPage() {
       </Card>
 
       <section className="mt-4 space-y-3" aria-label="選択日の予定と支出">
-        <div className="flex items-center justify-between">
+        <div className="space-y-2">
           <h2 className="text-[17px] font-bold">{formatDateJa(selected, true)}</h2>
-          <div className="flex gap-1.5">
+          <div className="grid grid-cols-3 gap-2 whitespace-nowrap">
             <button type="button" onClick={() => ui.openEvent({ mode: "new", date: selected })} className="min-h-10 rounded-lg bg-event-soft px-3 text-[13px] font-semibold text-event">
               ＋予定
             </button>

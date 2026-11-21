@@ -62,7 +62,7 @@ export default function HomePage() {
       </header>
 
       {/* 今月の残り */}
-      <Card className="bg-brand text-brand-ink border-transparent">
+      <section className="rounded-2xl bg-brand p-4 text-brand-ink shadow-sm">
         <div className="flex items-baseline justify-between">
           <h2 className="text-[14px] font-semibold opacity-90">今月の残り</h2>
           <span className="text-[12px] opacity-80">予算 − 今月の支出</span>
@@ -88,7 +88,7 @@ export default function HomePage() {
             </p>
           </div>
         )}
-      </Card>
+      </section>
 
       {/* 主要操作 */}
       <div className="grid grid-cols-2 gap-3">
@@ -158,7 +158,7 @@ export default function HomePage() {
             </Link>
           )}
           {prefs.needsReview && reviews.length > 0 && (
-            <Card className="border-warn/30 bg-warn-soft py-3">
+            <section className="rounded-2xl border border-warn/30 bg-warn-soft p-4 py-3">
               <h2 className="mb-1 flex items-center gap-1.5 text-[14px] font-semibold text-warn">
                 <IconAlert className="size-4" />
                 確認したいこと
@@ -172,7 +172,7 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
-            </Card>
+            </section>
           )}
         </div>
       )}

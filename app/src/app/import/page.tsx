@@ -69,12 +69,12 @@ export default function ImportPage() {
     <main className="space-y-4">
       <PageHeader title="画像から取り込み" />
 
-      <Card className="border-warn/30 bg-warn-soft py-3">
+      <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3">
         <p className="text-[13px] text-ink-2">
           <span className="font-bold text-warn">文字の自動読み取り（OCR）は、まだありません。</span>
           画像を見ながら金額・日付・店名を入力して登録します。入力した内容を確認するまで、取引は登録されません。
         </p>
-      </Card>
+      </section>
 
       <Card>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} aria-label="画像を選ぶ" />
@@ -116,7 +116,7 @@ export default function ImportPage() {
               <Button variant="secondary" onClick={clear}>
                 取り消す
               </Button>
-              <Button onClick={startEntry}>見ながら入力する</Button>
+              <Button onClick={startEntry}>入力へ進む</Button>
             </div>
           </div>
         )}

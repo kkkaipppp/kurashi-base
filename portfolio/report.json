@@ -1,0 +1,15 @@
+{
+  "project_id": "kurashi-base",
+  "mode": "production",
+  "as_of": "2026-11-21T15:56:17+09:00",
+  "phase": "Phase 1 開発版が完成（家計・予定・カレンダー・固定費・バックアップ）。OCRなし、iPhone実機は未確認",
+  "progress_pct": null,
+  "quality": "UNKNOWN",
+  "revenue_yen": null,
+  "cost_yen": null,
+  "period": "2026-11",
+  "blockers": 0,
+  "approvals": 2,
+  "next_action": "iPhone実機のSafariで主要な流れを確認する",
+  "evidence_ref": "DELIVERY_REPORT@2026-11-21"
+}
