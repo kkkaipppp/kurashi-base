@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { useData, useStore } from "@/lib/store";
 import { parseAmount, formatYen } from "@/lib/money";
 import { applyRestore, backupFileName, buildBackup, countData, COUNT_LABELS, parseBackup, type RestorePreview } from "@/lib/backup";
@@ -62,7 +62,8 @@ export default function SettingsPage() {
     a.href = url;
     a.download = backupFileName(now);
     a.click();
-    URL.revokeObjectURL(url);
+    // Safari はクリック直後に URL を無効にすると保存が始まらないことがあるため、少し待ってから片付ける
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
     const r = store.commit((d) => ({ ...d, meta: { ...d.meta, lastBackupAt: now } }));
     ui.toast(r.ok ? "バックアップファイルを書き出しました" : `ファイルは書き出しましたが、書き出した日を記録できませんでした。${r.error}`, r.ok ? "ok" : "error");
   };
@@ -97,8 +98,8 @@ export default function SettingsPage() {
       title: mode === "replace" ? "すべての記録をバックアップの内容に置き換えますか？" : "バックアップの記録を追加しますか？",
       body:
         mode === "replace"
-          ? "今のすべての記録と設定が、バックアップの内容に置き換わります。元に戻せないので、先に今のデータを書き出しておくと安心です。"
-          : `${plan.added}件を追加します。すでにある記録はそのまま残ります。`,
+          ? "今のすべての記録と設定が、バックアップの内容に置き換わります。置き換える前の状態はこの端末に1つだけ控えるので、この画面の「直前の操作を取り消す」で戻せます。"
+          : `${plan.added}件を追加します。すでにある記録はそのまま残ります。追加する前の状態は「直前の操作を取り消す」で戻せます。`,
       ok: mode === "replace" ? "置き換える" : "追加する",
       danger: mode === "replace",
     });
@@ -106,11 +107,27 @@ export default function SettingsPage() {
     // 確定の直前にもう一度、今のデータから計算し直す（確認中に別のタブで変わった場合に備える）
     const res = applyRestore(store.data ?? data, preview.data, mode);
     if (!res.ok) return ui.toast(res.error, "error");
-    const r = store.replaceAll(res.data); // 1回の保存で反映（失敗時は元のまま）
+    // 1回の保存で反映（失敗時は元のまま）。前の状態は控えておく
+    const r = store.replaceAll(res.data, mode === "replace" ? "バックアップから置き換え" : "バックアップから追加");
     if (!r.ok) return ui.toast(`${r.error.replace("保存できませんでした", "復元できませんでした")}（今のデータは変更していません）`, "error");
     ui.toast(mode === "replace" ? "バックアップから復元しました" : `${res.added}件を追加しました`);
     setPreview(null);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  // --- 直前の操作の取り消し ---
+  // data が変わるたびに読み直す（復元・取り消しのあとに表示を更新するため）
+  const undo = useMemo(() => (data ? store.undoInfo() : null), [data, store]);
+  const doUndo = async () => {
+    if (!undo) return;
+    const ok = await ui.confirm({
+      title: "直前の操作を取り消しますか？",
+      body: `「${undo.reason}」（${new Date(undo.savedAt).toLocaleString("ja-JP")}）の前の状態に戻します。そのあとに追加・変更した記録は、戻した状態には含まれません（今の状態は控えるので、もう一度取り消せば戻せます）。`,
+      ok: "取り消す",
+    });
+    if (!ok) return;
+    const r = store.undoLast();
+    ui.toast(r.ok ? "直前の操作を取り消しました" : r.error, r.ok ? "ok" : "error");
   };
 
   // --- 全削除 ---
@@ -125,7 +142,7 @@ export default function SettingsPage() {
       danger: true,
     });
     if (!ok) return;
-    const r = store.replaceAll(emptyData());
+    const r = store.wipeAll(emptyData());
     if (r.ok) ui.toast("すべてのデータを削除しました");
     else ui.toast(r.error, "error");
   };
@@ -298,6 +315,17 @@ export default function SettingsPage() {
                 復元する
               </Button>
             </div>
+          </div>
+        )}
+        {undo && (
+          <div className="mt-3 rounded-2xl border border-line p-3">
+            <h3 className="text-[14px] font-bold">直前の操作を取り消す</h3>
+            <p className="mt-1 text-[13px] text-ink-2">
+              「{undo.reason}」（{new Date(undo.savedAt).toLocaleString("ja-JP")}）の前の状態に戻せます。
+            </p>
+            <Button variant="secondary" onClick={doUndo} className="mt-2 w-full">
+              取り消して前の状態に戻す
+            </Button>
           </div>
         )}
       </Card>

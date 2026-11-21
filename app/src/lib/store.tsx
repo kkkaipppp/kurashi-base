@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { newId } from "./defaults";
 import { advanceDueDate } from "./recurring";
-import { loadData, quarantineAndReset, saveDataIfUnchanged, type LoadResult, type SaveResult } from "./storage";
+import { clearUndo, loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
 import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction } from "./types";
 
 export type TxInput = Omit<Transaction, "id" | "createdAt" | "updatedAt" | "currency">;
@@ -36,7 +36,12 @@ interface Store {
   setHomePref: (key: keyof HomePrefs, v: boolean) => SaveResult;
   addCategory: (c: Omit<Category, "id" | "order" | "archived">) => SaveResult;
   setCategoryArchived: (id: string, archived: boolean) => SaveResult;
-  replaceAll: (d: AppData) => SaveResult;
+  /** 復元など、全体が大きく変わる保存。前の状態を1つ控える（reason は取り消すときに表示） */
+  replaceAll: (d: AppData, reason: string) => SaveResult;
+  /** すべて削除。控えも残さない */
+  wipeAll: (empty: AppData) => SaveResult;
+  undoInfo: () => UndoSnapshot | null;
+  undoLast: () => SaveResult;
   addItem: <K extends CollectionKey>(k: K, item: ItemInput<K>) => SaveResult;
   updateItem: <K extends CollectionKey>(k: K, id: string, patch: Partial<ItemInput<K>>) => SaveResult;
   removeItem: (k: CollectionKey, id: string) => SaveResult;
@@ -85,19 +90,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, [applyLoad]);
 
+  /** 保存の結果を画面に反映する。ほかのタブで変わっていたら、最新を読み込み直す（入力中のシートはそのまま） */
+  const finish = useCallback(
+    (next: AppData, r: GuardedSaveResult): SaveResult => {
+      if (r.ok) {
+        persistedRawRef.current = r.persistedRaw;
+        dataRef.current = next;
+        setState((s) => ({ ...s, data: next }));
+        return { ok: true };
+      }
+      if (r.conflict) applyLoad(loadData());
+      return { ok: false, error: r.error };
+    },
+    [applyLoad],
+  );
+
   // 先に保存し、成功したときだけ画面の状態を更新する
   const commit = useCallback((fn: (d: AppData) => AppData): SaveResult => {
     const cur = dataRef.current;
     if (!cur) return { ok: false, error: "保存できませんでした。データを読み込めていません。再読み込みしてください" };
     const next = fn(cur);
-    const r = saveDataIfUnchanged(next, persistedRawRef.current);
-    if (r.ok) {
-      persistedRawRef.current = r.persistedRaw ?? null;
-      dataRef.current = next;
-      setState((s) => ({ ...s, data: next }));
-    }
-    return r;
-  }, []);
+    return finish(next, saveDataIfUnchanged(next, persistedRawRef.current));
+  }, [finish]);
 
   const store = useMemo<Store>(() => {
     const now = () => new Date().toISOString();
@@ -156,7 +170,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         })),
       setCategoryArchived: (id, archived) =>
         commit((d) => ({ ...d, categories: d.categories.map((c) => (c.id === id ? { ...c, archived } : c)) })),
-      replaceAll: (next) => commit(() => next),
+      replaceAll: (next, reason) => {
+        if (!dataRef.current) return { ok: false, error: "保存できませんでした。データを読み込めていません。再読み込みしてください" };
+        return finish(next, saveWithUndo(next, persistedRawRef.current, reason, now()));
+      },
+      wipeAll: (empty) => {
+        const r = commit(() => empty);
+        if (r.ok) clearUndo();
+        return r;
+      },
+      undoInfo: () => readUndo(),
+      undoLast: () => {
+        const r = restoreUndo(persistedRawRef.current, now());
+        if (r.ok && r.data) return finish(r.data, r);
+        if (!r.ok && r.conflict) applyLoad(loadData());
+        return r.ok ? { ok: true } : { ok: false, error: r.error };
+      },
       addItem: (k, item) => {
         const ts = now();
         return commit((d) => ({ ...d, [k]: [...d[k], { ...item, id: newId(ID_PREFIX[k]), createdAt: ts, updatedAt: ts }] }));
@@ -181,7 +210,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return r;
       },
     };
-  }, [state, commit, applyLoad]);
+  }, [state, commit, applyLoad, finish]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }
