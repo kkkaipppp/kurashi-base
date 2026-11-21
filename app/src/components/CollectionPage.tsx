@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useMemo, useRef, useState, type ReactNode } from "react";
 import { Sheet } from "./Sheet";
 import { Button, Card, Empty, Field, PageHeader, inputCls } from "./ui";
 import { useUI } from "./UIContext";
@@ -18,7 +18,10 @@ export interface FieldDef {
   label: string;
   type: "text" | "textarea" | "date" | "number" | "select" | "checkbox";
   required?: boolean;
-  options?: { value: string; label: string }[];
+  /** 入力しなくてもよい欄（ラベルの横に「任意」） */
+  optional?: boolean;
+  /** group を付けると、選択肢をグループに分けて表示する */
+  options?: { value: string; label: string; group?: string }[];
   placeholder?: string;
   hint?: string;
   /** number：小数を許すか（既定は整数のみ） */
@@ -291,16 +294,12 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
             );
           return (
             <div key={f.name} className={span}>
-              <Field label={f.label} htmlFor={fid} error={err} hint={f.hint}>
+              <Field label={f.label} htmlFor={fid} error={err} hint={f.hint} optional={f.optional}>
                 {f.type === "textarea" ? (
                   <textarea id={fid} rows={4} value={String(v ?? "")} onChange={(e) => set(f.name, e.target.value)} placeholder={f.placeholder} className={inputCls} aria-invalid={!!err} />
                 ) : f.type === "select" ? (
                   <select id={fid} value={String(v ?? "")} onChange={(e) => set(f.name, e.target.value)} className={inputCls} aria-invalid={!!err}>
-                    {f.options?.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
+                    <SelectOptions options={f.options ?? []} current={String(v ?? "")} />
                   </select>
                 ) : (
                   <input
@@ -321,6 +320,39 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
       </form>
     </Sheet>
+  );
+}
+
+/**
+ * 選択肢。group があれば optgroup でまとめる。
+ * 保存済みの値が今の選択肢にない場合（名前を変えた古い分類など）も、その値を残して表示する（データは書き換えない）。
+ */
+function SelectOptions({ options, current }: { options: NonNullable<FieldDef["options"]>; current: string }) {
+  const list = current && !options.some((o) => o.value === current) ? [...options, { value: current, label: `${current}（以前の分類）` }] : options;
+  const groups: [string, typeof list][] = [];
+  for (const o of list) {
+    const g = o.group ?? "";
+    const last = groups[groups.length - 1];
+    if (last && last[0] === g) last[1].push(o);
+    else groups.push([g, [o]]);
+  }
+  return (
+    <>
+      {groups.map(([g, os]) => {
+        const opts = os.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ));
+        return g ? (
+          <optgroup key={g} label={g}>
+            {opts}
+          </optgroup>
+        ) : (
+          <Fragment key={`_${os[0].value}`}>{opts}</Fragment>
+        );
+      })}
+    </>
   );
 }
 

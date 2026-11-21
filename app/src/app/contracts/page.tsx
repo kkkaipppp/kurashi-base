@@ -10,7 +10,7 @@ import type { Contract } from "@/lib/types";
 const CYCLES = [
   { value: "monthly", label: "毎月" },
   { value: "yearly", label: "毎年" },
-  { value: "none", label: "支払いなし・一括" },
+  { value: "none", label: "一括・なし" },
 ];
 
 const config: CollectionConfig<"contracts"> = {
@@ -20,13 +20,13 @@ const config: CollectionConfig<"contracts"> = {
   intro: "スマホ・保険・サブスク・賃貸などの契約と、更新日を記録します。支払いを家計に入れるときは「固定費」にも登録してください。解約の手続きは、各サービスで行ってください。",
   emptyText: "まだ契約が登録されていません。",
   fields: [
-    { name: "name", label: "契約名", type: "text", required: true, placeholder: "例：スマホ料金" },
-    { name: "provider", label: "契約先（任意）", type: "text", placeholder: "例：〇〇モバイル" },
-    { name: "amount", label: "支払額（円・任意）", type: "number", half: true },
-    { name: "cycle", label: "支払いの周期", type: "select", half: true, options: CYCLES },
-    { name: "renewalDate", label: "次の更新日（任意）", type: "date", half: true },
+    { name: "name", label: "名前", type: "text", required: true, placeholder: "例：スマホ料金" },
+    { name: "provider", label: "契約先", optional: true, type: "text", placeholder: "例：〇〇モバイル" },
+    { name: "amount", label: "支払額（円）", optional: true, type: "number", half: true },
+    { name: "cycle", label: "支払い", type: "select", half: true, options: CYCLES },
+    { name: "renewalDate", label: "更新日", optional: true, type: "date", half: true },
     { name: "status", label: "状態", type: "select", half: true, options: [{ value: "active", label: "契約中" }, { value: "cancelled", label: "解約済み" }] },
-    { name: "note", label: "メモ（任意）", type: "textarea", placeholder: "解約の方法、問い合わせ先など" },
+    { name: "note", label: "メモ", optional: true, type: "textarea", placeholder: "解約の方法、問い合わせ先など" },
   ],
   initial: () => ({ name: "", provider: "", amount: "", cycle: "monthly", renewalDate: "", status: "active", note: "" }),
   toDraft: (c) => ({ name: c.name, provider: c.provider, amount: numStr(c.amount), cycle: c.cycle, renewalDate: c.renewalDate, status: c.status, note: c.note }),

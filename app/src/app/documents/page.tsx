@@ -4,7 +4,7 @@ import { CollectionPage, type CollectionConfig } from "@/components/CollectionPa
 import { daysBetween, formatDateJa } from "@/lib/date";
 import { str } from "@/lib/draft";
 
-const CATEGORIES = ["身分証・免許", "保険", "年金・税金", "住まい", "車", "医療", "保証書・取扱説明書", "その他"];
+const CATEGORIES = ["身分証・免許", "保険", "年金・税金", "住まい", "車", "医療", "家電・保証書", "その他"];
 
 const config: CollectionConfig<"documents"> = {
   key: "documents",
@@ -13,11 +13,11 @@ const config: CollectionConfig<"documents"> = {
   intro: "大事な書類の名前・期限・保管場所を記録します。書類の画像やファイルは保存しません（保管場所のメモだけです）。",
   emptyText: "まだ書類が登録されていません。運転免許証やパスポートの期限から登録してみましょう。",
   fields: [
-    { name: "title", label: "書類の名前", type: "text", required: true, placeholder: "例：運転免許証" },
+    { name: "title", label: "名前", type: "text", required: true, placeholder: "例：運転免許証" },
     { name: "category", label: "分類", type: "select", half: true, options: CATEGORIES.map((x) => ({ value: x, label: x })) },
-    { name: "expiry", label: "期限（任意）", type: "date", half: true },
-    { name: "place", label: "保管場所（任意）", type: "text", placeholder: "例：寝室の引き出し、クラウドのフォルダ名" },
-    { name: "note", label: "メモ（任意）", type: "textarea" },
+    { name: "expiry", label: "期限", optional: true, type: "date", half: true },
+    { name: "place", label: "保管場所", optional: true, type: "text", placeholder: "例：寝室の引き出し、クラウドのフォルダ名" },
+    { name: "note", label: "メモ", optional: true, type: "textarea" },
   ],
   initial: () => ({ title: "", category: CATEGORIES[0], expiry: "", place: "", note: "" }),
   toDraft: (d) => ({ title: d.title, category: d.category, expiry: d.expiry, place: d.place, note: d.note }),

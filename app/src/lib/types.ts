@@ -220,10 +220,10 @@ export interface AppData extends Collections {
 }
 
 export const PAYMENT_METHODS: { id: string; label: string }[] = [
-  { id: "", label: "未指定" },
+  { id: "", label: "指定なし" },
   { id: "cash", label: "現金" },
   { id: "card", label: "クレジットカード" },
-  { id: "qr", label: "QR・スマホ決済" },
+  { id: "qr", label: "QRコード決済" },
   { id: "emoney", label: "電子マネー" },
   { id: "bank", label: "口座振替・振込" },
   { id: "other", label: "その他" },

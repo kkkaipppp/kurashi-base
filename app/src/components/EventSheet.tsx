@@ -174,7 +174,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
           )}
         </div>
 
-        <Field label="メモ（任意）" htmlFor="ev-note" error={errors.note}>
+        <Field label="メモ" optional htmlFor="ev-note" error={errors.note}>
           <textarea id="ev-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -193,7 +193,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
             </select>
           </Field>
           {draft.repeat && draft.repeat !== "none" && (
-            <Field label="いつまで（任意）" htmlFor="ev-until" error={errors.repeatUntil}>
+            <Field label="いつまで" optional htmlFor="ev-until" error={errors.repeatUntil}>
               <input id="ev-until" type="date" value={draft.repeatUntil ?? ""} onChange={(e) => set("repeatUntil", e.target.value)} className={inputCls} aria-invalid={!!errors.repeatUntil} />
             </Field>
           )}

@@ -16,7 +16,7 @@ export default function WidgetPreviewPage() {
 
   return (
     <main className="space-y-3">
-      <PageHeader title="ウィジェットのプレビュー" />
+      <PageHeader title="ウィジェット" />
       <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3 text-[13px] text-ink-2">
         <p className="font-bold text-warn">アプリの中で見るだけのプレビューです</p>
         iPhoneのホーム画面に置くウィジェットは、Webアプリでは作れません。ネイティブアプリとして作る必要があり、まだ対応していません。

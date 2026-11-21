@@ -37,18 +37,22 @@ function Summary({ data }: { data: AppData }) {
         <button type="button" onClick={() => setYear(year - 1)} aria-label="前の年" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
           <IconChevronL />
         </button>
-        <h2 className="text-[17px] font-bold">{year}年の枠</h2>
+        <h2 className="text-[17px] font-bold">{year}年の投資枠</h2>
         <button type="button" onClick={() => setYear(year + 1)} aria-label="次の年" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
           <IconChevronR />
         </button>
       </div>
-      <Meter label="つみたて投資枠（年間）" used={s.annualUsed.tsumitate} limit={NISA_LIMITS.annual.tsumitate} left={s.annualLeft.tsumitate} />
-      <Meter label="成長投資枠（年間）" used={s.annualUsed.growth} limit={NISA_LIMITS.annual.growth} left={s.annualLeft.growth} />
-      <Meter label="生涯の非課税保有限度額" used={s.lifetimeUsed} limit={NISA_LIMITS.lifetime} left={s.lifetimeLeft} />
-      <p className="num text-[12px] text-ink-3">
-        うち成長投資枠：使用 {formatYen(s.lifetimeGrowthUsed)}（上限 {formatYen(NISA_LIMITS.lifetimeGrowth)}）
-        {s.restoreNextYear > 0 && ` ／ ${year}年に売却した ${formatYen(s.restoreNextYear)} 分は、翌年に生涯の枠へ戻ります`}
-      </p>
+      <Meter label="つみたて投資枠" used={s.annualUsed.tsumitate} limit={NISA_LIMITS.annual.tsumitate} left={s.annualLeft.tsumitate} />
+      <Meter label="成長投資枠" used={s.annualUsed.growth} limit={NISA_LIMITS.annual.growth} left={s.annualLeft.growth} />
+      <div className="space-y-4 border-t border-line pt-4">
+        <h2 className="text-[15px] font-bold">生涯の投資枠（{year}年時点）</h2>
+        <Meter label="合計" used={s.lifetimeUsed} limit={NISA_LIMITS.lifetime} left={s.lifetimeLeft} />
+        <Meter label="うち成長投資枠" used={s.lifetimeGrowthUsed} limit={NISA_LIMITS.lifetimeGrowth} left={s.lifetimeGrowthLeft} />
+        <p className="text-[12px] text-ink-3">
+          生涯の投資枠（非課税保有限度額）は、買ったときの金額（簿価）で数えます。
+          {s.restoreNextYear > 0 && ` ${year}年に売った ${formatYen(s.restoreNextYear)} 分は、翌年にこの枠へ戻ります。`}
+        </p>
+      </div>
     </Card>
   );
 }
@@ -60,22 +64,22 @@ const FRAMES = [
 
 const config: CollectionConfig<"nisa"> = {
   key: "nisa",
-  title: "NISAの枠",
-  noun: "記録",
+  title: "NISA",
+  noun: "売買の記録",
   intro: (
     <>
-      買った金額と売った金額（買ったときの金額＝簿価）を記録すると、2024年からの制度の上限（年間：つみたて120万円・成長240万円、生涯1,800万円・うち成長1,200万円）に対して、使った枠と残りの枠を計算します。証券会社とはつながっていません。
+      買った金額と売った金額を記録すると、投資枠の使用額と残りを計算します（2024年からの制度：年間はつみたて投資枠120万円・成長投資枠240万円、生涯は1,800万円・うち成長投資枠1,200万円）。証券会社とはつながっていません。
       <strong className="font-semibold">投資の助言ではありません。</strong>制度が変わった場合は、アプリの更新が必要です。
     </>
   ),
-  emptyText: "まだ記録がありません。買付を記録すると、残りの枠が分かります。",
+  emptyText: "まだ売買の記録がありません。買付を記録すると、投資枠の残りが分かります。",
   fields: [
-    { name: "kind", label: "種類", type: "select", half: true, options: [{ value: "buy", label: "買付" }, { value: "sell", label: "売却" }] },
-    { name: "frame", label: "枠", type: "select", half: true, options: FRAMES },
-    { name: "amount", label: "金額（円）", type: "number", required: true, half: true, hint: "売却は、売った分を買ったときの金額（簿価）" },
+    { name: "kind", label: "売買", type: "select", half: true, options: [{ value: "buy", label: "買付" }, { value: "sell", label: "売却" }] },
+    { name: "frame", label: "投資枠", type: "select", half: true, options: FRAMES },
+    { name: "amount", label: "金額（円）", type: "number", required: true, half: true, hint: "売却のときは、売った分を買ったときの金額（簿価）" },
     { name: "date", label: "日付", type: "date", required: true, half: true },
-    { name: "name", label: "銘柄（任意）", type: "text", placeholder: "例：全世界株式インデックス" },
-    { name: "note", label: "メモ（任意）", type: "textarea" },
+    { name: "name", label: "銘柄", optional: true, type: "text", placeholder: "例：全世界株式インデックス" },
+    { name: "note", label: "メモ", optional: true, type: "textarea" },
   ],
   initial: ({ today }) => ({ kind: "buy", frame: "tsumitate", amount: "", date: today, name: "", note: "" }),
   toDraft: (e) => ({ kind: e.kind, frame: e.frame, amount: String(e.amount), date: e.date, name: e.name, note: e.note }),

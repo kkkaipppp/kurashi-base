@@ -272,11 +272,11 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           </Field>
         </div>
 
-        <Field label={draft.type === "expense" ? "店名（任意）" : "相手先（任意）"} htmlFor="tx-merchant" error={errors.merchant}>
+        <Field label={draft.type === "expense" ? "店名" : "相手先"} optional htmlFor="tx-merchant" error={errors.merchant}>
           <input id="tx-merchant" value={draft.merchant} onChange={(e) => set("merchant", e.target.value)} className={inputCls} maxLength={100} />
         </Field>
 
-        <Field label="支払方法（任意）" htmlFor="tx-pay">
+        <Field label="支払方法" optional htmlFor="tx-pay">
           <select id="tx-pay" value={draft.paymentMethod} onChange={(e) => set("paymentMethod", e.target.value)} className={inputCls}>
             {PAYMENT_METHODS.map((p) => (
               <option key={p.id} value={p.id}>
@@ -286,7 +286,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           </select>
         </Field>
 
-        <Field label="メモ（任意）" htmlFor="tx-note" error={errors.note}>
+        <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
           <textarea id="tx-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
         </Field>
 

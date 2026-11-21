@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { Fragment, useRef, useState } from "react";
 import { useData, useStore } from "@/lib/store";
 import { parseAmount, formatYen } from "@/lib/money";
@@ -9,7 +8,7 @@ import { emptyData } from "@/lib/defaults";
 import { formatDateJa } from "@/lib/date";
 import type { HomePrefs, TxType } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
-import { Button, Card, Field, IconChevronR, PageHeader, SectionTitle, inputCls } from "@/components/ui";
+import { Button, Card, Field, PageHeader, SectionTitle, inputCls } from "@/components/ui";
 
 const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
 
@@ -168,18 +167,6 @@ export default function SettingsPage() {
         </ul>
       </Card>
 
-      <Card className="p-0">
-        <Link href="/recurring" className="flex min-h-14 items-center justify-between px-4 hover:bg-surface-2">
-          <span className="text-[15px] font-semibold">固定費</span>
-          <span className="flex items-center gap-1 text-[13px] text-ink-3">
-            {data.recurring.filter((r) => r.active).length}件 <IconChevronR className="size-4" />
-          </span>
-        </Link>
-        <Link href="/import" className="flex min-h-14 items-center justify-between border-t border-line px-4 hover:bg-surface-2">
-          <span className="text-[15px] font-semibold">画像から取り込む</span>
-          <IconChevronR className="size-4 text-ink-3" />
-        </Link>
-      </Card>
 
       <Card>
         <SectionTitle>カテゴリ</SectionTitle>
@@ -310,7 +297,7 @@ export default function SettingsPage() {
           <li>画像の文字の自動読み取り（OCR）— 画像を見ながら手で入力します</li>
           <li>繰り返し予定の1回分だけの変更、振替・分割払いの記録</li>
           <li>通知、ホーム画面ウィジェット、iOSショートカット連携</li>
-          <li>クラウド同期・共有・AI・外部サービス連携（メニューの「準備中」）</li>
+          <li>クラウド同期・共有・AI・外部サービス連携（メニューの「つながり」に説明があります）</li>
         </ul>
       </Card>
     </main>

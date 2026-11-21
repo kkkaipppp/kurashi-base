@@ -7,20 +7,20 @@ import type { AppData } from "@/lib/types";
 
 type Item = { href: string; label: string; desc: string; count?: (d: AppData) => number; soon?: boolean };
 
+// グループは中身の種類で分ける（状態では分けない）。準備中のものは各項目に印を付ける。
+// 画像から取り込む（操作）は、ホームと支出の入力から使う。
 const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "お金",
     items: [
       { href: "/history", label: "取引履歴", desc: "月ごとの支出・収入と検索", count: (d) => d.transactions.length },
-      { href: "/recurring", label: "固定費", desc: "家賃・通信費など毎週・毎月の支払い", count: (d) => d.recurring.filter((r) => r.active).length },
-      { href: "/assets", label: "資産", desc: "預金や投資の評価額", count: (d) => d.assets.length },
-      { href: "/nisa", label: "NISAの枠", desc: "つみたて・成長投資枠の残り", count: (d) => d.nisa.length },
+      { href: "/recurring", label: "固定費", desc: "家賃・通信費などの決まった支払い", count: (d) => d.recurring.filter((r) => r.active).length },
+      { href: "/assets", label: "資産・NISA", desc: "預金・投資の評価額とNISAの投資枠", count: (d) => d.assets.length + d.nisa.length },
       { href: "/contracts", label: "契約", desc: "スマホ・保険・サブスクと更新日", count: (d) => d.contracts.filter((c) => c.status === "active").length },
-      { href: "/import", label: "画像から取り込む", desc: "レシートを見ながら支出を登録" },
     ],
   },
   {
-    title: "やること・目標",
+    title: "予定・やること",
     items: [
       { href: "/tasks", label: "タスク", desc: "やることと期限", count: (d) => d.tasks.filter((t) => !t.done).length },
       { href: "/goals", label: "目標", desc: "目標と進み具合", count: (d) => d.goals.filter((g) => !g.done).length },
@@ -36,17 +36,19 @@ const GROUPS: { title: string; items: Item[] }[] = [
     ],
   },
   {
-    title: "準備中",
+    title: "つながり",
     items: [
       { href: "/share", label: "共有", desc: "家族と一緒に使う", soon: true },
       { href: "/ai", label: "AI生活サポート", desc: "記録をもとに相談する", soon: true },
       { href: "/integrations", label: "外部サービス連携", desc: "銀行・カレンダーなどとつなぐ", soon: true },
-      { href: "/widget", label: "ウィジェットのプレビュー", desc: "ホーム画面に置く場合の表示", soon: true },
     ],
   },
   {
     title: "アプリ",
-    items: [{ href: "/settings", label: "設定", desc: "予算・表示・カテゴリ・バックアップ" }],
+    items: [
+      { href: "/settings", label: "設定", desc: "予算・表示・カテゴリ・バックアップ" },
+      { href: "/widget", label: "ウィジェット", desc: "ホーム画面に置く場合の表示を確認", soon: true },
+    ],
   },
 ];
 

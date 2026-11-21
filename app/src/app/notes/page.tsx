@@ -11,10 +11,10 @@ const config: CollectionConfig<"notes"> = {
   intro: "日記のような日々の記録も、日付のないメモも残せます。日付を入れると、日付ごとにまとまります。",
   emptyText: "まだメモがありません。今日あったことや、覚えておきたいことを書いてみましょう。",
   fields: [
-    { name: "title", label: "タイトル（任意）", type: "text", placeholder: "例：今日のふりかえり" },
+    { name: "title", label: "タイトル", optional: true, type: "text", placeholder: "例：今日のふりかえり" },
     { name: "body", label: "本文", type: "textarea" },
-    { name: "date", label: "日付（任意）", type: "date", half: true },
-    { name: "pinned", label: "上に固定する", type: "checkbox", half: true },
+    { name: "date", label: "日付", optional: true, type: "date", half: true },
+    { name: "pinned", label: "上に固定", type: "checkbox", half: true },
   ],
   initial: ({ today }) => ({ title: "", body: "", date: today, pinned: false }),
   toDraft: (n) => ({ title: n.title, body: n.body, date: n.date, pinned: n.pinned }),

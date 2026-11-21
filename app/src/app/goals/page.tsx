@@ -9,17 +9,17 @@ const config: CollectionConfig<"goals"> = {
   key: "goals",
   title: "目標",
   noun: "目標",
-  intro: "「100万円ためる」のような数字の目標も、「引っ越しする」のような達成したかどうかの目標も登録できます。進み具合は、自分で更新します。",
+  intro: "数値目標（例：100万円ためる）と、達成目標（例：引っ越す）を登録できます。進み具合は自分で更新します。",
   emptyText: "まだ目標がありません。",
   fields: [
-    { name: "title", label: "目標", type: "text", required: true, placeholder: "例：旅行のために30万円ためる" },
-    { name: "kind", label: "目標の形", type: "select", options: [{ value: "number", label: "数字で進み具合を記録する" }, { value: "check", label: "達成したかどうかだけ" }] },
-    { name: "current", label: "今の値", type: "number", decimal: true, half: true, hint: "数字の目標のとき" },
+    { name: "title", label: "内容", type: "text", required: true, placeholder: "例：旅行のために30万円ためる" },
+    { name: "kind", label: "種類", type: "select", options: [{ value: "number", label: "数値目標（例：30万円ためる）" }, { value: "check", label: "達成目標（例：引っ越す）" }] },
+    { name: "current", label: "今の値", type: "number", decimal: true, half: true, hint: "数値目標のとき" },
     { name: "target", label: "目標の値", type: "number", decimal: true, half: true },
-    { name: "unit", label: "単位（任意）", type: "text", half: true, placeholder: "例：円、冊、kg" },
-    { name: "deadline", label: "期限（任意）", type: "date", half: true },
-    { name: "note", label: "メモ（任意）", type: "textarea" },
-    { name: "done", label: "達成した", type: "checkbox" },
+    { name: "unit", label: "単位", optional: true, type: "text", half: true, placeholder: "例：円、冊、kg" },
+    { name: "deadline", label: "期限", optional: true, type: "date", half: true },
+    { name: "note", label: "メモ", optional: true, type: "textarea" },
+    { name: "done", label: "達成", type: "checkbox" },
   ],
   initial: () => ({ title: "", kind: "number", current: "0", target: "", unit: "", deadline: "", note: "", done: false }),
   toDraft: (g) => ({ title: g.title, kind: g.kind, current: String(g.current), target: numStr(g.target), unit: g.unit, deadline: g.deadline, note: g.note, done: g.done }),
@@ -36,7 +36,7 @@ const config: CollectionConfig<"goals"> = {
   validate: (d) => {
     if (str(d, "kind") !== "number") return {} as Record<string, string>;
     const t = numberFromDraft(str(d, "target"));
-    return t === null || t <= 0 ? { target: "数字の目標は、目標の値（0より大きい数）を入力してください" } : ({} as Record<string, string>);
+    return t === null || t <= 0 ? { target: "数値目標では、目標の値（0より大きい数）を入力してください" } : ({} as Record<string, string>);
   },
   sort: (a, b) => Number(a.done) - Number(b.done) || (a.deadline || "9999").localeCompare(b.deadline || "9999"),
   row: (g, { today }) => {

@@ -44,18 +44,22 @@ export function Field({
   htmlFor,
   error,
   hint,
+  optional,
   children,
 }: {
   label: string;
   htmlFor: string;
   error?: string;
   hint?: string;
+  /** 入力しなくてもよい欄。ラベルの横に小さく「任意」と出す */
+  optional?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className="min-w-0 space-y-1">
-      <label htmlFor={htmlFor} className="block text-[13px] font-semibold text-ink-2">
+      <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-2">
         {label}
+        {optional && <span className="rounded bg-surface-2 px-1 py-px text-[10px] font-medium text-ink-3">任意</span>}
       </label>
       {children}
       {error ? (

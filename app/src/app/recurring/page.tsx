@@ -174,7 +174,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
           <input id="rc-amount" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} className={`${inputCls} num`} aria-invalid={!!errors.amount} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="周期" htmlFor="rc-cycle">
+          <Field label="支払い" htmlFor="rc-cycle">
             <select id="rc-cycle" value={cycle} onChange={(e) => setCycle(e.target.value as RecurringCycle)} className={inputCls}>
               <option value="weekly">毎週</option>
               <option value="monthly">毎月</option>
@@ -194,7 +194,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
             ))}
           </select>
         </Field>
-        <Field label="支払方法（任意）" htmlFor="rc-pay">
+        <Field label="支払方法" optional htmlFor="rc-pay">
           <select id="rc-pay" value={pay} onChange={(e) => setPay(e.target.value)} className={inputCls}>
             {PAYMENT_METHODS.map((p) => (
               <option key={p.id} value={p.id}>
@@ -204,7 +204,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
           </select>
         </Field>
         <label className="flex min-h-11 items-center justify-between rounded-xl border border-line bg-surface px-3">
-          <span className="text-[15px] font-medium">有効にする（止めている間はホームに出しません）</span>
+          <span className="text-[15px] font-medium">有効（オフの間はホームに出しません）</span>
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="size-5 accent-[var(--brand)]" />
         </label>
       </div>
