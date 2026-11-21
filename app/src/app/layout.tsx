@@ -4,7 +4,9 @@ import { AppShell } from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "暮らしベース",
-  description: "予定とお金をひとつの場所で。端末内に保存するローカルファーストの家計＋予定アプリ（開発版）",
+  description: "予定とお金をひとつの場所で。記録は端末のブラウザの中だけに保存する、家計＋予定アプリ（β版）",
+  // 友人βの間は検索エンジンに載せない（URL を知っている人だけが使う）
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
