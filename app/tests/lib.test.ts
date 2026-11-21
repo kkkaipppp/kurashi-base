@@ -181,3 +181,13 @@ describe("重複候補", () => {
   });
   it("店名正規化", () => expect(normalizeMerchant("ＡＢＣ　ストア")).toBe("abcストア"));
 });
+
+describe("画像指紋の代替（http の LAN 接続用）", () => {
+  it("同じバイト列は同じ値、1バイト違えば別の値", async () => {
+    const { fallbackFingerprint } = await import("@/lib/duplicates");
+    const a = new Uint8Array([1, 2, 3, 4, 5]);
+    const b = new Uint8Array([1, 2, 3, 4, 6]);
+    expect(fallbackFingerprint(a)).toBe(fallbackFingerprint(new Uint8Array([1, 2, 3, 4, 5])));
+    expect(fallbackFingerprint(a)).not.toBe(fallbackFingerprint(b));
+  });
+});

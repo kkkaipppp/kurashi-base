@@ -57,6 +57,22 @@ export function findDuplicates(input: DupInput, txs: Transaction[]): DupCandidat
 
 /** 画像の指紋（SHA-256）。ブラウザ内で計算し外部送信しない */
 export async function fingerprintBytes(buf: ArrayBuffer): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", buf);
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  // crypto.subtle は安全な接続（https / localhost）でしか使えない。LAN の http で開いた実機では代替ハッシュを使う
+  if (typeof crypto !== "undefined" && crypto.subtle) {
+    const digest = await crypto.subtle.digest("SHA-256", buf);
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  return fallbackFingerprint(new Uint8Array(buf));
+}
+
+/** 重複確認用の代替指紋（FNV-1a 32bit を2系統＋バイト長）。暗号強度は不要な用途 */
+export function fallbackFingerprint(bytes: Uint8Array): string {
+  let h1 = 0x811c9dc5;
+  let h2 = 0x01000193 ^ bytes.length;
+  for (let i = 0; i < bytes.length; i++) {
+    h1 = Math.imul(h1 ^ bytes[i], 0x01000193);
+    h2 = Math.imul(h2 ^ bytes[bytes.length - 1 - i], 0x01000193);
+  }
+  const hex = (n: number) => (n >>> 0).toString(16).padStart(8, "0");
+  return `fnv:${hex(h1)}${hex(h2)}:${bytes.length}`;
 }
