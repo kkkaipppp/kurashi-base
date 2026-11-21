@@ -133,6 +133,7 @@ export const IconGrid = icon(
     <rect x="14" y="14" width="7" height="7" rx="1.5" />
   </>,
 );
+export const IconChart = icon(<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />);
 export const IconPlus = icon(<path d="M12 5v14M5 12h14" />);
 export const IconImage = icon(
   <>

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { StoreProvider, useStore } from "@/lib/store";
 import { UIProvider, useUI } from "./UIContext";
-import { Button, IconCalendar, IconGrid, IconHome, IconList, IconPlus } from "./ui";
+import { Button, IconCalendar, IconChart, IconGrid, IconHome, IconPlus } from "./ui";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -89,10 +89,10 @@ function CorruptScreen() {
 const NAV = [
   { href: "/", label: "ホーム", Icon: IconHome },
   { href: "/calendar", label: "カレンダー", Icon: IconCalendar },
-  { href: "/history", label: "取引履歴", Icon: IconList },
+  { href: "/report", label: "振り返り", Icon: IconChart },
   { href: "/menu", label: "メニュー", Icon: IconGrid },
 ];
-const MAIN = ["/", "/calendar", "/history"];
+const MAIN = ["/", "/calendar", "/report"];
 
 function BottomNav() {
   const path = usePathname();
@@ -119,9 +119,9 @@ function BottomNav() {
         <div className="flex flex-1 items-center justify-center">
           <button
             type="button"
-            onClick={() => ui.openTx({ mode: "new", type: "expense" })}
+            onClick={() => ui.openAdd({ date: path.startsWith("/calendar") ? (ui.calendarDate ?? undefined) : undefined })}
             className="-mt-6 inline-flex size-14 items-center justify-center rounded-full bg-brand text-brand-ink shadow-lg ring-4 ring-bg"
-            aria-label="支出を追加"
+            aria-label="追加する（支出・収入・予定・タスク）"
           >
             <IconPlus className="size-7" />
           </button>

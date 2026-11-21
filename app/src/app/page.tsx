@@ -8,6 +8,7 @@ import { formatDateJa, monthKey, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { nextRecurring } from "@/lib/recurring";
 import { buildNavi } from "@/lib/navi";
+import { buildInsights } from "@/lib/report";
 import { useUI } from "@/components/UIContext";
 import { EventRow, TxRow } from "@/components/Rows";
 import { Card, DevBadge, Empty, IconChevronR, IconImage, IconPlus, SectionTitle } from "@/components/ui";
@@ -42,6 +43,10 @@ export default function HomePage() {
 
   // 「今日のナビ」は記録されたデータからだけ作る。何もなければ出さない
   const navi = buildNavi(data, today);
+  const [naviOpen, setNaviOpen] = useState(false);
+  const insight = buildInsights(data, month, today)[0];
+  const EVENTS_SHOWN = 2;
+  const NAVI_SHOWN = 3;
 
   const prefs = data.prefs.home;
 
@@ -55,32 +60,46 @@ export default function HomePage() {
         <DevBadge />
       </header>
 
-      {/* 今月の残り */}
+      {/* 今月あと使える（＋今日の支出） */}
       <section className="rounded-2xl bg-brand p-4 text-brand-ink shadow-sm">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-[14px] font-semibold opacity-90">今月の残り</h2>
-          <span className="text-[12px] opacity-80">予算 − 今月の支出</span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-[14px] font-semibold opacity-90">今月あと使える</h2>
+            {remaining === null ? (
+              <p className="mt-1 text-2xl font-bold">予算 未設定</p>
+            ) : (
+              <p className={`num text-[32px] leading-tight font-bold ${remaining < 0 ? "text-[#ffd9d2]" : ""}`}>{formatSignedYen(remaining)}</p>
+            )}
+          </div>
+          {prefs.todaySpent && (
+            <div className="shrink-0 text-right">
+              <p className="text-[12px] font-semibold opacity-90">今日の支出</p>
+              <p className="num text-[20px] font-bold">{formatYen(todaySpent)}</p>
+            </div>
+          )}
         </div>
         {remaining === null ? (
-          <div className="mt-2">
-            <p className="text-2xl font-bold">未設定</p>
-            <p className="mt-1 text-[13px] opacity-90">予算を決めると、今月あといくら使えるかが分かります。</p>
+          <div className="mt-1">
+            <p className="text-[13px] opacity-90">予算を決めると、今月あといくら使えるかが分かります。</p>
             <Link href="/settings#budget" className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-white/15 px-4 text-[14px] font-semibold hover:bg-white/25">
               予算を設定する
             </Link>
             <p className="num mt-3 text-[13px] opacity-90">今月の支出 {formatYen(sum.expense)}</p>
           </div>
         ) : (
-          <div className="mt-1">
-            <p className={`num text-[34px] leading-tight font-bold ${remaining < 0 ? "text-[#ffd9d2]" : ""}`}>{formatSignedYen(remaining)}</p>
+          <>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/20" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="予算の使用率">
               <div className={`h-full rounded-full ${remaining < 0 ? "bg-[#ffb4a6]" : "bg-white"}`} style={{ width: `${pct}%` }} />
             </div>
-            <p className="num mt-2 text-[13px] opacity-90">
-              予算 {formatYen(data.budget.monthly ?? 0)} ／ 支出 {formatYen(sum.expense)}
-              {sum.income > 0 && ` ／ 収入 ${formatYen(sum.income)}`}
-            </p>
-          </div>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="num text-[12px] opacity-90">
+                予算 {formatYen(data.budget.monthly ?? 0)} − 支出 {formatYen(sum.expense)}
+              </p>
+              <Link href="/report" className="inline-flex min-h-9 shrink-0 items-center rounded-lg bg-white/15 px-3 text-[12px] font-semibold hover:bg-white/25">
+                振り返り
+              </Link>
+            </div>
+          </>
         )}
       </section>
 
@@ -98,83 +117,107 @@ export default function HomePage() {
         </button>
         <Link
           href="/import"
-          className="flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-surface text-[15px] font-bold shadow-sm ring-1 ring-line hover:bg-surface-2"
+          className="flex min-h-16 flex-col items-center justify-center rounded-2xl bg-surface px-2 text-center shadow-sm ring-1 ring-line hover:bg-surface-2"
         >
-          <span className="inline-flex size-8 items-center justify-center rounded-full bg-brand-soft text-brand">
-            <IconImage />
+          <span className="flex items-center gap-1.5 text-[14px] font-bold">
+            <span className="inline-flex size-7 items-center justify-center rounded-full bg-brand-soft text-brand">
+              <IconImage className="size-4" />
+            </span>
+            画像を見ながら記録
           </span>
-          画像から取り込む
+          <span className="text-[11px] text-ink-3">自動の読み取りはまだありません</span>
         </Link>
       </div>
 
-      {/* 今日の予定 */}
+      {/* 今日の予定（2件まで。残りはカレンダーへ） */}
       <Card>
         <SectionTitle
           action={
             <button type="button" onClick={() => ui.openEvent({ mode: "new", date: today })} className="min-h-9 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
-              ＋ 予定
+              ＋ 予定を追加
             </button>
           }
         >
-          今日の予定
+          今日の予定{todayEvents.length > 0 && <span className="ml-1 text-[13px] font-medium text-ink-3">{todayEvents.length}件</span>}
         </SectionTitle>
         {todayEvents.length ? (
-          <ul className="-mx-2">
-            {todayEvents.map((e) => (
-              <EventRow key={e.id} ev={e} day={today} />
-            ))}
-          </ul>
+          <>
+            <ul className="-mx-2">
+              {todayEvents.slice(0, EVENTS_SHOWN).map((e) => (
+                <EventRow key={e.id} ev={e} day={today} />
+              ))}
+            </ul>
+            {todayEvents.length > EVENTS_SHOWN && (
+              <Link href="/calendar" className="mt-1 flex min-h-10 items-center justify-center rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft">
+                ほか{todayEvents.length - EVENTS_SHOWN}件をカレンダーで見る
+              </Link>
+            )}
+          </>
         ) : (
           <p className="py-2 text-[14px] text-ink-3">今日の予定はありません</p>
         )}
       </Card>
 
-      {/* 補助情報（設定でON/OFF、データがない時は出さない） */}
-      {(prefs.todaySpent || (prefs.nextRecurring && next) || (prefs.needsReview && navi.length > 0)) && (
-        <div className="grid gap-3">
-          {prefs.todaySpent && (
-            <Card className="flex items-center justify-between py-3">
-              <h2 className="text-[14px] font-semibold text-ink-2">今日の支出</h2>
-              <p className="num text-lg font-bold">{formatYen(todaySpent)}</p>
-            </Card>
+      {/* 今日のナビ（急ぎから3件、残りは開いて全件） */}
+      {prefs.needsReview && navi.length > 0 && (
+        <Card className="py-3">
+          <h2 className="mb-1 text-[15px] font-bold">
+            今日のナビ<span className="ml-1 text-[13px] font-medium text-ink-3">{navi.length}件</span>
+          </h2>
+          <ul className="-mx-2">
+            {(naviOpen ? navi : navi.slice(0, NAVI_SHOWN)).map((n) => (
+              <li key={n.key}>
+                <Link href={n.href} className="flex min-h-12 items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-surface-2">
+                  <span className={`size-2 shrink-0 rounded-full ${n.tone === "warn" ? "bg-warn" : n.tone === "today" ? "bg-brand" : "bg-ink-3"}`} aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className={`block truncate text-[14px] font-semibold ${n.tone === "warn" ? "text-warn" : ""}`}>{n.title}</span>
+                    {n.sub && <span className="block truncate text-[12px] text-ink-3">{n.sub}</span>}
+                  </span>
+                  <IconChevronR className="size-4 shrink-0 text-ink-3" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {navi.length > NAVI_SHOWN && (
+            <button
+              type="button"
+              onClick={() => setNaviOpen(!naviOpen)}
+              aria-expanded={naviOpen}
+              className="mt-1 flex min-h-10 w-full items-center justify-center rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft"
+            >
+              {naviOpen ? "閉じる" : `すべて見る（ほか${navi.length - NAVI_SHOWN}件）`}
+            </button>
           )}
-          {prefs.nextRecurring && next && (
-            <Link href="/recurring" className="block">
-              <Card className="flex items-center justify-between py-3 hover:bg-surface-2">
-                <div>
-                  <h2 className="text-[14px] font-semibold text-ink-2">固定費の次回予定</h2>
-                  <p className="text-[13px] text-ink-3">
-                    {formatDateJa(next.nextDueDate)} {next.name}
-                  </p>
-                </div>
-                <p className="num text-lg font-bold">{formatYen(next.amount)}</p>
-              </Card>
-            </Link>
-          )}
-          {prefs.needsReview && navi.length > 0 && (
-            <Card className="order-first py-3">
-              <h2 className="mb-1 text-[15px] font-bold">今日のナビ</h2>
-              <ul className="-mx-2">
-                {navi.slice(0, 6).map((n) => (
-                  <li key={n.key}>
-                    <Link href={n.href} className="flex min-h-12 items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-surface-2">
-                      <span
-                        className={`size-2 shrink-0 rounded-full ${n.tone === "warn" ? "bg-warn" : n.tone === "today" ? "bg-brand" : "bg-ink-3"}`}
-                        aria-hidden="true"
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className={`block truncate text-[14px] font-semibold ${n.tone === "warn" ? "text-warn" : ""}`}>{n.title}</span>
-                        {n.sub && <span className="block truncate text-[12px] text-ink-3">{n.sub}</span>}
-                      </span>
-                      <IconChevronR className="size-4 shrink-0 text-ink-3" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              {navi.length > 6 && <p className="px-1 text-[12px] text-ink-3">ほか{navi.length - 6}件</p>}
-            </Card>
-          )}
-        </div>
+        </Card>
+      )}
+
+      {/* くらしの気づき（データがあるときだけ1件） */}
+      {insight && (
+        <Link href="/report" className="block">
+          <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <h2 className="text-[13px] font-semibold text-warn">くらしの気づき</h2>
+                <p className="text-[14px]">{insight.text}</p>
+              </div>
+              <IconChevronR className="size-4 shrink-0 text-ink-3" />
+            </div>
+          </section>
+        </Link>
+      )}
+
+      {prefs.nextRecurring && next && (
+        <Link href={`/recurring?open=${next.id}`} className="block">
+          <Card className="flex items-center justify-between py-3 hover:bg-surface-2">
+            <div>
+              <h2 className="text-[14px] font-semibold text-ink-2">固定費の次回予定</h2>
+              <p className="text-[13px] text-ink-3">
+                {formatDateJa(next.nextDueDate)} {next.name}
+              </p>
+            </div>
+            <p className="num text-lg font-bold">{formatYen(next.amount)}</p>
+          </Card>
+        </Link>
       )}
 
       {/* 最近の取引 */}

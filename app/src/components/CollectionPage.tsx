@@ -136,7 +136,7 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
   const blocked = config.addBlocked?.(data) ?? null;
   const add = () => setEditing({ key: Date.now() });
   const ids = useMemo(() => list.map((x) => (x as { id: string }).id), [list]);
-  const openById = useCallback((id: string) => setEditing({ id, key: Date.now() }), [setEditing]);
+  const openById = useCallback((id: string) => setEditing(id === "new" ? { key: Date.now() } : { id, key: Date.now() }), [setEditing]);
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">

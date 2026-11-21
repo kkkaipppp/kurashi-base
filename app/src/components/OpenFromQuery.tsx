@@ -13,7 +13,8 @@ function Inner({ ids, onOpen }: { ids: string[]; onOpen: (id: string) => void })
   const path = usePathname();
   const id = sp.get("open");
   useEffect(() => {
-    if (!id || !ids.includes(id)) return;
+    // open=new は新しく追加するシートを開く（＋ボタンの「タスク」から）
+    if (!id || (id !== "new" && !ids.includes(id))) return;
     onOpen(id);
     router.replace(path, { scroll: false });
   }, [id, ids, onOpen, router, path]);

@@ -4,6 +4,8 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 import { Button } from "./ui";
 import { TxSheet, type TxSheetRequest } from "./TxSheet";
 import { EventSheet, type EventSheetRequest } from "./EventSheet";
+import { AddChooser } from "./AddChooser";
+import { useRouter } from "next/navigation";
 
 interface ConfirmOpts {
   title: string;
@@ -13,6 +15,11 @@ interface ConfirmOpts {
 }
 
 interface UI {
+  /** 何を追加するか選ぶシート（支出・収入・予定・タスク）。date はその日付で入力を始める */
+  openAdd: (o?: { date?: string }) => void;
+  /** カレンダーで選んでいる日（＋ボタンがこの日付を引き継ぐ） */
+  calendarDate: string | null;
+  setCalendarDate: (d: string | null) => void;
   openTx: (r: TxSheetRequest) => void;
   openEvent: (r: EventSheetRequest) => void;
   confirm: (o: ConfirmOpts) => Promise<boolean>;
@@ -25,8 +32,11 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [tx, setTx] = useState<(TxSheetRequest & { key: number }) | null>(null);
   const [ev, setEv] = useState<(EventSheetRequest & { key: number }) | null>(null);
   const [cf, setCf] = useState<(ConfirmOpts & { resolve: (v: boolean) => void }) | null>(null);
+  const [add, setAdd] = useState<{ date?: string; key: number } | null>(null);
+  const [calendarDate, setCalendarDate] = useState<string | null>(null);
   const [toasts, setToasts] = useState<{ id: number; msg: string; kind: "ok" | "error" }[]>([]);
   const seq = useRef(0);
+  const router = useRouter();
 
   const toast = useCallback((msg: string, kind: "ok" | "error" = "ok") => {
     const id = ++seq.current;
@@ -44,12 +54,15 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   const ui = useMemo<UI>(
     () => ({
+      openAdd: (o) => setAdd({ date: o?.date, key: ++seq.current }),
+      calendarDate,
+      setCalendarDate,
       openTx: (r) => setTx({ ...r, key: ++seq.current }),
       openEvent: (r) => setEv({ ...r, key: ++seq.current }),
       confirm,
       toast,
     }),
-    [confirm, toast],
+    [confirm, toast, calendarDate],
   );
 
   const closeCf = (v: boolean) => {
@@ -60,6 +73,20 @@ export function UIProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={ui}>
       {children}
+      {add && (
+        <AddChooser
+          key={add.key}
+          date={add.date}
+          onClose={() => setAdd(null)}
+          onPick={(kind) => {
+            const date = add.date;
+            setAdd(null);
+            if (kind === "expense" || kind === "income") setTx({ mode: "new", type: kind, date, key: ++seq.current });
+            else if (kind === "event") setEv({ mode: "new", date, key: ++seq.current });
+            else router.push("/tasks?open=new");
+          }}
+        />
+      )}
       {tx && <TxSheet key={tx.key} req={tx} onClose={() => setTx(null)} />}
       {ev && <EventSheet key={ev.key} req={ev} onClose={() => setEv(null)} />}
       {cf && (

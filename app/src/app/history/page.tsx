@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useData } from "@/lib/store";
 import { sortTxDesc, summarizeMonth, txInMonth } from "@/lib/aggregate";
 import { addMonthsToKey, formatDateJa, formatMonthJa, monthKey, todayStr } from "@/lib/date";
@@ -9,6 +10,17 @@ import { PAYMENT_METHODS } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { TxRow } from "@/components/Rows";
 import { Card, Empty, IconChevronL, IconChevronR, IconSearch, PageHeader, inputCls } from "@/components/ui";
+
+/** 振り返りなどからの ?m=YYYY-MM&cat=<id> を、絞り込みに反映する */
+function QuerySync({ onApply }: { onApply: (m: string | null, cat: string | null) => void }) {
+  const sp = useSearchParams();
+  const m = sp.get("m");
+  const cat = sp.get("cat");
+  useEffect(() => {
+    if (m || cat) onApply(m, cat);
+  }, [m, cat, onApply]);
+  return null;
+}
 
 export default function HistoryPage() {
   const data = useData();
@@ -20,6 +32,16 @@ export default function HistoryPage() {
   const [pay, setPay] = useState("all");
 
   const sum = summarizeMonth(data.transactions, month);
+  const applyQuery = useMemo(
+    () => (m: string | null, c: string | null) => {
+      if (m && /^\d{4}-\d{2}$/.test(m)) setMonth(m);
+      setCat(c ?? "");
+      setType("all");
+      setQ("");
+      setPay("all");
+    },
+    [],
+  );
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "（不明）";
 
   const list = useMemo(() => {
@@ -48,6 +70,9 @@ export default function HistoryPage() {
   return (
     <main>
       <PageHeader title="取引履歴" />
+      <Suspense fallback={null}>
+        <QuerySync onApply={applyQuery} />
+      </Suspense>
 
       <Card className="py-3">
         <div className="flex items-center justify-between">
@@ -75,7 +100,7 @@ export default function HistoryPage() {
         </dl>
         {sum.byCategory.length > 0 && (
           <details className="mt-3">
-            <summary className="min-h-9 cursor-pointer py-1 text-[13px] font-semibold text-ink-2">カテゴリ別の支出</summary>
+            <summary className="min-h-9 cursor-pointer py-1 text-[13px] font-semibold text-ink-2">支出の内訳</summary>
             <ul className="mt-1 space-y-1.5">
               {sum.byCategory.map((c) => (
                 <li key={c.categoryId} className="text-[13px]">

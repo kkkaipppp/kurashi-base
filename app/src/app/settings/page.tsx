@@ -35,7 +35,7 @@ export default function SettingsPage() {
 
   // --- ホーム表示 ---
   const toggles: { key: keyof HomePrefs; label: string }[] = [
-    { key: "todaySpent", label: "今日の支出" },
+    { key: "todaySpent", label: "今日の支出（今月あと使えるの横）" },
     { key: "nextRecurring", label: "固定費の次回予定" },
     { key: "needsReview", label: "今日のナビ（期限・支払日・試験日など）" },
   ];
@@ -137,7 +137,7 @@ export default function SettingsPage() {
       <Card>
         <div id="budget" className="scroll-mt-20" />
         <SectionTitle>毎月の予算</SectionTitle>
-        <p className="mb-3 text-[13px] text-ink-3">ホームの「今月の残り」は、この予算から今月の支出を引いた金額です。空欄にすると未設定になります。</p>
+        <p className="mb-3 text-[13px] text-ink-3">ホームの「今月あと使える」は、この予算から今月の支出を引いた金額です。空欄にすると未設定になります。</p>
         <div className="flex items-start gap-2">
           <div className="flex-1">
             <Field label="予算（円）" htmlFor="budget-input" error={budgetErr}>
@@ -152,7 +152,7 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>ホームに表示する項目</SectionTitle>
-        <p className="mb-2 text-[13px] text-ink-3">「今月の残り」「今日の予定」「支出を追加」「画像から取り込む」は、いつも表示します。下の項目は、表示する内容があるときだけ出ます。</p>
+        <p className="mb-2 text-[13px] text-ink-3">「今月あと使える」「今日の予定」「支出を追加」「画像を見ながら記録」は、いつも表示します。下の項目は、表示する内容があるときだけ出ます。</p>
         <ul className="divide-y divide-line">
           {toggles.map((t) => (
             <li key={t.key}>

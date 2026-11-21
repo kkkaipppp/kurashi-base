@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { deadlineDays, deadlinesOn } from "@/lib/deadlines";
 import { formatMinutes } from "@/lib/life";
 import { useData } from "@/lib/store";
 import { daySummary, eventsOnDay, summarizeMonth } from "@/lib/aggregate";
@@ -25,6 +26,11 @@ export default function CalendarPage() {
   const today = todayStr();
   const [month, setMonth] = useState(monthKey(today));
   const [selected, setSelected] = useState(today);
+  // 選んだ日を＋ボタンに引き継ぐ
+  const { setCalendarDate } = ui;
+  useEffect(() => {
+    setCalendarDate(selected);
+  }, [selected, setCalendarDate]);
   const weeks = useMemo(() => monthGrid(month), [month]);
   const sum = summarizeMonth(data.transactions, month);
 
@@ -41,7 +47,8 @@ export default function CalendarPage() {
 
   const dayEvents = eventsOnDay(data.events, selected);
   const day = daySummary(data.transactions, selected);
-  const dayTasks = data.tasks.filter((t) => t.due === selected);
+  const dayDeadlines = deadlinesOn(data, selected);
+  const dlDays = useMemo(() => deadlineDays(data, month), [data, month]);
   const dayNotes = data.notes.filter((n) => n.date === selected);
   const dayStudy = data.studyLogs.filter((l) => l.date === selected).reduce((s, l) => s + l.minutes, 0);
 
@@ -99,7 +106,7 @@ export default function CalendarPage() {
                   const info = perDay.get(d)!;
                   const isSel = d === selected;
                   const isToday = d === today;
-                  const label = `${formatDateJa(d)}${info.ev ? ` 予定${info.ev}件` : ""}${info.exp ? ` 支出${formatYen(info.exp)}` : ""}${info.inc ? ` 収入${formatYen(info.inc)}` : ""}`;
+                  const label = `${formatDateJa(d)}${info.ev ? ` 予定${info.ev}件` : ""}${info.exp ? ` 支出${formatYen(info.exp)}` : ""}${info.inc ? ` 収入${formatYen(info.inc)}` : ""}${dlDays.has(d) ? " 期限あり" : ""}`;
                   return (
                     <td key={d} className="p-0 align-top">
                       <button
@@ -117,6 +124,7 @@ export default function CalendarPage() {
                         <span className="mt-0.5 flex h-1.5 gap-0.5" aria-hidden="true">
                           {info.ev > 0 && <span className={`size-1.5 rounded-full ${isSel ? "bg-white" : "bg-event"}`} />}
                           {info.inc > 0 && <span className={`size-1.5 rounded-full ${isSel ? "bg-white/70" : "bg-income"}`} />}
+                          {dlDays.has(d) && <span className={`size-1.5 rounded-full ${isSel ? "bg-white" : "bg-warn"}`} />}
                         </span>
                         {info.exp > 0 && (
                           <span className={`num mt-0.5 max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-expense"}`} aria-hidden="true">
@@ -138,6 +146,9 @@ export default function CalendarPage() {
           <span className="flex items-center gap-1">
             <span className="size-1.5 rounded-full bg-income" />収入
           </span>
+          <span className="flex items-center gap-1">
+            <span className="size-1.5 rounded-full bg-warn" />期限
+          </span>
           <span className="flex items-center gap-1 text-expense">赤い数字＝その日の支出</span>
         </div>
       </Card>
@@ -145,17 +156,13 @@ export default function CalendarPage() {
       <section className="mt-4 space-y-3" aria-label="選んだ日の予定とお金">
         <div className="space-y-2">
           <h2 className="text-[17px] font-bold">{formatDateJa(selected, true)}</h2>
-          <div className="grid grid-cols-3 gap-2 whitespace-nowrap">
-            <button type="button" onClick={() => ui.openEvent({ mode: "new", date: selected })} className="min-h-10 rounded-lg bg-event-soft px-3 text-[13px] font-semibold text-event">
-              ＋ 予定
-            </button>
-            <button type="button" onClick={() => ui.openTx({ mode: "new", type: "expense", date: selected })} className="min-h-10 rounded-lg bg-expense-soft px-3 text-[13px] font-semibold text-expense">
-              ＋ 支出
-            </button>
-            <button type="button" onClick={() => ui.openTx({ mode: "new", type: "income", date: selected })} className="min-h-10 rounded-lg bg-income-soft px-3 text-[13px] font-semibold text-income">
-              ＋ 収入
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => ui.openAdd({ date: selected })}
+            className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-brand-soft text-[14px] font-semibold text-brand"
+          >
+            ＋ この日に予定・支出・収入を追加
+          </button>
         </div>
 
         <Card>
@@ -171,37 +178,6 @@ export default function CalendarPage() {
           )}
         </Card>
 
-        {(dayTasks.length > 0 || dayNotes.length > 0 || dayStudy > 0) && (
-          <Card>
-            <SectionTitle>そのほかの記録</SectionTitle>
-            <ul className="space-y-1 text-[14px]">
-              {dayTasks.map((t) => (
-                <li key={t.id}>
-                  <Link href="/tasks" className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
-                    <span className="text-[12px] text-ink-3">タスク</span>
-                    <span className={t.done ? "text-ink-3 line-through" : "font-semibold"}>{t.title}</span>
-                  </Link>
-                </li>
-              ))}
-              {dayNotes.map((n) => (
-                <li key={n.id}>
-                  <Link href="/notes" className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
-                    <span className="text-[12px] text-ink-3">メモ</span>
-                    <span className="truncate">{n.title || n.body.slice(0, 30)}</span>
-                  </Link>
-                </li>
-              ))}
-              {dayStudy > 0 && (
-                <li>
-                  <Link href="/study" className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
-                    <span className="text-[12px] text-ink-3">勉強</span>
-                    <span>{formatMinutes(dayStudy)}</span>
-                  </Link>
-                </li>
-              )}
-            </ul>
-          </Card>
-        )}
 
         <Card>
           <SectionTitle
@@ -226,6 +202,38 @@ export default function CalendarPage() {
             <p className="py-1 text-[14px] text-ink-3">この日の支出・収入はありません</p>
           )}
         </Card>
+        {(dayDeadlines.length > 0 || dayNotes.length > 0 || dayStudy > 0) && (
+          <Card>
+            <SectionTitle>期限・記録</SectionTitle>
+            <ul className="space-y-1 text-[14px]">
+              {dayDeadlines.map((x) => (
+                <li key={x.key}>
+                  <Link href={x.href} className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
+                    <span className="w-12 shrink-0 text-[12px] text-warn">{x.kind}</span>
+                    <span className={`min-w-0 flex-1 truncate ${x.done ? "text-ink-3 line-through" : "font-semibold"}`}>{x.title}</span>
+                    {x.sub && <span className="num shrink-0 text-[13px]">{x.sub}</span>}
+                  </Link>
+                </li>
+              ))}
+              {dayNotes.map((n) => (
+                <li key={n.id}>
+                  <Link href={`/notes?open=${n.id}`} className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
+                    <span className="w-12 shrink-0 text-[12px] text-ink-3">メモ</span>
+                    <span className="truncate">{n.title || n.body.slice(0, 30)}</span>
+                  </Link>
+                </li>
+              ))}
+              {dayStudy > 0 && (
+                <li>
+                  <Link href="/study" className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
+                    <span className="w-12 shrink-0 text-[12px] text-ink-3">勉強</span>
+                    <span>{formatMinutes(dayStudy)}</span>
+                  </Link>
+                </li>
+              )}
+            </ul>
+          </Card>
+        )}
       </section>
     </main>
   );
