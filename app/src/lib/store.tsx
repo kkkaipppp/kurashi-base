@@ -1,0 +1,168 @@
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { newId } from "./defaults";
+import { advanceDueDate } from "./recurring";
+import { loadData, quarantineAndReset, saveData, type LoadResult, type SaveResult } from "./storage";
+import type { AppData, CalendarEvent, Category, HomePrefs, RecurringExpense, Transaction } from "./types";
+
+export type TxInput = Omit<Transaction, "id" | "createdAt" | "updatedAt" | "currency">;
+export type EventInput = Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">;
+export type RecurringInput = Omit<RecurringExpense, "id" | "createdAt" | "updatedAt">;
+
+type Status = "loading" | "ready" | "corrupt" | "unavailable";
+
+interface Store {
+  status: Status;
+  error: string | null;
+  data: AppData | null;
+  commit: (fn: (d: AppData) => AppData) => SaveResult;
+  addTx: (t: TxInput) => SaveResult & { id?: string };
+  updateTx: (id: string, t: TxInput) => SaveResult;
+  deleteTx: (id: string) => SaveResult;
+  addEvent: (e: EventInput) => SaveResult;
+  updateEvent: (id: string, e: EventInput) => SaveResult;
+  deleteEvent: (id: string) => SaveResult;
+  addRecurring: (r: RecurringInput) => SaveResult;
+  updateRecurring: (id: string, r: RecurringInput) => SaveResult;
+  deleteRecurring: (id: string) => SaveResult;
+  setBudget: (monthly: number | null) => SaveResult;
+  setHomePref: (key: keyof HomePrefs, v: boolean) => SaveResult;
+  addCategory: (c: Omit<Category, "id" | "order" | "archived">) => SaveResult;
+  setCategoryArchived: (id: string, archived: boolean) => SaveResult;
+  replaceAll: (d: AppData) => SaveResult;
+  resetCorrupt: () => SaveResult;
+  corruptRaw: string | null;
+}
+
+const Ctx = createContext<Store | null>(null);
+
+export function StoreProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<{ status: Status; data: AppData | null; error: string | null; raw: string | null }>({
+    status: "loading",
+    data: null,
+    error: null,
+    raw: null,
+  });
+  const dataRef = useRef<AppData | null>(null);
+
+  const applyLoad = useCallback((r: LoadResult) => {
+    if (r.status === "ok" || r.status === "new") {
+      dataRef.current = r.data;
+      setState({ status: "ready", data: r.data, error: null, raw: null });
+    } else if (r.status === "corrupt") {
+      dataRef.current = null;
+      setState({ status: "corrupt", data: null, error: r.error, raw: r.raw });
+    } else {
+      dataRef.current = null;
+      setState({ status: "unavailable", data: null, error: r.error, raw: null });
+    }
+  }, []);
+
+  useEffect(() => {
+    // localStorage はブラウザでのみ読めるため、マウント後に読み込む
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    applyLoad(loadData());
+    // 他のタブでの変更を反映
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key.startsWith("kurashi-base:data")) applyLoad(loadData());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [applyLoad]);
+
+  // 先に保存し、成功したときだけ画面の状態を更新する
+  const commit = useCallback((fn: (d: AppData) => AppData): SaveResult => {
+    const cur = dataRef.current;
+    if (!cur) return { ok: false, error: "データを読み込めていないため保存できません" };
+    const next = fn(cur);
+    const r = saveData(next);
+    if (r.ok) {
+      dataRef.current = next;
+      setState((s) => ({ ...s, data: next }));
+    }
+    return r;
+  }, []);
+
+  const store = useMemo<Store>(() => {
+    const now = () => new Date().toISOString();
+    return {
+      status: state.status,
+      error: state.error,
+      data: state.data,
+      corruptRaw: state.raw,
+      commit,
+      addTx: (t) => {
+        const id = newId("tx");
+        const ts = now();
+        const r = commit((d) => {
+          let recurring = d.recurring;
+          // 固定費から記録したら、その固定費の次回予定日を進める（同じ保存で一括）
+          if (t.recurringId) {
+            recurring = d.recurring.map((rc) =>
+              rc.id === t.recurringId
+                ? { ...rc, nextDueDate: advanceDueDate(rc.nextDueDate, rc.cycle, rc.anchorDay), updatedAt: ts }
+                : rc,
+            );
+          }
+          return { ...d, recurring, transactions: [...d.transactions, { ...t, id, currency: "JPY", createdAt: ts, updatedAt: ts }] };
+        });
+        return r.ok ? { ...r, id } : r;
+      },
+      updateTx: (id, t) =>
+        commit((d) => ({
+          ...d,
+          transactions: d.transactions.map((x) => (x.id === id ? { ...x, ...t, id, updatedAt: now() } : x)),
+        })),
+      deleteTx: (id) => commit((d) => ({ ...d, transactions: d.transactions.filter((x) => x.id !== id) })),
+      addEvent: (e) => {
+        const ts = now();
+        return commit((d) => ({ ...d, events: [...d.events, { ...e, id: newId("ev"), createdAt: ts, updatedAt: ts }] }));
+      },
+      updateEvent: (id, e) =>
+        commit((d) => ({ ...d, events: d.events.map((x) => (x.id === id ? { ...x, ...e, id, updatedAt: now() } : x)) })),
+      deleteEvent: (id) => commit((d) => ({ ...d, events: d.events.filter((x) => x.id !== id) })),
+      addRecurring: (rc) => {
+        const ts = now();
+        return commit((d) => ({ ...d, recurring: [...d.recurring, { ...rc, id: newId("rc"), createdAt: ts, updatedAt: ts }] }));
+      },
+      updateRecurring: (id, rc) =>
+        commit((d) => ({ ...d, recurring: d.recurring.map((x) => (x.id === id ? { ...x, ...rc, id, updatedAt: now() } : x)) })),
+      deleteRecurring: (id) => commit((d) => ({ ...d, recurring: d.recurring.filter((x) => x.id !== id) })),
+      setBudget: (monthly) => commit((d) => ({ ...d, budget: { monthly } })),
+      setHomePref: (key, v) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, [key]: v } } })),
+      addCategory: (c) =>
+        commit((d) => ({
+          ...d,
+          categories: [
+            ...d.categories,
+            { ...c, id: newId("cat"), order: d.categories.filter((x) => x.kind === c.kind).length, archived: false },
+          ],
+        })),
+      setCategoryArchived: (id, archived) =>
+        commit((d) => ({ ...d, categories: d.categories.map((c) => (c.id === id ? { ...c, archived } : c)) })),
+      replaceAll: (next) => commit(() => next),
+      resetCorrupt: () => {
+        if (!state.raw) return { ok: false, error: "対象のデータがありません" };
+        const r = quarantineAndReset(state.raw);
+        if (r.ok) applyLoad(loadData());
+        return r;
+      },
+    };
+  }, [state, commit, applyLoad]);
+
+  return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
+}
+
+export function useStore(): Store {
+  const s = useContext(Ctx);
+  if (!s) throw new Error("useStore must be used within StoreProvider");
+  return s;
+}
+
+/** status === "ready" の画面でだけ使う */
+export function useData(): AppData {
+  const s = useStore();
+  if (!s.data) throw new Error("data not ready");
+  return s.data;
+}

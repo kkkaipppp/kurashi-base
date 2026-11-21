@@ -1,0 +1,313 @@
+"use client";
+
+import Link from "next/link";
+import { useRef, useState } from "react";
+import { useData, useStore } from "@/lib/store";
+import { parseAmount, formatYen } from "@/lib/money";
+import { applyRestore, backupFileName, buildBackup, parseBackup, type RestorePreview } from "@/lib/backup";
+import { emptyData } from "@/lib/defaults";
+import { formatDateJa } from "@/lib/date";
+import type { HomePrefs, TxType } from "@/lib/types";
+import { useUI } from "@/components/UIContext";
+import { Button, Card, Field, IconChevronR, PageHeader, SectionTitle, inputCls } from "@/components/ui";
+
+const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
+
+export default function SettingsPage() {
+  const data = useData();
+  const store = useStore();
+  const ui = useUI();
+
+  // --- 予算 ---
+  const [budget, setBudget] = useState(data.budget.monthly === null ? "" : String(data.budget.monthly));
+  const [budgetErr, setBudgetErr] = useState<string | undefined>();
+  const saveBudget = () => {
+    if (budget.trim() === "") {
+      const r = store.setBudget(null);
+      return r.ok ? ui.toast("予算を未設定にしました") : ui.toast(r.error, "error");
+    }
+    const p = parseAmount(budget);
+    if (!p.ok) return setBudgetErr(p.error);
+    setBudgetErr(undefined);
+    const r = store.setBudget(p.value);
+    if (r.ok) ui.toast(`毎月の予算を${formatYen(p.value)}にしました`);
+    else ui.toast(r.error, "error");
+  };
+
+  // --- ホーム表示 ---
+  const toggles: { key: keyof HomePrefs; label: string }[] = [
+    { key: "todaySpent", label: "今日の使用分" },
+    { key: "nextRecurring", label: "固定費の次回予定" },
+    { key: "needsReview", label: "確認したいこと" },
+  ];
+
+  // --- カテゴリ ---
+  const [catKind, setCatKind] = useState<TxType>("expense");
+  const [catName, setCatName] = useState("");
+  const addCat = () => {
+    const name = catName.trim();
+    if (!name) return ui.toast("カテゴリ名を入力してください", "error");
+    if (data.categories.some((c) => c.kind === catKind && c.name === name && !c.archived)) return ui.toast("同じ名前のカテゴリがあります", "error");
+    const r = store.addCategory({ name, kind: catKind });
+    if (!r.ok) return ui.toast(r.error, "error");
+    setCatName("");
+    ui.toast(`カテゴリ「${name}」を追加しました`);
+  };
+
+  // --- バックアップ ---
+  const exportBackup = () => {
+    const now = new Date().toISOString();
+    const b = buildBackup({ ...data, meta: { ...data.meta, lastBackupAt: now } }, now);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = backupFileName(now);
+    a.click();
+    URL.revokeObjectURL(url);
+    const r = store.commit((d) => ({ ...d, meta: { ...d.meta, lastBackupAt: now } }));
+    ui.toast(r.ok ? "バックアップファイルを書き出しました" : `書き出しましたが、記録の保存に失敗しました：${r.error}`, r.ok ? "ok" : "error");
+  };
+
+  // --- 復元（S09 プレビュー） ---
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<RestorePreview | null>(null);
+  const [restoreErr, setRestoreErr] = useState<string | null>(null);
+  const [mode, setMode] = useState<"merge" | "replace">("merge");
+  const onFile = async (f: File | undefined) => {
+    setPreview(null);
+    setRestoreErr(null);
+    if (!f) return;
+    if (f.size > MAX_BACKUP_BYTES) return setRestoreErr("ファイルが大きすぎます（20MBまで）");
+    let text: string;
+    try {
+      text = await f.text();
+    } catch {
+      return setRestoreErr("ファイルを読み込めませんでした");
+    }
+    const r = parseBackup(text);
+    if (!r.ok) return setRestoreErr(`${r.error}。今のデータは変更していません。`);
+    setPreview(r.preview);
+  };
+  const doRestore = async () => {
+    if (!preview) return;
+    const ok = await ui.confirm({
+      title: mode === "replace" ? "今のデータを置き換えますか？" : "バックアップのデータを追加しますか？",
+      body:
+        mode === "replace"
+          ? "今の取引・予定・固定費・設定は、バックアップの内容にすべて置き換わります。先に今のデータを書き出しておくと安心です。"
+          : "同じIDのデータは今のものを残し、バックアップ側はスキップします。",
+      ok: mode === "replace" ? "置き換える" : "追加する",
+      danger: mode === "replace",
+    });
+    if (!ok) return;
+    const res = applyRestore(data, preview.data, mode);
+    const r = store.replaceAll(res.data); // 1回の保存で反映（失敗時は元のまま）
+    if (!r.ok) return ui.toast(`復元できませんでした：${r.error}（今のデータは変更していません）`, "error");
+    ui.toast(mode === "replace" ? "バックアップから復元しました" : `${res.added}件を追加しました（${res.skipped}件は既にあるためスキップ）`);
+    setPreview(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  // --- 全削除 ---
+  const wipe = async () => {
+    const ok = await ui.confirm({
+      title: "すべてのデータを削除しますか？",
+      body: `取引${data.transactions.length}件・予定${data.events.length}件・固定費${data.recurring.length}件と設定を、この端末から削除します。元に戻せません。`,
+      ok: "すべて削除",
+      danger: true,
+    });
+    if (!ok) return;
+    const r = store.replaceAll(emptyData());
+    if (r.ok) ui.toast("すべてのデータを削除しました");
+    else ui.toast(r.error, "error");
+  };
+
+  return (
+    <main className="space-y-4">
+      <PageHeader title="設定" />
+
+      <Card>
+        <div id="budget" className="scroll-mt-20" />
+        <SectionTitle>毎月の予算</SectionTitle>
+        <p className="mb-3 text-[13px] text-ink-3">ホームの「今月の残り」は、この予算から今月の支出を引いた金額です。空欄にすると未設定になります。</p>
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            <Field label="予算（円）" htmlFor="budget-input" error={budgetErr}>
+              <input id="budget-input" inputMode="numeric" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="例：100000" className={`${inputCls} num`} aria-invalid={!!budgetErr} />
+            </Field>
+          </div>
+          <Button onClick={saveBudget} className="mt-6">
+            保存
+          </Button>
+        </div>
+      </Card>
+
+      <Card>
+        <SectionTitle>ホームに表示する項目</SectionTitle>
+        <p className="mb-2 text-[13px] text-ink-3">「今月の残り」「今日の予定」「支出追加」「画像取込」は常に表示します。下の項目はデータがあるときだけ表示します。</p>
+        <ul className="divide-y divide-line">
+          {toggles.map((t) => (
+            <li key={t.key}>
+              <label className="flex min-h-12 items-center justify-between">
+                <span className="text-[15px]">{t.label}</span>
+                <input
+                  type="checkbox"
+                  checked={data.prefs.home[t.key]}
+                  onChange={(e) => {
+                    const r = store.setHomePref(t.key, e.target.checked);
+                    if (!r.ok) ui.toast(r.error, "error");
+                  }}
+                  className="size-5 accent-[var(--brand)]"
+                />
+              </label>
+            </li>
+          ))}
+        </ul>
+      </Card>
+
+      <Card className="p-0">
+        <Link href="/recurring" className="flex min-h-14 items-center justify-between px-4 hover:bg-surface-2">
+          <span className="text-[15px] font-semibold">固定費</span>
+          <span className="flex items-center gap-1 text-[13px] text-ink-3">
+            {data.recurring.filter((r) => r.active).length}件 <IconChevronR className="size-4" />
+          </span>
+        </Link>
+        <Link href="/import" className="flex min-h-14 items-center justify-between border-t border-line px-4 hover:bg-surface-2">
+          <span className="text-[15px] font-semibold">画像から取り込む</span>
+          <IconChevronR className="size-4 text-ink-3" />
+        </Link>
+      </Card>
+
+      <Card>
+        <SectionTitle>カテゴリ</SectionTitle>
+        <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="カテゴリの種別">
+          {(["expense", "income"] as const).map((k) => (
+            <button key={k} type="button" role="radio" aria-checked={catKind === k} onClick={() => setCatKind(k)} className={`min-h-10 rounded-lg text-[14px] font-semibold ${catKind === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
+              {k === "expense" ? "支出" : "収入"}
+            </button>
+          ))}
+        </div>
+        <ul className="divide-y divide-line">
+          {data.categories
+            .filter((c) => c.kind === catKind)
+            .map((c) => (
+              <li key={c.id} className="flex min-h-12 items-center justify-between">
+                <span className={c.archived ? "text-ink-3 line-through" : ""}>{c.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const active = data.categories.filter((x) => x.kind === c.kind && !x.archived);
+                    if (!c.archived && active.length <= 1) return ui.toast("最後のカテゴリは非表示にできません", "error");
+                    const r = store.setCategoryArchived(c.id, !c.archived);
+                    if (!r.ok) ui.toast(r.error, "error");
+                  }}
+                  className="min-h-10 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
+                >
+                  {c.archived ? "再表示" : "非表示"}
+                </button>
+              </li>
+            ))}
+        </ul>
+        <p className="mt-1 text-[12px] text-ink-3">非表示にしても、登録済みの取引のカテゴリはそのまま残ります。</p>
+        <div className="mt-3 flex gap-2">
+          <input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="新しいカテゴリ名" aria-label="新しいカテゴリ名" maxLength={20} className={inputCls} />
+          <Button variant="secondary" onClick={addCat}>
+            追加
+          </Button>
+        </div>
+      </Card>
+
+      <Card>
+        <div id="backup" className="scroll-mt-20" />
+        <SectionTitle>バックアップと復元</SectionTitle>
+        <p className="mb-3 text-[13px] text-ink-3">
+          データはこの端末のブラウザ内だけに保存されています。ブラウザのデータを消すと失われるため、定期的に書き出してください。
+          {data.meta.lastBackupAt ? ` 前回の書き出し：${formatDateJa(data.meta.lastBackupAt.slice(0, 10), true)}` : " まだ書き出していません。"}
+        </p>
+        <div className="grid gap-2">
+          <Button onClick={exportBackup}>バックアップを書き出す（JSON）</Button>
+          <Button variant="secondary" onClick={() => fileRef.current?.click()}>
+            バックアップから復元…
+          </Button>
+          <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} aria-label="バックアップファイルを選ぶ" />
+        </div>
+        {restoreErr && (
+          <p role="alert" className="mt-3 rounded-xl bg-expense-soft px-3 py-2 text-[14px] font-medium text-danger">
+            {restoreErr}
+          </p>
+        )}
+        {preview && (
+          <div className="mt-3 space-y-3 rounded-2xl border border-line bg-surface-2 p-3" aria-label="復元プレビュー">
+            <h3 className="font-bold">復元の前に確認してください</h3>
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-[14px]">
+              <dt className="text-ink-2">書き出し日時</dt>
+              <dd>{preview.exportedAt ? new Date(preview.exportedAt).toLocaleString("ja-JP") : "不明"}</dd>
+              <dt className="text-ink-2">取引</dt>
+              <dd>{preview.counts.transactions}件</dd>
+              <dt className="text-ink-2">予定</dt>
+              <dd>{preview.counts.events}件</dd>
+              <dt className="text-ink-2">固定費</dt>
+              <dd>{preview.counts.recurring}件</dd>
+              <dt className="text-ink-2">期間</dt>
+              <dd>{preview.period ? `${preview.period.from} 〜 ${preview.period.to}` : "なし"}</dd>
+            </dl>
+            {preview.warnings.map((w) => (
+              <p key={w} className="text-[13px] font-medium text-warn">
+                ⚠ {w}
+              </p>
+            ))}
+            <fieldset className="space-y-1">
+              <legend className="text-[13px] font-semibold text-ink-2">反映のしかた</legend>
+              <label className="flex min-h-11 items-center gap-2">
+                <input type="radio" name="restore-mode" checked={mode === "merge"} onChange={() => setMode("merge")} className="size-5 accent-[var(--brand)]" />
+                今のデータに追加する（同じデータは二重に入れない）
+              </label>
+              <label className="flex min-h-11 items-center gap-2">
+                <input type="radio" name="restore-mode" checked={mode === "replace"} onChange={() => setMode("replace")} className="size-5 accent-[var(--brand)]" />
+                今のデータをすべて置き換える
+              </label>
+            </fieldset>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setPreview(null);
+                  if (fileRef.current) fileRef.current.value = "";
+                }}
+              >
+                やめる
+              </Button>
+              <Button variant={mode === "replace" ? "danger" : "primary"} onClick={doRestore}>
+                復元する
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <SectionTitle>データとプライバシー</SectionTitle>
+        <ul className="mb-3 list-disc space-y-1 pl-5 text-[13px] text-ink-2">
+          <li>入力したデータは、この端末のブラウザ（localStorage）にだけ保存します。外部のサーバーへは送信しません。</li>
+          <li>端末どうしの同期、アカウント、共有には対応していません。</li>
+          <li>取り込んだ画像は保存しません（重複確認用の指紋だけを保存します）。</li>
+        </ul>
+        <Button variant="danger" onClick={wipe} className="w-full">
+          すべてのデータを削除
+        </Button>
+      </Card>
+
+      <Card>
+        <SectionTitle>このアプリについて</SectionTitle>
+        <p className="text-[13px] text-ink-2">暮らしベース 開発版（Phase 1）</p>
+        <p className="mt-2 text-[13px] font-semibold text-ink-2">まだ対応していないこと</p>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
+          <li>画像の文字の自動読み取り（OCR）— 画像を見ながら手で入力します</li>
+          <li>繰り返し予定、返金・振替・分割の取引</li>
+          <li>通知、ホーム画面ウィジェット、iOSショートカット連携</li>
+          <li>クラウド同期・共有</li>
+        </ul>
+      </Card>
+    </main>
+  );
+}

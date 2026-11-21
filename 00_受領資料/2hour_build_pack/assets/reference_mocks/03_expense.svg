@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+<rect width="390" height="844" fill="#f7f8fa"/>
+<rect x="0" y="0" width="390" height="88" fill="#ffffff"/>
+<text x="24" y="62" font-family="sans-serif" font-size="23" font-weight="bold" fill="#263244">支出を追加</text>
+<rect x="18" y="111" width="354" height="155" rx="18" fill="#ffffff"/>
+<text x="38" y="152" font-family="sans-serif" font-size="17" fill="#4b5563">金額</text>
+<text x="38" y="211" font-family="sans-serif" font-size="30" font-weight="bold" fill="#23364c">¥ 1,280</text>
+<rect x="18" y="287" width="354" height="72" rx="14" fill="#ffffff"/>
+<text x="34" y="331" font-family="sans-serif" font-size="16" fill="#263244">日付   2026/11/21</text>
+<rect x="18" y="374" width="354" height="72" rx="14" fill="#ffffff"/>
+<text x="34" y="418" font-family="sans-serif" font-size="16" fill="#263244">カテゴリ   食費</text>
+<rect x="18" y="461" width="354" height="72" rx="14" fill="#ffffff"/>
+<text x="34" y="505" font-family="sans-serif" font-size="16" fill="#263244">店名   （任意）</text>
+<rect x="18" y="548" width="354" height="72" rx="14" fill="#ffffff"/>
+<text x="34" y="592" font-family="sans-serif" font-size="16" fill="#263244">メモ   （任意）</text>
+<rect x="18" y="635" width="354" height="72" rx="14" fill="#ffffff"/>
+<text x="34" y="679" font-family="sans-serif" font-size="16" fill="#263244">保存する</text>
+<rect x="0" y="779" width="390" height="65" fill="#ffffff"/>
+<text x="33" y="819" font-family="sans-serif" font-size="13" fill="#64748b">ホーム</text><text x="135" y="819" font-family="sans-serif" font-size="13" fill="#64748b">カレンダー</text><text x="293" y="819" font-family="sans-serif" font-size="13" fill="#64748b">設定</text>
+</svg>
