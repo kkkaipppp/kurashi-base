@@ -1,4 +1,8 @@
-import type { AppData, Category } from "./types";
+import { COLLECTION_KEYS, type AppData, type Category, type Collections } from "./types";
+
+export function emptyCollections(): Collections {
+  return Object.fromEntries(COLLECTION_KEYS.map((k) => [k, []])) as unknown as Collections;
+}
 
 // 初期カテゴリ（取引のダミーデータは入れない）
 const EXPENSE = ["食費", "日用品", "交通", "住まい", "光熱・通信", "医療・健康", "趣味・娯楽", "交際", "衣服・美容", "その他"];
@@ -13,7 +17,7 @@ export function defaultCategories(): Category[] {
 
 export function emptyData(nowIso: string = new Date().toISOString()): AppData {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     transactions: [],
     events: [],
     categories: defaultCategories(),
@@ -21,6 +25,7 @@ export function emptyData(nowIso: string = new Date().toISOString()): AppData {
     budget: { monthly: null },
     prefs: { home: { todaySpent: true, nextRecurring: true, needsReview: true } },
     meta: { createdAt: nowIso, lastBackupAt: null },
+    ...emptyCollections(),
   };
 }
 

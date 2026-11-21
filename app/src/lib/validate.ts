@@ -39,6 +39,8 @@ export interface EventDraft {
   startTime: string;
   endTime: string;
   note: string;
+  repeat?: "none" | "weekly" | "monthly" | "yearly";
+  repeatUntil?: string;
 }
 
 export function validateEvent(draft: EventDraft): { ok: true } | { ok: false; errors: FieldErrors } {
@@ -57,5 +59,11 @@ export function validateEvent(draft: EventDraft): { ok: true } | { ok: false; er
     if (!errors.startTime && !errors.endTime && e < s) errors.endDate = "終了は開始より後にしてください";
   }
   if (draft.note.length > 500) errors.note = "メモは500文字以内にしてください";
+  const rep = draft.repeat ?? "none";
+  if (rep !== "none") {
+    if (draft.startDate !== draft.endDate) errors.repeat = "繰り返しは、1日の予定だけ設定できます";
+    if (draft.repeatUntil && (!isValidDateStr(draft.repeatUntil) || draft.repeatUntil < draft.startDate))
+      errors.repeatUntil = "繰り返しの終了日は、開始日以降にしてください";
+  }
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true };
 }

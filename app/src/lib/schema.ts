@@ -1,6 +1,6 @@
 import { isValidDateStr, isValidTimeStr } from "./date";
 import { MAX_AMOUNT } from "./money";
-import type { AppData } from "./types";
+import { COLLECTION_KEYS, type AppData, type CollectionKey } from "./types";
 
 // 保存データ・バックアップの構造検証。不正なら理由を返し、既存データには触れない。
 
@@ -8,12 +8,50 @@ type R = { ok: true; data: AppData } | { ok: false; error: string };
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const isStr = (v: unknown): v is string => typeof v === "string";
+const okDateOrBlank = (v: unknown) => isStr(v) && (v === "" || isValidDateStr(v));
+const isDate = (v: unknown) => isStr(v) && isValidDateStr(v);
+const isBool = (v: unknown) => typeof v === "boolean";
+const isNum = (v: unknown) => typeof v === "number" && Number.isFinite(v);
+const numOrNull = (v: unknown) => v === null || isNum(v);
+const oneOf = (...xs: string[]) => (v: unknown) => isStr(v) && xs.includes(v);
 const isAmt = (v: unknown) => Number.isInteger(v) && (v as number) > 0 && (v as number) <= MAX_AMOUNT;
 
-export function validateAppData(raw: unknown): R {
+export const CURRENT_SCHEMA = 2;
+
+/**
+ * 古い形式のデータを今の形式に移行する（元のオブジェクトは変更しない）。
+ * v1 → v2：NISA・メモ・勉強・目標の空の一覧を足す。既存のデータはそのまま。
+ */
+export function migrate(raw: unknown): unknown {
+  if (!isObj(raw)) return raw;
+  let d: Record<string, unknown> = raw;
+  if (d.schemaVersion === 1) {
+    d = { ...d, schemaVersion: 2 };
+    for (const k of COLLECTION_KEYS) d[k] = [];
+  }
+  return d;
+}
+
+// 追加した一覧ごとの項目チェック（順番は COLLECTION_KEYS に合わせる。studySubjects は studyLogs より前）
+const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: unknown) => boolean> }> = {
+  nisa: { label: "NISA", fields: { date: isDate, kind: oneOf("buy", "sell"), frame: oneOf("tsumitate", "growth"), amount: (v) => isAmt(v), name: isStr, note: isStr } },
+  notes: { label: "生活記録・メモ", fields: { title: isStr, body: isStr, date: okDateOrBlank, pinned: isBool } },
+  tasks: { label: "タスク", fields: { title: isStr, due: okDateOrBlank, done: isBool, note: isStr } },
+  assets: { label: "資産", fields: { name: isStr, kind: oneOf("cash", "investment", "nisa", "pension", "insurance", "property", "other"), value: numOrNull, asOf: okDateOrBlank, note: isStr } },
+  contracts: { label: "契約", fields: { name: isStr, provider: isStr, amount: numOrNull, cycle: oneOf("monthly", "yearly", "none"), renewalDate: okDateOrBlank, status: oneOf("active", "cancelled"), note: isStr } },
+  health: { label: "健康記録", fields: { date: isDate, item: isStr, value: numOrNull, unit: isStr, note: isStr } },
+  documents: { label: "書類", fields: { title: isStr, category: isStr, expiry: okDateOrBlank, place: isStr, note: isStr } },
+  studySubjects: { label: "勉強（資格）", fields: { name: isStr, examDate: okDateOrBlank, targetHours: (v) => v === null || (isNum(v) && (v as number) > 0), archived: isBool } },
+  studyLogs: { label: "勉強記録", fields: { subjectId: isStr, date: isDate, minutes: (v) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 1440, note: isStr } },
+  goals: { label: "目標", fields: { title: isStr, deadline: okDateOrBlank, kind: oneOf("number", "check"), target: numOrNull, current: isNum, unit: isStr, done: isBool, note: isStr } },
+};
+
+export function validateAppData(input: unknown): R {
+  const raw = migrate(input);
   if (!isObj(raw)) return { ok: false, error: "データの形式が正しくありません" };
-  if (raw.schemaVersion !== 1) return { ok: false, error: `対応していないデータ形式です（schemaVersion: ${String(raw.schemaVersion)}）` };
-  for (const k of ["transactions", "events", "categories", "recurring"]) {
+  if (raw.schemaVersion !== CURRENT_SCHEMA)
+    return { ok: false, error: `対応していないデータ形式です（schemaVersion: ${String(raw.schemaVersion)}）。アプリを最新にしてください` };
+  for (const k of ["transactions", "events", "categories", "recurring", ...COLLECTION_KEYS]) {
     if (!Array.isArray(raw[k])) return { ok: false, error: `${k} が見つかりません` };
   }
   const cats = raw.categories as unknown[];
@@ -36,7 +74,9 @@ export function validateAppData(raw: unknown): R {
     if (
       !isObj(e) || !isStr(e.id) || !isStr(e.title) || !isStr(e.startDate) || !isValidDateStr(e.startDate) ||
       !isStr(e.endDate) || !isValidDateStr(e.endDate) || e.endDate < e.startDate || typeof e.allDay !== "boolean" ||
-      (!e.allDay && (!isStr(e.startTime) || !isValidTimeStr(e.startTime) || !isStr(e.endTime) || !isValidTimeStr(e.endTime)))
+      (!e.allDay && (!isStr(e.startTime) || !isValidTimeStr(e.startTime) || !isStr(e.endTime) || !isValidTimeStr(e.endTime))) ||
+      !(e.repeat === undefined || ["none", "weekly", "monthly", "yearly"].includes(e.repeat as string)) ||
+      !(e.repeatUntil === undefined || okDateOrBlank(e.repeatUntil))
     )
       return { ok: false, error: "予定のデータが壊れています" };
     if (ids.has(e.id)) return { ok: false, error: "予定IDが重複しています" };
@@ -44,7 +84,7 @@ export function validateAppData(raw: unknown): R {
   }
   for (const r of raw.recurring as unknown[]) {
     if (
-      !isObj(r) || !isStr(r.id) || !isStr(r.name) || !isAmt(r.amount) || (r.cycle !== "monthly" && r.cycle !== "yearly") ||
+      !isObj(r) || !isStr(r.id) || !isStr(r.name) || !isAmt(r.amount) || !["weekly", "monthly", "yearly"].includes(r.cycle as string) ||
       !Number.isInteger(r.anchorDay) || !isStr(r.nextDueDate) || !isValidDateStr(r.nextDueDate) || typeof r.active !== "boolean"
     )
       return { ok: false, error: "固定費のデータが壊れています" };
@@ -53,6 +93,21 @@ export function validateAppData(raw: unknown): R {
     return { ok: false, error: "予算のデータが壊れています" };
   if (!isObj(raw.prefs) || !isObj(raw.prefs.home)) return { ok: false, error: "表示設定のデータが壊れています" };
   if (!isObj(raw.meta)) return { ok: false, error: "管理情報が壊れています" };
+
+  const subjectIds = new Set<string>();
+  for (const k of COLLECTION_KEYS) {
+    const spec = SPECS[k];
+    const seen = new Set<string>();
+    for (const item of raw[k] as unknown[]) {
+      if (!isObj(item) || !isStr(item.id) || !Object.entries(spec.fields).every(([f, check]) => check(item[f])))
+        return { ok: false, error: `${spec.label}のデータが壊れています` };
+      if (seen.has(item.id)) return { ok: false, error: `${spec.label}のIDが重複しています` };
+      seen.add(item.id);
+      if (k === "studySubjects") subjectIds.add(item.id);
+      if (k === "studyLogs" && !subjectIds.has(item.subjectId as string))
+        return { ok: false, error: "勉強の記録が、存在しない資格・科目を指しています" };
+    }
+  }
   return { ok: true, data: raw as unknown as AppData };
 }
 

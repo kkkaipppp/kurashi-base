@@ -4,11 +4,17 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { newId } from "./defaults";
 import { advanceDueDate } from "./recurring";
 import { loadData, quarantineAndReset, saveData, type LoadResult, type SaveResult } from "./storage";
-import type { AppData, CalendarEvent, Category, HomePrefs, RecurringExpense, Transaction } from "./types";
+import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction } from "./types";
 
 export type TxInput = Omit<Transaction, "id" | "createdAt" | "updatedAt" | "currency">;
 export type EventInput = Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">;
 export type RecurringInput = Omit<RecurringExpense, "id" | "createdAt" | "updatedAt">;
+export type ItemInput<K extends CollectionKey> = Omit<ItemOf<K>, "id" | "createdAt" | "updatedAt">;
+
+const ID_PREFIX: Record<CollectionKey, string> = {
+  nisa: "nisa", notes: "note", tasks: "task", assets: "asset", contracts: "ct", health: "hl",
+  documents: "doc", studySubjects: "subj", studyLogs: "slog", goals: "goal",
+};
 
 type Status = "loading" | "ready" | "corrupt" | "unavailable";
 
@@ -31,6 +37,10 @@ interface Store {
   addCategory: (c: Omit<Category, "id" | "order" | "archived">) => SaveResult;
   setCategoryArchived: (id: string, archived: boolean) => SaveResult;
   replaceAll: (d: AppData) => SaveResult;
+  addItem: <K extends CollectionKey>(k: K, item: ItemInput<K>) => SaveResult;
+  updateItem: <K extends CollectionKey>(k: K, id: string, patch: Partial<ItemInput<K>>) => SaveResult;
+  removeItem: (k: CollectionKey, id: string) => SaveResult;
+  removeStudySubject: (id: string) => SaveResult;
   resetCorrupt: () => SaveResult;
   corruptRaw: string | null;
 }
@@ -142,6 +152,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setCategoryArchived: (id, archived) =>
         commit((d) => ({ ...d, categories: d.categories.map((c) => (c.id === id ? { ...c, archived } : c)) })),
       replaceAll: (next) => commit(() => next),
+      addItem: (k, item) => {
+        const ts = now();
+        return commit((d) => ({ ...d, [k]: [...d[k], { ...item, id: newId(ID_PREFIX[k]), createdAt: ts, updatedAt: ts }] }));
+      },
+      updateItem: (k, id, patch) =>
+        commit((d) => ({
+          ...d,
+          [k]: (d[k] as { id: string }[]).map((x) => (x.id === id ? { ...x, ...patch, id, updatedAt: now() } : x)),
+        })),
+      removeItem: (k, id) => commit((d) => ({ ...d, [k]: (d[k] as { id: string }[]).filter((x) => x.id !== id) })),
+      // 資格・科目を消すときは、その勉強記録も一緒に消す（どこにも属さない記録を残さない）
+      removeStudySubject: (id) =>
+        commit((d) => ({
+          ...d,
+          studySubjects: d.studySubjects.filter((x) => x.id !== id),
+          studyLogs: d.studyLogs.filter((l) => l.subjectId !== id),
+        })),
       resetCorrupt: () => {
         if (!state.raw) return { ok: false, error: "対象のデータがありません" };
         const r = quarantineAndReset(state.raw);

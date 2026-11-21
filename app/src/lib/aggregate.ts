@@ -1,4 +1,4 @@
-import { monthKey } from "./date";
+import { daysBetween, daysInMonth, monthKey, parseDateStr } from "./date";
 import type { CalendarEvent, Transaction } from "./types";
 
 // 集計対象は「確定した取引」だけ。固定費の予定・取込候補は Transaction ではないので混入しない。
@@ -47,14 +47,27 @@ export function daySummary(txs: Transaction[], date: string) {
   };
 }
 
-/** その日に掛かる予定（日跨ぎ含む）を、終日→開始時刻順で返す */
+/** 予定がその日にあるか。繰り返しは1日の予定だけ（週・月・年）。月末を超える日は月末に、2/29 は平年 2/28 に丸める */
+export function occursOn(e: CalendarEvent, date: string): boolean {
+  const rep = e.repeat ?? "none";
+  if (rep === "none" || e.startDate !== e.endDate) return e.startDate <= date && date <= e.endDate;
+  if (date < e.startDate) return false;
+  if (e.repeatUntil && date > e.repeatUntil) return false;
+  const s = parseDateStr(e.startDate);
+  const t = parseDateStr(date);
+  if (rep === "weekly") return daysBetween(e.startDate, date) % 7 === 0;
+  if (rep === "monthly") return t.d === Math.min(s.d, daysInMonth(t.y, t.m));
+  return t.m === s.m && t.d === Math.min(s.d, daysInMonth(t.y, t.m));
+}
+
+/** その日に掛かる予定（日跨ぎ・繰り返し含む）を、終日→開始時刻順で返す */
 export function eventsOnDay(events: CalendarEvent[], date: string): CalendarEvent[] {
   return events
-    .filter((e) => e.startDate <= date && date <= e.endDate)
+    .filter((e) => occursOn(e, date))
     .sort((a, b) => {
       if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
-      const at = a.startDate < date ? "00:00" : a.startTime;
-      const bt = b.startDate < date ? "00:00" : b.startTime;
+      const at = a.startDate < date && a.startDate !== a.endDate ? "00:00" : a.startTime;
+      const bt = b.startDate < date && b.startDate !== b.endDate ? "00:00" : b.startTime;
       return at.localeCompare(bt) || a.title.localeCompare(b.title);
     });
 }
