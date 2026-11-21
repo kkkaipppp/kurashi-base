@@ -313,7 +313,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
                 </li>
               ))}
             </ul>
-            <p className="text-[12px] text-ink-2">別の支出・収入なら、そのまま保存できます。前に登録した記録は変更・削除しません。</p>
+            <p className="text-[12px] text-ink-2">別の支出・収入なら、そのまま保存できます。すでにある記録はそのまま残ります。</p>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="secondary" onClick={() => setDups(null)}>
                 戻って確認

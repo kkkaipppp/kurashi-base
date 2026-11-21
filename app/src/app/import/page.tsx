@@ -67,7 +67,7 @@ export default function ImportPage() {
 
   return (
     <main className="space-y-4">
-      <PageHeader title="画像から取り込む" />
+      <PageHeader title="画像を見ながら記録" />
 
       <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3">
         <p className="text-[13px] text-ink-2">

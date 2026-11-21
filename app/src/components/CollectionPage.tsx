@@ -44,6 +44,8 @@ export interface CollectionConfig<K extends CollectionKey> {
   key: K;
   title: string;
   noun: string; // 「タスク」「資産」など。ボタン・確認文に使う
+  /** 追加ボタンの文言（既定：「○○を追加」） */
+  addLabel?: string;
   intro?: ReactNode;
   emptyText: string;
   fields: FieldDef[] | ((ctx: { data: AppData }) => FieldDef[]);
@@ -142,14 +144,14 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
       <div className="flex items-center justify-between gap-2">
         {heading ? <h2 className="text-[17px] font-bold">{heading}</h2> : <span />}
         <Button onClick={add} disabled={!!blocked} className="min-h-10 px-3 text-[14px]">
-          ＋ {config.noun}を追加
+          ＋ {config.addLabel ?? `${config.noun}を追加`}
         </Button>
       </div>
       {blocked && <p className="text-[13px] text-ink-3">{blocked}</p>}
       {config.intro && <div className="text-[13px] text-ink-3">{config.intro}</div>}
       {config.header?.({ data, today, list })}
       {list.length === 0 ? (
-        <Empty action={!blocked && <Button onClick={add}>{config.noun}を追加</Button>}>{config.emptyText}</Empty>
+        <Empty action={!blocked && <Button onClick={add}>{config.addLabel ?? `${config.noun}を追加`}</Button>}>{config.emptyText}</Empty>
       ) : (
         groups.map(([g, items]) => (
           <Card key={g || "all"} className="py-2">

@@ -7,23 +7,29 @@ import type { AppData } from "@/lib/types";
 
 type Item = { href: string; label: string; desc: string; count?: (d: AppData) => number; soon?: boolean };
 
-// グループは中身の種類で分ける（状態では分けない）。準備中のものは各項目に印を付ける。
-// 画像から取り込む（操作）は、ホームと支出の入力から使う。
+// よく使うものを先頭に、残りは中身の種類で分ける。使えないもの（準備中）はいちばん下にまとめ、各項目にも印を付ける。
+// 画像を見ながら記録（操作）は、ホームから使う。
 const GROUPS: { title: string; items: Item[] }[] = [
   {
-    title: "お金",
+    title: "よく使う",
     items: [
       { href: "/history", label: "取引履歴", desc: "月ごとの支出・収入と検索", count: (d) => d.transactions.length },
       { href: "/recurring", label: "固定費", desc: "家賃・通信費などの決まった支払い", count: (d) => d.recurring.filter((r) => r.active).length },
+      { href: "/tasks", label: "タスク", desc: "やることと期限", count: (d) => d.tasks.filter((t) => !t.done).length },
+      { href: "/settings#backup", label: "バックアップと復元", desc: "記録をファイルに保存・ファイルから戻す" },
+    ],
+  },
+  {
+    title: "お金",
+    items: [
       { href: "/assets", label: "資産・NISA", desc: "預金・投資の評価額とNISAの投資枠", count: (d) => d.assets.length + d.nisa.length },
       { href: "/contracts", label: "契約", desc: "スマホ・保険・サブスクと更新日", count: (d) => d.contracts.filter((c) => c.status === "active").length },
     ],
   },
   {
-    title: "予定・やること",
+    title: "目標・学び",
     items: [
-      { href: "/tasks", label: "タスク", desc: "やることと期限", count: (d) => d.tasks.filter((t) => !t.done).length },
-      { href: "/goals", label: "目標", desc: "目標と進み具合", count: (d) => d.goals.filter((g) => !g.done).length },
+      { href: "/goals", label: "目標", desc: "目標と達成率", count: (d) => d.goals.filter((g) => !g.done).length },
       { href: "/study", label: "資格の勉強", desc: "試験日までの日数と勉強時間", count: (d) => d.studySubjects.filter((s) => !s.archived).length },
     ],
   },
@@ -36,17 +42,15 @@ const GROUPS: { title: string; items: Item[] }[] = [
     ],
   },
   {
-    title: "つながり",
+    title: "アプリ",
+    items: [{ href: "/settings", label: "設定", desc: "予算・表示・カテゴリ・データの削除" }],
+  },
+  {
+    title: "準備中（まだ使えません）",
     items: [
       { href: "/share", label: "共有", desc: "家族と一緒に使う", soon: true },
       { href: "/ai", label: "AI生活サポート", desc: "記録をもとに相談する", soon: true },
       { href: "/integrations", label: "外部サービス連携", desc: "銀行・カレンダーなどとつなぐ", soon: true },
-    ],
-  },
-  {
-    title: "アプリ",
-    items: [
-      { href: "/settings", label: "設定", desc: "予算・表示・カテゴリ・バックアップ" },
       { href: "/widget", label: "ウィジェット", desc: "ホーム画面に置く場合の表示を確認", soon: true },
     ],
   },
@@ -56,7 +60,7 @@ export default function MenuPage() {
   const data = useData();
   return (
     <main className="space-y-4">
-      <PageHeader title="メニュー" />
+      <PageHeader title="すべての機能" />
       {GROUPS.map((g) => (
         <section key={g.title}>
           <h2 className="mb-1.5 px-1 text-[13px] font-semibold text-ink-3">{g.title}</h2>

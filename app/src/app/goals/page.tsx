@@ -55,7 +55,7 @@ const config: CollectionConfig<"goals"> = {
           <span className="h-1.5 w-14 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
             <span className="block h-full rounded-full bg-brand" style={{ width: `${p}%` }} />
           </span>
-          {p}%
+          達成率{p}%
         </span>
       ),
     };
