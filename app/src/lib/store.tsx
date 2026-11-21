@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { newId } from "./defaults";
 import { advanceDueDate } from "./recurring";
-import { loadData, quarantineAndReset, saveData, type LoadResult, type SaveResult } from "./storage";
+import { loadData, quarantineAndReset, saveDataIfUnchanged, type LoadResult, type SaveResult } from "./storage";
 import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction } from "./types";
 
 export type TxInput = Omit<Transaction, "id" | "createdAt" | "updatedAt" | "currency">;
@@ -55,16 +55,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     raw: null,
   });
   const dataRef = useRef<AppData | null>(null);
+  const persistedRawRef = useRef<string | null>(null);
 
   const applyLoad = useCallback((r: LoadResult) => {
     if (r.status === "ok" || r.status === "new") {
       dataRef.current = r.data;
+      persistedRawRef.current = r.persistedRaw;
       setState({ status: "ready", data: r.data, error: null, raw: null });
     } else if (r.status === "corrupt") {
       dataRef.current = null;
+      persistedRawRef.current = null;
       setState({ status: "corrupt", data: null, error: r.error, raw: r.raw });
     } else {
       dataRef.current = null;
+      persistedRawRef.current = null;
       setState({ status: "unavailable", data: null, error: r.error, raw: null });
     }
   }, []);
@@ -86,8 +90,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const cur = dataRef.current;
     if (!cur) return { ok: false, error: "保存できませんでした。データを読み込めていません。再読み込みしてください" };
     const next = fn(cur);
-    const r = saveData(next);
+    const r = saveDataIfUnchanged(next, persistedRawRef.current);
     if (r.ok) {
+      persistedRawRef.current = r.persistedRaw ?? null;
       dataRef.current = next;
       setState((s) => ({ ...s, data: next }));
     }

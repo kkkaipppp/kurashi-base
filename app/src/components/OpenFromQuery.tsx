@@ -16,8 +16,10 @@ function Inner({ ids, onOpen }: { ids: string[]; onOpen: (id: string) => void })
     // open=new は新しく追加するシートを開く（＋ボタンの「タスク」から）
     if (!id || (id !== "new" && !ids.includes(id))) return;
     onOpen(id);
-    router.replace(path, { scroll: false });
-  }, [id, ids, onOpen, router, path]);
+    const params = new URLSearchParams(sp.toString());
+    params.delete("open");
+    router.replace(`${path}${params.size ? `?${params.toString()}` : ""}`, { scroll: false });
+  }, [id, ids, onOpen, router, path, sp]);
   return null;
 }
 

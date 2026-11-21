@@ -56,9 +56,12 @@ export function validateAppData(input: unknown): R {
     if (!Array.isArray(raw[k])) return { ok: false, error: `${k} が見つかりません` };
   }
   const cats = raw.categories as unknown[];
+  const catIds = new Set<string>();
   for (const c of cats) {
     if (!isObj(c) || !isStr(c.id) || !isStr(c.name) || (c.kind !== "expense" && c.kind !== "income"))
       return { ok: false, error: "カテゴリのデータが壊れています" };
+    if (catIds.has(c.id)) return { ok: false, error: "カテゴリIDが重複しています" };
+    catIds.add(c.id);
   }
   const ids = new Set<string>();
   for (const t of raw.transactions as unknown[]) {
@@ -83,12 +86,15 @@ export function validateAppData(input: unknown): R {
     if (ids.has(e.id)) return { ok: false, error: "予定IDが重複しています" };
     ids.add(e.id);
   }
+  const recurringIds = new Set<string>();
   for (const r of raw.recurring as unknown[]) {
     if (
       !isObj(r) || !isStr(r.id) || !isStr(r.name) || !isAmt(r.amount) || !["weekly", "monthly", "yearly"].includes(r.cycle as string) ||
       !Number.isInteger(r.anchorDay) || !isStr(r.nextDueDate) || !isValidDateStr(r.nextDueDate) || typeof r.active !== "boolean"
     )
       return { ok: false, error: "固定費のデータが壊れています" };
+    if (recurringIds.has(r.id)) return { ok: false, error: "固定費IDが重複しています" };
+    recurringIds.add(r.id);
   }
   if (!isObj(raw.budget) || !(raw.budget.monthly === null || isAmt(raw.budget.monthly)))
     return { ok: false, error: "予算のデータが壊れています" };
@@ -110,6 +116,28 @@ export function validateAppData(input: unknown): R {
     }
   }
   return { ok: true, data: raw as unknown as AppData };
+}
+
+/**
+ * 参照整合性を追加検査する。古い端末データの読み込みでは自動変更・破棄をしないため、
+ * 構造検査 validateAppData と分離し、復元前の厳密検査で使う。
+ */
+export function validateRelationships(data: AppData): { ok: true } | { ok: false; error: string } {
+  const categories = new Map(data.categories.map((c) => [c.id, c]));
+  for (const t of data.transactions) {
+    const cat = categories.get(t.categoryId);
+    if (!cat) return { ok: false, error: `取引「${t.id}」が存在しないカテゴリを参照しています` };
+    if (cat.kind !== t.type) return { ok: false, error: `取引「${t.id}」の種別とカテゴリが一致しません` };
+  }
+  for (const r of data.recurring) {
+    const cat = categories.get(r.categoryId);
+    if (!cat || cat.kind !== "expense") return { ok: false, error: `固定費「${r.id}」が支出用カテゴリを参照していません` };
+  }
+  const subjects = new Set(data.studySubjects.map((s) => s.id));
+  for (const l of data.studyLogs) {
+    if (!subjects.has(l.subjectId)) return { ok: false, error: `勉強記録「${l.id}」が存在しない資格を参照しています` };
+  }
+  return { ok: true };
 }
 
 /** 文字列の簡易チェックサム（FNV-1a 32bit）。改ざん防止ではなく破損検出用 */

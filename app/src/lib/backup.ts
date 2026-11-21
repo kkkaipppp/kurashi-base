@@ -1,4 +1,4 @@
-import { checksum, CURRENT_SCHEMA, validateAppData } from "./schema";
+import { checksum, CURRENT_SCHEMA, validateAppData, validateRelationships } from "./schema";
 import { COLLECTION_KEYS, type AppData, type CollectionKey } from "./types";
 
 export const BACKUP_FORMAT = "kurashi-base-backup";
@@ -75,10 +75,14 @@ export function parseBackup(text: string): { ok: true; preview: RestorePreview }
   const f = raw as Partial<BackupFile>;
   if (f.format !== BACKUP_FORMAT) return { ok: false, error: "暮らしベースのバックアップファイルではありません" };
   if (f.schemaVersion !== 1 && f.schemaVersion !== CURRENT_SCHEMA) return { ok: false, error: "対応していないバックアップのバージョンです" };
+  if (!f.data || typeof f.data !== "object" || Array.isArray(f.data) || typeof f.checksum !== "string")
+    return { ok: false, error: "バックアップのデータまたはチェックサムがありません" };
   // チェックサムはファイルに書かれたままの中身で確かめてから、今の形式に移行する
   if (f.checksum !== checksum(JSON.stringify(f.data))) return { ok: false, error: "チェックサムが一致しません。ファイルが壊れているか、変更されています" };
   const v = validateAppData(f.data);
   if (!v.ok) return { ok: false, error: v.error };
+  const references = validateRelationships(v.data);
+  if (!references.ok) return { ok: false, error: references.error };
   const d = v.data;
   const counts = countData(d);
   const warnings: string[] = [];
@@ -128,6 +132,8 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
     const data = structuredClone(incoming);
     const v = validateAppData(data);
     if (!v.ok) return { ok: false, error: `復元できませんでした。バックアップの中身に問題があります（${v.error}）` };
+    const rel = validateRelationships(v.data);
+    if (!rel.ok) return { ok: false, error: `復元できませんでした。${rel.error}` };
     const c = countData(data);
     const total = Object.entries(c).filter(([k]) => k !== "categories").reduce((s, [, n]) => s + n, 0);
     return { ok: true, data: v.data, added: total, duplicates: 0, conflicts: 0, dependentSkipped: 0 };
@@ -190,6 +196,8 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
 
   const v = validateAppData(data);
   if (!v.ok) return { ok: false, error: `復元できませんでした。合わせた結果に問題があります（${v.error}）。今のデータは変更していません` };
+  const rel = validateRelationships(v.data);
+  if (!rel.ok) return { ok: false, error: `復元できませんでした。${rel.error}。今のデータは変更していません` };
   return { ok: true, data: v.data, added, duplicates, conflicts, dependentSkipped };
 }
 

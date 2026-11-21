@@ -127,6 +127,17 @@ export default function HomePage() {
         </Link>
       </div>
 
+      {data.transactions.length === 0 && data.events.length === 0 && (
+        <Card>
+          <h2 className="text-[15px] font-bold">はじめての暮らしベース</h2>
+          <p className="mt-1 text-[13px] text-ink-2">① 予算を決める（任意） → ② 支出か予定を1件登録 → ③ カレンダーで確認。記録はこのブラウザ内に保存されます。</p>
+          <Link href="/guide" className="mt-2 inline-flex min-h-11 items-center text-[14px] font-semibold text-brand">
+            使い方とデータの保存について
+            <IconChevronR className="ml-1 size-4" />
+          </Link>
+        </Card>
+      )}
+
       {/* 今日の予定（2件まで。残りはカレンダーへ） */}
       <Card>
         <SectionTitle

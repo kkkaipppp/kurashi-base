@@ -52,9 +52,12 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
   const isCurrent = monthKey(today) === key;
   const day = isCurrent ? Number(today.slice(8, 10)) : 31;
   const prevKey = addMonthsToKey(key, -1);
+  const [prevYear, prevMonth] = prevKey.split("-").map(Number);
+  const previousHasSameDay = day <= daysInMonth(prevYear, prevMonth);
   const cur = expenseUntilDay(data.transactions, key, day);
   const prev = expenseUntilDay(data.transactions, prevKey, day);
-  const span = isCurrent ? "先月の同じ日まで" : "先月";
+  const span = isCurrent ? (previousHasSameDay ? "先月の同じ日まで" : "先月の月末まで") : "前月";
+  const period = isCurrent ? "今月" : `${Number(key.slice(5))}月`;
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "（不明なカテゴリ）";
 
   if (cur > 0 && prev > 0) {
@@ -64,13 +67,16 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
       key: "total",
       text:
         diff === 0
-          ? `今月の支出は${span}と同じです`
-          : `今月の支出は${span}より${formatYen(Math.abs(diff))}${diff > 0 ? "多い" : "少ない"}です（${diff > 0 ? "+" : "−"}${Math.abs(pct)}%）`,
+          ? `${period}の支出は${span}と同じです`
+          : `${period}の支出は${span}より${formatYen(Math.abs(diff))}${diff > 0 ? "多い" : "少ない"}です（${diff > 0 ? "+" : "−"}${Math.abs(pct)}%）`,
       href: `/history?m=${key}`,
     });
 
     // いちばん増えたカテゴリ（増加が1,000円以上のときだけ）
-    const until = (k: string) => `${k}-${String(Math.min(day, 31)).padStart(2, "0")}`;
+    const until = (k: string) => {
+      const [y, m] = k.split("-").map(Number);
+      return `${k}-${String(Math.min(day, daysInMonth(y, m))).padStart(2, "0")}`;
+    };
     const byCat = (k: string) => {
       const m = new Map<string, number>();
       for (const t of txInMonth(data.transactions, k)) if (t.type === "expense" && t.date <= until(k)) m.set(t.categoryId, (m.get(t.categoryId) ?? 0) + t.amount);

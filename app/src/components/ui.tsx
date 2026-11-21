@@ -98,7 +98,7 @@ export function Empty({ children, action }: { children: ReactNode; action?: Reac
 }
 
 export function DevBadge() {
-  return <span className="rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">開発版</span>;
+  return <span className="rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">β版</span>;
 }
 
 // --- アイコン（インラインSVG） ---

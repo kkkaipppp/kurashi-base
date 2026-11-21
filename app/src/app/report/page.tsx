@@ -169,7 +169,7 @@ export default function ReportPage() {
           </Card>
 
           <Card>
-            <SectionTitle>週ごとの支出</SectionTitle>
+            <SectionTitle>7日間ごとの支出</SectionTitle>
             <ul className="space-y-1.5">
               {weeks.map((w) => (
                 <li key={w.from} className="flex items-center gap-2 text-[13px]">

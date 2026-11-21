@@ -306,7 +306,8 @@ export default function SettingsPage() {
         <SectionTitle>データとプライバシー</SectionTitle>
         <ul className="mb-3 list-disc space-y-1 pl-5 text-[13px] text-ink-2">
           <li>入力したデータは、この端末のブラウザの中にだけ保存します。外部のサーバーへは送りません。</li>
-          <li>端末どうしの同期、アカウント、共有には対応していません。</li>
+          <li>端末どうしの同期、アカウント、共有には対応していません。URLを友達に送っても記録は共有されません。</li>
+          <li>ブラウザの履歴・サイトデータの消去、機種変更、アプリの再インストールで記録が失われる場合があります。定期的にバックアップしてください。</li>
           <li>取り込んだ画像は保存しません（同じ画像かどうかを確かめるために、画像から計算した値だけを保存します）。</li>
         </ul>
         <Button variant="danger" onClick={wipe} className="w-full">
@@ -316,13 +317,13 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>このアプリについて</SectionTitle>
-        <p className="text-[13px] text-ink-2">暮らしベース 開発版</p>
+        <p className="text-[13px] text-ink-2">暮らしベース β版（試用版）</p>
         <p className="mt-2 text-[13px] font-semibold text-ink-2">まだ対応していないこと</p>
         <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
           <li>画像の文字の自動読み取り（OCR）— 画像を見ながら手で入力します</li>
           <li>繰り返し予定の1回分だけの変更、振替・分割払いの記録</li>
           <li>通知、ホーム画面ウィジェット、iOSショートカット連携</li>
-          <li>クラウド同期・共有・AI・外部サービス連携（メニューの「つながり」に説明があります）</li>
+          <li>クラウド同期・共有・AI・外部サービス連携（メニューの「準備中」に説明があります）</li>
         </ul>
       </Card>
     </main>

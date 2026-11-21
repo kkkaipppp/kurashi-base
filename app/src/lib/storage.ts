@@ -5,8 +5,8 @@ import type { AppData } from "./types";
 export const STORAGE_KEY = "kurashi-base:data:v1";
 
 export type LoadResult =
-  | { status: "ok"; data: AppData }
-  | { status: "new"; data: AppData }
+  | { status: "ok"; data: AppData; persistedRaw: string }
+  | { status: "new"; data: AppData; persistedRaw: null }
   | { status: "corrupt"; error: string; raw: string }
   | { status: "unavailable"; error: string };
 
@@ -36,7 +36,7 @@ export function loadData(kv: KV | null = getLocal()): LoadResult {
   } catch {
     return { status: "unavailable", error: "保存場所を読み込めませんでした" };
   }
-  if (raw === null) return { status: "new", data: emptyData() };
+  if (raw === null) return { status: "new", data: emptyData(), persistedRaw: null };
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -45,7 +45,7 @@ export function loadData(kv: KV | null = getLocal()): LoadResult {
   }
   const v = validateAppData(parsed);
   if (!v.ok) return { status: "corrupt", error: v.error, raw };
-  return { status: "ok", data: v.data };
+  return { status: "ok", data: v.data, persistedRaw: raw };
 }
 
 export type SaveResult = { ok: true } | { ok: false; error: string };
@@ -59,6 +59,25 @@ export function saveData(data: AppData, kv: KV | null = getLocal()): SaveResult 
   } catch (e) {
     const quota = e instanceof DOMException && (e.name === "QuotaExceededError" || e.code === 22);
     return { ok: false, error: quota ? "保存できませんでした。保存できる容量が足りません。バックアップを書き出してから、古い記録を整理してください" : "保存できませんでした。もう一度お試しください" };
+  }
+}
+
+/**
+ * 複数タブによる古い状態からの上書きを検出する（同時書き込みを完全に直列化するものではない）。
+ * 端末上のデータが読み込み時と違えば保存を中止し、利用者へ再読込を案内する。
+ */
+export function saveDataIfUnchanged(data: AppData, expectedRaw: string | null, kv: KV | null = getLocal()): SaveResult & { persistedRaw?: string } {
+  if (!kv) return { ok: false, error: "保存できませんでした。ブラウザの保存場所を使えません" };
+  try {
+    if (kv.getItem(STORAGE_KEY) !== expectedRaw) {
+      return { ok: false, error: "ほかのタブで記録が変更されています。入力内容を控え、画面を再読み込みしてからやり直してください" };
+    }
+    const raw = JSON.stringify(data);
+    kv.setItem(STORAGE_KEY, raw);
+    return { ok: true, persistedRaw: raw };
+  } catch (e) {
+    const quota = typeof DOMException !== "undefined" && e instanceof DOMException && (e.name === "QuotaExceededError" || e.code === 22);
+    return { ok: false, error: quota ? "保存できませんでした。保存容量が足りません。バックアップを書き出してください" : "保存できませんでした。保存場所にアクセスできません" };
   }
 }
 
