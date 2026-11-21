@@ -45,7 +45,11 @@ export function TxRow({ tx, showDate = false }: { tx: Transaction; showDate?: bo
   );
 }
 
+const REPEAT_LABEL = { none: "", weekly: "毎週", monthly: "毎月", yearly: "毎年" } as const;
+
 export function eventTimeLabel(e: CalendarEvent, day?: string): string {
+  const rep = REPEAT_LABEL[e.repeat ?? "none"];
+  if (rep && e.startDate === e.endDate) return `${rep}・${e.allDay ? "終日" : `${e.startTime}〜${e.endTime}`}`;
   if (e.allDay) return e.startDate === e.endDate ? "終日" : `終日（${formatDateJa(e.startDate)}〜${formatDateJa(e.endDate)}）`;
   const multi = e.startDate !== e.endDate;
   if (!multi) return `${e.startTime}〜${e.endTime}`;

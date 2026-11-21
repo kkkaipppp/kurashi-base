@@ -16,7 +16,10 @@ export default function RecurringPage() {
   const [editing, setEditing] = useState<{ id?: string; key: number } | null>(null);
   const today = todayStr();
   const list = [...data.recurring].sort((a, b) => Number(b.active) - Number(a.active) || a.nextDueDate.localeCompare(b.nextDueDate));
-  const monthlyTotal = data.recurring.filter((r) => r.active && r.cycle === "monthly").reduce((s, r) => s + r.amount, 0);
+  // 月あたりの目安：毎週は ×52÷12、毎年は ÷12
+  const monthlyTotal = Math.round(
+    data.recurring.filter((r) => r.active).reduce((s, r) => s + (r.cycle === "weekly" ? (r.amount * 52) / 12 : r.cycle === "yearly" ? r.amount / 12 : r.amount), 0),
+  );
 
   const record = (r: RecurringExpense) =>
     ui.openTx({
@@ -40,11 +43,11 @@ export default function RecurringPage() {
         }
       />
       <p className="mb-3 text-[13px] text-ink-3">
-        固定費は「予定」として管理し、支出の合計には入れません。支払ったら「支払いを記録」で支出として登録すると、次回予定日が進みます。
+        固定費は支払いの「予定」として管理するので、支出の合計には入れません。支払ったら「支払いを記録」で支出として登録すると、次回予定日が進みます。
       </p>
-      {data.recurring.some((r) => r.active && r.cycle === "monthly") && (
+      {data.recurring.some((r) => r.active) && (
         <Card className="mb-3 flex items-center justify-between py-3">
-          <span className="text-[14px] font-semibold text-ink-2">毎月の固定費（予定）</span>
+          <span className="text-[14px] font-semibold text-ink-2">固定費（月あたりの目安）</span>
           <span className="num text-lg font-bold">{formatYen(monthlyTotal)}</span>
         </Card>
       )}
@@ -61,7 +64,7 @@ export default function RecurringPage() {
                     <button type="button" onClick={() => setEditing({ id: r.id, key: Date.now() })} className="min-w-0 flex-1 text-left">
                       <p className="truncate text-[15px] font-bold">{r.name}</p>
                       <p className="text-[12px] text-ink-3">
-                        {cycleLabel(r.cycle)} {r.anchorDay}日 · {data.categories.find((c) => c.id === r.categoryId)?.name ?? "（不明）"}
+                        {cycleLabel(r.cycle)}{r.cycle === "weekly" ? "" : ` ${r.anchorDay}日`} · {data.categories.find((c) => c.id === r.categoryId)?.name ?? "（不明）"}
                         {!r.active && " · 停止中"}
                       </p>
                       {r.active && (
@@ -173,11 +176,12 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
         <div className="grid grid-cols-2 gap-3">
           <Field label="周期" htmlFor="rc-cycle">
             <select id="rc-cycle" value={cycle} onChange={(e) => setCycle(e.target.value as RecurringCycle)} className={inputCls}>
+              <option value="weekly">毎週</option>
               <option value="monthly">毎月</option>
               <option value="yearly">毎年</option>
             </select>
           </Field>
-          <Field label="次回の支払日" htmlFor="rc-next" error={errors.nextDue} hint="この日付の「日」が毎回の支払日になります（月末を超える月は月末）">
+          <Field label="次回の支払日" htmlFor="rc-next" error={errors.nextDue} hint={cycle === "weekly" ? "この日から7日ごとに支払日になります" : "この日付の「日」が毎回の支払日になります（月末を超える月は月末）"}>
             <input id="rc-next" type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} className={inputCls} aria-invalid={!!errors.nextDue} />
           </Field>
         </div>

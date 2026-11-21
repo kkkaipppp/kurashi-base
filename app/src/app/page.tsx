@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useData } from "@/lib/store";
 import { daySummary, eventsOnDay, remainingBudget, sortTxDesc, summarizeMonth } from "@/lib/aggregate";
-import { daysBetween, formatDateJa, monthKey, todayStr } from "@/lib/date";
+import { formatDateJa, monthKey, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
-import { nextRecurring, overdueRecurring } from "@/lib/recurring";
+import { nextRecurring } from "@/lib/recurring";
+import { buildNavi } from "@/lib/navi";
 import { useUI } from "@/components/UIContext";
 import { EventRow, TxRow } from "@/components/Rows";
-import { Card, DevBadge, Empty, IconAlert, IconImage, IconPlus, SectionTitle } from "@/components/ui";
+import { Card, DevBadge, Empty, IconChevronR, IconImage, IconPlus, SectionTitle } from "@/components/ui";
 
 /** 日付の変わり目（0時）でホームの「今日」を更新する */
 function useToday(): string {
@@ -36,18 +37,11 @@ export default function HomePage() {
   const todayEvents = eventsOnDay(data.events, today);
   const todaySpent = daySummary(data.transactions, today).expense;
   const next = nextRecurring(data.recurring);
-  const overdue = overdueRecurring(data.recurring, today);
   const recent = sortTxDesc(data.transactions).slice(0, 5);
   const pct = data.budget.monthly ? Math.min(100, Math.round((sum.expense / data.budget.monthly) * 100)) : 0;
 
-  // 「確認したいこと」は実データがあるときだけ
-  const reviews: { key: string; text: string; href: string }[] = [];
-  if (overdue.length) reviews.push({ key: "overdue", text: `支払予定日を過ぎた固定費が${overdue.length}件あります`, href: "/recurring" });
-  const hasData = data.transactions.length + data.events.length > 0;
-  const lastBackup = data.meta.lastBackupAt;
-  const sinceBackup = lastBackup ? daysBetween(lastBackup.slice(0, 10), today) : null;
-  if (hasData && (sinceBackup === null ? daysBetween(data.meta.createdAt.slice(0, 10), today) >= 30 : sinceBackup >= 30))
-    reviews.push({ key: "backup", text: "30日以上バックアップしていません", href: "/settings#backup" });
+  // 「今日のナビ」は記録されたデータからだけ作る。何もなければ出さない
+  const navi = buildNavi(data, today);
 
   const prefs = data.prefs.home;
 
@@ -136,7 +130,7 @@ export default function HomePage() {
       </Card>
 
       {/* 補助情報（設定でON/OFF、データがない時は出さない） */}
-      {(prefs.todaySpent || (prefs.nextRecurring && next) || (prefs.needsReview && reviews.length > 0)) && (
+      {(prefs.todaySpent || (prefs.nextRecurring && next) || (prefs.needsReview && navi.length > 0)) && (
         <div className="grid gap-3">
           {prefs.todaySpent && (
             <Card className="flex items-center justify-between py-3">
@@ -157,22 +151,28 @@ export default function HomePage() {
               </Card>
             </Link>
           )}
-          {prefs.needsReview && reviews.length > 0 && (
-            <section className="rounded-2xl border border-warn/30 bg-warn-soft p-4 py-3">
-              <h2 className="mb-1 flex items-center gap-1.5 text-[14px] font-semibold text-warn">
-                <IconAlert className="size-4" />
-                確認したいこと
-              </h2>
-              <ul className="space-y-1">
-                {reviews.map((r) => (
-                  <li key={r.key}>
-                    <Link href={r.href} className="flex min-h-9 items-center text-[14px] font-medium underline-offset-2 hover:underline">
-                      {r.text}
+          {prefs.needsReview && navi.length > 0 && (
+            <Card className="order-first py-3">
+              <h2 className="mb-1 text-[15px] font-bold">今日のナビ</h2>
+              <ul className="-mx-2">
+                {navi.slice(0, 6).map((n) => (
+                  <li key={n.key}>
+                    <Link href={n.href} className="flex min-h-12 items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-surface-2">
+                      <span
+                        className={`size-2 shrink-0 rounded-full ${n.tone === "warn" ? "bg-warn" : n.tone === "today" ? "bg-brand" : "bg-ink-3"}`}
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className={`block truncate text-[14px] font-semibold ${n.tone === "warn" ? "text-warn" : ""}`}>{n.title}</span>
+                        {n.sub && <span className="block truncate text-[12px] text-ink-3">{n.sub}</span>}
+                      </span>
+                      <IconChevronR className="size-4 shrink-0 text-ink-3" />
                     </Link>
                   </li>
                 ))}
               </ul>
-            </section>
+              {navi.length > 6 && <p className="px-1 text-[12px] text-ink-3">ほか{navi.length - 6}件</p>}
+            </Card>
           )}
         </div>
       )}

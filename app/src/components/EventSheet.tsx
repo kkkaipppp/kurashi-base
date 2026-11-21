@@ -19,10 +19,10 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
   const initial = useMemo<EventDraft>(() => {
     if (editing) {
       const { title, startDate, endDate, allDay, startTime, endTime, note } = editing;
-      return { title, startDate, endDate, allDay, startTime, endTime, note };
+      return { title, startDate, endDate, allDay, startTime, endTime, note, repeat: editing.repeat ?? "none", repeatUntil: editing.repeatUntil ?? "" };
     }
     const d = req.mode === "new" && req.date ? req.date : todayStr();
-    return { title: "", startDate: d, endDate: d, allDay: false, startTime: "10:00", endTime: "11:00", note: "" };
+    return { title: "", startDate: d, endDate: d, allDay: false, startTime: "10:00", endTime: "11:00", note: "", repeat: "none", repeatUntil: "" };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -68,6 +68,8 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
         note: draft.note.trim(),
         startTime: draft.allDay ? "" : draft.startTime,
         endTime: draft.allDay ? "" : draft.endTime,
+        repeat: draft.repeat ?? "none",
+        repeatUntil: draft.repeat && draft.repeat !== "none" ? (draft.repeatUntil ?? "") : "",
       };
       const r = editing ? store.updateEvent(editing.id, input) : store.addEvent(input);
       if (!r.ok) {
@@ -175,7 +177,32 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
         <Field label="メモ（任意）" htmlFor="ev-note" error={errors.note}>
           <textarea id="ev-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
         </Field>
-        <p className="text-[12px] text-ink-3">繰り返し予定には、まだ対応していません。</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="繰り返し" htmlFor="ev-rep" error={errors.repeat}>
+            <select
+              id="ev-rep"
+              value={draft.repeat ?? "none"}
+              onChange={(e) => set("repeat", e.target.value as EventDraft["repeat"])}
+              className={inputCls}
+              aria-invalid={!!errors.repeat}
+            >
+              <option value="none">しない</option>
+              <option value="weekly">毎週</option>
+              <option value="monthly">毎月</option>
+              <option value="yearly">毎年</option>
+            </select>
+          </Field>
+          {draft.repeat && draft.repeat !== "none" && (
+            <Field label="いつまで（任意）" htmlFor="ev-until" error={errors.repeatUntil}>
+              <input id="ev-until" type="date" value={draft.repeatUntil ?? ""} onChange={(e) => set("repeatUntil", e.target.value)} className={inputCls} aria-invalid={!!errors.repeatUntil} />
+            </Field>
+          )}
+        </div>
+        {draft.repeat && draft.repeat !== "none" && (
+          <p className="text-[12px] text-ink-3">
+            繰り返しは1日の予定だけ設定できます。編集・削除すると、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。
+          </p>
+        )}
 
         {saveError && (
           <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[14px] font-medium text-danger">

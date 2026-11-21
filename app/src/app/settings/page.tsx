@@ -38,7 +38,7 @@ export default function SettingsPage() {
   const toggles: { key: keyof HomePrefs; label: string }[] = [
     { key: "todaySpent", label: "今日の使用分" },
     { key: "nextRecurring", label: "固定費の次回予定" },
-    { key: "needsReview", label: "確認したいこと" },
+    { key: "needsReview", label: "今日のナビ（期限・支払日・試験日など）" },
   ];
 
   // --- カテゴリ ---

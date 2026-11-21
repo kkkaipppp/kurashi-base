@@ -219,6 +219,13 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           ))}
         </div>
 
+        <details className="-mt-1 text-[12px] text-ink-3">
+          <summary className="cursor-pointer py-1">返金・振替・分割払いを記録するには</summary>
+          <p className="pt-1">
+            返金は「収入」として、元の支出と同じカテゴリで登録してください。口座どうしの振替や分割払いの記録には、まだ対応していません。
+          </p>
+        </details>
+
         <Field label="金額（円）" htmlFor="tx-amount" error={errors.amount}>
           <div className="relative">
             <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xl font-bold text-ink-3">¥</span>

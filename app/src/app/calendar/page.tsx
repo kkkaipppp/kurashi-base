@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { formatMinutes } from "@/lib/life";
 import { useData } from "@/lib/store";
 import { daySummary, eventsOnDay, summarizeMonth } from "@/lib/aggregate";
 import { addMonthsToKey, formatDateJa, formatMonthJa, monthGrid, monthKey, todayStr } from "@/lib/date";
@@ -39,6 +41,9 @@ export default function CalendarPage() {
 
   const dayEvents = eventsOnDay(data.events, selected);
   const day = daySummary(data.transactions, selected);
+  const dayTasks = data.tasks.filter((t) => t.due === selected);
+  const dayNotes = data.notes.filter((n) => n.date === selected);
+  const dayStudy = data.studyLogs.filter((l) => l.date === selected).reduce((s, l) => s + l.minutes, 0);
 
   const move = (delta: number) => {
     const next = addMonthsToKey(month, delta);
@@ -165,6 +170,38 @@ export default function CalendarPage() {
             <p className="py-1 text-[14px] text-ink-3">予定はありません</p>
           )}
         </Card>
+
+        {(dayTasks.length > 0 || dayNotes.length > 0 || dayStudy > 0) && (
+          <Card>
+            <SectionTitle>そのほかの記録</SectionTitle>
+            <ul className="space-y-1 text-[14px]">
+              {dayTasks.map((t) => (
+                <li key={t.id}>
+                  <Link href="/tasks" className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
+                    <span className="text-[12px] text-ink-3">タスク</span>
+                    <span className={t.done ? "text-ink-3 line-through" : "font-semibold"}>{t.title}</span>
+                  </Link>
+                </li>
+              ))}
+              {dayNotes.map((n) => (
+                <li key={n.id}>
+                  <Link href="/notes" className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
+                    <span className="text-[12px] text-ink-3">メモ</span>
+                    <span className="truncate">{n.title || n.body.slice(0, 30)}</span>
+                  </Link>
+                </li>
+              ))}
+              {dayStudy > 0 && (
+                <li>
+                  <Link href="/study" className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
+                    <span className="text-[12px] text-ink-3">勉強</span>
+                    <span>{formatMinutes(dayStudy)}</span>
+                  </Link>
+                </li>
+              )}
+            </ul>
+          </Card>
+        )}
 
         <Card>
           <SectionTitle

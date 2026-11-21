@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { StoreProvider, useStore } from "@/lib/store";
 import { UIProvider, useUI } from "./UIContext";
-import { Button, IconCalendar, IconHome, IconList, IconPlus, IconSettings } from "./ui";
+import { Button, IconCalendar, IconGrid, IconHome, IconList, IconPlus } from "./ui";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -89,15 +89,17 @@ function CorruptScreen() {
 const NAV = [
   { href: "/", label: "ホーム", Icon: IconHome },
   { href: "/calendar", label: "カレンダー", Icon: IconCalendar },
-  { href: "/history", label: "履歴", Icon: IconList },
-  { href: "/settings", label: "設定", Icon: IconSettings },
+  { href: "/history", label: "取引履歴", Icon: IconList },
+  { href: "/menu", label: "メニュー", Icon: IconGrid },
 ];
+const MAIN = ["/", "/calendar", "/history"];
 
 function BottomNav() {
   const path = usePathname();
   const ui = useUI();
   const item = (n: (typeof NAV)[number]) => {
-    const active = n.href === "/" ? path === "/" : path.startsWith(n.href);
+    // ホーム・カレンダー・取引履歴以外の画面は、すべて「メニュー」の中にある
+    const active = n.href === "/menu" ? !MAIN.some((m) => (m === "/" ? path === "/" : path.startsWith(m))) : n.href === "/" ? path === "/" : path.startsWith(n.href);
     return (
       <Link
         key={n.href}
