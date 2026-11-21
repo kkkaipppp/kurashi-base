@@ -1,4 +1,8 @@
-# 暮らしベース Phase 1 納品レポート（2026-11-21）
+# 暮らしベース 納品レポート（2026-11-21）
+
+> **追記（同日・自律開発の回）**：Phase 1 のあと、生活管理の10領域（タスク・資産とNISAの枠・契約・生活記録/メモ・健康・目標・資格の勉強・書類、共有/AI/外部連携は「準備中」の箱）、メニュー、今日のナビ、繰り返し予定、毎週の固定費を追加し、全画面の日本語を見直した。データ形式は v1 → v2（自動移行・既存データは変更なし）。詳細は `docs/FEATURE_BOX_STATUS.md`・`docs/TEST_REPORT.md`・`docs/JAPANESE_COPY_AUDIT.md`・`docs/NEXT_SESSION_HANDOFF.md`。以下は Phase 1 時点の記録。
+
+## Phase 1 の記録
 
 ## 要約
 スマホ優先・ローカルファーストの家計＋予定アプリの開発版を、`app/` にゼロから作りました（Next.js 16 + TypeScript + Tailwind CSS v4、保存先は localStorage）。

@@ -103,7 +103,7 @@ export default function HomePage() {
           <span className="inline-flex size-8 items-center justify-center rounded-full bg-brand-soft text-brand">
             <IconImage />
           </span>
-          画像を取り込む
+          画像から取り込む
         </Link>
       </div>
 
