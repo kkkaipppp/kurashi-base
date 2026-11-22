@@ -67,7 +67,7 @@ V09,M8,P1,資格の候補検索,V01,20件＋自由入力、別名で探せる,�
 V10,M8,P1,勉強時間の目安と1日の目標,V09,出典を出す、日割りが正確,受領 v5_plus_brand 08_品質とWBS,Claude Code,DONE,自動テスト（10分切り上げ・当日・過去・うるう年）、画面で3時間20分 (75cc5ee),2026-11-22,,2026-11-22,2026-11-22
 V11,M8,P1,参考書・note のリンク,V09,架空の商品なし、タグなし,受領 v5_plus_brand 08_品質とWBS,Claude Code,DONE,自動テスト（tag なし・note.com）(75cc5ee),2026-11-22,,2026-11-22,2026-11-22
 V12,M8,P1,くらしベースのロゴ・表示名,V03,ヘッダー・タブ・アイコンで矛盾しない,受領 v5_plus_brand 08_品質とWBS,Claude Code,DONE,docs/BRAND_IMPLEMENTATION_REPORT.md（再現案）(61f62d8),2026-11-22,正式なロゴとするかは論点 Q21,2026-11-22,2026-11-22
-V13,M8,P2,OCR データの利用条件の確認,,商用可否を記録し、未確認はブロック,受領 v5_plus_brand 08_品質とWBS,User/Claude Code,BLOCKED,,,ダウンロードとライブラリの導入は平尾さんの承認待ち（論点 Q22）,2026-11-26,2026-11-27
+V13,M8,P2,OCR データの利用条件の確認,,商用可否を記録し、未確認はブロック,受領 v5_plus_brand 08_品質とWBS,User/Claude Code,DONE,docs/OCR_DATA_LICENSE_CHECK.md（CORD v2 は CC BY 4.0、nano-receipts は MIT だが出どころが弱い。どちらも日本のレシートではない）,2026-11-22,ダウンロードとライブラリの導入は平尾さんの承認待ち（論点 Q22）,2026-11-26,2026-11-27
 V14,M8,P2,"OCR 画像2,000件の取得と SHA の固定",V13,"2,000件・重複0・manifest",受領 v5_plus_brand 08_品質とWBS,Claude Code,BLOCKED,,,tools/ocr_benchmark に取得・検査のスクリプト（検査のテスト5件 OK）。画像は未取得,2026-11-27,2026-11-28
 V15,M8,P2,OCR の実装と精度の基準,V14,GT つきの精度と未ラベルの耐性を分けて報告,受領 v5_plus_brand 08_品質とWBS,Claude Code,NOT_STARTED,,,OCR を入れるか（論点 Q10）と npm の追加の承認が先,2026-12-10,2026-12-20
 V16,M8,P0,npm run check,V12,型・lint・テスト・ビルド PASS,受領 v5_plus_brand 08_品質とWBS,Claude Code,DONE,npm run check PASS（テスト147件）,2026-11-22,,2026-11-22,2026-11-22
