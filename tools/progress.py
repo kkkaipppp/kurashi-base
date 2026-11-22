@@ -2,7 +2,7 @@
 
   py -3 -I tools/progress.py init                      # docs/ux-autonomous/10_PARENT_WBS.csv から docs/progress/WBS.csv を作る（既にあれば何もしない）
   py -3 -I tools/progress.py set W004 DONE "根拠" [SHA]   # 状態を更新（DONE は根拠必須）
-  py -3 -I tools/progress.py sync                      # ROADMAP/WBS/STATUS を docs/progress と親フォルダ 00_全体進捗/暮らしベース/ に書き出す
+  py -3 -I tools/progress.py sync                      # ROADMAP/WBS/STATUS/論点（ISSUES.csv）と、ガント・ロードマップ・論点一覧の画面（PROGRESS.html）を docs/progress と親フォルダ 00_全体進捗/暮らしベース/ に書き出す
 
 状態は NOT_STARTED / IN_PROGRESS / DONE / BLOCKED / NOT_RUN の5種のみ。
 """
@@ -101,15 +101,25 @@ def cmd_sync(extra: dict[str, str]) -> None:
         "**注記：テスト未実施の項目を PASS や GO にしない。DONE は根拠のある項目だけ。**",
     ]
     STATUS.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # ガントチャート・ロードマップ・論点一覧の画面（-I で起動するので、同じフォルダのファイルを直接読み込む）
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("progress_board", Path(__file__).resolve().parent / "progress_board.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    board = mod.build(git_sha())
+    files = [(WBS, "WBS.csv"), (ROADMAP, "ROADMAP.md"), (STATUS, "STATUS.md"), (board, "PROGRESS.html")]
+    if (PROG / "ISSUES.csv").exists():
+        files.append((PROG / "ISSUES.csv", "ISSUES.csv"))
     for dest in (PARENT, EXPORT):
-        try:
-            dest.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(WBS, dest / "WBS.csv")
-            shutil.copyfile(ROADMAP, dest / "ROADMAP.md")
-            shutil.copyfile(STATUS, dest / "STATUS.md")
-            print("synced ->", dest)
-        except OSError as e:
-            print("sync failed:", dest, e)
+        dest.mkdir(parents=True, exist_ok=True)
+        failed = []
+        for src, name in files:  # 1つが開かれていて書けなくても、ほかは同期する
+            try:
+                shutil.copyfile(src, dest / name)
+            except OSError as e:
+                failed.append(f"{name}（{e.strerror}。Excel などで開いていたら閉じて、もう一度 sync）")
+        print(("sync failed: " + "、".join(failed) + " ->" if failed else "synced ->"), dest)
 
 
 if __name__ == "__main__":

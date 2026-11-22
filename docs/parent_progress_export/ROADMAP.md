@@ -41,3 +41,7 @@ WBSを優先度順に更新。日付を無理に埋めず、`DONE`は完了証�
 | M6〜M7 | 未着手 | 友人βの開始後 |
 
 判定：`docs/BETA_RELEASE_REPORT.md`（友人β GO 可：公開の承認待ち）
+
+## 見える化（2026-11-22 追加）
+- **ガントチャート・ロードマップ・論点一覧**：`docs/progress/PROGRESS.html`（ブラウザで開く。親フォルダ `00_全体進捗/暮らしベース/PROGRESS.html` にも同期）
+- 元のデータ：作業は `WBS.csv`（Start・End 列。未完了は仮の予定）、要件を決めるための論点は `ISSUES.csv`。`py -3 -I tools/progress.py sync` で画面を作り直す

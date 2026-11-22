@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>暮らしベース 進捗</title>
+<style>
+:root{--bg:#f5f3ee;--card:#fff;--ink:#22201c;--ink2:#5d5850;--ink3:#8f897e;--line:#e6e1d6;--brand:#2f6f5e;--brand-soft:#e3efe9;
+--done:#2f6f5e;--prog:#3b6fb6;--block:#c0503a;--notrun:#b08a2e;--todo:#a39b8c;--weekend:#f3efe7;--today:#c0503a}
+@media (prefers-color-scheme:dark){:root{--bg:#171614;--card:#22201d;--ink:#eeeae2;--ink2:#bdb6aa;--ink3:#8a8478;--line:#38342e;--brand:#6fb39d;--brand-soft:#23352e;
+--done:#5ea58e;--prog:#6d9be0;--block:#e0775f;--notrun:#d4ac4c;--todo:#7d776c;--weekend:#1e1d1a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI",sans-serif}
+header{padding:16px 16px 4px;max-width:1200px;margin:auto}h1{font-size:20px;margin:0}.meta{color:var(--ink3);font-size:12px}
+.kpis{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 12px}.kpi b{font-size:18px;margin-right:4px}
+nav{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}nav .in{max-width:1200px;margin:auto;display:flex;gap:4px;padding:0 12px}
+nav button{border:0;background:none;color:var(--ink2);font:inherit;font-weight:600;padding:12px 10px;border-bottom:3px solid transparent;cursor:pointer}
+nav button[aria-selected=true]{color:var(--brand);border-color:var(--brand)}
+main{max-width:1200px;margin:auto;padding:12px 16px 40px}section[hidden]{display:none}
+.tools{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px;color:var(--ink2);font-size:13px}
+.legend{display:flex;flex-wrap:wrap;gap:10px}.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+/* ガント */
+.gwrap{overflow:auto;max-height:78vh;-webkit-overflow-scrolling:touch}
+.grid{display:grid;min-width:max-content}
+.cell{height:30px;border-bottom:1px solid var(--line);position:relative}
+.lab{position:sticky;left:0;z-index:5;background:var(--card);border-right:1px solid var(--line);padding:4px 8px;white-space:nowrap;overflow:hidden;font-size:13px;display:flex;align-items:center;gap:6px}
+.lab .id{color:var(--ink3);font-size:11px;min-width:34px}.lab .nm{overflow:hidden;text-overflow:ellipsis}
+.mrow .lab{font-weight:700;background:var(--brand-soft)}.mrow .cell{background-color:var(--brand-soft)}
+.hd{position:sticky;top:0;z-index:6;background:var(--card);font-size:11px;color:var(--ink3);text-align:center;height:46px;border-bottom:1px solid var(--line);line-height:1.25;padding-top:3px}
+.hd.lab{z-index:8;font-size:12px}
+.days{display:grid}.days>div.we{background:var(--weekend)}.days>div.today{color:var(--today);font-weight:700}
+.bar{position:absolute;top:7px;height:16px;border-radius:5px;z-index:2}
+.bar.tent{background:transparent!important;border:2px dashed currentColor}
+.mbar{position:absolute;top:11px;height:8px;border-radius:4px;background:var(--brand);opacity:.55;z-index:2}
+.tline{position:absolute;top:0;bottom:0;width:2px;background:var(--today);z-index:3;opacity:.7}
+.chip{display:inline-block;font-size:11px;padding:0 7px;border-radius:999px;white-space:nowrap}
+.s-DONE{background:var(--done);color:var(--done)}.s-IN_PROGRESS{background:var(--prog);color:var(--prog)}.s-BLOCKED{background:var(--block);color:var(--block)}.s-NOT_RUN{background:var(--notrun);color:var(--notrun)}.s-NOT_STARTED{background:var(--todo);color:var(--todo)}
+.chip[class*=" s-"]{color:#fff}
+.tip{color:var(--ink3);font-size:12px;margin-top:8px}
+/* ロードマップ */
+.road{display:grid;gap:10px}.ms{padding:14px;display:grid;gap:6px;border-left:6px solid var(--todo)}
+.ms.st-done{border-left-color:var(--done)}.ms.st-prog{border-left-color:var(--prog)}.ms.st-block{border-left-color:var(--block)}
+.ms h3{margin:0;font-size:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ms .per{color:var(--ink3);font-size:12px;font-weight:400}
+.pbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}.pbar>div{height:100%;background:var(--done)}
+.ms dl,.iss dl{margin:0;display:grid;grid-template-columns:6.5em 1fr;gap:2px 8px;font-size:13px}dt{color:var(--ink3)}dd{margin:0}
+.ms ul{margin:0;padding-left:18px}
+/* 論点 */
+.issues{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
+.iss{padding:14px;display:grid;gap:8px;align-content:start}.iss.closed{opacity:.65}
+.iss .top{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--ink3)}
+.iss h3{margin:0;font-size:15px}.iss .rec{background:var(--brand-soft);border-radius:10px;padding:6px 10px;font-size:13px}.iss .rec b{color:var(--brand)}
+.tag{border:1px solid var(--line);border-radius:999px;padding:0 8px}.open{background:var(--block);color:#fff;border-radius:999px;padding:0 8px}.dec{background:var(--done);color:#fff;border-radius:999px;padding:0 8px}
+select,label{font:inherit;color:inherit}select{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+@media (max-width:640px){.issues{grid-template-columns:1fr}.lab .chip{display:none}}
+</style></head><body>
+<header><h1>暮らしベース 進捗</h1><div class="meta" id="meta"></div><div class="kpis" id="kpis"></div></header>
+<nav><div class="in" role="tablist">
+<button role="tab" data-t="gantt">ガントチャート</button><button role="tab" data-t="road">ロードマップ</button><button role="tab" data-t="iss">論点一覧</button>
+</div></nav>
+<main>
+<section id="gantt"><div class="tools"><label><input type="checkbox" id="hideDone"> 完了を隠す</label>
+<label>計画 <select id="series"><option value="B">友人β（B01〜）</option><option value="W">v3 まで（W001〜）</option><option value="all">すべて</option></select></label>
+<div class="legend" id="legend"></div></div>
+<div class="card gwrap"><div class="grid" id="grid"></div></div>
+<p class="tip">塗りつぶし＝実績（完了日）。点線＝<b>仮の予定</b>（未完了。決まった期限ではない）。赤い縦線＝今日。行を押す（マウスを合わせる）と完了条件と根拠が出ます。</p></section>
+<section id="road" hidden><div class="road" id="roadList"></div></section>
+<section id="iss" hidden><div class="tools"><label>表示 <select id="issFilter"><option value="open">未決だけ</option><option value="all">すべて</option></select></label>
+<label>区分 <select id="issCat"><option value="">すべて</option></select></label></div><div class="issues" id="issList"></div></section>
+</main>
+<script>
+const D=__DATA__;
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dd=s=>new Date(s+"T00:00:00"),day=864e5,fmt=d=>`${d.getMonth()+1}/${d.getDate()}`,SJ=D.statusJa;
+$("#meta").textContent=`更新 ${D.updated}${D.sha?"・commit "+D.sha:""}・元のデータ：docs/progress/WBS.csv・ROADMAP.md・ISSUES.csv`;
+const done=D.tasks.filter(t=>t.Status==="DONE").length,p0=D.tasks.filter(t=>t.Priority==="P0"&&t.Status!=="DONE").length,open=D.issues.filter(i=>i["状態"]==="未決").length;
+$("#kpis").innerHTML=`<div class="kpi"><b>${done}/${D.tasks.length}</b>作業が完了</div><div class="kpi"><b>${p0}</b>P0 が未完了</div><div class="kpi"><b>${open}</b>未決の論点</div>`;
+$("#legend").innerHTML=Object.entries(SJ).map(([k,v])=>`<span><i class="s-${k}"></i>${v}</span>`).join("");
+function tab(t){if(!["gantt","road","iss"].includes(t))t="gantt";document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));
+ ["gantt","road","iss"].forEach(id=>$("#"+id).hidden=id!==t);try{history.replaceState(null,"","#"+t)}catch(e){}}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>tab(b.dataset.t));tab((location.hash||"#gantt").slice(1));
+// ガント
+const ts=D.tasks.filter(t=>t.Start&&t.End),min=new Date(Math.min(...ts.map(t=>+dd(t.Start)))),max=new Date(Math.max(...ts.map(t=>+dd(t.End)),+dd(D.today)));
+const N=Math.round((max-min)/day)+1,CW=30,LW=Math.round(Math.min(300,Math.max(190,innerWidth*0.42)));
+const idx=s=>Math.round((dd(s)-min)/day),todayI=idx(D.today);
+function gantt(){const hide=$("#hideDone").checked,ser=$("#series").value,g=$("#grid");
+ g.style.gridTemplateColumns=`${LW}px ${N*CW}px`;
+ let h=`<div class="hd lab">作業（${ser==="B"?"友人β":ser==="W"?"v3 まで":"すべて"}）</div><div class="hd days" style="grid-template-columns:repeat(${N},${CW}px)">`;
+ for(let i=0;i<N;i++){const d=new Date(+min+i*day),w=d.getDay();h+=`<div class="${w%6===0?"we":""} ${i===todayI?"today":""}">${i===0||d.getDate()===1?(d.getMonth()+1)+"月":"&nbsp;"}<br>${d.getDate()}<br>${"日月火水木金土"[w]}</div>`}
+ h+="</div>";
+ const bg=`background-image:repeating-linear-gradient(to right,transparent 0 ${CW-1}px,var(--line) ${CW-1}px ${CW}px)`;
+ const tl=todayI>=0&&todayI<N?`<div class="tline" style="left:${todayI*CW+CW/2-1}px"></div>`:"";
+ let shown=0;
+ for(const m of D.milestones){const all=D.tasks.filter(t=>t.Milestone===m.id&&t.Start&&(ser==="all"||t.ID.startsWith(ser)));if(!all.length)continue;
+  const rows=hide?all.filter(t=>t.Status!=="DONE"):all;
+  const s=Math.min(...all.map(t=>idx(t.Start))),e=Math.max(...all.map(t=>idx(t.End))),dn=all.filter(t=>t.Status==="DONE").length;
+  h+=`<div class="mrow" style="display:contents"><div class="cell lab"><span class="nm">${m.id} ${esc(m.name)}</span><span style="margin-left:auto;font-weight:400;color:var(--ink3);font-size:11px">${dn}/${all.length}</span></div><div class="cell" style="${bg}">${tl}<div class="mbar" style="left:${s*CW+2}px;width:${(e-s+1)*CW-4}px"></div></div></div>`;
+  for(const t of rows){shown++;const a=idx(t.Start),b=idx(t.End),tent=t.Status!=="DONE";
+   const tip=`${t.ID} ${t.Task}\n状態：${SJ[t.Status]||t.Status}／担当：${t.Owner}／${fmt(dd(t.Start))}〜${fmt(dd(t.End))}${tent?"（仮）":"（実績）"}\n完了条件：${t.Acceptance}${t.Evidence?"\n根拠："+t.Evidence:""}${t.Notes?"\nメモ："+t.Notes:""}`;
+   h+=`<div style="display:contents" title="${esc(tip)}" onclick="alert(this.title)"><div class="cell lab"><span class="id">${t.ID}</span><span class="chip s-${t.Status}">${SJ[t.Status]||t.Status}</span><span class="nm">${esc(t.Task)}</span></div><div class="cell" style="${bg}">${tl}<div class="bar s-${t.Status} ${tent?"tent":""}" style="left:${a*CW+3}px;width:${(b-a+1)*CW-6}px"></div></div></div>`}}
+ if(!shown&&hide)h+=`<div class="cell lab" style="grid-column:1/3">残っている作業はありません</div>`;
+ g.innerHTML=h}
+$("#hideDone").onchange=gantt;$("#series").onchange=gantt;gantt();
+// ロードマップ
+const stCls={完了:["st-done","s-DONE"],進行中:["st-prog","s-IN_PROGRESS"],止まっている:["st-block","s-BLOCKED"],未着手:["","s-NOT_STARTED"]};
+$("#roadList").innerHTML=D.milestones.map(m=>{const r=D.tasks.filter(t=>t.Milestone===m.id),n=r.length,dn=r.filter(t=>t.Status==="DONE").length;
+ const st=!n?"未着手":dn===n?"完了":r.some(t=>t.Status==="BLOCKED")?"止まっている":(dn||r.some(t=>t.Status==="IN_PROGRESS"))?"進行中":"未着手";
+ const s=n?r.map(t=>t.Start).filter(Boolean).sort()[0]:"",e=n?r.map(t=>t.End).filter(Boolean).sort().at(-1):"";
+ const left=r.filter(t=>t.Status!=="DONE");
+ const iss=D.issues.filter(i=>i["状態"]==="未決"&&r.some(t=>new RegExp("\\b"+t.ID+"\\b").test(i["止まっている作業"]||"")));
+ return `<div class="card ms ${stCls[st][0]}"><h3>${m.id} ${esc(m.name)} <span class="chip ${stCls[st][1]}">${st}</span><span class="per">${s?fmt(dd(s))+"〜"+fmt(dd(e))+(left.length?"（終わりは仮）":""):""}</span></h3>
+ <div class="pbar"><div style="width:${n?dn/n*100:0}%"></div></div><dl><dt>進み具合</dt><dd>${dn}/${n} 作業が完了</dd><dt>到達すること</dt><dd>${esc(m.goal)}</dd><dt>GO の条件</dt><dd>${esc(m.go)}</dd>
+ ${left.length?`<dt>残り</dt><dd><ul>${left.map(t=>`<li>${t.ID} ${esc(t.Task)}（${SJ[t.Status]}・${esc(t.Owner)}）</li>`).join("")}</ul></dd>`:""}
+ ${iss.length?`<dt>決めること</dt><dd>${iss.map(i=>`${i.ID} ${esc(i["論点"])}`).join("<br>")}</dd>`:""}</dl></div>`}).join("");
+// 論点
+[...new Set(D.issues.map(i=>i["区分"]))].forEach(c=>$("#issCat").insertAdjacentHTML("beforeend",`<option>${esc(c)}</option>`));
+function issues(){const f=$("#issFilter").value,c=$("#issCat").value;
+ const L=D.issues.filter(i=>(f==="all"||i["状態"]==="未決")&&(!c||i["区分"]===c))
+  .sort((a,b)=>(a["状態"]==="未決"?0:1)-(b["状態"]==="未決"?0:1)||(/^\d/.test(a["期限"])?0:1)-(/^\d/.test(b["期限"])?0:1)||String(a["期限"]).localeCompare(String(b["期限"]))||a.ID.localeCompare(b.ID));
+ $("#issList").innerHTML=L.length?L.map(i=>{const op=i["状態"]==="未決";return `<div class="card iss ${op?"":"closed"}"><div class="top"><b>${i.ID}</b><span class="tag">${esc(i["区分"])}</span><span class="${op?"open":"dec"}">${esc(i["状態"])}</span><span>期限 ${esc(i["期限"])}</span></div>
+ <h3>${esc(i["論点"])}</h3><dl><dt>選択肢</dt><dd>${esc(i["選択肢"])}</dd></dl>
+ <div class="rec">${op?"<b>おすすめ</b>　"+esc(i["おすすめ"]):"<b>決定</b>　"+esc(i["決定"])}<br><span style="color:var(--ink2)">${esc(i["理由"])}</span></div>
+ <dl><dt>決める人</dt><dd>${esc(i["決める人"])}</dd><dt>止まっている作業</dt><dd>${esc(i["止まっている作業"])}</dd><dt>出典</dt><dd>${esc(i["出典"])}</dd></dl></div>`}).join(""):"<p>該当する論点はありません。</p>"}
+$("#issFilter").onchange=issues;$("#issCat").onchange=issues;issues();
+</script></body></html>
