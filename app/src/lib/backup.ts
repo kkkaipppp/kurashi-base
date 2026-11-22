@@ -12,7 +12,7 @@ export interface BackupFile {
   data: AppData;
 }
 
-export type Counts = Record<"transactions" | "events" | "recurring" | "categories" | CollectionKey, number>;
+export type Counts = Record<"transactions" | "events" | "recurring" | "categories" | "trips" | CollectionKey, number>;
 
 export function countData(d: AppData): Counts {
   const c = {
@@ -20,6 +20,7 @@ export function countData(d: AppData): Counts {
     events: d.events.length,
     recurring: d.recurring.length,
     categories: d.categories.length,
+    trips: (d.trips ?? []).length,
   } as Counts;
   for (const k of COLLECTION_KEYS) c[k] = d[k].length;
   return c;
@@ -31,6 +32,7 @@ export const COUNT_LABELS: Record<keyof Counts, string> = {
   events: "予定",
   recurring: "固定費",
   categories: "カテゴリ",
+  trips: "旅行",
   nisa: "NISAの記録",
   notes: "生活記録・メモ",
   tasks: "タスク",
@@ -182,6 +184,7 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
     categories,
     transactions: mergeList(current.transactions, incoming.transactions, { skipIf: (t) => badCat.has(t.categoryId) }),
     events: mergeList(current.events, incoming.events),
+    trips: mergeList(current.trips ?? [], incoming.trips ?? []),
     recurring: mergeList(current.recurring, incoming.recurring, { skipIf: (r) => badCat.has(r.categoryId) }),
     studySubjects: mergeList(current.studySubjects, incoming.studySubjects, { sameMeaning: (x, y) => x.name === y.name }),
     studyLogs: mergeList(current.studyLogs, incoming.studyLogs, { skipIf: (l) => badSubj.has(l.subjectId) }),

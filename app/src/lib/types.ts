@@ -34,11 +34,53 @@ export interface CalendarEvent {
   /** v2 で追加（任意）。繰り返しは1日の予定だけ。未指定は繰り返しなし */
   repeat?: EventRepeat;
   repeatUntil?: string; // 繰り返しの終了日（"" = 終わりなし）
+  /** v5 で追加（どれも任意。古い予定には無い） */
+  location?: string; // 場所（Googleマップの目的地にも使う）
+  url?: string; // 予約サイトなど（http/https のみ）
+  items?: CheckItem[]; // 持ち物
+  tripId?: string; // 旅行に入れた予定
+  kind?: EventKind; // 旅行の行程の種類
+  cost?: number | null; // かかりそうな費用（目安。支出の記録とは別）
   createdAt: string;
   updatedAt: string;
 }
 
 export type EventRepeat = "none" | "weekly" | "monthly" | "yearly";
+export type EventKind = "move" | "stay" | "sight" | "food" | "other";
+export const EVENT_KINDS: { id: EventKind; label: string }[] = [
+  { id: "move", label: "移動" },
+  { id: "stay", label: "宿泊" },
+  { id: "sight", label: "観光" },
+  { id: "food", label: "食事" },
+  { id: "other", label: "その他" },
+];
+
+export interface CheckItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+/** v5 で追加：旅行（複数日の行程）。行程は CalendarEvent.tripId でつなぐ */
+export interface Trip {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  destination: string;
+  budget: number | null;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** v5 で追加：資格の参考書（ユーザーが選んだものだけを保存） */
+export interface StudyBook {
+  id: string;
+  title: string;
+  url: string; // "" = なし
+  note: string;
+}
 
 export interface Category {
   id: string;
@@ -162,6 +204,9 @@ export interface StudySubject {
   examDate: string; // "" = 未定
   targetHours: number | null;
   archived: boolean;
+  /** v5 で追加（任意）：候補から選んだ資格の ID、参考書 */
+  catalogId?: string;
+  books?: StudyBook[];
   createdAt: string;
   updatedAt: string;
 }
@@ -214,6 +259,8 @@ export interface AppData extends Collections {
   events: CalendarEvent[];
   categories: Category[];
   recurring: RecurringExpense[];
+  /** v5 で追加。古いデータには無いので、読み込み時に空の一覧を足す（schema.ts の migrate） */
+  trips: Trip[];
   budget: { monthly: number | null }; // 毎月の支出予算（円）。null = 未設定
   prefs: { home: HomePrefs };
   meta: { createdAt: string; lastBackupAt: string | null };

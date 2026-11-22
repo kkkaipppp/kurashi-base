@@ -30,8 +30,37 @@ export function migrate(raw: unknown): unknown {
     // 通常の v1 には新しい一覧がないので空で足す。すでに値があれば消さずに残し、後の検証に任せる
     for (const k of COLLECTION_KEYS) if (d[k] === undefined) d[k] = [];
   }
+  // v5：旅行の一覧（無ければ空で足す。形式の番号は 2 のまま。古いアプリは知らない項目をそのまま残す）
+  if (d.schemaVersion === 2 && d.trips === undefined) d = { ...d, trips: [] };
   return d;
 }
+
+const isHttpOrBlank = (v: unknown) => {
+  if (!isStr(v)) return false;
+  if (v.trim() === "") return true;
+  try {
+    const u = new URL(v);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+const optional = (check: (v: unknown) => boolean) => (v: unknown) => v === undefined || check(v);
+const isCheckList = (v: unknown) =>
+  Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done));
+const isBookList = (v: unknown) =>
+  Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.title) && isHttpOrBlank(x.url) && isStr(x.note));
+const isMoneyOrNull = (v: unknown) => v === null || (Number.isInteger(v) && (v as number) >= 0 && (v as number) <= MAX_AMOUNT);
+
+/** v5 で予定に足した任意の項目（無くてもよい。あれば形を確かめる） */
+const EVENT_V5: Record<string, (v: unknown) => boolean> = {
+  location: optional(isStr),
+  url: optional(isHttpOrBlank),
+  items: optional(isCheckList),
+  tripId: optional(isStr),
+  kind: optional(oneOf("move", "stay", "sight", "food", "other")),
+  cost: optional(isMoneyOrNull),
+};
 
 // 追加した一覧ごとの項目チェック（順番は COLLECTION_KEYS に合わせる。studySubjects は studyLogs より前）
 const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: unknown) => boolean> }> = {
@@ -42,7 +71,7 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
   contracts: { label: "契約", fields: { name: isStr, provider: isStr, amount: numOrNull, cycle: oneOf("monthly", "yearly", "none"), renewalDate: okDateOrBlank, status: oneOf("active", "cancelled"), note: isStr } },
   health: { label: "健康記録", fields: { date: isDate, item: isStr, value: numOrNull, unit: isStr, note: isStr } },
   documents: { label: "書類", fields: { title: isStr, category: isStr, expiry: okDateOrBlank, place: isStr, note: isStr } },
-  studySubjects: { label: "勉強（資格）", fields: { name: isStr, examDate: okDateOrBlank, targetHours: (v) => v === null || (isNum(v) && (v as number) > 0), archived: isBool } },
+  studySubjects: { label: "勉強（資格）", fields: { name: isStr, examDate: okDateOrBlank, targetHours: (v) => v === null || (isNum(v) && (v as number) > 0), archived: isBool, catalogId: optional(isStr), books: optional(isBookList) } },
   studyLogs: { label: "勉強記録", fields: { subjectId: isStr, date: isDate, minutes: (v) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 1440, note: isStr } },
   goals: { label: "目標", fields: { title: isStr, deadline: okDateOrBlank, kind: oneOf("number", "check"), target: numOrNull, current: isNum, unit: isStr, done: isBool, note: isStr } },
 };
@@ -80,11 +109,23 @@ export function validateAppData(input: unknown): R {
       !isStr(e.endDate) || !isValidDateStr(e.endDate) || e.endDate < e.startDate || typeof e.allDay !== "boolean" ||
       (!e.allDay && (!isStr(e.startTime) || !isValidTimeStr(e.startTime) || !isStr(e.endTime) || !isValidTimeStr(e.endTime))) ||
       !(e.repeat === undefined || ["none", "weekly", "monthly", "yearly"].includes(e.repeat as string)) ||
-      !(e.repeatUntil === undefined || okDateOrBlank(e.repeatUntil))
+      !(e.repeatUntil === undefined || okDateOrBlank(e.repeatUntil)) ||
+      !Object.entries(EVENT_V5).every(([f, check]) => check(e[f]))
     )
       return { ok: false, error: "予定のデータが壊れています" };
     if (ids.has(e.id)) return { ok: false, error: "予定IDが重複しています" };
     ids.add(e.id);
+  }
+  if (!Array.isArray(raw.trips)) return { ok: false, error: "trips が見つかりません" };
+  const tripIds = new Set<string>();
+  for (const t of raw.trips as unknown[]) {
+    if (
+      !isObj(t) || !isStr(t.id) || !isStr(t.title) || !isDate(t.startDate) || !isDate(t.endDate) ||
+      (t.endDate as string) < (t.startDate as string) || !isStr(t.destination) || !isMoneyOrNull(t.budget) || !isStr(t.note)
+    )
+      return { ok: false, error: "旅行のデータが壊れています" };
+    if (tripIds.has(t.id)) return { ok: false, error: "旅行のIDが重複しています" };
+    tripIds.add(t.id);
   }
   const recurringIds = new Set<string>();
   for (const r of raw.recurring as unknown[]) {

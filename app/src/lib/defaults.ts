@@ -20,6 +20,7 @@ export function emptyData(nowIso: string = new Date().toISOString()): AppData {
     schemaVersion: 2,
     transactions: [],
     events: [],
+    trips: [],
     categories: defaultCategories(),
     recurring: [],
     budget: { monthly: null },
