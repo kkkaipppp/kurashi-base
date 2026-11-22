@@ -12,7 +12,7 @@ const caps = readdirSync(DIR, { withFileTypes: true })
   .sort((a, b) => (a.date + a.dir).localeCompare(b.date + b.dir));
 
 // 版の並び（古い→新しい）。同じ日付は撮った版の順（phase1 < v2 < v3 < v4 < v5）
-const ORDER = ["phase1", "v2", "v3", "v4-beta", "v5"];
+const ORDER = ["phase1", "v2", "v3", "v4-beta", "v5", "v5-fix", "go-ready"];
 caps.sort((a, b) => a.date.localeCompare(b.date) || (ORDER.indexOf(a.label) + 99) % 99 - (ORDER.indexOf(b.label) + 99) % 99);
 
 const index = caps.map((c) => ({ dir: c.dir, date: c.date, label: c.label, commit: c.commit, viewport: c.viewport, screens: Object.fromEntries(Object.entries(c.states).map(([s, list]) => [s, list.map((x) => ({ id: x.id, name: x.name, file: x.file ? `${c.dir}/${x.file}` : null, skipped: x.skipped ?? null, note: x.note ?? null }))])) }));

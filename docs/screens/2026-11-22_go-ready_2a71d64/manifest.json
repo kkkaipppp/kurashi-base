@@ -1,0 +1,177 @@
+{
+  "date": "2026-11-22",
+  "schema": 2,
+  "label": "go-ready",
+  "commit": "2a71d64",
+  "base": "http://localhost:3211",
+  "viewport": "375x812@2x",
+  "states": {
+    "empty": [
+      {
+        "id": "01_home",
+        "name": "ホーム",
+        "path": "/",
+        "file": "empty/01_home.jpg"
+      },
+      {
+        "id": "02_add",
+        "name": "＋（何を追加するか）",
+        "path": "/",
+        "file": "empty/02_add.jpg"
+      },
+      {
+        "id": "03_event_add",
+        "name": "予定を追加",
+        "path": "/",
+        "file": "empty/03_event_add.jpg"
+      },
+      {
+        "id": "05_calendar",
+        "name": "カレンダー",
+        "path": "/calendar",
+        "file": "empty/05_calendar.jpg"
+      },
+      {
+        "id": "06_report",
+        "name": "振り返り",
+        "path": "/report",
+        "file": "empty/06_report.jpg"
+      },
+      {
+        "id": "07_trips",
+        "name": "旅行",
+        "path": "/trips",
+        "file": "empty/07_trips.jpg"
+      },
+      {
+        "id": "09_study",
+        "name": "資格の学習",
+        "path": "/study",
+        "file": "empty/09_study.jpg"
+      },
+      {
+        "id": "10_menu",
+        "name": "メニュー",
+        "path": "/menu",
+        "file": "empty/10_menu.jpg"
+      },
+      {
+        "id": "11_guide",
+        "name": "使い方",
+        "path": "/guide",
+        "file": "empty/11_guide.jpg"
+      },
+      {
+        "id": "12_settings",
+        "name": "設定",
+        "path": "/settings",
+        "file": "empty/12_settings.jpg"
+      },
+      {
+        "id": "12b_backup",
+        "name": "バックアップと復元",
+        "path": "/settings",
+        "file": "empty/12b_backup.jpg"
+      },
+      {
+        "id": "13_history",
+        "name": "取引履歴",
+        "path": "/history",
+        "file": "empty/13_history.jpg"
+      }
+    ],
+    "sample": [
+      {
+        "id": "01_home",
+        "name": "ホーム",
+        "path": "/",
+        "file": "sample/01_home.jpg"
+      },
+      {
+        "id": "02_add",
+        "name": "＋（何を追加するか）",
+        "path": "/",
+        "file": "sample/02_add.jpg"
+      },
+      {
+        "id": "03_event_add",
+        "name": "予定を追加",
+        "path": "/",
+        "file": "sample/03_event_add.jpg"
+      },
+      {
+        "id": "04_event_detail",
+        "name": "予定の詳細",
+        "path": "/",
+        "file": "sample/04_event_detail.jpg"
+      },
+      {
+        "id": "04b_event_edit",
+        "name": "予定を編集",
+        "path": "/",
+        "file": "sample/04b_event_edit.jpg"
+      },
+      {
+        "id": "05_calendar",
+        "name": "カレンダー",
+        "path": "/calendar",
+        "file": "sample/05_calendar.jpg"
+      },
+      {
+        "id": "06_report",
+        "name": "振り返り",
+        "path": "/report",
+        "file": "sample/06_report.jpg"
+      },
+      {
+        "id": "07_trips",
+        "name": "旅行",
+        "path": "/trips",
+        "file": "sample/07_trips.jpg"
+      },
+      {
+        "id": "08_trip_detail",
+        "name": "旅行の詳細",
+        "path": "/trips?open=trip_sample_kyoto",
+        "file": "sample/08_trip_detail.jpg"
+      },
+      {
+        "id": "09_study",
+        "name": "資格の学習",
+        "path": "/study",
+        "file": "sample/09_study.jpg"
+      },
+      {
+        "id": "10_menu",
+        "name": "メニュー",
+        "path": "/menu",
+        "file": "sample/10_menu.jpg"
+      },
+      {
+        "id": "11_guide",
+        "name": "使い方",
+        "path": "/guide",
+        "file": "sample/11_guide.jpg"
+      },
+      {
+        "id": "12_settings",
+        "name": "設定",
+        "path": "/settings",
+        "file": "sample/12_settings.jpg"
+      },
+      {
+        "id": "12b_backup",
+        "name": "バックアップと復元",
+        "path": "/settings",
+        "file": "sample/12b_backup.jpg"
+      },
+      {
+        "id": "13_history",
+        "name": "取引履歴",
+        "path": "/history",
+        "file": "sample/13_history.jpg"
+      }
+    ]
+  },
+  "note": "サンプルデータは架空。撮影用の一時プロフィールの中だけに入れた"
+}
