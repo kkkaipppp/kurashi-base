@@ -401,9 +401,10 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
           <button
             type="button"
             onClick={() => setShowMore(true)}
-            className="flex min-h-11 w-full items-center justify-center rounded-xl border border-dashed border-line text-[14px] font-semibold text-brand hover:bg-brand-soft"
+            className="flex min-h-12 w-full flex-col items-center justify-center rounded-xl border border-dashed border-line py-1.5 text-brand hover:bg-brand-soft"
           >
-            ＋ 詳細を追加（場所・URL・メモ・持ち物・繰り返し）
+            <span className="text-[14px] font-semibold">＋ 詳細を追加</span>
+            <span className="text-[12px] text-ink-3">場所・URL・メモ・持ち物・繰り返し</span>
           </button>
         ) : (
           <div className="space-y-4 rounded-2xl bg-surface-2 p-3">

@@ -39,7 +39,7 @@ function seedFor(schema) {
 
 /** 撮る画面。act はページを開いたあとに行う操作（ボタンを押すなど）。無い画面（古い版）は飛ばす */
 // 開いているシート（role=dialog）があれば、その中のボタンを優先して押す
-const clickText = (text) => `(() => { const scope = [...document.querySelectorAll('[role=dialog]')].pop() ?? document; const b = [...scope.querySelectorAll('button,a')].find(e => e.textContent.trim().startsWith(${JSON.stringify(text)}) || e.getAttribute('aria-label')?.startsWith(${JSON.stringify(text)})); if (b) { b.click(); return true } return false })()`;
+const clickText = (text) => `(() => { const scope = [...document.querySelectorAll('[role=dialog]')].pop() ?? document; const b = [...scope.querySelectorAll('button,a')].find(e => e.textContent.trim().replace(/^[^\\p{L}\\p{N}]+/u, '').startsWith(${JSON.stringify(text)}) || e.getAttribute('aria-label')?.startsWith(${JSON.stringify(text)})); if (b) { b.click(); return true } return false })()`;
 const SCREENS = [
   { id: "01_home", name: "ホーム", path: "/" },
   { id: "02_add", name: "＋（何を追加するか）", path: "/", act: [clickText("追加する")] },
