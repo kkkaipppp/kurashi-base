@@ -15,7 +15,7 @@ export function eventMatchesSnapshot(current: CalendarEvent, snapshot: string): 
 }
 
 /** 競合したときの案内（入力は画面に残る） */
-export const RECORD_CONFLICT_ERROR = "ほかのタブ（または別の画面）でこの記録が変わっていたため、保存をやめました。入力した内容は残っています。いったん閉じて、最新の内容を開き直してから入力し直してください";
+export const RECORD_CONFLICT_ERROR = "ほかのタブ（または別の画面）でこの記録が変わっていたため、保存をやめました。入力した内容を控えてから、いったん閉じて最新の内容を開き直してください";
 
 /**
  * 保存してよいかを確かめる。snapshot が無ければ（新規・古い呼び出し）確かめない。
