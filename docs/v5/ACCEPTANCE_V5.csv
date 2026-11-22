@@ -9,7 +9,7 @@ HOME-007,HOME,P0,320px幅,横のはみ出しなし,manual,PASS（アプリ内ブ
 HOME-008,HOME,P0,初回ガイド,少ない操作で次に進める,manual,PASS（アプリ内ブラウザ）,はじめにやること（3手順、押すと移動）
 HOME-009,HOME,P0,保存データ,再読み込みでも同じ,manual,PASS（アプリ内ブラウザ）,再読み込みしても同じ記録
 HOME-010,HOME,P0,予算超過,符号と金額が正確,manual,PASS（既存テスト・今回変更なし）,remainingBudget・formatSignedYen
-HOME-011,HOME,P0,ホームから予定詳細,予定が開く,manual,PASS（アプリ内ブラウザ）,予定を押すと予定の詳細が開く
+HOME-011,HOME,P0,ホームから予定詳細,予定が開く,manual,PASS（アプリ内ブラウザ）,予定を押すと予定の詳細が開く。iPhone 実機でも確認（平尾さん 11-22）
 HOME-012,HOME,P0,戻る,適切な画面に戻る,manual,NOT_RUN,戻る操作で編集シートが残る既知の問題（BUG-07）
 CAL-001,CAL,P0,選択日引継ぎ,カレンダーで選んだ日を予定追加に引き継ぐ,manual,PASS（アプリ内ブラウザ）,旅行の2日目から追加→12/2が初期値。カレンダーの選択日の引き継ぎは前回確認
 CAL-002,CAL,P0,最小入力,タイトルと日時で保存,manual,PASS（アプリ内ブラウザ）,予定名と日時だけで保存できる（詳細は「詳細を追加」）
@@ -27,14 +27,14 @@ CAL-013,CAL,P0,編集,編集して即反映,manual,PASS（アプリ内ブラウ�
 CAL-014,CAL,P0,削除,指定予定だけ消える,manual,PASS（コードの確認。画面では未操作）,deleteEvent は指定した予定だけ消す
 CAL-015,CAL,P0,費用関連,取引を勝手に削除しない,manual,PASS（コードの確認。画面では未操作）,予定を消しても支出は消さない（確認の文にも明記）
 CAL-016,CAL,P0,未保存警告,入力を守る,manual,PASS（コードの確認。画面では未操作）,未保存の入力は破棄の確認
-CAL-017,CAL,P0,iPhoneキーボード,保存ボタンをタップできる,manual,NOT_RUN,11-22 に平尾さんが実機で確認済みだが、v5 で予定の入力欄が増えたため再確認が必要
-CAL-018,CAL,P0,日付ピッカー,iPhoneで選択できる,manual,NOT_RUN,iPhone 実機
+CAL-017,CAL,P0,iPhoneキーボード,保存ボタンをタップできる,manual,PASS（iPhone 実機・平尾さん 11-22）,予定の入力でキーボード表示中も保存できた
+CAL-018,CAL,P0,日付ピッカー,iPhoneで選択できる,manual,PASS（iPhone 実機・平尾さん 11-22）,日付を選ぶ画面で選べた
 CAL-019,CAL,P0,旧データ,追加項目がなくても表示可能,manual,PASS（自動テスト）,v4 の予定（追加項目なし）がそのまま読める
 CAL-020,CAL,P0,Google終日リンク,終了日翌日の排他的区間,manual,PASS（自動テスト）,終了日の翌日（排他的）
 CAL-021,CAL,P0,Google時刻リンク,JSTが一致,manual,PASS（自動テスト）,Asia/Tokyo を指定
 CAL-022,CAL,P0,Google同期誤解,「同期しました」と表示しない,manual,PASS（自動テスト）,「同期しました」「登録完了」を使わない見張りテスト
-TRIP-001,TRIP,P1,旅行作成,タイトルと開始終了日だけで作れる,manual,PASS（アプリ内ブラウザ）,名前と開始・終了日で作れる（行き先・予算は任意）
-TRIP-002,TRIP,P1,行程,日付ごとに表示,manual,PASS（アプリ内ブラウザ）,1日目〜3日目に分けて表示
+TRIP-001,TRIP,P1,旅行作成,タイトルと開始終了日だけで作れる,manual,PASS（アプリ内ブラウザ）,名前と開始・終了日で作れる（行き先・予算は任意）。iPhone 実機でも確認（平尾さん 11-22）
+TRIP-002,TRIP,P1,行程,日付ごとに表示,manual,PASS（アプリ内ブラウザ）,1日目〜3日目に分けて表示。iPhone 実機でも確認（平尾さん 11-22）
 TRIP-003,TRIP,P1,宿泊,ホテルを日別に扱える,manual,PASS（コードの確認。画面では未操作）,行程の種類「宿泊」、複数日の予定は各日に出る
 TRIP-004,TRIP,P1,交通,電車や飛行機の時刻を表示,manual,PASS（コードの確認。画面では未操作）,行程の行に時刻を表示
 TRIP-005,TRIP,P1,リンク,予約先へ移動,manual,PASS（コードの確認。画面では未操作）,予定の詳細「登録したページを開く」（http/https のみ）
@@ -43,13 +43,13 @@ TRIP-007,TRIP,P1,GoogleMaps,行き先入りの経路検索,manual,PASS（アプ�
 TRIP-008,TRIP,P1,交通モード,公共交通/徒歩/車を選べる,manual,PASS（コードの確認。画面では未操作）,電車やバス・車・歩いての3つ
 TRIP-009,TRIP,P1,Web検索,入力語のみ送信,manual,PASS（アプリ内ブラウザ）,入力した言葉だけが q= に入る
 TRIP-010,TRIP,P1,検索空白,検索をしない,manual,PASS（自動テスト）,空なら URL を作らず、ボタンも押せない
-TRIP-011,TRIP,P1,Googleカレンダー,新規イベント候補を開く,manual,PASS（アプリ内ブラウザ）,Googleカレンダーの作成画面の URL（日時・場所）を確認
-TRIP-012,TRIP,P1,外部戻る,元の旅行へ戻れる,manual,NOT_RUN,iPhone Safari で外部サイトから戻る操作
+TRIP-011,TRIP,P1,Googleカレンダー,新規イベント候補を開く,manual,PASS（アプリ内ブラウザ）,Googleカレンダーの作成画面の URL（日時・場所）を確認。iPhone 実機でも確認（平尾さん 11-22）
+TRIP-012,TRIP,P1,外部戻る,元の旅行へ戻れる,manual,PASS（iPhone 実機・平尾さん 11-22）,Googleマップを開いて Safari の戻るでアプリに戻れた
 TRIP-013,TRIP,P1,関連支出,任意で関連付けられる,manual,NOT_DONE,支出と旅行のひも付けは未実装（行程の「費用の目安」だけ）
 TRIP-014,TRIP,P1,旅行削除,独立の収支を消さない,manual,PASS（コードの確認。画面では未操作）,旅行を消しても行程の予定・支出は残る（予定は旅行から外れる）
 TRIP-015,TRIP,P1,320px詳細,横スクロールなし,manual,PASS（アプリ内ブラウザ）,320px ではみ出しなし
 STUDY-001,STUDY,P1,有名候補,20件が表示,manual,PASS（アプリ内ブラウザ）,候補20件を分野ごとに表示
-STUDY-002,STUDY,P1,部分一致,簿記で候補が出る,manual,PASS（アプリ内ブラウザ）,「簿記」で日商簿記1〜3級
+STUDY-002,STUDY,P1,部分一致,簿記で候補が出る,manual,PASS（アプリ内ブラウザ）,「簿記」で日商簿記1〜3級。iPhone 実機でも確認（平尾さん 11-22）
 STUDY-003,STUDY,P1,別名,FEで基本情報が出る,manual,PASS（自動テスト）,FE・基本情報で基本情報技術者
 STUDY-004,STUDY,P1,未登録資格,自由入力できる,manual,PASS（コードの確認。画面では未操作）,「○○」を自分で登録する
 STUDY-005,STUDY,P1,出典付き学習時間,簿記3級80-100が表示,manual,PASS（アプリ内ブラウザ）,簿記3級：80〜100時間（出典：TAC）
@@ -58,7 +58,7 @@ STUDY-007,STUDY,P1,手動編集,目標を変更できる,manual,PASS（アプリ
 STUDY-008,STUDY,P1,受験日なし,日割りを無理に出さない,manual,PASS（自動テスト）,試験日なし→「試験日を入れると…」
 STUDY-009,STUDY,P1,受験当日,ゼロ除算しない,manual,PASS（自動テスト）,当日は割り算しない
 STUDY-010,STUDY,P1,受験日過去,過去扱い,manual,PASS（自動テスト）,過去は「試験日を確認してください」
-STUDY-011,STUDY,P1,勉強記録,合計が更新,manual,PASS（アプリ内ブラウザ）,＋30分→累計・今日・この7日間が更新
+STUDY-011,STUDY,P1,勉強記録,合計が更新,manual,PASS（アプリ内ブラウザ）,＋30分→累計・今日・この7日間が更新。iPhone 実機でも確認（平尾さん 11-22）
 STUDY-012,STUDY,P1,勉強記録削除,合計から減る,manual,PASS（コードの確認。画面では未操作）,記録から毎回計算し直す
 STUDY-013,STUDY,P1,学習計画,10分刻みで算出,manual,PASS（自動テスト）,10分単位で切り上げ（30日・100時間→3時間20分）
 STUDY-014,STUDY,P1,参考書検索,実在するAmazon検索へ,manual,PASS（自動テスト）,Amazon の検索ページ（stripbooks）
