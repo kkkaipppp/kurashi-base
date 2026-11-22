@@ -237,6 +237,8 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
     [editing],
   );
   const [f, setF] = useState(initial);
+  // 編集を始めたときの記録。保存の直前に今の記録と比べ、別のタブで変わっていたら上書きしない
+  const editSnapshot = useRef(editing ? JSON.stringify(editing) : undefined);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const lock = useRef(false);
@@ -269,7 +271,7 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
     if (Object.keys(e).length) return setErrors(e);
     lock.current = true;
     const input: TripInput = { title: f.title.trim(), startDate: f.startDate, endDate: f.endDate, destination: f.destination.trim(), budget, note: f.note.trim() };
-    const r = editing ? store.updateTrip(editing.id, input) : store.addTrip(input);
+    const r = editing ? store.updateTrip(editing.id, input, editSnapshot.current) : store.addTrip(input);
     if (!r.ok) {
       lock.current = false;
       return setSaveError(r.error);

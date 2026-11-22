@@ -68,6 +68,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   const [saveError, setSaveError] = useState<string | null>(null);
   const [dups, setDups] = useState<DupCandidate[] | null>(null);
   const [busy, setBusy] = useState(false);
+  // 編集を始めたときの記録。保存の直前に今の記録と比べ、別のタブで変わっていたら上書きしない
+  const editSnapshot = useRef(editing ? JSON.stringify(editing) : undefined);
   const lock = useRef(false); // 連続タップでの二重保存防止
   const saved = useRef(false);
 
@@ -129,7 +131,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           return;
         }
       }
-      const r = editing ? store.updateTx(editing.id, input) : store.addTx(input);
+      const r = editing ? store.updateTx(editing.id, input, editSnapshot.current) : store.addTx(input);
       if (!r.ok) {
         setSaveError(r.error); // 入力は保持したまま
         return;

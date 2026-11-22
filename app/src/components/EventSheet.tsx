@@ -195,7 +195,7 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
               Googleカレンダーで予定を作る
             </a>
           )}
-          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーの予定を作る画面が開き、予定名・日時・場所だけを渡します（メモとURLは渡しません）。Google の画面で「保存」を押すと登録されます。このアプリとは連動しません。</p>}
+          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーが開きます。予定名・日時・場所だけを渡すので、確かめてから Google の画面で「保存」を押すと登録されます（このアプリとは連動しません）。</p>}
         </div>
         {ev.repeat && ev.repeat !== "none" && (
           <p className="text-[12px] text-ink-3">繰り返しの予定です。編集・削除は、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。</p>
@@ -226,6 +226,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
   }, []);
   const initialExtra = useMemo(() => extraOf(editing, newReq?.tripId ?? ""), []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const initialEventSnapshot = useRef(editing ? JSON.stringify(editing) : undefined);
   const [draft, setDraft] = useState<EventDraft>(initial);
   const [extra, setExtra] = useState<Extra>(initialExtra);
   const [showMore, setShowMore] = useState(hasExtra(initialExtra, initial));
@@ -301,7 +302,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       };
       // undefined の項目は保存しない（JSON に残さない）
       for (const k of Object.keys(input) as (keyof typeof input)[]) if (input[k] === undefined) delete input[k];
-      const r = editing ? store.updateEvent(editing.id, input) : store.addEvent(input);
+      const r = editing ? store.updateEvent(editing.id, input, initialEventSnapshot.current) : store.addEvent(input);
       if (!r.ok) {
         setSaveError(r.error);
         return;

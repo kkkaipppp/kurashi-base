@@ -210,6 +210,8 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
   const fields = typeof config.fields === "function" ? config.fields({ data }) : config.fields;
   const [draft, setDraft] = useState<Draft>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // 編集を始めたときの記録。保存の直前に今の記録と比べ、別のタブで変わっていたら上書きしない
+  const editSnapshot = useRef(cur ? JSON.stringify(cur) : undefined);
   const lock = useRef(false);
   const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
 
@@ -231,7 +233,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
     if (Object.keys(real).length) return;
     lock.current = true;
     const item = config.fromDraft(draft);
-    const r = cur ? store.updateItem(config.key, (cur as { id: string }).id, item) : store.addItem(config.key, item);
+    const r = cur ? store.updateItem(config.key, (cur as { id: string }).id, item, editSnapshot.current) : store.addItem(config.key, item);
     if (!r.ok) {
       lock.current = false;
       ui.toast(r.error, "error");

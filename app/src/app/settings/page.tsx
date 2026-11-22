@@ -133,17 +133,18 @@ export default function SettingsPage() {
   // --- 全削除 ---
   const wipe = async () => {
     const ok = await ui.confirm({
-      title: "すべてのデータを削除しますか？",
+      title: "この端末の記録をすべて削除しますか？",
       body: `${Object.entries(countData(data))
         .filter(([k, n]) => k !== "categories" && n > 0)
         .map(([k, n]) => `${COUNT_LABELS[k as keyof typeof COUNT_LABELS]}${n}件`)
-        .join("・") || "記録"}と設定を、この端末から削除します。元に戻せません。`,
+        .join("・") || "記録"}と設定を、この端末から削除します。「直前の操作を取り消す」の控えも消えるので、元に戻せません。
+残しておきたい記録があれば、先に「バックアップを書き出す」でファイルに保存してください。`,
       ok: "すべて削除",
       danger: true,
     });
     if (!ok) return;
     const r = store.wipeAll(emptyData());
-    if (r.ok) ui.toast("すべてのデータを削除しました");
+    if (r.ok) ui.toast("この端末の記録をすべて削除しました");
     else ui.toast(r.error, "error");
   };
 
@@ -274,7 +275,7 @@ export default function SettingsPage() {
               </p>
             ))}
             <fieldset className="space-y-1">
-              <legend className="text-[13px] font-semibold text-ink-2">反映のしかた</legend>
+              <legend className="text-[13px] font-semibold text-ink-2">復元方法を選ぶ</legend>
               <label className="flex min-h-11 items-center gap-2">
                 <input type="radio" name="restore-mode" checked={mode === "merge"} onChange={() => setMode("merge")} className="size-5 accent-[var(--brand)]" />
                 今のデータに追加する（同じデータは二重に入れない）
@@ -341,7 +342,7 @@ export default function SettingsPage() {
           <li>取り込んだ画像は保存しません（同じ画像かどうかを確かめるために、画像から計算した値だけを保存します）。</li>
         </ul>
         <Button variant="danger" onClick={wipe} className="w-full">
-          すべてのデータを削除
+          この端末の記録をすべて削除
         </Button>
       </Card>
 

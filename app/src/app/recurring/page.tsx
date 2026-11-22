@@ -110,6 +110,8 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
   const [pay, setPay] = useState(cur?.paymentMethod ?? "");
   const [active, setActive] = useState(cur?.active ?? true);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // 編集を始めたときの記録。保存の直前に今の記録と比べ、別のタブで変わっていたら上書きしない
+  const editSnapshot = useRef(cur ? JSON.stringify(cur) : undefined);
   const lock = useRef(false);
 
   const save = () => {
@@ -134,7 +136,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
       paymentMethod: pay,
       active,
     };
-    const r = cur ? store.updateRecurring(cur.id, input) : store.addRecurring(input);
+    const r = cur ? store.updateRecurring(cur.id, input, editSnapshot.current) : store.addRecurring(input);
     if (!r.ok) {
       lock.current = false;
       return ui.toast(r.error, "error");

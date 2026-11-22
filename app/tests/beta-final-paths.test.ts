@@ -34,7 +34,7 @@ describe("容量不足でも、既存の記録は開ける（P0-3：実際のブ
 describe("予定の編集で空にした詳細が戻らない（P0-1：ストアの更新の道）", () => {
   const store = readFileSync(join(__dirname, "..", "src", "lib", "store.tsx"), "utf8");
   it("updateEvent は古い予定に重ねず、編集できる項目をすべて置き換える", () => {
-    const fn = store.slice(store.indexOf("updateEvent: (id, e) =>"), store.indexOf("deleteEvent: (id)"));
+    const fn = store.slice(store.indexOf("updateEvent: (id, e"), store.indexOf("deleteEvent: (id)"));
     expect(fn).toContain("replaceEventEditableFields");
     expect(fn).not.toMatch(/\{\s*\.\.\.x,\s*\.\.\.e/);
   });

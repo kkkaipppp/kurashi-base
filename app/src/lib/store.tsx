@@ -4,7 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { newId } from "./defaults";
 import { advanceDueDate } from "./recurring";
 import { replaceEventEditableFields } from "./eventMerge";
-import { clearUndo, loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
+import { staleRecordError } from "./eventConcurrency";
+import { loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, wipeAllAppData, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot, type WipeResult } from "./storage";
 import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
 
 export type TxInput = Omit<Transaction, "id" | "createdAt" | "updatedAt" | "currency">;
@@ -26,19 +27,20 @@ interface Store {
   data: AppData | null;
   commit: (fn: (d: AppData) => AppData) => SaveResult;
   addTx: (t: TxInput) => SaveResult & { id?: string };
-  updateTx: (id: string, t: TxInput) => SaveResult;
+  /** snapshot：編集を始めたときの記録の JSON。今の記録と違えば保存しない（別タブとの競合） */
+  updateTx: (id: string, t: TxInput, snapshot?: string) => SaveResult;
   deleteTx: (id: string) => SaveResult;
   addEvent: (e: EventInput) => SaveResult & { id?: string };
-  updateEvent: (id: string, e: EventInput) => SaveResult;
+  updateEvent: (id: string, e: EventInput, snapshot?: string) => SaveResult;
   deleteEvent: (id: string) => SaveResult;
   /** 持ち物のチェックを切り替える（予定の詳細から） */
   toggleEventItem: (eventId: string, itemId: string) => SaveResult;
   addTrip: (t: TripInput) => SaveResult & { id?: string };
-  updateTrip: (id: string, t: TripInput) => SaveResult;
+  updateTrip: (id: string, t: TripInput, snapshot?: string) => SaveResult;
   /** 旅行を消しても、行程の予定と支出は消さない（予定は旅行から外れるだけ） */
   deleteTrip: (id: string) => SaveResult;
   addRecurring: (r: RecurringInput) => SaveResult;
-  updateRecurring: (id: string, r: RecurringInput) => SaveResult;
+  updateRecurring: (id: string, r: RecurringInput, snapshot?: string) => SaveResult;
   deleteRecurring: (id: string) => SaveResult;
   setBudget: (monthly: number | null) => SaveResult;
   setHomePref: (key: keyof HomePrefs, v: boolean) => SaveResult;
@@ -51,7 +53,7 @@ interface Store {
   undoInfo: () => UndoSnapshot | null;
   undoLast: () => SaveResult;
   addItem: <K extends CollectionKey>(k: K, item: ItemInput<K>) => SaveResult;
-  updateItem: <K extends CollectionKey>(k: K, id: string, patch: Partial<ItemInput<K>>) => SaveResult;
+  updateItem: <K extends CollectionKey>(k: K, id: string, patch: Partial<ItemInput<K>>, snapshot?: string) => SaveResult;
   removeItem: (k: CollectionKey, id: string) => SaveResult;
   removeStudySubject: (id: string) => SaveResult;
   resetCorrupt: () => SaveResult;
@@ -100,7 +102,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   /** 保存の結果を画面に反映する。ほかのタブで変わっていたら、最新を読み込み直す（入力中のシートはそのまま） */
   const finish = useCallback(
-    (next: AppData, r: GuardedSaveResult): SaveResult => {
+    (next: AppData, r: GuardedSaveResult | WipeResult): SaveResult => {
       if (r.ok) {
         persistedRawRef.current = r.persistedRaw;
         dataRef.current = next;
@@ -123,6 +125,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const store = useMemo<Store>(() => {
     const now = () => new Date().toISOString();
+    /** 編集を始めたときから、その記録が変わっていないか（変わっていれば保存しない理由を返す） */
+    const staleCheck = (list: readonly { id: string }[] | undefined, id: string, snapshot?: string): SaveResult | null => {
+      const error = staleRecordError(list, id, snapshot); // recordMatchesSnapshot(current, snapshot) で今の記録と比べる
+      return error ? { ok: false, error } : null;
+    };
     return {
       status: state.status,
       error: state.error,
@@ -146,7 +153,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         });
         return r.ok ? { ...r, id } : r;
       },
-      updateTx: (id, t) =>
+      updateTx: (id, t, snapshot) =>
+        staleCheck(dataRef.current?.transactions, id, snapshot) ??
         commit((d) => ({
           ...d,
           transactions: d.transactions.map((x) => (x.id === id ? { ...x, ...t, id, updatedAt: now() } : x)),
@@ -158,7 +166,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const r = commit((d) => ({ ...d, events: [...d.events, { ...e, id, createdAt: ts, updatedAt: ts }] }));
         return r.ok ? { ...r, id } : r;
       },
-      updateEvent: (id, e) =>
+      updateEvent: (id, e, snapshot) =>
+        staleCheck(dataRef.current?.events, id, snapshot) ??
         commit((d) => ({
           ...d,
           events: d.events.map((x) => (x.id === id ? replaceEventEditableFields(x, e, now()) : x)),
@@ -177,7 +186,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const r = commit((d) => ({ ...d, trips: [...(d.trips ?? []), { ...t, id, createdAt: ts, updatedAt: ts }] }));
         return r.ok ? { ...r, id } : r;
       },
-      updateTrip: (id, t) =>
+      updateTrip: (id, t, snapshot) =>
+        staleCheck(dataRef.current?.trips, id, snapshot) ??
         commit((d) => ({ ...d, trips: (d.trips ?? []).map((x) => (x.id === id ? { ...x, ...t, id, updatedAt: now() } : x)) })),
       deleteTrip: (id) =>
         commit((d) => ({
@@ -193,7 +203,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const ts = now();
         return commit((d) => ({ ...d, recurring: [...d.recurring, { ...rc, id: newId("rc"), createdAt: ts, updatedAt: ts }] }));
       },
-      updateRecurring: (id, rc) =>
+      updateRecurring: (id, rc, snapshot) =>
+        staleCheck(dataRef.current?.recurring, id, snapshot) ??
         commit((d) => ({ ...d, recurring: d.recurring.map((x) => (x.id === id ? { ...x, ...rc, id, updatedAt: now() } : x)) })),
       deleteRecurring: (id) => commit((d) => ({ ...d, recurring: d.recurring.filter((x) => x.id !== id) })),
       setBudget: (monthly) => commit((d) => ({ ...d, budget: { monthly } })),
@@ -213,9 +224,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return finish(next, saveWithUndo(next, persistedRawRef.current, reason, now()));
       },
       wipeAll: (empty) => {
-        const r = commit(() => empty);
-        if (r.ok) clearUndo();
-        return r;
+        // 本体・取り消しの控え・壊れたデータの退避分（kurashi-base: で始まるキー）を消し、残っていないことを確かめる。
+        // 消しきれなければ成功と言わず、戻せるものは戻す（ほかのアプリのキーには触れない）
+        const r = wipeAllAppData(persistedRawRef.current);
+        return finish(empty, r);
       },
       undoInfo: () => readUndo(),
       undoLast: () => {
@@ -228,7 +240,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const ts = now();
         return commit((d) => ({ ...d, [k]: [...d[k], { ...item, id: newId(ID_PREFIX[k]), createdAt: ts, updatedAt: ts }] }));
       },
-      updateItem: (k, id, patch) =>
+      updateItem: (k, id, patch, snapshot) =>
+        staleCheck(dataRef.current?.[k] as { id: string }[] | undefined, id, snapshot) ??
         commit((d) => ({
           ...d,
           [k]: (d[k] as { id: string }[]).map((x) => (x.id === id ? { ...x, ...patch, id, updatedAt: now() } : x)),
