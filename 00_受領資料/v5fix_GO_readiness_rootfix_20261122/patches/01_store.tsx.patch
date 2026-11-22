@@ -1,0 +1,66 @@
+--- a/app/src/lib/store.tsx
++++ b/app/src/lib/store.tsx
+@@ -4,7 +4,8 @@
+ import { newId } from "./defaults";
+ import { advanceDueDate } from "./recurring";
+ import { replaceEventEditableFields } from "./eventMerge";
+-import { clearUndo, loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
++import { eventMatchesSnapshot } from "./eventConcurrency";
++import { wipeAllAppData, loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
+ import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
+ 
+ export type TxInput = Omit<Transaction, "id" | "createdAt" | "updatedAt" | "currency">;
+@@ -29,7 +30,7 @@
+   updateTx: (id: string, t: TxInput) => SaveResult;
+   deleteTx: (id: string) => SaveResult;
+   addEvent: (e: EventInput) => SaveResult & { id?: string };
+-  updateEvent: (id: string, e: EventInput) => SaveResult;
++  updateEvent: (id: string, e: EventInput, expectedSnapshot?: string) => SaveResult;
+   deleteEvent: (id: string) => SaveResult;
+   /** 持ち物のチェックを切り替える（予定の詳細から） */
+   toggleEventItem: (eventId: string, itemId: string) => SaveResult;
+@@ -100,7 +101,7 @@
+ 
+   /** 保存の結果を画面に反映する。ほかのタブで変わっていたら、最新を読み込み直す（入力中のシートはそのまま） */
+   const finish = useCallback(
+-    (next: AppData, r: GuardedSaveResult): SaveResult => {
++    (next: AppData, r: GuardedSaveResult | WipeResult): SaveResult => {
+       if (r.ok) {
+         persistedRawRef.current = r.persistedRaw;
+         dataRef.current = next;
+@@ -158,11 +159,18 @@
+         const r = commit((d) => ({ ...d, events: [...d.events, { ...e, id, createdAt: ts, updatedAt: ts }] }));
+         return r.ok ? { ...r, id } : r;
+       },
+-      updateEvent: (id, e) =>
+-        commit((d) => ({
++      updateEvent: (id, e, expectedSnapshot) => {
++        const current = dataRef.current?.events.find((x) => x.id === id);
++        if (!current) return { ok: false, error: "この予定はすでに削除されています。画面を開き直してください" };
++        // 編集フォームを開いた時点の内容と比較し、別タブでの編集を黙って上書きしない。
++        if (expectedSnapshot !== undefined && !eventMatchesSnapshot(current, expectedSnapshot)) {
++          return { ok: false, error: "ほかのタブでこの予定が変更されました。入力内容を控えてから、いったん閉じて最新の予定を開き直してください" };
++        }
++        return commit((d) => ({
+           ...d,
+           events: d.events.map((x) => (x.id === id ? replaceEventEditableFields(x, e, now()) : x)),
+-        })),
++        }));
++      },
+       deleteEvent: (id) => commit((d) => ({ ...d, events: d.events.filter((x) => x.id !== id) })),
+       toggleEventItem: (eventId, itemId) =>
+         commit((d) => ({
+@@ -213,9 +221,10 @@
+         return finish(next, saveWithUndo(next, persistedRawRef.current, reason, now()));
+       },
+       wipeAll: (empty) => {
+-        const r = commit(() => empty);
+-        if (r.ok) clearUndo();
+-        return r;
++        // 取り消し用控え・破損データ退避分も含めて完了検証する。
++        // 消去できなかった場合は成功と伝えず、保持済みデータの表示を維持する。
++        const r = wipeAllAppData(persistedRawRef.current);
++        return finish(empty, r);
+       },
+       undoInfo: () => readUndo(),
+       undoLast: () => {

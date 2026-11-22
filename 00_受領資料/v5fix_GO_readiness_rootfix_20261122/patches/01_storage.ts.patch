@@ -1,0 +1,92 @@
+--- a/app/src/lib/storage.ts
++++ b/app/src/lib/storage.ts
+@@ -11,6 +11,8 @@
+   | { status: "unavailable"; error: string };
+ 
+ export interface KV {
++  readonly length?: number;
++  key?(index: number): string | null;
+   getItem(k: string): string | null;
+   setItem(k: string, v: string): void;
+   removeItem(k: string): void;
+@@ -57,7 +59,7 @@
+     return { ok: true };
+   } catch (e) {
+     const quota = e instanceof DOMException && (e.name === "QuotaExceededError" || e.code === 22);
+-    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。設定の「バックアップを書き出す」でファイルに保存してから、Safari の使っていないサイトのデータを消してください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
++    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。このアプリのサイトデータを削除せず、先に「設定」からバックアップを書き出してください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
+   }
+ }
+ 
+@@ -80,7 +82,7 @@
+     return { ok: true, persistedRaw: raw };
+   } catch (e) {
+     const quota = typeof DOMException !== "undefined" && e instanceof DOMException && (e.name === "QuotaExceededError" || e.code === 22);
+-    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。設定の「バックアップを書き出す」でファイルに保存してから、Safari の使っていないサイトのデータを消してください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
++    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。このアプリのサイトデータを削除せず、先に「設定」からバックアップを書き出してください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
+   }
+ }
+ 
+@@ -171,6 +173,62 @@
+   }
+ }
+ 
++/**
++ * 「すべて削除」専用。既存の全アプリキーを列挙し、残存確認してから成功を返す。
++ * localStorage はトランザクションでないので、失敗時は可能な範囲で巻き戻し、
++ * 不完全な削除を成功として扱わない。
++ */
++export type WipeResult = { ok: true; persistedRaw: null } | { ok: false; error: string; conflict?: true };
++export function wipeAllAppData(expectedRaw: string | null, kv: KV | null = getLocal()): WipeResult {
++  if (!kv || typeof kv.key !== "function" || typeof kv.length !== "number") {
++    return { ok: false, error: "削除対象の確認ができませんでした。データは変更していません" };
++  }
++  const prior = new Map<string, string>();
++  try {
++    if (kv.getItem(STORAGE_KEY) !== expectedRaw) return { ok: false, error: CONFLICT_ERROR, conflict: true };
++    // remove 中に length が変わるため、先にすべての対象キーを確定する。
++    for (let i = 0; i < kv.length; i++) {
++      const key = kv.key(i);
++      if (key?.startsWith("kurashi-base:")) {
++        const raw = kv.getItem(key);
++        if (raw !== null) prior.set(key, raw);
++      }
++    }
++  } catch {
++    return { ok: false, error: "削除対象を読み込めませんでした。データは変更していません" };
++  }
++  // 同じオリジン上の他アプリのキーは絶対に消さない。
++  const keys = [...prior.keys()].filter((key) => key !== STORAGE_KEY);
++  if (prior.has(STORAGE_KEY)) keys.push(STORAGE_KEY); // 本体は最後に削除
++  try {
++    for (const key of keys) {
++      if (key === STORAGE_KEY && kv.getItem(STORAGE_KEY) !== expectedRaw) {
++        throw new Error("another-tab-wrote");
++      }
++      kv.removeItem(key);
++      if (kv.getItem(key) !== null) throw new Error("still-exists");
++    }
++    // 書き込みではなく全件チェックなので、読み取り可能な限り必ず確認する。
++    for (let i = 0; i < kv.length; i++) {
++      if (kv.key(i)?.startsWith("kurashi-base:")) throw new Error("remaining-app-data");
++    }
++    return { ok: true, persistedRaw: null };
++  } catch {
++    const failures: string[] = [];
++    for (const [key, raw] of prior) {
++      try {
++        const actual = kv.getItem(key);
++        // 別タブが新しい内容を書いた場合は、古いスナップショットで上書きしない。
++        if (actual !== null && actual !== raw) { failures.push(key); continue; }
++        if (actual !== raw) kv.setItem(key, raw);
++        if (kv.getItem(key) !== raw) failures.push(key);
++      } catch { failures.push(key); }
++    }
++    if (failures.length) return { ok: false, error: "削除を完了できず、元のデータもすべては戻せませんでした。画面を閉じず、残っている記録をバックアップしてください" };
++    return { ok: false, error: "削除できませんでした。元の記録は復旧しました。再度お試しください" };
++  }
++}
++
+ /** 破損データを退避してから初期化する（元の文字列は別キーに残す） */
+ export function quarantineAndReset(raw: string, kv: KV | null = getLocal()): SaveResult {
+   if (!kv) return { ok: false, error: "保存場所を使えません" };

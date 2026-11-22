@@ -1,0 +1,19 @@
+--- a/app/src/components/EventSheet.tsx
++++ b/app/src/components/EventSheet.tsx
+@@ -226,6 +226,7 @@
+   }, []);
+   const initialExtra = useMemo(() => extraOf(editing, newReq?.tripId ?? ""), []); // eslint-disable-line react-hooks/exhaustive-deps
+ 
++  const initialEventSnapshot = useRef(editing ? JSON.stringify(editing) : undefined);
+   const [draft, setDraft] = useState<EventDraft>(initial);
+   const [extra, setExtra] = useState<Extra>(initialExtra);
+   const [showMore, setShowMore] = useState(hasExtra(initialExtra, initial));
+@@ -301,7 +302,7 @@
+       };
+       // undefined の項目は保存しない（JSON に残さない）
+       for (const k of Object.keys(input) as (keyof typeof input)[]) if (input[k] === undefined) delete input[k];
+-      const r = editing ? store.updateEvent(editing.id, input) : store.addEvent(input);
++      const r = editing ? store.updateEvent(editing.id, input, initialEventSnapshot.current) : store.addEvent(input);
+       if (!r.ok) {
+         setSaveError(r.error);
+         return;
