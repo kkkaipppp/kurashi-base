@@ -46,8 +46,13 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
   const [mode, setMode] = useState<"view" | "edit" | "new">(req.mode);
   const id = req.mode === "new" ? undefined : req.id;
   const ev = id ? data.events.find((e) => e.id === id) : undefined;
+  // 編集中に別タブで削除されてもフォームをアンマウントしない。
+  // 初回の記録を保持し、保存時にはストア側の競合検出で拒否する。
+  const [originalEvent] = useState<CalendarEvent | undefined>(ev);
+  const editingEvent = ev ?? originalEvent;
 
-  if (id && !ev) {
+  // 詳細を見ている間に消されたときは、入力の画面（新規）に化けさせず「見つかりません」を出す
+  if (id && (!editingEvent || (mode === "view" && !ev))) {
     return (
       <Sheet title="予定" open onRequestClose={onClose}>
         <p className="text-ink-2">この予定は見つかりません（削除された可能性があります）。</p>
@@ -55,7 +60,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
     );
   }
   if (mode === "view" && ev) return <EventDetail ev={ev} onClose={onClose} onEdit={() => setMode("edit")} />;
-  return <EventForm editing={mode === "edit" ? ev : undefined} req={req} onClose={onClose} />;
+  return <EventForm editing={mode === "edit" ? editingEvent : undefined} req={req} onClose={onClose} />;
 }
 
 /* ---------------- 予定の詳細 ---------------- */
@@ -176,10 +181,10 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
                 行き方を調べる（Googleマップ・電車やバス）
               </a>
               <div className="mt-1 flex justify-center gap-4 text-[13px]">
-                <a href={mapsDirections(ev.location!, "driving")!} target="_blank" rel="noopener noreferrer" className="min-h-9 py-2 font-semibold text-brand underline">
+                <a href={mapsDirections(ev.location!, "driving")!} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg px-3 font-semibold text-brand underline">
                   車で
                 </a>
-                <a href={mapsDirections(ev.location!, "walking")!} target="_blank" rel="noopener noreferrer" className="min-h-9 py-2 font-semibold text-brand underline">
+                <a href={mapsDirections(ev.location!, "walking")!} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg px-3 font-semibold text-brand underline">
                   歩いて
                 </a>
               </div>

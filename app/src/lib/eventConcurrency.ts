@@ -22,8 +22,8 @@ export const RECORD_CONFLICT_ERROR = "ほかのタブ（または別の画面）
  * 記録が消えていれば・変わっていれば、保存しない理由を返す（null なら保存してよい）
  */
 export function staleRecordError(list: readonly { id: string }[] | undefined, id: string, snapshot?: string): string | null {
-  if (snapshot === undefined) return null;
   const current = (list ?? []).find((x) => x.id === id);
   if (!current) return "この記録は、ほかのタブなどで削除されています。入力した内容を控えてから、画面を閉じてください";
+  if (snapshot === undefined) return null;
   return recordMatchesSnapshot(current, snapshot) ? null : RECORD_CONFLICT_ERROR;
 }

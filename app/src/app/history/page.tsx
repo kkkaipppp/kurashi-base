@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useData } from "@/lib/store";
 import { sortTxDesc, summarizeMonth, txInMonth } from "@/lib/aggregate";
 import { addMonthsToKey, formatDateJa, formatMonthJa, monthKey, todayStr } from "@/lib/date";
@@ -25,11 +25,20 @@ function QuerySync({ onApply }: { onApply: (m: string | null, cat: string | null
 export default function HistoryPage() {
   const data = useData();
   const ui = useUI();
+  const pathname = usePathname();
+  const lastPath = useRef(pathname);
   const [month, setMonth] = useState(monthKey(todayStr()));
   const [q, setQ] = useState("");
   const [type, setType] = useState<"all" | "expense" | "income">("all");
   const [cat, setCat] = useState("");
   const [pay, setPay] = useState("all");
+
+  useEffect(() => {
+    if (lastPath.current === pathname) return;
+    lastPath.current = pathname;
+    setMonth(monthKey(todayStr()));
+    setQ(""); setType("all"); setCat(""); setPay("all");
+  }, [pathname]);
 
   const sum = summarizeMonth(data.transactions, month);
   const applyQuery = useMemo(

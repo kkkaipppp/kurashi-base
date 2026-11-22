@@ -375,7 +375,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
                     <p className="text-[12px] text-ink-3">{g.group}</p>
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       {g.items.map((c) => (
-                        <button key={c.id} type="button" onClick={() => pick(c)} className="min-h-9 rounded-full border border-line bg-surface px-3 text-[13px] hover:bg-brand-soft">
+                        <button key={c.id} type="button" onClick={() => pick(c)} className="min-h-11 rounded-full border border-line bg-surface px-3 text-[13px] hover:bg-brand-soft">
                           {c.name}
                         </button>
                       ))}
@@ -411,7 +411,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
                 <p className="text-[12px] text-ink-3">資格の学校・通信講座が示している目安です。学習の経験で大きく変わるので、自分に合わせて変えてください。</p>
                 <div className="mt-1 flex gap-2">
                   {[cert.targetHoursHint.min, cert.targetHoursHint.max].map((h) => (
-                    <button key={h} type="button" onClick={() => setF((x) => ({ ...x, targetHours: String(h) }))} className="min-h-9 rounded-lg bg-surface px-3 text-[13px] font-semibold text-brand">
+                    <button key={h} type="button" onClick={() => setF((x) => ({ ...x, targetHours: String(h) }))} className="min-h-11 rounded-lg bg-surface px-3 text-[13px] font-semibold text-brand">
                       {h}時間にする
                     </button>
                   ))}
@@ -430,7 +430,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
                   {f.books.map((b) => (
                     <li key={b.id} className="flex min-h-10 items-center gap-2 rounded-lg bg-surface-2 px-3">
                       <span className="min-w-0 flex-1 truncate text-[14px]">{b.title}</span>
-                      <button type="button" onClick={() => setF((x) => ({ ...x, books: x.books.filter((y) => y.id !== b.id) }))} className="min-h-9 rounded-lg px-2 text-[13px] text-ink-3" aria-label={`${b.title}を外す`}>
+                      <button type="button" onClick={() => setF((x) => ({ ...x, books: x.books.filter((y) => y.id !== b.id) }))} className="min-h-11 rounded-lg px-2 text-[13px] text-ink-3" aria-label={`${b.title}を外す`}>
                         外す
                       </button>
                     </li>

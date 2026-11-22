@@ -1,11 +1,11 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Button } from "./ui";
 import { TxSheet, type TxSheetRequest } from "./TxSheet";
 import { EventSheet, type EventSheetRequest } from "./EventSheet";
 import { AddChooser } from "./AddChooser";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface ConfirmOpts {
   title: string;
@@ -37,6 +37,17 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<{ id: number; msg: string; kind: "ok" | "error" }[]>([]);
   const seq = useRef(0);
   const router = useRouter();
+  const pathname = usePathname();
+  const previousPath = useRef(pathname);
+  // Next.js Activity がページを保持しても、画面をまたいだ一時シートは持ち越さない。
+  useEffect(() => {
+    if (previousPath.current === pathname) return;
+    previousPath.current = pathname;
+    setAdd(null);
+    setTx(null);
+    setEv(null);
+    setCf((current) => { current?.resolve(false); return null; });
+  }, [pathname]);
 
   const toast = useCallback((msg: string, kind: "ok" | "error" = "ok") => {
     const id = ++seq.current;

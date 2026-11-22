@@ -139,7 +139,7 @@ export default function SettingsPage() {
         .map(([k, n]) => `${COUNT_LABELS[k as keyof typeof COUNT_LABELS]}${n}件`)
         .join("・") || "記録"}と設定を、この端末から削除します。「直前の操作を取り消す」の控えも消えるので、元に戻せません。
 残しておきたい記録があれば、先に「バックアップを書き出す」でファイルに保存してください。`,
-      ok: "すべて削除",
+      ok: "すべて削除する",
       danger: true,
     });
     if (!ok) return;
@@ -304,6 +304,11 @@ export default function SettingsPage() {
                 )}
               </ul>
             )}
+            {mode === "replace" && (
+              <p role="alert" className="rounded-xl bg-expense-soft px-3 py-3 text-[14px] font-semibold text-danger">
+                今の記録を消して、バックアップの内容に置き換えます。バックアップにない記録は残りません。
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="secondary"
@@ -315,7 +320,7 @@ export default function SettingsPage() {
                 やめる
               </Button>
               <Button variant={mode === "replace" ? "danger" : "primary"} onClick={doRestore} disabled={!plan?.ok}>
-                復元する
+                {mode === "replace" ? "今の記録を置き換える" : "復元する"}
               </Button>
             </div>
           </div>
@@ -341,6 +346,7 @@ export default function SettingsPage() {
           <li>ブラウザの履歴・Webサイトデータを消したときや、機種変更したときに、記録が消えることがあります。定期的にバックアップしてください。</li>
           <li>レシートの画像は保存しません。</li>
         </ul>
+        <p className="mb-2 text-[13px] font-semibold text-danger">削除すると元に戻せません。残したい記録は先にバックアップしてください。</p>
         <Button variant="danger" onClick={wipe} className="w-full">
           この端末の記録をすべて削除
         </Button>

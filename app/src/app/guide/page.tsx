@@ -44,6 +44,11 @@ export default function GuidePage() {
       </Card>
 
       <Card>
+        <h2 className="text-[17px] font-bold">次からすぐに開く</h2>
+        <p className="mt-2 text-[14px]">iPhoneのSafariで共有ボタンを押し、「ホーム画面に追加」を選ぶと、次からアイコンで開けます。</p>
+      </Card>
+
+      <Card>
         <h2 className="text-[17px] font-bold">ほかにできること</h2>
         <ul className="mt-2 list-disc space-y-2 pl-5 text-[14px]">
           <li>予定を押す → 行き方を調べる・Googleカレンダー</li>
