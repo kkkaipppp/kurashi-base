@@ -443,7 +443,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
                   aria-label="持ち物を入力"
                   enterKeyHint="enter"
                 />
-                <Button variant="secondary" onClick={addItem} disabled={!newItem.trim()}>
+                <Button variant="secondary" onClick={addItem} disabled={!newItem.trim()} className="shrink-0 whitespace-nowrap">
                   追加
                 </Button>
               </div>

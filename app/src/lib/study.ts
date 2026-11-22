@@ -94,10 +94,5 @@ export function dailyTarget(targetHours: number | null, loggedMinutes: number, t
   return { kind: "ok", minutes, daysLeft, tooMuch: minutes > 240 };
 }
 
-/** 分を「1時間30分」の形に */
-export function formatMinutes(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  if (h === 0) return `${m}分`;
-  return m === 0 ? `${h}時間` : `${h}時間${m}分`;
-}
+/** 分を「1時間30分」の形に（life.ts と共通） */
+export { formatMinutes } from "./life";
