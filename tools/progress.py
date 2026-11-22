@@ -150,6 +150,10 @@ def _write_json(p: Path, d: dict) -> None:
     p.write_bytes((json.dumps(d, ensure_ascii=False, indent=2) + "\n").replace("\n", nl).encode("utf-8"))
 
 
+def _clip(s: str, n: int = 60) -> str:
+    return s if len(s) <= n else s[: n - 1] + "…"
+
+
 def update_report(s: dict, sha: str) -> None:
     """本部への報告（portfolio/report.json・details.json）を、ロードマップと WBS から作る。
     mode・quality・金額は人が決める項目なので、そのまま残す"""
@@ -173,8 +177,9 @@ def update_report(s: dict, sha: str) -> None:
         d = json.loads(DETAILS.read_text(encoding="utf-8"))
         d.update({
             "as_of": ts,
-            "blocker_items": [f"{b['ID']} {b['Task']}（{b.get('Notes') or b.get('Evidence') or '理由は WBS'}）"[:200] for b in s["blocked"]][:20],
-            "approval_items": [f"{i['ID']} {i['論点']}（期限 {i['期限']}）"[:200] for i in s["decide"]][:20],
+            # 本部の検査：1項目60字まで
+            "blocker_items": [_clip(f"{b['ID']} {b['Task']}（{b.get('Notes') or b.get('Evidence') or '理由は WBS'}）") for b in s["blocked"]][:20],
+            "approval_items": [_clip(f"{i['ID']} {i['論点']}（期限 {i['期限']}）") for i in s["decide"]][:20],
         })
         _write_json(DETAILS, d)
 

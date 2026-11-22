@@ -1,15 +1,15 @@
 {
   "project_id": "kurashi-base",
   "mode": "production",
-  "as_of": "2026-11-22T11:25:53+09:00",
-  "phase": "ロードマップ M3 機能横断と日本語（9/10 完了）。WBS 43/56 完了、未決の論点 13件",
-  "progress_pct": 77,
+  "as_of": "2026-11-22T12:14:32+09:00",
+  "phase": "ロードマップ M3 機能横断と日本語（9/10 完了）。WBS 56/77 完了、未決の論点 15件",
+  "progress_pct": 73,
   "quality": "UNKNOWN",
   "revenue_yen": null,
   "cost_yen": null,
   "period": "2026-11",
-  "blockers": 1,
-  "approvals": 4,
-  "next_action": "W030 旧UIの主要ジャーニー自動・手動受入",
-  "evidence_ref": "docs/progress/PROGRESS.html@a540a9a"
+  "blockers": 3,
+  "approvals": 5,
+  "next_action": "W030 旧UIの主要ジャーニー自動・手動受入（自動テストとアプリ内ブラウザの分は v5 の受入（docs/v5/ACCEPTANCE_V5.csv）で確認。残りは iPhone 実機（V17））",
+  "evidence_ref": "docs/progress/PROGRESS.html@53233ca"
 }

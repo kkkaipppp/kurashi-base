@@ -1,0 +1,13 @@
+{
+  "base_version": "v4 a648199",
+  "pack_date": "2026-11-22",
+  "files": 26,
+  "acceptance_cases": 105,
+  "certification_candidates": 20,
+  "ocr_images_included": 0,
+  "ocr_tests_run_on_images": false,
+  "ocr_license_review": "REQUIRED",
+  "google_calendar_full_sync": false,
+  "amazon_affiliate_enabled": false,
+  "ocr_full_set_on_each_ocr_change": true
+}

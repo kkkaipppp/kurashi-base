@@ -1,0 +1,283 @@
+[
+  {
+    "id": "ip",
+    "name": "ITパスポート",
+    "group": "IT",
+    "aliases": [
+      "ITパス",
+      "Iパス"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://www.ipa.go.jp/shiken/kubun/list.html",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "fe",
+    "name": "基本情報技術者",
+    "group": "IT",
+    "aliases": [
+      "FE",
+      "基本情報"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://www.ipa.go.jp/shiken/kubun/list.html",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "ap",
+    "name": "応用情報技術者",
+    "group": "IT",
+    "aliases": [
+      "AP",
+      "応用情報"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://www.ipa.go.jp/shiken/kubun/list.html",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "sc",
+    "name": "情報処理安全確保支援士",
+    "group": "IT",
+    "aliases": [
+      "SC",
+      "登録セキスペ"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://www.ipa.go.jp/shiken/kubun/list.html",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "aws_clf",
+    "name": "AWS Certified Cloud Practitioner",
+    "group": "IT",
+    "aliases": [
+      "AWS CLF",
+      "クラウドプラクティショナー"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://aws.amazon.com/jp/certification/",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "aws_saa",
+    "name": "AWS Certified Solutions Architect - Associate",
+    "group": "IT",
+    "aliases": [
+      "AWS SAA",
+      "ソリューションアーキテクト"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://aws.amazon.com/jp/certification/certified-solutions-architect-associate/",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "boki3",
+    "name": "日商簿記3級",
+    "group": "会計",
+    "aliases": [
+      "簿記3級",
+      "簿記三級"
+    ],
+    "targetHoursHint": {
+      "min": 80,
+      "max": 100,
+      "source": "https://faq.tac-school.co.jp/support/list/web/knowledge526.html",
+      "kind": "education_provider_estimate"
+    },
+    "officialExamURL": "https://www.kentei.ne.jp/bookkeeping",
+    "checkedOn": "2026-11-22",
+    "caveat": "時間は学習経験によって異なる目安。本人が編集可能。"
+  },
+  {
+    "id": "boki2",
+    "name": "日商簿記2級",
+    "group": "会計",
+    "aliases": [
+      "簿記2級",
+      "簿記二級"
+    ],
+    "targetHoursHint": {
+      "min": 200,
+      "max": 250,
+      "source": "https://faq.tac-school.co.jp/support/list/web/knowledge526.html",
+      "kind": "education_provider_estimate"
+    },
+    "officialExamURL": "https://www.kentei.ne.jp/bookkeeping",
+    "checkedOn": "2026-11-22",
+    "caveat": "時間は学習経験によって異なる目安。本人が編集可能。"
+  },
+  {
+    "id": "boki1",
+    "name": "日商簿記1級",
+    "group": "会計",
+    "aliases": [
+      "簿記1級"
+    ],
+    "targetHoursHint": {
+      "min": 500,
+      "max": 600,
+      "source": "https://faq.tac-school.co.jp/support/list/web/knowledge526.html",
+      "kind": "education_provider_estimate"
+    },
+    "officialExamURL": "https://www.kentei.ne.jp/bookkeeping",
+    "checkedOn": "2026-11-22",
+    "caveat": "時間は学習経験によって異なる目安。本人が編集可能。"
+  },
+  {
+    "id": "fp3",
+    "name": "FP3級",
+    "group": "金融",
+    "aliases": [
+      "ファイナンシャルプランナー3級",
+      "FP技能検定3級"
+    ],
+    "targetHoursHint": {
+      "min": 80,
+      "max": 150,
+      "source": "https://www.u-can.co.jp/course/data/in_html/50/column/column42.html",
+      "kind": "education_provider_estimate"
+    },
+    "officialExamURL": "https://www.jafp.or.jp/exam/",
+    "checkedOn": "2026-11-22",
+    "caveat": "時間は学習経験によって異なる目安。本人が編集可能。"
+  },
+  {
+    "id": "fp2",
+    "name": "FP2級",
+    "group": "金融",
+    "aliases": [
+      "ファイナンシャルプランナー2級",
+      "FP技能検定2級"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://www.jafp.or.jp/exam/",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "takken",
+    "name": "宅地建物取引士",
+    "group": "法律・不動産",
+    "aliases": [
+      "宅建",
+      "宅建士"
+    ],
+    "targetHoursHint": {
+      "min": 300,
+      "max": 500,
+      "source": "https://www.u-can.co.jp/%E5%AE%85%E5%BB%BA/column/column04.html",
+      "kind": "education_provider_estimate"
+    },
+    "officialExamURL": "https://www.retio.or.jp/",
+    "checkedOn": "2026-11-22",
+    "caveat": "時間は学習経験によって異なる目安。本人が編集可能。"
+  },
+  {
+    "id": "gyosei",
+    "name": "行政書士",
+    "group": "法律・不動産",
+    "aliases": [
+      "行政書士試験"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": null,
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "sharoushi",
+    "name": "社会保険労務士",
+    "group": "法律・不動産",
+    "aliases": [
+      "社労士"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": null,
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "toeic",
+    "name": "TOEIC L&R",
+    "group": "語学",
+    "aliases": [
+      "トーイック",
+      "TOEIC Listening & Reading"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://www.iibc-global.org/toeic/test/lr.html",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "eiken2",
+    "name": "実用英語技能検定2級",
+    "group": "語学",
+    "aliases": [
+      "英検2級",
+      "英検二級"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://www.eiken.or.jp/eiken/",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "eikenp1",
+    "name": "実用英語技能検定準1級",
+    "group": "語学",
+    "aliases": [
+      "英検準1級",
+      "英検準一級"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": "https://www.eiken.or.jp/eiken/",
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "kanji2",
+    "name": "日本漢字能力検定2級",
+    "group": "語学",
+    "aliases": [
+      "漢検2級"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": null,
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "mos",
+    "name": "MOS Excel",
+    "group": "IT",
+    "aliases": [
+      "MOS",
+      "マイクロソフトオフィススペシャリスト"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": null,
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  },
+  {
+    "id": "hisho",
+    "name": "秘書検定2級",
+    "group": "ビジネス",
+    "aliases": [
+      "秘書2級",
+      "秘書検定"
+    ],
+    "targetHoursHint": null,
+    "officialExamURL": null,
+    "checkedOn": "2026-11-22",
+    "caveat": "学習時間の根拠未確認のため提案しない。"
+  }
+]
