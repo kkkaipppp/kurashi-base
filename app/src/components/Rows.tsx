@@ -64,13 +64,16 @@ export function EventRow({ ev, day }: { ev: CalendarEvent; day?: string }) {
     <li>
       <button
         type="button"
-        onClick={() => ui.openEvent({ mode: "edit", id: ev.id })}
+        onClick={() => ui.openEvent({ mode: "view", id: ev.id })}
         className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2"
       >
         <span className="h-9 w-1.5 shrink-0 rounded-full bg-event" aria-hidden="true" />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15px] font-semibold">{ev.title}</span>
-          <span className="block truncate text-[12px] text-ink-3">{eventTimeLabel(ev, day)}</span>
+          <span className="block truncate text-[12px] text-ink-3">
+            {eventTimeLabel(ev, day)}
+            {ev.location ? `・${ev.location}` : ""}
+          </span>
         </span>
       </button>
     </li>

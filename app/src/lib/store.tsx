@@ -4,11 +4,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { newId } from "./defaults";
 import { advanceDueDate } from "./recurring";
 import { clearUndo, loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
-import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction } from "./types";
+import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
 
 export type TxInput = Omit<Transaction, "id" | "createdAt" | "updatedAt" | "currency">;
 export type EventInput = Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">;
 export type RecurringInput = Omit<RecurringExpense, "id" | "createdAt" | "updatedAt">;
+export type TripInput = Omit<Trip, "id" | "createdAt" | "updatedAt">;
 export type ItemInput<K extends CollectionKey> = Omit<ItemOf<K>, "id" | "createdAt" | "updatedAt">;
 
 const ID_PREFIX: Record<CollectionKey, string> = {
@@ -26,9 +27,15 @@ interface Store {
   addTx: (t: TxInput) => SaveResult & { id?: string };
   updateTx: (id: string, t: TxInput) => SaveResult;
   deleteTx: (id: string) => SaveResult;
-  addEvent: (e: EventInput) => SaveResult;
+  addEvent: (e: EventInput) => SaveResult & { id?: string };
   updateEvent: (id: string, e: EventInput) => SaveResult;
   deleteEvent: (id: string) => SaveResult;
+  /** 持ち物のチェックを切り替える（予定の詳細から） */
+  toggleEventItem: (eventId: string, itemId: string) => SaveResult;
+  addTrip: (t: TripInput) => SaveResult & { id?: string };
+  updateTrip: (id: string, t: TripInput) => SaveResult;
+  /** 旅行を消しても、行程の予定と支出は消さない（予定は旅行から外れるだけ） */
+  deleteTrip: (id: string) => SaveResult;
   addRecurring: (r: RecurringInput) => SaveResult;
   updateRecurring: (id: string, r: RecurringInput) => SaveResult;
   deleteRecurring: (id: string) => SaveResult;
@@ -146,11 +153,38 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       deleteTx: (id) => commit((d) => ({ ...d, transactions: d.transactions.filter((x) => x.id !== id) })),
       addEvent: (e) => {
         const ts = now();
-        return commit((d) => ({ ...d, events: [...d.events, { ...e, id: newId("ev"), createdAt: ts, updatedAt: ts }] }));
+        const id = newId("ev");
+        const r = commit((d) => ({ ...d, events: [...d.events, { ...e, id, createdAt: ts, updatedAt: ts }] }));
+        return r.ok ? { ...r, id } : r;
       },
       updateEvent: (id, e) =>
         commit((d) => ({ ...d, events: d.events.map((x) => (x.id === id ? { ...x, ...e, id, updatedAt: now() } : x)) })),
       deleteEvent: (id) => commit((d) => ({ ...d, events: d.events.filter((x) => x.id !== id) })),
+      toggleEventItem: (eventId, itemId) =>
+        commit((d) => ({
+          ...d,
+          events: d.events.map((x) =>
+            x.id === eventId ? { ...x, items: (x.items ?? []).map((i) => (i.id === itemId ? { ...i, done: !i.done } : i)), updatedAt: now() } : x,
+          ),
+        })),
+      addTrip: (t) => {
+        const ts = now();
+        const id = newId("trip");
+        const r = commit((d) => ({ ...d, trips: [...(d.trips ?? []), { ...t, id, createdAt: ts, updatedAt: ts }] }));
+        return r.ok ? { ...r, id } : r;
+      },
+      updateTrip: (id, t) =>
+        commit((d) => ({ ...d, trips: (d.trips ?? []).map((x) => (x.id === id ? { ...x, ...t, id, updatedAt: now() } : x)) })),
+      deleteTrip: (id) =>
+        commit((d) => ({
+          ...d,
+          trips: (d.trips ?? []).filter((x) => x.id !== id),
+          events: d.events.map((e) => {
+            if (e.tripId !== id) return e;
+            const { tripId: _drop, ...rest } = e; // eslint-disable-line @typescript-eslint/no-unused-vars
+            return { ...rest, updatedAt: now() };
+          }),
+        })),
       addRecurring: (rc) => {
         const ts = now();
         return commit((d) => ({ ...d, recurring: [...d.recurring, { ...rc, id: newId("rc"), createdAt: ts, updatedAt: ts }] }));

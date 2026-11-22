@@ -1,38 +1,230 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { Sheet } from "./Sheet";
 import { Button, Field, inputCls } from "./ui";
 import { useUI } from "./UIContext";
+import { eventTimeLabel } from "./Rows";
 import { useData, useStore } from "@/lib/store";
 import { validateEvent, type EventDraft, type FieldErrors } from "@/lib/validate";
 import { formatDateJa, todayStr } from "@/lib/date";
+import { formatYen } from "@/lib/money";
+import { newId } from "@/lib/defaults";
+import { calendarTemplate, isSavableUrl, mapsDirections, safeExternalLink } from "@/lib/externalLinks";
+import { EVENT_KINDS, type CalendarEvent, type CheckItem, type EventKind } from "@/lib/types";
 
-export type EventSheetRequest = { mode: "edit"; id: string } | { mode: "new"; date?: string };
+export type EventSheetRequest =
+  | { mode: "view"; id: string } // 予定の詳細（押したときに開く）
+  | { mode: "edit"; id: string }
+  | { mode: "new"; date?: string; tripId?: string };
+
+/** 詳細（場所・URL・持ち物など）の入力。予定名と日時だけで保存でき、あとから足せる */
+interface Extra {
+  location: string;
+  url: string;
+  items: CheckItem[];
+  tripId: string;
+  kind: EventKind | "";
+  cost: string;
+}
+
+const extraOf = (e?: CalendarEvent, tripId = ""): Extra => ({
+  location: e?.location ?? "",
+  url: e?.url ?? "",
+  items: e?.items ?? [],
+  tripId: e?.tripId ?? tripId,
+  kind: e?.kind ?? "",
+  cost: e?.cost != null ? String(e.cost) : "",
+});
+
+const hasExtra = (x: Extra, d: EventDraft) =>
+  !!(x.location || x.url || x.items.length || x.tripId || x.kind || x.cost || d.note || (d.repeat && d.repeat !== "none"));
 
 export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: () => void }) {
   const data = useData();
+  const [mode, setMode] = useState<"view" | "edit" | "new">(req.mode);
+  const id = req.mode === "new" ? undefined : req.id;
+  const ev = id ? data.events.find((e) => e.id === id) : undefined;
+
+  if (id && !ev) {
+    return (
+      <Sheet title="予定" open onRequestClose={onClose}>
+        <p className="text-ink-2">この予定は見つかりません（削除された可能性があります）。</p>
+      </Sheet>
+    );
+  }
+  if (mode === "view" && ev) return <EventDetail ev={ev} onClose={onClose} onEdit={() => setMode("edit")} />;
+  return <EventForm editing={mode === "edit" ? ev : undefined} req={req} onClose={onClose} />;
+}
+
+/* ---------------- 予定の詳細 ---------------- */
+
+function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () => void; onEdit: () => void }) {
+  const data = useData();
   const store = useStore();
   const ui = useUI();
-  const editing = req.mode === "edit" ? data.events.find((e) => e.id === req.id) : undefined;
+  const trip = ev.tripId ? data.trips.find((t) => t.id === ev.tripId) : undefined;
+  const directions = ev.location ? mapsDirections(ev.location) : null;
+  const gcal = calendarTemplate({ ...ev, description: ev.note, location: ev.location });
+  const link = ev.url ? safeExternalLink(ev.url) : null;
+  const kind = EVENT_KINDS.find((k) => k.id === ev.kind)?.label;
+
+  const remove = async () => {
+    const ok = await ui.confirm({
+      title: "この予定を削除しますか？",
+      body: `${formatDateJa(ev.startDate)} ${ev.title}\n${ev.repeat && ev.repeat !== "none" ? "繰り返しのすべての日から消えます。" : ""}記録した支出は消えません。削除すると元に戻せません。`,
+      ok: "削除する",
+      danger: true,
+    });
+    if (!ok) return;
+    const r = store.deleteEvent(ev.id);
+    if (!r.ok) return ui.toast(r.error, "error");
+    ui.toast("削除しました");
+    onClose();
+  };
+
+  const linkBtn = "flex min-h-11 items-center justify-center rounded-xl border border-line bg-surface px-3 text-[14px] font-semibold text-brand hover:bg-brand-soft";
+
+  return (
+    <Sheet
+      title="予定の詳細"
+      open
+      onRequestClose={onClose}
+      footer={
+        <div className="flex gap-2">
+          <Button variant="danger" onClick={remove}>
+            削除
+          </Button>
+          <Button className="flex-1" onClick={onEdit}>
+            編集する
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-[19px] leading-snug font-bold break-words">{ev.title}</h3>
+          <p className="mt-1 text-[14px] text-ink-2">
+            {formatDateJa(ev.startDate, true)}
+            {ev.endDate !== ev.startDate && ` 〜 ${formatDateJa(ev.endDate, true)}`}
+            <span className="ml-2">{eventTimeLabel(ev)}</span>
+          </p>
+          {(trip || kind) && (
+            <p className="mt-1 text-[13px] text-ink-3">
+              {trip && (
+                <Link href={`/trips?open=${trip.id}`} className="font-semibold text-brand" onClick={onClose}>
+                  旅行：{trip.title}
+                </Link>
+              )}
+              {trip && kind && "・"}
+              {kind}
+            </p>
+          )}
+        </div>
+
+        {ev.location && (
+          <div>
+            <p className="text-[12px] font-semibold text-ink-3">場所</p>
+            <p className="text-[15px] break-words">{ev.location}</p>
+          </div>
+        )}
+        {ev.note && (
+          <div>
+            <p className="text-[12px] font-semibold text-ink-3">メモ</p>
+            <p className="text-[15px] whitespace-pre-wrap break-words">{ev.note}</p>
+          </div>
+        )}
+        {ev.cost != null && (
+          <div>
+            <p className="text-[12px] font-semibold text-ink-3">費用の目安</p>
+            <p className="num text-[15px]">{formatYen(ev.cost)}</p>
+          </div>
+        )}
+
+        {(ev.items?.length ?? 0) > 0 && (
+          <div>
+            <p className="text-[12px] font-semibold text-ink-3">
+              持ち物（{ev.items!.filter((i) => i.done).length}/{ev.items!.length}）
+            </p>
+            <ul className="mt-1 space-y-1">
+              {ev.items!.map((i) => (
+                <li key={i.id}>
+                  <label className="flex min-h-11 items-center gap-3 rounded-xl px-1">
+                    <input
+                      type="checkbox"
+                      checked={i.done}
+                      onChange={() => {
+                        const r = store.toggleEventItem(ev.id, i.id);
+                        if (!r.ok) ui.toast(r.error, "error");
+                      }}
+                      className="size-5 accent-[var(--brand)]"
+                    />
+                    <span className={`text-[15px] ${i.done ? "text-ink-3 line-through" : ""}`}>{i.text}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="grid gap-2">
+          {directions && (
+            <a href={directions} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+              行き方を調べる（Googleマップ）
+            </a>
+          )}
+          {link && (
+            <a href={link} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+              登録したページを開く
+            </a>
+          )}
+          {gcal && (
+            <a href={gcal} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+              Googleカレンダーに追加する
+            </a>
+          )}
+          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーの画面が開きます。そこで「保存」を押すと登録されます（このアプリとは連動しません）。</p>}
+        </div>
+        {ev.repeat && ev.repeat !== "none" && (
+          <p className="text-[12px] text-ink-3">繰り返しの予定です。編集・削除は、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。</p>
+        )}
+      </div>
+    </Sheet>
+  );
+}
+
+/* ---------------- 予定の追加・編集 ---------------- */
+
+function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: EventSheetRequest; onClose: () => void }) {
+  const data = useData();
+  const store = useStore();
+  const ui = useUI();
+  const newReq = req.mode === "new" ? req : undefined;
+  const trips = data.trips ?? [];
 
   const initial = useMemo<EventDraft>(() => {
     if (editing) {
       const { title, startDate, endDate, allDay, startTime, endTime, note } = editing;
       return { title, startDate, endDate, allDay, startTime, endTime, note, repeat: editing.repeat ?? "none", repeatUntil: editing.repeatUntil ?? "" };
     }
-    const d = req.mode === "new" && req.date ? req.date : todayStr();
+    const trip = newReq?.tripId ? trips.find((t) => t.id === newReq.tripId) : undefined;
+    const d = newReq?.date ?? trip?.startDate ?? todayStr();
     return { title: "", startDate: d, endDate: d, allDay: false, startTime: "10:00", endTime: "11:00", note: "", repeat: "none", repeatUntil: "" };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const initialExtra = useMemo(() => extraOf(editing, newReq?.tripId ?? ""), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [draft, setDraft] = useState<EventDraft>(initial);
+  const [extra, setExtra] = useState<Extra>(initialExtra);
+  const [showMore, setShowMore] = useState(hasExtra(initialExtra, initial));
+  const [newItem, setNewItem] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const saved = useRef(false);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const dirty = JSON.stringify([draft, extra]) !== JSON.stringify([initial, initialExtra]) || newItem.trim() !== "";
 
   const set = <K extends keyof EventDraft>(k: K, v: EventDraft[K]) => {
     setDraft((d) => {
@@ -42,6 +234,17 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
       return n;
     });
     if (errors[k as string]) setErrors((e) => ({ ...e, [k]: "" }));
+  };
+  const setX = <K extends keyof Extra>(k: K, v: Extra[K]) => {
+    setExtra((x) => ({ ...x, [k]: v }));
+    if (errors[k as string]) setErrors((e) => ({ ...e, [k]: "" }));
+  };
+
+  const addItem = () => {
+    const t = newItem.trim();
+    if (!t) return;
+    setX("items", [...extra.items, { id: newId("it"), text: t.slice(0, 60), done: false }]);
+    setNewItem("");
   };
 
   const requestClose = async () => {
@@ -58,10 +261,17 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
     setSaveError(null);
     try {
       const v = validateEvent(draft);
-      if (!v.ok) {
-        setErrors(v.errors);
+      const errs: FieldErrors = v.ok ? {} : { ...v.errors };
+      if (!isSavableUrl(extra.url)) errs.url = "URL は https:// から始まる形で入力してください";
+      const costTxt = extra.cost.replace(/[,，円\s]/g, "").normalize("NFKC");
+      const cost = costTxt === "" ? null : Number(costTxt);
+      if (cost !== null && (!Number.isInteger(cost) || cost < 0 || cost > 100_000_000)) errs.cost = "費用は0以上の整数（円）で入力してください";
+      if (Object.keys(errs).length) {
+        setErrors(errs);
+        if (errs.url || errs.cost || errs.note || errs.repeat || errs.repeatUntil) setShowMore(true);
         return;
       }
+      const pending = newItem.trim() ? [...extra.items, { id: newId("it"), text: newItem.trim().slice(0, 60), done: false }] : extra.items;
       const input = {
         ...draft,
         title: draft.title.trim(),
@@ -70,7 +280,16 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
         endTime: draft.allDay ? "" : draft.endTime,
         repeat: draft.repeat ?? "none",
         repeatUntil: draft.repeat && draft.repeat !== "none" ? (draft.repeatUntil ?? "") : "",
+        // v5 の詳細（空のものは保存しない。古い予定の形のまま残す）
+        ...(extra.location.trim() ? { location: extra.location.trim() } : { location: undefined }),
+        ...(extra.url.trim() ? { url: safeExternalLink(extra.url) ?? undefined } : { url: undefined }),
+        ...(pending.length ? { items: pending } : { items: undefined }),
+        ...(extra.tripId ? { tripId: extra.tripId } : { tripId: undefined }),
+        ...(extra.kind ? { kind: extra.kind } : { kind: undefined }),
+        ...(cost !== null ? { cost } : { cost: undefined }),
       };
+      // undefined の項目は保存しない（JSON に残さない）
+      for (const k of Object.keys(input) as (keyof typeof input)[]) if (input[k] === undefined) delete input[k];
       const r = editing ? store.updateEvent(editing.id, input) : store.addEvent(input);
       if (!r.ok) {
         setSaveError(r.error);
@@ -91,7 +310,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
     if (!editing) return;
     const ok = await ui.confirm({
       title: "この予定を削除しますか？",
-      body: `${formatDateJa(editing.startDate)} ${editing.title}\n削除すると元に戻せません。`,
+      body: `${formatDateJa(editing.startDate)} ${editing.title}\n記録した支出は消えません。削除すると元に戻せません。`,
       ok: "削除する",
       danger: true,
     });
@@ -101,14 +320,6 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
     ui.toast("削除しました");
     onClose();
   };
-
-  if (req.mode === "edit" && !editing) {
-    return (
-      <Sheet title="予定" open onRequestClose={onClose}>
-        <p className="text-ink-2">この予定は見つかりません（削除された可能性があります）。</p>
-      </Sheet>
-    );
-  }
 
   return (
     <Sheet
@@ -136,7 +347,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
           save();
         }}
       >
-        <Field label="タイトル" htmlFor="ev-title" error={errors.title}>
+        <Field label="予定名" htmlFor="ev-title" error={errors.title}>
           <input
             id="ev-title"
             value={draft.title}
@@ -145,6 +356,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
             placeholder="例：友人と食事"
             className={inputCls}
             maxLength={100}
+            enterKeyHint="done"
           />
         </Field>
 
@@ -174,34 +386,128 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
           )}
         </div>
 
-        <Field label="メモ" optional htmlFor="ev-note" error={errors.note}>
-          <textarea id="ev-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="繰り返し" htmlFor="ev-rep" error={errors.repeat}>
-            <select
-              id="ev-rep"
-              value={draft.repeat ?? "none"}
-              onChange={(e) => set("repeat", e.target.value as EventDraft["repeat"])}
-              className={inputCls}
-              aria-invalid={!!errors.repeat}
-            >
-              <option value="none">しない</option>
-              <option value="weekly">毎週</option>
-              <option value="monthly">毎月</option>
-              <option value="yearly">毎年</option>
-            </select>
-          </Field>
-          {draft.repeat && draft.repeat !== "none" && (
-            <Field label="いつまで" optional htmlFor="ev-until" error={errors.repeatUntil}>
-              <input id="ev-until" type="date" value={draft.repeatUntil ?? ""} onChange={(e) => set("repeatUntil", e.target.value)} className={inputCls} aria-invalid={!!errors.repeatUntil} />
+        {!showMore ? (
+          <button
+            type="button"
+            onClick={() => setShowMore(true)}
+            className="flex min-h-11 w-full items-center justify-center rounded-xl border border-dashed border-line text-[14px] font-semibold text-brand hover:bg-brand-soft"
+          >
+            ＋ 詳細を追加（場所・URL・メモ・持ち物・繰り返し）
+          </button>
+        ) : (
+          <div className="space-y-4 rounded-2xl bg-surface-2 p-3">
+            <Field label="場所" optional htmlFor="ev-loc">
+              <input id="ev-loc" value={extra.location} onChange={(e) => setX("location", e.target.value)} placeholder="例：京都駅" className={inputCls} maxLength={100} />
             </Field>
-          )}
-        </div>
-        {draft.repeat && draft.repeat !== "none" && (
-          <p className="text-[12px] text-ink-3">
-            繰り返しは1日の予定だけ設定できます。編集・削除すると、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。
-          </p>
+            <Field label="URL（予約サイトなど）" optional htmlFor="ev-url" error={errors.url}>
+              <input id="ev-url" type="url" inputMode="url" value={extra.url} onChange={(e) => setX("url", e.target.value)} placeholder="https://" className={inputCls} maxLength={500} aria-invalid={!!errors.url} />
+            </Field>
+            <Field label="メモ" optional htmlFor="ev-note" error={errors.note}>
+              <textarea id="ev-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
+            </Field>
+
+            <div>
+              <p className="mb-1 text-[14px] font-semibold">
+                持ち物<span className="ml-1 text-[12px] font-normal text-ink-3">任意</span>
+              </p>
+              {extra.items.length > 0 && (
+                <ul className="mb-2 space-y-1">
+                  {extra.items.map((i) => (
+                    <li key={i.id} className="flex min-h-10 items-center gap-2 rounded-lg bg-surface px-3">
+                      <span className="flex-1 text-[14px]">{i.text}</span>
+                      <button
+                        type="button"
+                        onClick={() => setX("items", extra.items.filter((x) => x.id !== i.id))}
+                        className="min-h-9 rounded-lg px-2 text-[13px] text-ink-3 hover:bg-surface-2"
+                        aria-label={`${i.text}を持ち物から外す`}
+                      >
+                        外す
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="flex gap-2">
+                <input
+                  value={newItem}
+                  onChange={(e) => setNewItem(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addItem();
+                    }
+                  }}
+                  placeholder="例：充電器"
+                  className={inputCls}
+                  maxLength={60}
+                  aria-label="持ち物を入力"
+                  enterKeyHint="enter"
+                />
+                <Button variant="secondary" onClick={addItem} disabled={!newItem.trim()}>
+                  追加
+                </Button>
+              </div>
+            </div>
+
+            {trips.length > 0 && (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="旅行に入れる" optional htmlFor="ev-trip">
+                  <select id="ev-trip" value={extra.tripId} onChange={(e) => setX("tripId", e.target.value)} className={inputCls}>
+                    <option value="">入れない</option>
+                    {trips.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.title}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                {extra.tripId && (
+                  <Field label="種類" optional htmlFor="ev-kind">
+                    <select id="ev-kind" value={extra.kind} onChange={(e) => setX("kind", e.target.value as Extra["kind"])} className={inputCls}>
+                      <option value="">選ばない</option>
+                      {EVENT_KINDS.map((k) => (
+                        <option key={k.id} value={k.id}>
+                          {k.label}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                )}
+              </div>
+            )}
+
+            <Field label="費用の目安（円）" optional htmlFor="ev-cost" error={errors.cost}>
+              <input id="ev-cost" inputMode="numeric" value={extra.cost} onChange={(e) => setX("cost", e.target.value)} placeholder="例：14000" className={inputCls} maxLength={12} aria-invalid={!!errors.cost} />
+            </Field>
+            <p className="-mt-2 text-[12px] text-ink-3">目安のメモです。支出として記録するには「＋」から支出を追加してください。</p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="繰り返し" htmlFor="ev-rep" error={errors.repeat}>
+                <select
+                  id="ev-rep"
+                  value={draft.repeat ?? "none"}
+                  onChange={(e) => set("repeat", e.target.value as EventDraft["repeat"])}
+                  className={inputCls}
+                  aria-invalid={!!errors.repeat}
+                >
+                  <option value="none">しない</option>
+                  <option value="weekly">毎週</option>
+                  <option value="monthly">毎月</option>
+                  <option value="yearly">毎年</option>
+                </select>
+              </Field>
+              {draft.repeat && draft.repeat !== "none" && (
+                <Field label="いつまで" optional htmlFor="ev-until" error={errors.repeatUntil}>
+                  <input id="ev-until" type="date" value={draft.repeatUntil ?? ""} onChange={(e) => set("repeatUntil", e.target.value)} className={inputCls} aria-invalid={!!errors.repeatUntil} />
+                </Field>
+              )}
+            </div>
+            {draft.repeat && draft.repeat !== "none" && (
+              <p className="text-[12px] text-ink-3">
+                繰り返しは1日の予定だけ設定できます。編集・削除すると、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。
+              </p>
+            )}
+          </div>
         )}
 
         {saveError && (
