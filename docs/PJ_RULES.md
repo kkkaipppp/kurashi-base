@@ -14,8 +14,14 @@
 2. `docs/STATE.md` を更新
 3. 決めたことを `docs/DECISIONS.md`、起きたこと・リスクを `docs/RAID.md` に
 4. `cd app && npm run check` を通す（落ちたまま終えない。落ちたら正直に書く）
-5. `portfolio/report.json`・`details.json` を更新し、本部の検査に通す
-6. WBS を使う作業なら `py -3 -I tools/progress.py sync`
+5. `py -3 -I tools/progress.py sync` を実行する。WBS・ロードマップ・論点から、進捗の画面（`docs/progress/PROGRESS.html`）と本部への報告（`portfolio/report.json`・`details.json`）が作り直され、親フォルダ `00_全体進捗/暮らしベース/` に同期される。そのあと本部の検査（`tools/report_check.py` と `../00_経営管理/scripts/details_check.py`）に通す
+6. 最後の返信で、sync が出す「WBS の変化」と「本部への報告」（今いるマイルストン・完了数・次の作業・判断待ち）を平尾さんに伝える
+
+## WBS・ロードマップ・論点の更新（2026-11-22 平尾さんの指示）
+- **本部への進捗報告は、ロードマップ（`docs/progress/ROADMAP.md` のマイルストン）と WBS をもとにする。** report.json を手で書かない（mode・quality・金額だけは人が決める）
+- 作業が終わった・始めた・止まったら、**その都度** `py -3 -I tools/progress.py set <ID> <状態> "根拠"` で WBS を更新する。新しい作業は WBS.csv に行を足す（Start・End を入れる。未完了の日付は仮の予定）
+- 決めること（要件・公開・範囲）が出たら `docs/progress/ISSUES.csv` に論点として足す。決まったら「状態＝決定」と「決定」に日付と決めた人を書き、`docs/DECISIONS.md` にも残す
+- 更新したら sync して、変わったところを返信で報告する
 
 週1回：`docs/LESSONS.md` を読み直し、プレイブック2章の8観点で見直す。
 
