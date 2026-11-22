@@ -8,3 +8,6 @@ _review/
 
 # OCR の評価用画像（ライセンス上、Git に入れない）
 .ocr-eval-data/
+
+# Python のキャッシュ
+__pycache__/

@@ -57,3 +57,15 @@ describe("外部リンク（Googleマップ・Googleカレンダー・Web検索�
     expect(new URL(noteSearch("宅建 勉強法")!).searchParams.get("q")).toBe("宅建 勉強法 site:note.com");
   });
 });
+
+describe("Googleカレンダーへ渡す内容（点検役の指摘：メモを渡さないことの見張り）", () => {
+  it("予定の詳細の画面は、メモ（description）を Googleカレンダーに渡さない", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const src = readFileSync(join(__dirname, "..", "src", "components", "EventSheet.tsx"), "utf8");
+    const call = src.slice(src.indexOf("const gcal = calendarTemplate("), src.indexOf("const gcal = calendarTemplate(") + 120);
+    expect(call).not.toMatch(/description|note/);
+    const u = new URL(calendarTemplate({ title: "予定", startDate: "2026-11-22", endDate: "2026-11-22", allDay: true, location: "駅" })!);
+    expect(u.searchParams.has("details")).toBe(false);
+  });
+});

@@ -27,8 +27,8 @@ CAL-013,CAL,P0,編集,編集して即反映,manual,PASS（アプリ内ブラウ�
 CAL-014,CAL,P0,削除,指定予定だけ消える,manual,PASS（コードの確認。画面では未操作）,deleteEvent は指定した予定だけ消す
 CAL-015,CAL,P0,費用関連,取引を勝手に削除しない,manual,PASS（コードの確認。画面では未操作）,予定を消しても支出は消さない（確認の文にも明記）
 CAL-016,CAL,P0,未保存警告,入力を守る,manual,PASS（コードの確認。画面では未操作）,未保存の入力は破棄の確認
-CAL-017,CAL,P0,iPhoneキーボード,保存ボタンをタップできる,manual,PASS（iPhone 実機・平尾さん 11-22）,予定の入力でキーボード表示中も保存できた
-CAL-018,CAL,P0,日付ピッカー,iPhoneで選択できる,manual,PASS（iPhone 実機・平尾さん 11-22）,日付を選ぶ画面で選べた
+CAL-017,CAL,P0,iPhoneキーボード,保存ボタンをタップできる,manual,NOT_RUN（再確認待ち）,予定の入力でキーボード表示中も保存できた。11-22 の実機 PASS の後に、保存・復元の処理（e005b04）と入力の画面（d4718ff）を変えたため、再確認が要る（WBS F07）
+CAL-018,CAL,P0,日付ピッカー,iPhoneで選択できる,manual,PASS（iPhone 実機・平尾さん 11-22）,日付を選ぶ画面で選べた（v5 の新しい画面の確認で、平尾さんが日付の入力も OK と報告）
 CAL-019,CAL,P0,旧データ,追加項目がなくても表示可能,manual,PASS（自動テスト）,v4 の予定（追加項目なし）がそのまま読める
 CAL-020,CAL,P0,Google終日リンク,終了日翌日の排他的区間,manual,PASS（自動テスト）,終了日の翌日（排他的）
 CAL-021,CAL,P0,Google時刻リンク,JSTが一致,manual,PASS（自動テスト）,Asia/Tokyo を指定
@@ -91,8 +91,8 @@ SAFETY-005,SAFETY,P0,容量不足,閲覧とバックアップを妨げない,man
 SAFETY-006,SAFETY,P0,Undo,保存失敗時に控え維持,manual,PASS（自動テスト）,直前の操作の取り消し
 SAFETY-007,SAFETY,P0,全削除,控えまで確認,manual,PASS（自動テスト）,すべて削除で控えも消す
 SAFETY-008,SAFETY,P0,保存失敗表示,成功の誤案内をしない,manual,PASS（自動テスト）,保存の失敗は失敗と表示
-SAFETY-009,SAFETY,P0,Safari書出,ファイルへ保存,manual,PASS（iPhone 実機・平尾さん 11-22）,バックアップの書き出し
-SAFETY-010,SAFETY,P0,Safari再取込,復元して件数一致,manual,PASS（iPhone 実機・平尾さん 11-22）,同じファイルで復元
+SAFETY-009,SAFETY,P0,Safari書出,ファイルへ保存,manual,NOT_RUN（再確認待ち）,バックアップの書き出し。11-22 の実機 PASS の後に、保存・復元の処理（e005b04）と入力の画面（d4718ff）を変えたため、再確認が要る（WBS F07）
+SAFETY-010,SAFETY,P0,Safari再取込,復元して件数一致,manual,NOT_RUN（再確認待ち）,同じファイルで復元。11-22 の実機 PASS の後に、保存・復元の処理（e005b04）と入力の画面（d4718ff）を変えたため、再確認が要る（WBS F07）
 SAFETY-011,SAFETY,P0,カテゴリ不整合,誤統合を防ぐ,manual,PASS（自動テスト）,意味の違うカテゴリは取り込まない
 SAFETY-012,SAFETY,P0,重複取引,重複を検出,manual,PASS（自動テスト）,同じ記録は二重にしない
 COPY-001,COPY,P0,曖昧ナビ,明確な「今日やること」へ,manual,PASS（アプリ内ブラウザ）,今日やること・確認したいこと
