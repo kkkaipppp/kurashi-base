@@ -1,9 +1,9 @@
 {
   "project_id": "kurashi-base",
   "mode": "production",
-  "as_of": "2026-11-22T16:12:03+09:00",
-  "phase": "ロードマップ M3 機能横断と日本語（9/10 完了）。WBS 74/98 完了、未決の論点 14件",
-  "progress_pct": 76,
+  "as_of": "2026-11-22T16:15:47+09:00",
+  "phase": "ロードマップ M3 機能横断と日本語（9/10 完了）。WBS 78/98 完了、未決の論点 14件",
+  "progress_pct": 80,
   "quality": "UNKNOWN",
   "revenue_yen": null,
   "cost_yen": null,
@@ -11,5 +11,5 @@
   "blockers": 4,
   "approvals": 4,
   "next_action": "B09 主要画面の入力しやすさ（チャッピーのレビュー（v4）を反映）",
-  "evidence_ref": "docs/progress/PROGRESS.html@ddb5dc3"
+  "evidence_ref": "docs/progress/PROGRESS.html@6903aec"
 }

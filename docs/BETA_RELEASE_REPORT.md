@@ -2,7 +2,7 @@
 
 - ブランチ：`beta/friend-v1`（`master` の `1713cbc` から作成。master にはまだマージしていない）
 - 受領資料：`kurashi_v3_friend_beta_fix_and_claude_20261122.zip`（修正候補の `patched_project/` は、差分を見て取り込んだ。丸ごと上書きはしていない）
-- **今の判定（2026-11-22 夜、8章・`docs/release/GO_EVIDENCE_20261122.md`）：友人β NO-GO**。ブランチ `beta/friend-go`（ddb5dc3）、`npm run check` PASS（テスト191件）。必須受入 B01〜B15 のうち iPhone 実機と公開 URL の6件が NOT_RUN
+- **今の判定（2026-11-22 夜、8章・`docs/release/GO_EVIDENCE_20261122.md`）：友人β NO-GO**。ブランチ `beta/friend-go`（ddb5dc3）、`npm run check` PASS（テスト191件）。必須受入 B01〜B15 のうち、iPhone 実機の4件は 11-22 夜に PASS。公開 URL の B01・B14（と B15 の公開部分）が NOT_RUN
 - 以下の1〜5章は v4 時点（テスト111件）の記録。6章が v5、7章が最終修正
 - v4 時点の判定（11-22 昼）：友人β GO 可（公開の承認待ち）。iPhone 実機でキーボードとバックアップを平尾さんが確認し、問題なし（B11・B12）。残るのは公開の承認（B15）と、公開 URL での R1〜R8
 - 最初の判定は NO-GO（条件付き）だった。理由は iPhone 実機の確認が残っていたため
