@@ -16,7 +16,7 @@
 - iPhone 用サーバー：`http://172.17.183.12:3211`（新しいビルド。iPhone は XN-002-5G で開く。このセッションが動いている間だけ）
 
 ## 次の3手
-1. 平尾さんの OK のあと：GitHub（Private）への push と Vercel での公開 → 公開 URL で B01・B14・B15
+1. GitHub（Private）への push と Vercel での公開 → 公開 URL で B01・B14・B15。**公開は平尾さんの OK 済み（11-22 夜）**。master は a127697 まで早送り済み（未 push）。GitHub・Vercel へのログインを平尾さんが PC でしたら再開（gh は入っていないので、ブラウザでリポジトリを作り、Git Credential Manager で push）
 2. ユーザーの OK のあと：beta/friend-v1 を master にマージ → GitHub（Private）に push → Vercel（Root Directory=app）で公開 → 公開 URL で R1〜R8
 3. 友人に渡す（RELEASE_PREP 5章の一言）→ 感想を集める。CHARTER S1 の測り方も決める
 
