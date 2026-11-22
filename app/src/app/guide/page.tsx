@@ -46,9 +46,9 @@ export default function GuidePage() {
       <Card>
         <h2 className="text-[17px] font-bold">ほかにできること</h2>
         <ul className="mt-2 list-disc space-y-2 pl-5 text-[14px]">
-          <li>予定を押すと詳細が開きます。場所を入れておくと「行き方を調べる」で Googleマップが開きます。「Googleカレンダーで予定を作る」は、Google の画面で保存すると登録されます（このアプリとは連動しません）。</li>
-          <li>旅行は「メニュー → 旅行」。日ごとの行程（移動・宿泊・観光など）と持ち物をまとめられます。</li>
-          <li>資格は「メニュー → 資格の学習」。候補から選ぶと、出典のある資格だけ勉強時間の目安が出ます。試験日と目標を入れると、1日に勉強したい時間が分かります。</li>
+          <li>予定を押す → 行き方を調べる・Googleカレンダー</li>
+          <li>メニュー → 旅行：日ごとの行程と持ち物</li>
+          <li>メニュー → 資格の学習：1日の勉強時間の目安</li>
         </ul>
         <div className="mt-3 grid gap-1">
           <Link href="/trips" className={linkCls}>
@@ -65,10 +65,9 @@ export default function GuidePage() {
       <Card>
         <h2 className="text-[17px] font-bold">記録を守るために</h2>
         <ul className="mt-2 list-disc space-y-2 pl-5 text-[14px]">
-          <li>記録は、今使っている端末の、このブラウザの中だけに保存されます。インターネット上には送りません。</li>
-          <li>同じURLを別のスマホやPC、別のブラウザで開いても、記録は見えません。URLを友達に送っても、記録は共有されません。</li>
-          <li>Safari の履歴・Webサイトデータを消す、機種変更する、といった操作で記録が消えることがあります。</li>
-          <li>週に1回ほど「バックアップを書き出す」でファイルに保存してください。そのファイルから、いつでも戻せます。</li>
+          <li>記録はこの端末の、このブラウザの中だけ（Safari など）</li>
+          <li>Safari のデータを消すと、記録も消えます</li>
+          <li>週に1回、バックアップを書き出す</li>
         </ul>
         <Link href="/settings#backup" className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink">
           バックアップを書き出す

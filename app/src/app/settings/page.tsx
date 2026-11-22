@@ -155,7 +155,7 @@ export default function SettingsPage() {
       <Card>
         <div id="budget" className="scroll-mt-20" />
         <SectionTitle>毎月の予算</SectionTitle>
-        <p className="mb-3 text-[13px] text-ink-3">ホームの「今月の残り予算」は、この予算から今月の支出を引いた金額です。空欄にすると未設定になります。</p>
+        <p className="mb-3 text-[13px] text-ink-3">残り予算＝この予算−今月の支出。空欄なら未設定。</p>
         <div className="flex items-start gap-2">
           <div className="flex-1">
             <Field label="予算（円）" htmlFor="budget-input" error={budgetErr}>
@@ -170,7 +170,7 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>ホームに表示する項目</SectionTitle>
-        <p className="mb-2 text-[13px] text-ink-3">「今月の残り予算」「今日の予定」「今日やること」は、いつも表示します（今日やることは、期限が今日までのタスクがあるときだけ）。下の項目は、表示する内容があるときだけ出ます。</p>
+        <p className="mb-2 text-[13px] text-ink-3">下の項目は、内容があるときだけ表示します。</p>
         <ul className="divide-y divide-line">
           {toggles.map((t) => (
             <li key={t.key}>
@@ -339,7 +339,7 @@ export default function SettingsPage() {
           <li>記録は、この端末のブラウザの中にだけ保存します。外部のサーバーへは送りません。</li>
           <li>端末どうしの同期、アカウント、共有には対応していません。URLを友達に送っても記録は共有されません。</li>
           <li>ブラウザの履歴・Webサイトデータを消したときや、機種変更したときに、記録が消えることがあります。定期的にバックアップしてください。</li>
-          <li>取り込んだ画像は保存しません（同じ画像かどうかを確かめるために、画像から計算した値だけを保存します）。</li>
+          <li>レシートの画像は保存しません。</li>
         </ul>
         <Button variant="danger" onClick={wipe} className="w-full">
           この端末の記録をすべて削除

@@ -138,7 +138,7 @@ export default function ReportPage() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-1 text-[11px] text-ink-3">記録された金額から計算しています。理由までは分かりません。</p>
+              <p className="mt-1 text-[11px] text-ink-3">記録した金額からの計算です。</p>
             </Card>
           )}
 

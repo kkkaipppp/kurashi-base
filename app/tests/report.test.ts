@@ -36,7 +36,7 @@ describe("くらしの気づき（B10：データがないときは出さない�
   it("月の途中は先月の同じ日までと比べる", () => {
     const d = { ...emptyData(), transactions: [tx("2026-11-10", 6000), tx("2026-10-10", 5000), tx("2026-10-25", 90000)] };
     const i = buildInsights(d, "2026-11", "2026-11-21");
-    expect(i[0].text).toBe("今月の支出は先月の同じ日までより¥1,000多いです（+20%）");
+    expect(i[0].text).toBe("先月の同じ日より ¥1,000 多い（+20%）");
   });
   it("いちばん増えたカテゴリは、1,000円以上増えたときだけ", () => {
     const d = {
@@ -44,7 +44,7 @@ describe("くらしの気づき（B10：データがないときは出さない�
       transactions: [tx("2026-11-05", 8000, "exp-1"), tx("2026-10-05", 5000, "exp-1"), tx("2026-11-05", 1500, "exp-3"), tx("2026-10-05", 1000, "exp-3")],
     };
     const i = buildInsights(d, "2026-11", "2026-11-21");
-    expect(i.find((x) => x.key === "cat")?.text).toBe("食費が先月の同じ日までより¥3,000多いです（+60%）");
+    expect(i.find((x) => x.key === "cat")?.text).toBe("食費：先月の同じ日より ¥3,000 多い（+60%）");
     expect(i.find((x) => x.key === "cat")?.href).toBe("/history?m=2026-11&cat=exp-1");
   });
   it("月末の見込みは、予算があり7日目以降だけ", () => {
@@ -52,6 +52,6 @@ describe("くらしの気づき（B10：データがないときは出さない�
     expect(buildInsights(d, "2026-11", "2026-11-10").some((i) => i.key === "pace")).toBe(false);
     d.budget.monthly = 50000;
     expect(buildInsights(d, "2026-11", "2026-11-06").some((i) => i.key === "pace")).toBe(false);
-    expect(buildInsights(d, "2026-11", "2026-11-10").find((i) => i.key === "pace")?.text).toBe("このペースだと、月末の支出は約¥9,000になりそうです（予算は ¥50,000）");
+    expect(buildInsights(d, "2026-11", "2026-11-10").find((i) => i.key === "pace")?.text).toBe("月末の見込み：約¥9,000（予算 ¥50,000）");
   });
 });

@@ -171,7 +171,7 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
               </span>
             )}
           </div>
-          <p className="text-[12px] text-ink-3">入力した言葉で Google の検索結果を開きます。アプリが調べて答えるわけではありません。</p>
+          <p className="text-[12px] text-ink-3">Google の検索結果が開きます。</p>
         </div>
       </Card>
 

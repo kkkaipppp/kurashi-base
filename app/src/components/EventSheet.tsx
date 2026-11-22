@@ -195,7 +195,7 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
               Googleカレンダーで予定を作る
             </a>
           )}
-          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーの予定を作る画面が開きます（予定名・日時・場所だけを渡す）。Google の画面で「保存」を押すと登録されます。このアプリとは連動しません。</p>}
+          {gcal && <p className="text-[12px] text-ink-3">Google の画面で「保存」すると登録されます（予定名・日時・場所だけ渡します。連動はしません）。</p>}
         </div>
         {ev.repeat && ev.repeat !== "none" && (
           <p className="text-[12px] text-ink-3">繰り返しの予定です。編集・削除は、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。</p>
@@ -492,7 +492,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
             <Field label="費用の目安（円）" optional htmlFor="ev-cost" error={errors.cost}>
               <input id="ev-cost" inputMode="numeric" value={extra.cost} onChange={(e) => setX("cost", e.target.value)} placeholder="例：14000" className={inputCls} maxLength={12} aria-invalid={!!errors.cost} />
             </Field>
-            <p className="-mt-2 text-[12px] text-ink-3">目安のメモです。支出として記録するには「＋」から支出を追加してください。</p>
+            <p className="-mt-2 text-[12px] text-ink-3">支出の記録は「＋」からです。</p>
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="繰り返し" htmlFor="ev-rep" error={errors.repeat}>

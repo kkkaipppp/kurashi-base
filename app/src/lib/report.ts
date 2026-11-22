@@ -56,8 +56,9 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
   const previousHasSameDay = day <= daysInMonth(prevYear, prevMonth);
   const cur = expenseUntilDay(data.transactions, key, day);
   const prev = expenseUntilDay(data.transactions, prevKey, day);
-  const span = isCurrent ? (previousHasSameDay ? "先月の同じ日まで" : "先月の月末まで") : "前月";
-  const period = isCurrent ? "今月" : `${Number(key.slice(5))}月`;
+  const span = isCurrent ? (previousHasSameDay ? "先月の同じ日" : "先月全体") : "前月";
+  // 今月は見出しで分かるので書かない。過去の月だけ「9月の支出は」と書く
+  const period = isCurrent ? "" : `${Number(key.slice(5))}月の支出は`;
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "（不明なカテゴリ）";
 
   if (cur > 0 && prev > 0) {
@@ -67,8 +68,8 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
       key: "total",
       text:
         diff === 0
-          ? `${period}の支出は${span}と同じです`
-          : `${period}の支出は${span}より${formatYen(Math.abs(diff))}${diff > 0 ? "多い" : "少ない"}です（${diff > 0 ? "+" : "−"}${Math.abs(pct)}%）`,
+          ? `${period}${span}と同じ`
+          : `${period}${span}より ${formatYen(Math.abs(diff))} ${diff > 0 ? "多い" : "少ない"}（${diff > 0 ? "+" : "−"}${Math.abs(pct)}%）`,
       href: `/history?m=${key}`,
     });
 
@@ -92,7 +93,7 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
     if (best)
       out.push({
         key: "cat",
-        text: `${catName(best.id)}が${span}より${formatYen(best.diff)}多いです（+${Math.round((best.diff / best.prev) * 100)}%）`,
+        text: `${catName(best.id)}：${span}より ${formatYen(best.diff)} 多い（+${Math.round((best.diff / best.prev) * 100)}%）`,
         href: `/history?m=${key}&cat=${best.id}`,
       });
   }
@@ -104,7 +105,7 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
     const projected = Math.round(((cur / day) * daysInMonth(y, m)) / 100) * 100;
     out.push({
       key: "pace",
-      text: `このペースだと、月末の支出は約${formatYen(projected)}になりそうです（予算は ${formatYen(data.budget.monthly)}）`,
+      text: `月末の見込み：約${formatYen(projected)}（予算 ${formatYen(data.budget.monthly)}）`,
     });
   }
   return out;

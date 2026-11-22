@@ -97,11 +97,11 @@ describe("利用者が迷いやすい日付と日本語", () => {
     d.transactions.push(tx({ id: "b", date: "2026-08-01", amount: 1000 }));
     expect(buildInsights(d, "2026-09", "2026-11-21")[0].text).toContain("9月の支出");
   });
-  it("当月31日の先月比較は、先月が短ければ月末までと表示する", () => {
+  it("当月31日の先月比較は、先月が短ければ先月全体と比べると表示する", () => {
     const d = emptyData();
     d.transactions.push(tx({ id: "a", date: "2026-03-30", amount: 2000 }));
     d.transactions.push(tx({ id: "b", date: "2026-02-28", amount: 1000 }));
-    expect(buildInsights(d, "2026-03", "2026-03-31")[0].text).toContain("先月の月末まで");
+    expect(buildInsights(d, "2026-03", "2026-03-31")[0].text).toContain("先月全体より");
   });
 });
 
@@ -111,19 +111,19 @@ describe("振り返りの月の境目（友人β）", () => {
     d.transactions.push(tx({ id: "a", date: "2026-12-01", amount: 2000 }));
     d.transactions.push(tx({ id: "b", date: "2026-11-01", amount: 1000 }));
     const text = buildInsights(d, "2026-12", "2026-12-01")[0].text;
-    expect(text).toContain("先月の同じ日まで");
+    expect(text).toContain("先月の同じ日より");
     expect(text).not.toMatch(/NaN|Infinity/);
   });
   it("うるう年の2月29日から3月を見ても日付が壊れない", () => {
     const d = emptyData();
     d.transactions.push(tx({ id: "a", date: "2028-03-31", amount: 3000 }));
     d.transactions.push(tx({ id: "b", date: "2028-02-29", amount: 1000 }));
-    expect(buildInsights(d, "2028-03", "2028-03-31")[0].text).toContain("先月の月末まで");
+    expect(buildInsights(d, "2028-03", "2028-03-31")[0].text).toContain("先月全体より");
   });
   it("1月の前月は前の年の12月", () => {
     const d = emptyData();
     d.transactions.push(tx({ id: "a", date: "2027-01-10", amount: 3000 }));
     d.transactions.push(tx({ id: "b", date: "2026-12-05", amount: 1000 }));
-    expect(buildInsights(d, "2027-01", "2027-01-15")[0].text).toContain("先月の同じ日まで");
+    expect(buildInsights(d, "2027-01", "2027-01-15")[0].text).toContain("先月の同じ日より");
   });
 });
