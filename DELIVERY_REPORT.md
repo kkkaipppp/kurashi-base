@@ -100,4 +100,4 @@ npm run check      # 型チェック → lint → 単体テスト → ビルド
 画面確認で使った取引・予定・固定費は、確認が終わったあとブラウザの保存領域から消しました。アプリにダミーデータは入っていません（初期のカテゴリだけ）。
 
 ## 友人β版（2026-11-22）
-詳細は `docs/BETA_RELEASE_REPORT.md`。ブランチ `beta/friend-v1`、`npm run check` PASS（テスト111件）。友人βは NO-GO（iPhone 実機の確認と公開の承認待ち）。公開手順は `docs/RELEASE_PREP.md`。
+詳細は `docs/BETA_RELEASE_REPORT.md`。ブランチ `beta/friend-v1`、`npm run check` PASS（テスト111件）。友人βは GO 可（iPhone 実機でキーボード・バックアップを確認済み、公開の承認待ち）。公開手順は `docs/RELEASE_PREP.md`。
