@@ -153,6 +153,14 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
   );
   const curSubj = new Map(current.studySubjects.map((s) => [s.id, s]));
   const badSubj = new Set(incoming.studySubjects.filter((s) => curSubj.has(s.id) && curSubj.get(s.id)!.name !== s.name).map((s) => s.id));
+  // 旅行IDが一致していても行き先・期間・名前が異なるなら、別の旅行の可能性がある。
+  // この旅行を指す予定を取り込むと、別の旅程に紐づいてしまうため安全側でスキップする。
+  const curTrip = new Map((current.trips ?? []).map((t) => [t.id, t]));
+  const badTrip = new Set((incoming.trips ?? []).filter((t) => {
+    const existing = curTrip.get(t.id);
+    return existing && (existing.title !== t.title || existing.destination !== t.destination ||
+      existing.startDate !== t.startDate || existing.endDate !== t.endDate);
+  }).map((t) => t.id));
 
   /** 一覧を合成する。sameMeaning は「IDが同じとき、同じものとみなすか」（既定：中身が完全に同じ） */
   const mergeList = <T extends WithId>(a: T[], b: T[], opts: { skipIf?: (x: T) => boolean; sameMeaning?: (x: T, y: T) => boolean } = {}): T[] => {
@@ -183,7 +191,7 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
     ...current,
     categories,
     transactions: mergeList(current.transactions, incoming.transactions, { skipIf: (t) => badCat.has(t.categoryId) }),
-    events: mergeList(current.events, incoming.events),
+    events: mergeList(current.events, incoming.events, { skipIf: (e) => !!e.tripId && badTrip.has(e.tripId) }),
     trips: mergeList(current.trips ?? [], incoming.trips ?? []),
     recurring: mergeList(current.recurring, incoming.recurring, { skipIf: (r) => badCat.has(r.categoryId) }),
     studySubjects: mergeList(current.studySubjects, incoming.studySubjects, { sameMeaning: (x, y) => x.name === y.name }),

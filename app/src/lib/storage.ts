@@ -19,9 +19,8 @@ export interface KV {
 function getLocal(): KV | null {
   try {
     if (typeof window === "undefined" || !window.localStorage) return null;
-    const probe = "kurashi-base:probe";
-    window.localStorage.setItem(probe, "1");
-    window.localStorage.removeItem(probe);
+    // 読み取り前に書き込みテストをしない。容量不足でも既存データは読めることがある。
+    // 書き込みできるかは saveDataIfUnchanged が、実際の保存時に判定する。
     return window.localStorage;
   } catch {
     return null;
@@ -58,7 +57,7 @@ export function saveData(data: AppData, kv: KV | null = getLocal()): SaveResult 
     return { ok: true };
   } catch (e) {
     const quota = e instanceof DOMException && (e.name === "QuotaExceededError" || e.code === 22);
-    return { ok: false, error: quota ? "保存できませんでした。保存できる容量が足りません。バックアップを書き出してから、古い記録を整理してください" : "保存できませんでした。もう一度お試しください" };
+    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。設定の「バックアップを書き出す」でファイルに保存してから、Safari の使っていないサイトのデータを消してください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
   }
 }
 
@@ -81,7 +80,7 @@ export function saveDataIfUnchanged(data: AppData, expectedRaw: string | null, k
     return { ok: true, persistedRaw: raw };
   } catch (e) {
     const quota = typeof DOMException !== "undefined" && e instanceof DOMException && (e.name === "QuotaExceededError" || e.code === 22);
-    return { ok: false, error: quota ? "保存できませんでした。保存容量が足りません。バックアップを書き出してください" : "保存できませんでした。保存場所にアクセスできません" };
+    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。設定の「バックアップを書き出す」でファイルに保存してから、Safari の使っていないサイトのデータを消してください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
   }
 }
 
@@ -123,14 +122,34 @@ export function saveWithUndo(data: AppData, expectedRaw: string | null, reason: 
     return { ok: false, error: "保存できませんでした。保存場所にアクセスできません" };
   }
   if (current !== expectedRaw) return { ok: false, error: CONFLICT_ERROR, conflict: true };
-  if (current !== null) {
-    try {
-      kv.setItem(UNDO_KEY, JSON.stringify({ savedAt: now, reason, raw: current } satisfies UndoSnapshot));
-    } catch {
-      return { ok: false, error: "保存できませんでした。元に戻すための控えを作れなかったため、変更をやめました。先にバックアップを書き出してください" };
-    }
+  if (current === null) return saveDataIfUnchanged(data, expectedRaw, kv);
+  // localStorage は複数キーを一括更新できないため、保存失敗時は前の控えに戻す。
+  // 操作前の控えは同じ文字列のまま保持し、失敗しても取り消し履歴を失わない。
+  let previousUndo: string | null;
+  try {
+    previousUndo = kv.getItem(UNDO_KEY);
+  } catch {
+    return { ok: false, error: "保存場所を読み込めないため、元に戻すための控えを作れませんでした" };
   }
-  return saveDataIfUnchanged(data, expectedRaw, kv);
+  const pendingUndo = JSON.stringify({ savedAt: now, reason, raw: current } satisfies UndoSnapshot);
+  try {
+    kv.setItem(UNDO_KEY, pendingUndo);
+  } catch {
+    return { ok: false, error: "保存できませんでした。元に戻すための控えを作れません。先にバックアップを書き出してください" };
+  }
+  const result = saveDataIfUnchanged(data, expectedRaw, kv);
+  if (result.ok) return result;
+  try {
+    // 別の処理が控えを書き換えていたら、その控えを無断で上書きしない。
+    if (kv.getItem(UNDO_KEY) !== pendingUndo) {
+      return { ok: false, error: `${result.error}。取り消し用データも変更されたため、再読み込みしてください`, ...(result.conflict ? { conflict: true as const } : {}) };
+    }
+    if (previousUndo === null) kv.removeItem(UNDO_KEY);
+    else kv.setItem(UNDO_KEY, previousUndo);
+  } catch {
+    return { ok: false, error: `${result.error}。取り消し用の控えを元に戻せませんでした。新たな操作をせず、現在のデータをバックアップしてください`, ...(result.conflict ? { conflict: true as const } : {}) };
+  }
+  return result;
 }
 
 /** 控えの状態に戻す。戻す直前の状態を新しい控えにするので、もう一度押せばやり直せる */

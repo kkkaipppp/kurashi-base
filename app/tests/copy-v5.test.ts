@@ -54,9 +54,11 @@ describe("v5 の文言", () => {
     expect(old).toEqual([]);
   });
 
-  it("Googleカレンダーへのボタンは「追加する」と言い、保存は Google 側だと説明する", () => {
+  it("Googleカレンダーへのボタンは「予定を作る」と言い（同期と誤解させない）、渡す内容と保存は Google 側だと説明する", () => {
     const ev = ALL.find((f) => f.p.endsWith("EventSheet.tsx"))!.s;
-    expect(ev).toContain("Googleカレンダーに追加する");
+    expect(ev).toContain("Googleカレンダーで予定を作る");
+    expect(ev).not.toContain("Googleカレンダーに追加する");
+    expect(ev).toContain("予定名・日時・場所だけを渡します");
     expect(ev).toContain("「保存」を押すと登録されます");
     expect(ev).toContain("行き方を調べる");
   });

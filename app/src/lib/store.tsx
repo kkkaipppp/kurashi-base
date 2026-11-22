@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { newId } from "./defaults";
 import { advanceDueDate } from "./recurring";
+import { replaceEventEditableFields } from "./eventMerge";
 import { clearUndo, loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
 import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
 
@@ -158,7 +159,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return r.ok ? { ...r, id } : r;
       },
       updateEvent: (id, e) =>
-        commit((d) => ({ ...d, events: d.events.map((x) => (x.id === id ? { ...x, ...e, id, updatedAt: now() } : x)) })),
+        commit((d) => ({
+          ...d,
+          events: d.events.map((x) => (x.id === id ? replaceEventEditableFields(x, e, now()) : x)),
+        })),
       deleteEvent: (id) => commit((d) => ({ ...d, events: d.events.filter((x) => x.id !== id) })),
       toggleEventItem: (eventId, itemId) =>
         commit((d) => ({

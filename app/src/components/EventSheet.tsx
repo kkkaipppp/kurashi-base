@@ -192,10 +192,10 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
           )}
           {gcal && (
             <a href={gcal} target="_blank" rel="noopener noreferrer" className={linkBtn}>
-              Googleカレンダーに追加する
+              Googleカレンダーで予定を作る
             </a>
           )}
-          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーの画面が開きます。そこで「保存」を押すと登録されます（このアプリとは連動しません。メモは渡しません）。</p>}
+          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーの予定を作る画面が開き、予定名・日時・場所だけを渡します（メモとURLは渡しません）。Google の画面で「保存」を押すと登録されます。このアプリとは連動しません。</p>}
         </div>
         {ev.repeat && ev.repeat !== "none" && (
           <p className="text-[12px] text-ink-3">繰り返しの予定です。編集・削除は、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。</p>
@@ -273,7 +273,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     try {
       const v = validateEvent(draft);
       const errs: FieldErrors = v.ok ? {} : { ...v.errors };
-      if (!isSavableUrl(extra.url)) errs.url = "URL は https:// から始まる形で入力してください";
+      if (!isSavableUrl(extra.url)) errs.url = "URLは https:// または http:// から入力してください";
       const costTxt = extra.cost.replace(/[,，円\s]/g, "").normalize("NFKC");
       const cost = costTxt === "" ? null : Number(costTxt);
       if (cost !== null && (!Number.isInteger(cost) || cost < 0 || cost > 100_000_000)) errs.cost = "費用は0以上の整数（円）で入力してください";

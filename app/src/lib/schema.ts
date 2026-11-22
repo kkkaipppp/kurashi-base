@@ -175,6 +175,12 @@ export function validateRelationships(data: AppData): { ok: true } | { ok: false
     const cat = categories.get(r.categoryId);
     if (!cat || cat.kind !== "expense") return { ok: false, error: `固定費「${r.name}」のカテゴリが、支出用のカテゴリになっていません` };
   }
+  const trips = new Set((data.trips ?? []).map((t) => t.id));
+  for (const e of data.events) {
+    if (e.tripId && !trips.has(e.tripId)) {
+      return { ok: false, error: `${e.startDate}の予定「${e.title}」が、存在しない旅行を参照しています` };
+    }
+  }
   const subjects = new Set(data.studySubjects.map((s) => s.id));
   for (const l of data.studyLogs) {
     if (!subjects.has(l.subjectId)) return { ok: false, error: `${l.date}の勉強の記録（${l.minutes}分）の資格が、バックアップの中に見つかりません` };
