@@ -36,7 +36,7 @@ export default function SettingsPage() {
   // --- ホーム表示 ---
   const toggles: { key: keyof HomePrefs; label: string }[] = [
     { key: "todaySpent", label: "今日の支出（今月の残り予算の横）" },
-    { key: "nextRecurring", label: "固定費の次回予定" },
+    { key: "nextRecurring", label: "次の固定費" },
     { key: "needsReview", label: "確認したいこと（支払日・試験日・更新日など）" },
   ];
 
@@ -336,9 +336,9 @@ export default function SettingsPage() {
       <Card>
         <SectionTitle>データとプライバシー</SectionTitle>
         <ul className="mb-3 list-disc space-y-1 pl-5 text-[13px] text-ink-2">
-          <li>入力したデータは、この端末のブラウザの中にだけ保存します。外部のサーバーへは送りません。</li>
+          <li>記録は、この端末のブラウザの中にだけ保存します。外部のサーバーへは送りません。</li>
           <li>端末どうしの同期、アカウント、共有には対応していません。URLを友達に送っても記録は共有されません。</li>
-          <li>ブラウザの履歴・サイトデータの消去、機種変更、アプリの再インストールで記録が失われる場合があります。定期的にバックアップしてください。</li>
+          <li>ブラウザの履歴・Webサイトデータを消したときや、機種変更したときに、記録が消えることがあります。定期的にバックアップしてください。</li>
           <li>取り込んだ画像は保存しません（同じ画像かどうかを確かめるために、画像から計算した値だけを保存します）。</li>
         </ul>
         <Button variant="danger" onClick={wipe} className="w-full">
@@ -353,8 +353,8 @@ export default function SettingsPage() {
         <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
           <li>レシートの文字の自動読み取り（OCR）— レシートの画像を見ながら手で入力します</li>
           <li>繰り返し予定の1回分だけの変更、振替・分割払いの記録</li>
-          <li>通知、ホーム画面ウィジェット、iOSショートカット連携</li>
-          <li>クラウド同期・共有・AI・外部サービス連携（メニューの「準備中」に説明があります）</li>
+          <li>通知、ホーム画面のウィジェット、iPhone のショートカット</li>
+          <li>端末どうしの同期・共有・AI・ほかのサービスとのつながり（メニューの「準備中」に説明があります）</li>
         </ul>
       </Card>
     </main>

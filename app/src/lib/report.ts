@@ -100,10 +100,11 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
   // 今のペースのまま月末まで使った場合の単純計算（7日目以降、予算があるときだけ）
   if (isCurrent && data.budget.monthly !== null && day >= 7 && cur > 0) {
     const [y, m] = key.split("-").map(Number);
-    const projected = Math.round((cur / day) * daysInMonth(y, m));
+    // 細かい金額は見込みとして不自然なので、100円単位に丸める
+    const projected = Math.round(((cur / day) * daysInMonth(y, m)) / 100) * 100;
     out.push({
       key: "pace",
-      text: `このペースだと、月末の支出は約${formatYen(projected)}です（予算 ${formatYen(data.budget.monthly)}・単純計算）`,
+      text: `このペースだと、月末の支出は約${formatYen(projected)}になりそうです（予算は ${formatYen(data.budget.monthly)}）`,
     });
   }
   return out;

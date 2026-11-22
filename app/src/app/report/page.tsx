@@ -87,7 +87,7 @@ export default function ReportPage() {
             </Link>
           }
         >
-          {formatMonthJa(month)}の支出・収入の記録がないため、振り返りはありません。
+          {formatMonthJa(month)}は、まだ支出・収入の記録がありません。「＋」から記録すると、ここに使い方の内訳が出ます。
         </Empty>
       ) : (
         <>
@@ -95,7 +95,7 @@ export default function ReportPage() {
             <p className="text-[13px] font-semibold text-ink-2">この月の支出</p>
             <p className="num text-[30px] leading-tight font-bold">
               {formatYen(r.expense)}
-              {budget !== null && <span className="ml-1 text-[14px] font-medium text-ink-3">／ 予算 {formatYen(budget)}</span>}
+              {budget !== null && <span className="ml-1 text-[14px] font-medium text-ink-3">／予算 {formatYen(budget)}</span>}
             </p>
             {pct !== null && (
               <div className="mt-2">

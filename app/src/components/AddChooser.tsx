@@ -17,7 +17,7 @@ export function AddChooser({ date, onClose, onPick }: { date?: string; onClose: 
   const d = date ?? todayStr();
   return (
     <Sheet title="何を追加しますか？" open onRequestClose={onClose}>
-      <p className="mb-3 text-[13px] text-ink-3">{formatDateJa(d, true)}の記録として追加します（タスクは期限を入力します）。</p>
+      <p className="mb-3 text-[13px] text-ink-3">{formatDateJa(d, true)}の記録として入力を始めます（日付は入力の画面で変えられます）。</p>
       <div className="grid grid-cols-2 gap-3">
         {CHOICES.map((c) => (
           <button

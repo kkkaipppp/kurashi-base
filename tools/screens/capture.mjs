@@ -131,6 +131,11 @@ async function main() {
           acted = (await evaluate(a)) && acted;
           await sleep(700);
         }
+        if (args.text) {
+          // 文言の見直し用：画面の文字（シートが開いていればその中も）を保存する
+          const text = await evaluate(`document.body.innerText`);
+          writeFileSync(join(OUT, state, `${s.id}.txt`), String(text ?? ""));
+        }
         const shot = await send("Page.captureScreenshot", { format: "jpeg", quality: 72 });
         const file = `${s.id}.jpg`;
         writeFileSync(join(OUT, state, file), Buffer.from(shot.result.data, "base64"));

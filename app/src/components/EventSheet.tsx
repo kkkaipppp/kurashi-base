@@ -195,7 +195,7 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
               Googleカレンダーで予定を作る
             </a>
           )}
-          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーが開きます。予定名・日時・場所だけを渡すので、確かめてから Google の画面で「保存」を押すと登録されます（このアプリとは連動しません）。</p>}
+          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーの予定を作る画面が開きます（予定名・日時・場所だけを渡す）。Google の画面で「保存」を押すと登録されます。このアプリとは連動しません。</p>}
         </div>
         {ev.repeat && ev.repeat !== "none" && (
           <p className="text-[12px] text-ink-3">繰り返しの予定です。編集・削除は、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。</p>

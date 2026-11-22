@@ -52,6 +52,6 @@ describe("くらしの気づき（B10：データがないときは出さない�
     expect(buildInsights(d, "2026-11", "2026-11-10").some((i) => i.key === "pace")).toBe(false);
     d.budget.monthly = 50000;
     expect(buildInsights(d, "2026-11", "2026-11-06").some((i) => i.key === "pace")).toBe(false);
-    expect(buildInsights(d, "2026-11", "2026-11-10").find((i) => i.key === "pace")?.text).toBe("このペースだと、月末の支出は約¥9,000です（予算 ¥50,000・単純計算）");
+    expect(buildInsights(d, "2026-11", "2026-11-10").find((i) => i.key === "pace")?.text).toBe("このペースだと、月末の支出は約¥9,000になりそうです（予算は ¥50,000）");
   });
 });

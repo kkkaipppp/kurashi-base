@@ -21,7 +21,7 @@ const logs: CollectionConfig<"studyLogs"> = {
   key: "studyLogs",
   title: "勉強の記録",
   noun: "勉強の記録",
-  emptyText: "まだ勉強の記録がありません。上の「＋15分」などで、すぐに記録できます。",
+  emptyText: "まだ勉強の記録がありません。資格のカードの「＋15分」などから、すぐに記録できます。",
   addBlocked: (data) => (data.studySubjects.some((s) => !s.archived) ? null : "先に、上で資格を追加してください。"),
   fields: ({ data }) => [
     {
@@ -157,7 +157,7 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
             {target.kind === "noTarget" && <p className="text-ink-2">「編集」で目標の勉強時間を入れると、1日の目安を出します。</p>}
             {target.kind === "noExam" && <p className="text-ink-2">「編集」で試験日を入れると、1日の目安を出します。</p>}
             {target.kind === "checkExam" && <p className="text-ink-2">試験日を確認してください（今日か、過ぎています）。</p>}
-            <p className="mt-1 text-[12px] text-ink-3">今日 {formatMinutes(st.todayMinutes)} 記録</p>
+            <p className="mt-1 text-[12px] text-ink-3">今日の記録：{formatMinutes(st.todayMinutes)}</p>
           </div>
         )}
 
