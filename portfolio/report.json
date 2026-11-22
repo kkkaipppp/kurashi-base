@@ -1,7 +1,7 @@
 {
   "project_id": "kurashi-base",
   "mode": "production",
-  "as_of": "2026-11-22T12:14:32+09:00",
+  "as_of": "2026-11-22T12:15:18+09:00",
   "phase": "ロードマップ M3 機能横断と日本語（9/10 完了）。WBS 56/77 完了、未決の論点 15件",
   "progress_pct": 73,
   "quality": "UNKNOWN",
@@ -11,5 +11,5 @@
   "blockers": 3,
   "approvals": 5,
   "next_action": "W030 旧UIの主要ジャーニー自動・手動受入（自動テストとアプリ内ブラウザの分は v5 の受入（docs/v5/ACCEPTANCE_V5.csv）で確認。残りは iPhone 実機（V17））",
-  "evidence_ref": "docs/progress/PROGRESS.html@53233ca"
+  "evidence_ref": "docs/progress/PROGRESS.html@1aa97ab"
 }
