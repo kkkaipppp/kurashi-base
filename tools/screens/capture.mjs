@@ -21,9 +21,9 @@ const COMMIT = args.commit ?? "unknown";
 const DATE = args.date ?? new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
 const EDGE = args.edge ?? "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 const ROOT = resolve(import.meta.dirname, "..", "..");
-const OUT = join(ROOT, "docs", "screens", `${DATE}_${LABEL}_${COMMIT}`);
-const WIDTH = 375;
-const HEIGHT = 812;
+const OUT = join(ROOT, "docs", "screens", `${DATE}_${LABEL}_${COMMIT}${args.width && args.width !== "375" ? `_${args.width}` : ""}`);
+const WIDTH = Number(args.width ?? 375);
+const HEIGHT = Number(args.height ?? 812);
 const KEY = "kurashi-base:data:v1";
 const SCHEMA = Number(args.schema ?? 2); // Phase 1（データ形式1）の版を撮るときは --schema 1
 
@@ -38,12 +38,14 @@ function seedFor(schema) {
 }
 
 /** 撮る画面。act はページを開いたあとに行う操作（ボタンを押すなど）。無い画面（古い版）は飛ばす */
-const clickText = (text) => `(() => { const b = [...document.querySelectorAll('button,a')].find(e => e.textContent.trim().startsWith(${JSON.stringify(text)}) || e.getAttribute('aria-label')?.startsWith(${JSON.stringify(text)})); if (b) { b.click(); return true } return false })()`;
+// 開いているシート（role=dialog）があれば、その中のボタンを優先して押す
+const clickText = (text) => `(() => { const scope = [...document.querySelectorAll('[role=dialog]')].pop() ?? document; const b = [...scope.querySelectorAll('button,a')].find(e => e.textContent.trim().startsWith(${JSON.stringify(text)}) || e.getAttribute('aria-label')?.startsWith(${JSON.stringify(text)})); if (b) { b.click(); return true } return false })()`;
 const SCREENS = [
   { id: "01_home", name: "ホーム", path: "/" },
   { id: "02_add", name: "＋（何を追加するか）", path: "/", act: [clickText("追加する")] },
   { id: "03_event_add", name: "予定を追加", path: "/", act: [clickText("追加する"), clickText("予定")] },
   { id: "04_event_detail", name: "予定の詳細", path: "/", act: [`(() => { const b = document.querySelector('main li button'); if (b) { b.click(); return true } return false })()`], sampleOnly: true },
+  { id: "04b_event_edit", name: "予定を編集", path: "/", act: [`(() => { const b = document.querySelector('main li button'); if (b) { b.click(); return true } return false })()`, clickText("編集する")], sampleOnly: true },
   { id: "05_calendar", name: "カレンダー", path: "/calendar" },
   { id: "06_report", name: "振り返り", path: "/report" },
   { id: "07_trips", name: "旅行", path: "/trips" },
@@ -52,6 +54,7 @@ const SCREENS = [
   { id: "10_menu", name: "メニュー", path: "/menu" },
   { id: "11_guide", name: "使い方", path: "/guide" },
   { id: "12_settings", name: "設定", path: "/settings" },
+  { id: "12b_backup", name: "バックアップと復元", path: "/settings", act: [`(() => { const e = document.getElementById("backup"); if (e) { e.scrollIntoView(); return true } return false })()`] },
   { id: "13_history", name: "取引履歴", path: "/history" },
 ];
 

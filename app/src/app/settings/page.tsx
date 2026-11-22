@@ -233,12 +233,14 @@ export default function SettingsPage() {
       <Card>
         <div id="backup" className="scroll-mt-20" />
         <SectionTitle>バックアップと復元</SectionTitle>
-        <p className="mb-3 text-[13px] text-ink-3">
-          データはこの端末のブラウザ内だけに保存されています。ブラウザのデータを消すと失われるため、定期的に書き出してください。
-          {data.meta.lastBackupAt ? ` 前回の書き出し：${formatDateJa(data.meta.lastBackupAt.slice(0, 10), true)}` : " まだ書き出していません。"}
+        <p className="text-[13px] text-ink-2">
+          記録は、この端末のブラウザの中だけに保存されています。ブラウザのデータを消すと記録も消えるので、週に1回ほどファイルに書き出してください。
+        </p>
+        <p className="mt-1 mb-3 text-[13px] font-semibold text-ink-2">
+          {data.meta.lastBackupAt ? `前回の書き出し：${formatDateJa(data.meta.lastBackupAt.slice(0, 10), true)}` : "まだ書き出していません"}
         </p>
         <div className="grid gap-2">
-          <Button onClick={exportBackup}>バックアップを書き出す（ファイルに保存）</Button>
+          <Button onClick={exportBackup}>バックアップを書き出す</Button>
           <Button variant="secondary" onClick={() => fileRef.current?.click()}>
             バックアップから復元…
           </Button>
