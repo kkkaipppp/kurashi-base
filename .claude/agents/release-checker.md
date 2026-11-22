@@ -35,6 +35,7 @@ tools: Read, Grep, Glob, Bash
 16. 秘密の鍵・トークン・個人情報（実名の記録・メールアドレス）がリポジトリに入っていないか（`git grep` で確かめる。`.env`・`_review/` が `.gitignore` にあるか）
 17. 検索エンジンに載せない設定（`app/src/app/layout.tsx` の robots）が残っているか
 18. 使えない機能（OCR・同期・共有・AI）を、使えるように見せる言い方がないか（`tests/copy-v5.test.ts` の見張りが通るか）
+19. 実機・人の確認の「合格」が、最後に関係する変更（`git log` の日時・コミット）より**後**に付いたものか。前に付いた合格のまま PASS になっていないか（プレイブック L12。`docs/v5/ACCEPTANCE_V5.csv`・`docs/progress/WBS.csv` の根拠・完了日と、`git log -- app` を見比べる）
 
 ## 出すもの（これだけ）
 見つけた問題を、重い順に表で：
