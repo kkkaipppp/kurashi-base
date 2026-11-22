@@ -1,0 +1,283 @@
+--- a/app/src/components/EventSheet.tsx
++++ b/app/src/components/EventSheet.tsx
+@@ -192,7 +192,7 @@
+           )}
+           {gcal && (
+             <a href={gcal} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+-              Googleカレンダーに追加する
++              Googleカレンダーで予定を作る
+             </a>
+           )}
+           {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーの画面が開きます。そこで「保存」を押すと登録されます（このアプリとは連動しません。メモは渡しません）。</p>}
+@@ -273,7 +273,7 @@
+     try {
+       const v = validateEvent(draft);
+       const errs: FieldErrors = v.ok ? {} : { ...v.errors };
+-      if (!isSavableUrl(extra.url)) errs.url = "URL は https:// から始まる形で入力してください";
++      if (!isSavableUrl(extra.url)) errs.url = "URLは https:// または http:// から入力してください";
+       const costTxt = extra.cost.replace(/[,，円\s]/g, "").normalize("NFKC");
+       const cost = costTxt === "" ? null : Number(costTxt);
+       if (cost !== null && (!Number.isInteger(cost) || cost < 0 || cost > 100_000_000)) errs.cost = "費用は0以上の整数（円）で入力してください";
+--- a/app/src/lib/backup.ts
++++ b/app/src/lib/backup.ts
+@@ -153,6 +153,14 @@
+   );
+   const curSubj = new Map(current.studySubjects.map((s) => [s.id, s]));
+   const badSubj = new Set(incoming.studySubjects.filter((s) => curSubj.has(s.id) && curSubj.get(s.id)!.name !== s.name).map((s) => s.id));
++  // 旅行IDが一致していても行き先・期間・名前が異なるなら、別の旅行の可能性がある。
++  // この旅行を指す予定を取り込むと、別の旅程に紐づいてしまうため安全側でスキップする。
++  const curTrip = new Map((current.trips ?? []).map((t) => [t.id, t]));
++  const badTrip = new Set((incoming.trips ?? []).filter((t) => {
++    const existing = curTrip.get(t.id);
++    return existing && (existing.title !== t.title || existing.destination !== t.destination ||
++      existing.startDate !== t.startDate || existing.endDate !== t.endDate);
++  }).map((t) => t.id));
+ 
+   /** 一覧を合成する。sameMeaning は「IDが同じとき、同じものとみなすか」（既定：中身が完全に同じ） */
+   const mergeList = <T extends WithId>(a: T[], b: T[], opts: { skipIf?: (x: T) => boolean; sameMeaning?: (x: T, y: T) => boolean } = {}): T[] => {
+@@ -183,7 +191,7 @@
+     ...current,
+     categories,
+     transactions: mergeList(current.transactions, incoming.transactions, { skipIf: (t) => badCat.has(t.categoryId) }),
+-    events: mergeList(current.events, incoming.events),
++    events: mergeList(current.events, incoming.events, { skipIf: (e) => !!e.tripId && badTrip.has(e.tripId) }),
+     trips: mergeList(current.trips ?? [], incoming.trips ?? []),
+     recurring: mergeList(current.recurring, incoming.recurring, { skipIf: (r) => badCat.has(r.categoryId) }),
+     studySubjects: mergeList(current.studySubjects, incoming.studySubjects, { sameMeaning: (x, y) => x.name === y.name }),
+--- /dev/null
++++ b/app/src/lib/eventMerge.ts
+@@ -0,0 +1,17 @@
++import type { CalendarEvent } from "./types";
++
++/**
++ * 予定編集は編集フォームが全項目を返す「完全な置き換え」。
++ * 古い任意項目を spread で残すと、入力欄で空にした場所・URL・旅行などが復活する。
++ * id と createdAt だけは元の記録を保ち、更新日時を置き換える。
++ */
++export type EventEditable = Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">;
++
++export function replaceEventEditableFields(existing: CalendarEvent, next: EventEditable, updatedAt: string): CalendarEvent {
++  return {
++    ...next,
++    id: existing.id,
++    createdAt: existing.createdAt,
++    updatedAt,
++  };
++}
+--- a/app/src/lib/schema.ts
++++ b/app/src/lib/schema.ts
+@@ -175,6 +175,12 @@
+     const cat = categories.get(r.categoryId);
+     if (!cat || cat.kind !== "expense") return { ok: false, error: `固定費「${r.name}」のカテゴリが、支出用のカテゴリになっていません` };
+   }
++  const trips = new Set((data.trips ?? []).map((t) => t.id));
++  for (const e of data.events) {
++    if (e.tripId && !trips.has(e.tripId)) {
++      return { ok: false, error: `${e.startDate}の予定「${e.title}」が、存在しない旅行を参照しています` };
++    }
++  }
+   const subjects = new Set(data.studySubjects.map((s) => s.id));
+   for (const l of data.studyLogs) {
+     if (!subjects.has(l.subjectId)) return { ok: false, error: `${l.date}の勉強の記録（${l.minutes}分）の資格が、バックアップの中に見つかりません` };
+--- a/app/src/lib/storage.ts
++++ b/app/src/lib/storage.ts
+@@ -19,9 +19,8 @@
+ function getLocal(): KV | null {
+   try {
+     if (typeof window === "undefined" || !window.localStorage) return null;
+-    const probe = "kurashi-base:probe";
+-    window.localStorage.setItem(probe, "1");
+-    window.localStorage.removeItem(probe);
++    // 読み取り前に書き込みテストをしない。容量不足でも既存データは読めることがある。
++    // 書き込みできるかは saveDataIfUnchanged が、実際の保存時に判定する。
+     return window.localStorage;
+   } catch {
+     return null;
+@@ -123,14 +122,34 @@
+     return { ok: false, error: "保存できませんでした。保存場所にアクセスできません" };
+   }
+   if (current !== expectedRaw) return { ok: false, error: CONFLICT_ERROR, conflict: true };
+-  if (current !== null) {
+-    try {
+-      kv.setItem(UNDO_KEY, JSON.stringify({ savedAt: now, reason, raw: current } satisfies UndoSnapshot));
+-    } catch {
+-      return { ok: false, error: "保存できませんでした。元に戻すための控えを作れなかったため、変更をやめました。先にバックアップを書き出してください" };
++  if (current === null) return saveDataIfUnchanged(data, expectedRaw, kv);
++  // localStorage は複数キーを一括更新できないため、保存失敗時は前の控えに戻す。
++  // 操作前の控えは同じ文字列のまま保持し、失敗しても取り消し履歴を失わない。
++  let previousUndo: string | null;
++  try {
++    previousUndo = kv.getItem(UNDO_KEY);
++  } catch {
++    return { ok: false, error: "保存場所を読み込めないため、元に戻すための控えを作れませんでした" };
++  }
++  const pendingUndo = JSON.stringify({ savedAt: now, reason, raw: current } satisfies UndoSnapshot);
++  try {
++    kv.setItem(UNDO_KEY, pendingUndo);
++  } catch {
++    return { ok: false, error: "保存できませんでした。元に戻すための控えを作れません。先にバックアップを書き出してください" };
++  }
++  const result = saveDataIfUnchanged(data, expectedRaw, kv);
++  if (result.ok) return result;
++  try {
++    // 別の処理が控えを書き換えていたら、その控えを無断で上書きしない。
++    if (kv.getItem(UNDO_KEY) !== pendingUndo) {
++      return { ok: false, error: `${result.error}。取り消し用データも変更されたため、再読み込みしてください`, ...(result.conflict ? { conflict: true as const } : {}) };
+     }
++    if (previousUndo === null) kv.removeItem(UNDO_KEY);
++    else kv.setItem(UNDO_KEY, previousUndo);
++  } catch {
++    return { ok: false, error: `${result.error}。取り消し用の控えを元に戻せませんでした。新たな操作をせず、現在のデータをバックアップしてください`, ...(result.conflict ? { conflict: true as const } : {}) };
+   }
+-  return saveDataIfUnchanged(data, expectedRaw, kv);
++  return result;
+ }
+ 
+ /** 控えの状態に戻す。戻す直前の状態を新しい控えにするので、もう一度押せばやり直せる */
+--- a/app/src/lib/store.tsx
++++ b/app/src/lib/store.tsx
+@@ -3,6 +3,7 @@
+ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+ import { newId } from "./defaults";
+ import { advanceDueDate } from "./recurring";
++import { replaceEventEditableFields } from "./eventMerge";
+ import { clearUndo, loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
+ import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
+ 
+@@ -158,7 +159,10 @@
+         return r.ok ? { ...r, id } : r;
+       },
+       updateEvent: (id, e) =>
+-        commit((d) => ({ ...d, events: d.events.map((x) => (x.id === id ? { ...x, ...e, id, updatedAt: now() } : x)) })),
++        commit((d) => ({
++          ...d,
++          events: d.events.map((x) => (x.id === id ? replaceEventEditableFields(x, e, now()) : x)),
++        })),
+       deleteEvent: (id) => commit((d) => ({ ...d, events: d.events.filter((x) => x.id !== id) })),
+       toggleEventItem: (eventId, itemId) =>
+         commit((d) => ({
+--- /dev/null
++++ b/app/tests/beta-final-guard.test.ts
+@@ -0,0 +1,122 @@
++import { describe, expect, it } from "vitest";
++import { emptyData } from "@/lib/defaults";
++import { applyRestore } from "@/lib/backup";
++import { validateRelationships } from "@/lib/schema";
++import { replaceEventEditableFields } from "@/lib/eventMerge";
++import { loadData, readUndo, saveDataIfUnchanged, saveWithUndo, STORAGE_KEY, UNDO_KEY, type KV } from "@/lib/storage";
++import type { CalendarEvent, Trip } from "@/lib/types";
++
++const NOW = "2026-11-22T10:00:00.000Z";
++const event = (id: string, extra: Partial<CalendarEvent> = {}): CalendarEvent => ({
++  id, title: "新幹線", startDate: "2026-12-01", endDate: "2026-12-01", allDay: false,
++  startTime: "09:00", endTime: "12:00", note: "", createdAt: NOW, updatedAt: NOW, ...extra,
++});
++const trip = (id: string, title: string): Trip => ({
++  id, title, startDate: "2026-12-01", endDate: "2026-12-03", destination: title,
++  budget: null, note: "", createdAt: NOW, updatedAt: NOW,
++});
++class FaultKV implements KV {
++  values = new Map<string, string>();
++  failWrite = new Set<string>();
++  failRead = new Set<string>();
++  failRemove = new Set<string>();
++  getItem(key: string) {
++    if (this.failRead.has(key)) throw new Error("read unavailable");
++    return this.values.get(key) ?? null;
++  }
++  setItem(key: string, value: string) {
++    if (this.failWrite.has(key)) throw new DOMException("storage full", "QuotaExceededError");
++    this.values.set(key, value);
++  }
++  removeItem(key: string) {
++    if (this.failRemove.has(key)) throw new Error("remove unavailable");
++    this.values.delete(key);
++  }
++}
++
++describe("友人β：データを壊さないための回帰検証", () => {
++  it("編集で空にした場所・URL・持ち物・旅行・種類・費用が復活しない", () => {
++    const before = event("e1", { location: "札幌", url: "https://example.com", items: [{id:"i1",text:"傘",done:false}], tripId:"t1", kind:"move", cost:1000 });
++    const { location: _location, url: _url, items: _items, tripId: _tripId, kind: _kind, cost: _cost, id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...clean } = before;
++    void [_location, _url, _items, _tripId, _kind, _cost, _id, _createdAt, _updatedAt];
++    const after = replaceEventEditableFields(before, clean, "2026-12-02T00:00:00.000Z");
++    for (const k of ["location", "url", "items", "tripId", "kind", "cost"]) expect(k in after).toBe(false);
++    expect(after.id).toBe("e1");
++    expect(after.createdAt).toBe(NOW);
++  });
++  it("意味が違う同一IDの旅行を指す行程は追加復元しない", () => {
++    const current = emptyData();
++    current.trips.push(trip("same-trip", "京都旅行"));
++    const incoming = emptyData();
++    incoming.trips.push(trip("same-trip", "札幌旅行"));
++    incoming.events.push(event("new-event", { tripId: "same-trip" }));
++    const result = applyRestore(current, incoming, "merge");
++    expect(result.ok).toBe(true);
++    if (!result.ok) return;
++    expect(result.data.events).toHaveLength(0);
++    expect(result.data.trips[0].title).toBe("京都旅行");
++    expect(result.dependentSkipped).toBe(1);
++  });
++  it("意味が同じ旅行の予算メモ違いなら参照する行程を維持する", () => {
++    const current = emptyData();
++    current.trips.push(trip("same-trip", "京都旅行"));
++    const incoming = emptyData();
++    incoming.trips.push({ ...trip("same-trip", "京都旅行"), budget: 30000 });
++    incoming.events.push(event("new-event", { tripId: "same-trip" }));
++    const result = applyRestore(current, incoming, "merge");
++    expect(result.ok).toBe(true);
++    if (result.ok) expect(result.data.events[0].tripId).toBe("same-trip");
++  });
++  it("存在しない旅行を参照するバックアップは復元できない", () => {
++    const data = emptyData();
++    data.events.push(event("e1", { tripId: "missing" }));
++    expect(validateRelationships(data).ok).toBe(false);
++  });
++  it("容量不足で書き込めない場合でも、既存データがあれば読み出せる", () => {
++    const kv = new FaultKV();
++    const data = emptyData();
++    kv.values.set(STORAGE_KEY, JSON.stringify(data));
++    kv.failWrite.add(STORAGE_KEY);
++    expect(loadData(kv).status).toBe("ok");
++    expect(saveDataIfUnchanged(data, kv.getItem(STORAGE_KEY), kv).ok).toBe(false);
++    expect(kv.getItem(STORAGE_KEY)).toBe(JSON.stringify(data));
++  });
++  it("本体保存に失敗しても、前の取り消し用控えは変わらない", () => {
++    const kv = new FaultKV();
++    const a = emptyData();
++    const before = JSON.stringify(a);
++    kv.values.set(STORAGE_KEY, before);
++    const olderUndo = JSON.stringify({ savedAt: NOW, reason: "旧復元", raw: before });
++    kv.values.set(UNDO_KEY, olderUndo);
++    kv.failWrite.add(STORAGE_KEY);
++    const result = saveWithUndo({ ...a, budget: { monthly: 50000 } }, before, "新復元", NOW, kv);
++    expect(result.ok).toBe(false);
++    expect(kv.getItem(UNDO_KEY)).toBe(olderUndo);
++    expect(kv.getItem(STORAGE_KEY)).toBe(before);
++    expect(readUndo(kv)?.reason).toBe("旧復元");
++  });
++  it("本体保存失敗、かつ元の控えに戻せない場合は、異常を隠さない", () => {
++    const kv = new FaultKV();
++    const data = emptyData();
++    const before = JSON.stringify(data);
++    kv.values.set(STORAGE_KEY, before);
++    kv.failWrite.add(STORAGE_KEY);
++    kv.failRemove.add(UNDO_KEY);
++    const result = saveWithUndo({ ...data, budget: { monthly: 30000 } }, before, "復元", NOW, kv);
++    expect(result.ok).toBe(false);
++    if (!result.ok) expect(result.error).toContain("控えを元に戻せませんでした");
++  });
++  it("保存前に競合すれば元のデータも控えも変更しない", () => {
++    const kv = new FaultKV();
++    const initial = emptyData();
++    const raw = JSON.stringify(initial);
++    kv.values.set(STORAGE_KEY, raw);
++    const anotherTab = JSON.stringify({ ...initial, budget:{monthly:50000} });
++    kv.values.set(STORAGE_KEY, anotherTab);
++    const result = saveWithUndo(emptyData(), raw, "復元", NOW, kv);
++    expect(result.ok).toBe(false);
++    if (!result.ok) expect(result.conflict).toBe(true);
++    expect(kv.getItem(STORAGE_KEY)).toBe(anotherTab);
++    expect(kv.getItem(UNDO_KEY)).toBeNull();
++  });
++});

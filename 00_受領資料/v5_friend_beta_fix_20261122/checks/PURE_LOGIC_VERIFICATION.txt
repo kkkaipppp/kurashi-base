@@ -1,0 +1,15 @@
+検証対象：kurashi-base v5 2cf3cb5に対する本パッチ（2026-11-22）
+- global TypeScript tsc --strict --module commonjs --target ES2022 --lib es2022,dom: PASS
+  検査：backup.ts, schema.ts, storage.ts, eventMerge.ts（純粋ロジックの依存関係を含む）
+- node実行の独立チェック: PASS（7区分）
+  1. 予定の任意項目削除
+  2. 旅行ID衝突時の誤参照防止
+  3. 同一旅行の予算違いでも予定を復元可能
+  4. 旅行参照の検証
+  5. 書込不可でも既存の保存データを読み出せる
+  6. 保存失敗で以前のUNDOを復旧
+  7. 復元→取り消し
+- Vitest追加8ケース: ファイルを作成済み、実行は未実施
+- npm run check: 未実施（npmパッケージ取得不可）
+- iPhone実機: 未実施
+- スクリーンショット: Next.js本体ではなくコードから構成した静的プレビュー

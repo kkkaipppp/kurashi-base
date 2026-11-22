@@ -50,7 +50,7 @@ const D=${payload};
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function draw(){const st=document.getElementById("state").value;
  const ids=[];const names={};D.forEach(c=>(c.screens[st]||[]).forEach(x=>{if(!ids.includes(x.id))ids.push(x.id);names[x.id]=names[x.id]||x.name}));ids.sort();
- let h="<thead><tr><th class=row>画面</th>"+D.map(c=>"<th>"+esc(c.label)+"<br><span class=cap>"+esc(c.date)+"・"+esc(c.commit)+"</span></th>").join("")+"</tr></thead><tbody>";
+ let h="<thead><tr><th class=row>画面</th>"+D.map(c=>"<th>"+esc(c.label)+"<br><span class=cap>"+esc(c.date)+"・"+esc(c.commit)+"<br>"+esc(c.viewport)+"</span></th>").join("")+"</tr></thead><tbody>";
  for(const id of ids){h+="<tr><th class=row>"+esc(names[id])+"<br><span class=cap>"+esc(id)+"</span></th>";
   for(const c of D){const x=(c.screens[st]||[]).find(y=>y.id===id);
    h+="<td>"+(x&&x.file?"<img loading=lazy src='"+esc(x.file)+"' alt='"+esc(c.label+" "+x.name)+"'>"+(x.note?"<div class=cap>"+esc(x.note)+"</div>":""):"<div class=none>"+(x&&x.skipped?"この版には無い画面":"撮っていない")+"</div>")+"</td>"}
