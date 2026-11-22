@@ -5,7 +5,7 @@
 - 更新：2026-11-22
 - ブランチ：`beta/friend-go`（`beta/friend-v1` の a6e7f00 から。master にはまだマージしていない。push もしていない）
 - 段階：M4 スマホβ／M5 公開準備（ロードマップ `docs/progress/ROADMAP.md` の「友人β版」）
-- **GO 準備の根本修正を取り込み済み**（ブランチ `beta/friend-go`、28a7c74〜。テスト183件 PASS）。必須受入 B01〜B15 は 9 PASS・6 NOT_RUN（iPhone・公開 URL）で **NO-GO**。証拠：`docs/release/GO_EVIDENCE_20261122.md`
+- **GO 準備の根本修正を取り込み済み**（ブランチ `beta/friend-go`、28a7c74〜。テスト191件 PASS、最終 ddb5dc3）。必須受入 B01〜B15 は 9 PASS・6 NOT_RUN（iPhone・公開 URL）で **NO-GO**。証拠：`docs/release/GO_EVIDENCE_20261122.md`
 - **友人β 最終修正（P0 4件）を取り込み済み**（e005b04〜d4718ff、テスト159件 PASS、実画面のスクショは docs/screens/…_v5-fix_d4718ff）。判定は **NO-GO（条件付き：iPhone 実機で修正した流れ F07）**
 - **v5（生活の機能とブランド）を実装**：ホーム3項目・予定の詳細・旅行・資格の学習・日本語・くらしベースのロゴ。受入105件は `docs/v5/ACCEPTANCE_V5.csv`。iPhone 実機で v5 の新しい画面も OK（11-22、平尾さん）。判定は **友人β GO 可（公開の判断待ち）**。ロゴは再現案で使うと決定（Q21）
 - v4 時点の判定：**友人β GO 可（公開の承認待ち）**。iPhone 実機でキーボード・バックアップの確認が済んだ（11-22、平尾さん）。残りは公開の承認（`docs/BETA_RELEASE_REPORT.md`）／一般公開 NO-GO

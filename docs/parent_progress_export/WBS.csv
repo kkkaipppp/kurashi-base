@@ -84,12 +84,12 @@ F05,M8,P1,文言：Googleカレンダーで予定を作る・URL の案内・保
 F06,M8,P0,実画面のスクリーンショット,F05,ホーム・カレンダー・予定の追加と詳細と編集・バックアップを実アプリで撮る,受領 v5_friend_beta_fix 01_改善指示,Claude Code,DONE,docs/screens/2026-11-22_v5-fix_d4718ff（375×812）と _390（390×844）,2026-11-22,,2026-11-22,2026-11-22
 F07,M8,P0,iPhone 実機で修正した流れを確かめる,F06,予定の詳細を消す→再起動、バックアップ→復元→取り消し→やり直し,受領 v5_friend_beta_fix 01_改善指示,User,NOT_RUN,,,平尾さんの操作が必要,2026-11-23,2026-11-23
 GO01,M8,P0,Git の戻り地点と作業ブランチ,,ブランチ beta/friend-go、基準 a6e7f00,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,git switch -c beta/friend-go（a6e7f00 から）,2026-11-22,,2026-11-22,2026-11-22
-GO02,M8,P0,すべて削除の完全な削除（wipeAllAppData）,GO01,控え・退避まで消え、ほかのアプリのキーは残る,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,go-data-deletion 7件・go-paths、アプリ内ブラウザで B07 (28a7c74),2026-11-22,,2026-11-22,2026-11-22
+GO02,M8,P0,すべて削除の完全な削除（wipeAllAppData）,GO01,控え・退避まで消え、ほかのアプリのキーは残る,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,go-data-deletion 7件・go-paths、アプリ内ブラウザで B07 (28a7c74)。ddb5dc3 でやり直し（16:16）,2026-11-22,,2026-11-22,2026-11-22
 GO03,M8,P0,削除の途中の失敗と戻し,GO02,RED→GREEN,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,go-data-deletion（障害注入）RED→GREEN (28a7c74),2026-11-22,,2026-11-22,2026-11-22
-GO04,M8,P0,同じ予定の2タブ編集で上書きしない,GO01,競合のとき保存をやめる,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,アプリ内ブラウザ2タブで B09、go-paths (28a7c74),2026-11-22,,2026-11-22,2026-11-22
-GO05,M8,P0,取引・旅行・固定費・タスクなどにも競合の確かめを広げる,GO04,金額・予定を黙って上書きしない,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,go-paths（store の5つの更新・5つの画面）(28a7c74),2026-11-22,,2026-11-22,2026-11-22
-GO06,M8,P0,容量不足の案内でサイトデータを消すように誘わない,,先にバックアップを案内,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,アプリ内ブラウザで B06 (28a7c74),2026-11-22,,2026-11-22,2026-11-22
-GO07,M8,P0,既存の回帰（v1/v2・復元・旅行・資格など）,GO02,全件 PASS,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,npm run check PASS（テスト183件）(2a71d64),2026-11-22,,2026-11-22,2026-11-22
+GO04,M8,P0,同じ予定の2タブ編集で上書きしない,GO01,競合のとき保存をやめる,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,アプリ内ブラウザ2タブで B09、go-paths (28a7c74)。点検役の指摘で資格・消された記録も対応、ddb5dc3 で2タブの確認をやり直し（16:13）,2026-11-22,,2026-11-22,2026-11-22
+GO05,M8,P0,取引・旅行・固定費・タスクなどにも競合の確かめを広げる,GO04,金額・予定を黙って上書きしない,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,go-paths（store の5つの更新・5つの画面）(28a7c74)。点検役の指摘で資格・消された記録も対応、ddb5dc3 で2タブの確認をやり直し（16:13）,2026-11-22,,2026-11-22,2026-11-22
+GO06,M8,P0,容量不足の案内でサイトデータを消すように誘わない,,先にバックアップを案内,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,アプリ内ブラウザで B06 (28a7c74)。ddb5dc3 でやり直し（16:15）,2026-11-22,,2026-11-22,2026-11-22
+GO07,M8,P0,既存の回帰（v1/v2・復元・旅行・資格など）,GO02,全件 PASS,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,npm run check PASS（テスト191件）(ddb5dc3),2026-11-22,,2026-11-22,2026-11-22
 GO08,M8,P0,iPhone：予定の詳細を消す→開き直す（B02）,GO07,B02 PASS,受領 v5fix_GO_readiness 06_WBS,User,NOT_RUN,,,docs/release/IPHONE_CHECK_20261122.md の1〜3,2026-11-23,2026-11-23
 GO09,M8,P0,iPhone：バックアップ→復元→取り消し→やり直し（B03・B04）,GO07,B03・B04 PASS,受領 v5fix_GO_readiness 06_WBS,User,NOT_RUN,,,同じ手順の4〜6,2026-11-23,2026-11-23
 GO10,M8,P0,iPhone：キーボード・二重保存（B13）,GO07,B13 PASS,受領 v5fix_GO_readiness 06_WBS,User,NOT_RUN,,,同じ手順の1〜2,2026-11-23,2026-11-23
