@@ -123,7 +123,7 @@ export default function ReportPage() {
 
           {insights.length > 0 && (
             <Card className="border-warn/30 bg-warn-soft">
-              <SectionTitle>くらしの気づき</SectionTitle>
+              <SectionTitle>支出の変化</SectionTitle>
               <ul className="space-y-1">
                 {insights.map((i) => (
                   <li key={i.key} className="text-[14px]">

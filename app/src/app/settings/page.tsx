@@ -35,9 +35,9 @@ export default function SettingsPage() {
 
   // --- ホーム表示 ---
   const toggles: { key: keyof HomePrefs; label: string }[] = [
-    { key: "todaySpent", label: "今日の支出（今月あと使えるの横）" },
+    { key: "todaySpent", label: "今日の支出（今月の残り予算の横）" },
     { key: "nextRecurring", label: "固定費の次回予定" },
-    { key: "needsReview", label: "今日のナビ（期限・支払日・試験日など）" },
+    { key: "needsReview", label: "確認したいこと（支払日・試験日・更新日など）" },
   ];
 
   // --- カテゴリ ---
@@ -65,7 +65,7 @@ export default function SettingsPage() {
     // Safari はクリック直後に URL を無効にすると保存が始まらないことがあるため、少し待ってから片付ける
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
     const r = store.commit((d) => ({ ...d, meta: { ...d.meta, lastBackupAt: now } }));
-    ui.toast(r.ok ? "バックアップファイルを書き出しました" : `ファイルは書き出しましたが、書き出した日を記録できませんでした。${r.error}`, r.ok ? "ok" : "error");
+    ui.toast(r.ok ? "バックアップの保存を始めました。ファイルが保存されたか確認してください" : `ファイルは書き出しましたが、書き出した日を記録できませんでした。${r.error}`, r.ok ? "ok" : "error");
   };
 
   // --- 復元（S09 プレビュー） ---
@@ -154,7 +154,7 @@ export default function SettingsPage() {
       <Card>
         <div id="budget" className="scroll-mt-20" />
         <SectionTitle>毎月の予算</SectionTitle>
-        <p className="mb-3 text-[13px] text-ink-3">ホームの「今月あと使える」は、この予算から今月の支出を引いた金額です。空欄にすると未設定になります。</p>
+        <p className="mb-3 text-[13px] text-ink-3">ホームの「今月の残り予算」は、この予算から今月の支出を引いた金額です。空欄にすると未設定になります。</p>
         <div className="flex items-start gap-2">
           <div className="flex-1">
             <Field label="予算（円）" htmlFor="budget-input" error={budgetErr}>
@@ -169,7 +169,7 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>ホームに表示する項目</SectionTitle>
-        <p className="mb-2 text-[13px] text-ink-3">「今月あと使える」「今日の予定」「支出を追加」「画像を見ながら記録」は、いつも表示します。下の項目は、表示する内容があるときだけ出ます。</p>
+        <p className="mb-2 text-[13px] text-ink-3">「今月の残り予算」「今日の予定」「今日やること」は、いつも表示します（今日やることは、期限が今日までのタスクがあるときだけ）。下の項目は、表示する内容があるときだけ出ます。</p>
         <ul className="divide-y divide-line">
           {toggles.map((t) => (
             <li key={t.key}>
@@ -345,10 +345,10 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>このアプリについて</SectionTitle>
-        <p className="text-[13px] text-ink-2">暮らしベース β版（試用版）</p>
+        <p className="text-[13px] text-ink-2">くらしベース（KURASHI BASE）β版（試用版）</p>
         <p className="mt-2 text-[13px] font-semibold text-ink-2">まだ対応していないこと</p>
         <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
-          <li>画像の文字の自動読み取り（OCR）— 画像を見ながら手で入力します</li>
+          <li>レシートの文字の自動読み取り（OCR）— レシートの画像を見ながら手で入力します</li>
           <li>繰り返し予定の1回分だけの変更、振替・分割払いの記録</li>
           <li>通知、ホーム画面ウィジェット、iOSショートカット連携</li>
           <li>クラウド同期・共有・AI・外部サービス連携（メニューの「準備中」に説明があります）</li>

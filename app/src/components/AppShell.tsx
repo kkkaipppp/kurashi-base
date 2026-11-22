@@ -40,7 +40,7 @@ function StorageProblem({ title, body, children }: { title: string; body: string
       <h1 className="text-xl font-bold">{title}</h1>
       <p className="text-ink-2">{body}</p>
       <p className="text-[13px] text-ink-3">
-        暮らしベースはデータをこの端末のブラウザ内に保存します。ブラウザの設定（プライベートブラウズ、サイトデータの保存制限）を確認してから再読み込みしてください。
+        くらしベースはデータをこの端末のブラウザ内に保存します。ブラウザの設定（プライベートブラウズ、サイトデータの保存制限）を確認してから再読み込みしてください。
       </p>
       {children}
       <Button variant="secondary" onClick={() => location.reload()}>

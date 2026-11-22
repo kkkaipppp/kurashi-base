@@ -17,6 +17,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/recurring", label: "固定費", desc: "家賃・通信費などの決まった支払い", count: (d) => d.recurring.filter((r) => r.active).length },
       { href: "/tasks", label: "タスク", desc: "やることと期限", count: (d) => d.tasks.filter((t) => !t.done).length },
       { href: "/trips", label: "旅行", desc: "日程・行程・行き方を調べる", count: (d) => (d.trips ?? []).filter((t) => t.endDate >= todayStr()).length },
+      { href: "/import", label: "レシートを見て入力", desc: "レシートの画像を見ながら支出を入力（自動読み取りはまだ）" },
       { href: "/settings#backup", label: "バックアップと復元", desc: "記録をファイルに保存・ファイルから戻す" },
     ],
   },

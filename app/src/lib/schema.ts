@@ -153,7 +153,7 @@ export function validateAppData(input: unknown): R {
       seen.add(item.id);
       if (k === "studySubjects") subjectIds.add(item.id);
       if (k === "studyLogs" && !subjectIds.has(item.subjectId as string))
-        return { ok: false, error: "勉強の記録が、存在しない資格・科目を指しています" };
+        return { ok: false, error: "勉強の記録が、存在しない資格を指しています" };
     }
   }
   return { ok: true, data: raw as unknown as AppData };

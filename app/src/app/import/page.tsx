@@ -57,7 +57,7 @@ export default function ImportPage() {
     ui.openTx({
       mode: "new",
       type: "expense",
-      title: "画像を見ながら登録",
+      title: "レシートを見て入力",
       source: "image",
       sourceFingerprint: picked.fingerprint,
       previewUrl: picked.url,
@@ -67,7 +67,7 @@ export default function ImportPage() {
 
   return (
     <main className="space-y-4">
-      <PageHeader title="画像を見ながら記録" />
+      <PageHeader title="レシートを見て入力" />
 
       <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3">
         <p className="text-[13px] text-ink-2">

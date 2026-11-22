@@ -8,7 +8,7 @@ const ITEMS = [
   { name: "証券会社（NISA）", status: "未接続", note: "今は「資産・NISA」で手入力します" },
   { name: "Googleカレンダーなど", status: "未接続", note: "予定の読み込み・書き出し" },
   { name: "iPhoneのショートカット・通知", status: "未接続", note: "決済の通知から支出を記録。Webアプリでは、ほかのアプリの通知を自動では読めません" },
-  { name: "レシートの文字の読み取り（OCR）", status: "準備中", note: "今は「画像を見ながら記録」で、画像を見ながら手で入力します" },
+  { name: "レシートの文字の読み取り（OCR）", status: "準備中", note: "今は「レシートを見て入力」で、画像を見ながら手で入力します" },
 ];
 
 export default function IntegrationsPage() {

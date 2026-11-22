@@ -75,7 +75,7 @@ export function parseBackup(text: string): { ok: true; preview: RestorePreview }
   }
   if (typeof raw !== "object" || raw === null) return { ok: false, error: "バックアップ形式ではありません" };
   const f = raw as Partial<BackupFile>;
-  if (f.format !== BACKUP_FORMAT) return { ok: false, error: "暮らしベースのバックアップファイルではありません" };
+  if (f.format !== BACKUP_FORMAT) return { ok: false, error: "くらしベース（暮らしベース）のバックアップファイルではありません" };
   if (f.schemaVersion !== 1 && f.schemaVersion !== CURRENT_SCHEMA) return { ok: false, error: "対応していないバックアップのバージョンです" };
   if (!f.data || typeof f.data !== "object" || Array.isArray(f.data) || typeof f.checksum !== "string")
     return { ok: false, error: "バックアップのデータまたはチェックサムがありません" };
