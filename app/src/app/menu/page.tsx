@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { Card, IconChevronR, PageHeader } from "@/components/ui";
 import { useData } from "@/lib/store";
+import { todayStr } from "@/lib/date";
 import type { AppData } from "@/lib/types";
 
 type Item = { href: string; label: string; desc: string; count?: (d: AppData) => number; soon?: boolean };
 
 // よく使うものを先頭に、残りは中身の種類で分ける。使えないもの（準備中）はいちばん下にまとめ、各項目にも印を付ける。
-// 画像を見ながら記録（操作）は、ホームから使う。
 const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "よく使う",
@@ -16,6 +16,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/history", label: "取引履歴", desc: "月ごとの支出・収入と検索", count: (d) => d.transactions.length },
       { href: "/recurring", label: "固定費", desc: "家賃・通信費などの決まった支払い", count: (d) => d.recurring.filter((r) => r.active).length },
       { href: "/tasks", label: "タスク", desc: "やることと期限", count: (d) => d.tasks.filter((t) => !t.done).length },
+      { href: "/trips", label: "旅行", desc: "日程・行程・行き方を調べる", count: (d) => (d.trips ?? []).filter((t) => t.endDate >= todayStr()).length },
       { href: "/settings#backup", label: "バックアップと復元", desc: "記録をファイルに保存・ファイルから戻す" },
     ],
   },
@@ -30,7 +31,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: "目標・学び",
     items: [
       { href: "/goals", label: "目標", desc: "目標と達成率", count: (d) => d.goals.filter((g) => !g.done).length },
-      { href: "/study", label: "資格の勉強", desc: "試験日までの日数と勉強時間", count: (d) => d.studySubjects.filter((s) => !s.archived).length },
+      { href: "/study", label: "資格の学習", desc: "資格を探す・勉強時間の目安・参考書", count: (d) => d.studySubjects.filter((s) => !s.archived).length },
     ],
   },
   {
