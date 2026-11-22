@@ -59,7 +59,7 @@ export function saveData(data: AppData, kv: KV | null = getLocal()): SaveResult 
     return { ok: true };
   } catch (e) {
     const quota = e instanceof DOMException && (e.name === "QuotaExceededError" || e.code === 22);
-    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。このアプリのサイトデータを削除せず、先に「設定」からバックアップを書き出してください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
+    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。このアプリのサイトデータは削除しないでください。先に「設定」からバックアップを書き出し、ほかのタブを閉じてから、もう一度保存してください。続くときは、開発者に知らせてください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
   }
 }
 
@@ -82,7 +82,7 @@ export function saveDataIfUnchanged(data: AppData, expectedRaw: string | null, k
     return { ok: true, persistedRaw: raw };
   } catch (e) {
     const quota = typeof DOMException !== "undefined" && e instanceof DOMException && (e.name === "QuotaExceededError" || e.code === 22);
-    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。このアプリのサイトデータを削除せず、先に「設定」からバックアップを書き出してください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
+    return { ok: false, error: quota ? "保存できませんでした。この端末のブラウザの保存容量がいっぱいです。今までの記録は消えていません。このアプリのサイトデータは削除しないでください。先に「設定」からバックアップを書き出し、ほかのタブを閉じてから、もう一度保存してください。続くときは、開発者に知らせてください" : "保存できませんでした。今までの記録は消えていません。もう一度お試しください。続くときは、プライベートブラウズではなく通常のタブで開いてください" };
   }
 }
 

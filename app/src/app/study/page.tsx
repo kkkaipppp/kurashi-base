@@ -246,6 +246,10 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
   const [q, setQ] = useState("");
   const [book, setBook] = useState({ title: "", url: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // 編集を始めたときの記録と ID。保存の直前に比べ、別のタブで変わっていたら・消されていたら保存しない
+  const editSnapshot = useRef(editing ? JSON.stringify(editing) : undefined);
+  const editId = useRef(editing?.id);
+  const [wasEditing] = useState(Boolean(editing)); // 見出し用（消されても「編集」のまま）
   const lock = useRef(false);
   const dirty = JSON.stringify(f) !== JSON.stringify(initial) || !!book.title.trim();
   const cert = findCertification(f.catalogId);
@@ -289,7 +293,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
       ...(f.catalogId && f.name.trim() === cert?.name ? { catalogId: f.catalogId } : {}),
       ...(f.books.length ? { books: f.books } : {}),
     };
-    const r = editing ? store.commit((d) => ({ ...d, studySubjects: d.studySubjects.map((x) => (x.id === editing.id ? { ...item, id: x.id, createdAt: x.createdAt, updatedAt: new Date().toISOString() } : x)) })) : store.addItem("studySubjects", item);
+    const r = editId.current ? store.replaceItem("studySubjects", editId.current, item, editSnapshot.current) : store.addItem("studySubjects", item);
     if (!r.ok) {
       lock.current = false;
       return ui.toast(r.error, "error");
@@ -316,7 +320,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
 
   return (
     <Sheet
-      title={editing ? "資格を編集" : "資格を追加"}
+      title={wasEditing ? "資格を編集" : "資格を追加"}
       open
       onRequestClose={requestClose}
       footer={

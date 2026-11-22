@@ -24,7 +24,8 @@ describe("同じ記録を2つのタブで編集しても、古い入力で黙っ
     ["updateTx", "deleteTx"],
     ["updateTrip", "deleteTrip"],
     ["updateRecurring", "deleteRecurring"],
-    ["updateItem", "removeItem"],
+    ["updateItem", "replaceItem"],
+    ["replaceItem", "removeItem"],
   ])("store.%s は、編集を始めたときの内容と今の内容を比べてから保存する", (name, next) => {
     const body = fnBody(name, next);
     expect(body).toMatch(/staleCheck\(dataRef\.current/);
@@ -52,11 +53,40 @@ describe("同じ記録を2つのタブで編集しても、古い入力で黙っ
     ["app/trips/page.tsx", "updateTrip("],
     ["app/recurring/page.tsx", "updateRecurring("],
     ["components/CollectionPage.tsx", "updateItem("],
+    ["app/study/page.tsx", "replaceItem("],
   ])("%s は、編集を始めたときの内容（スナップショット）を保存に渡す", (file, call) => {
     const s = src(file);
     expect(s).toMatch(/Snapshot = useRef\(/);
     const i = s.indexOf(call);
     expect(i).toBeGreaterThan(-1);
     expect(s.slice(i, i + 160)).toMatch(/Snapshot\.current/);
+  });
+});
+
+describe("編集中に別のタブで記録が消されても、「追加」に化けて作り直さない（点検役の指摘）", () => {
+  it.each([
+    ["app/recurring/page.tsx", "updateRecurring(editId.current"],
+    ["app/trips/page.tsx", "updateTrip(editId.current"],
+    ["app/study/page.tsx", "replaceItem(\"studySubjects\", editId.current"],
+  ])("%s は、編集を始めた ID で保存を呼ぶ（今のデータから探し直した記録の有無で、追加と編集を分けない）", (file, call) => {
+    const s = src(file);
+    expect(s).toMatch(/editId = useRef\(/);
+    expect(s).toContain(call);
+  });
+
+  it("資格の編集は store.commit で直接書き換えない（競合の確かめを通らないため）", () => {
+    expect(src("app/study/page.tsx")).not.toMatch(/store\.commit\(/);
+  });
+
+  it("容量不足の案内は、サイトデータを消すよう誘わず、次にすることを言う", () => {
+    const s = src("lib/storage.ts");
+    expect(s).not.toContain("サイトのデータを消してください");
+    expect(s).toContain("サイトデータは削除しないでください");
+    expect(s).toContain("もう一度保存してください");
+  });
+
+  it("壊れたデータの書き出しも、URL をすぐに無効にしない（Safari）", () => {
+    const s = src("components/AppShell.tsx");
+    expect(s).toContain("setTimeout(() => URL.revokeObjectURL(url)");
   });
 });

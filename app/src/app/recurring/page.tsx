@@ -112,6 +112,9 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   // 編集を始めたときの記録。保存の直前に今の記録と比べ、別のタブで変わっていたら上書きしない
   const editSnapshot = useRef(cur ? JSON.stringify(cur) : undefined);
+  // 編集を始めた記録の ID。別のタブで消されても「追加」に化けず、削除されたと知らせる
+  const editId = useRef(cur?.id);
+  const [wasEditing] = useState(Boolean(cur)); // 見出し用（消されても「編集」のまま）
   const lock = useRef(false);
 
   const save = () => {
@@ -136,7 +139,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
       paymentMethod: pay,
       active,
     };
-    const r = cur ? store.updateRecurring(cur.id, input, editSnapshot.current) : store.addRecurring(input);
+    const r = editId.current ? store.updateRecurring(editId.current, input, editSnapshot.current) : store.addRecurring(input);
     if (!r.ok) {
       lock.current = false;
       return ui.toast(r.error, "error");
@@ -156,7 +159,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
 
   return (
     <Sheet
-      title={cur ? "固定費を編集" : "固定費を追加"}
+      title={wasEditing ? "固定費を編集" : "固定費を追加"}
       open
       onRequestClose={onClose}
       footer={

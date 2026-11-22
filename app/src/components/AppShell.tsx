@@ -60,7 +60,8 @@ function CorruptScreen() {
     a.href = url;
     a.download = `kurashi-base-corrupt-${Date.now()}.json`;
     a.click();
-    URL.revokeObjectURL(url);
+    // Safari ではすぐに無効にすると保存が始まらないことがあるため、少し待つ（設定のバックアップと同じ）
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
   };
   return (
     <StorageProblem title="保存データを読み込めません" body={`${s.error ?? ""}。データは削除していません。`}>

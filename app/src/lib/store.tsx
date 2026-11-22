@@ -54,6 +54,8 @@ interface Store {
   undoLast: () => SaveResult;
   addItem: <K extends CollectionKey>(k: K, item: ItemInput<K>) => SaveResult;
   updateItem: <K extends CollectionKey>(k: K, id: string, patch: Partial<ItemInput<K>>, snapshot?: string) => SaveResult;
+  /** 記録をまるごと置き換える（空にした項目を残さない）。snapshot で別タブとの競合を確かめる */
+  replaceItem: <K extends CollectionKey>(k: K, id: string, item: ItemInput<K>, snapshot?: string) => SaveResult;
   removeItem: (k: CollectionKey, id: string) => SaveResult;
   removeStudySubject: (id: string) => SaveResult;
   resetCorrupt: () => SaveResult;
@@ -245,6 +247,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         commit((d) => ({
           ...d,
           [k]: (d[k] as { id: string }[]).map((x) => (x.id === id ? { ...x, ...patch, id, updatedAt: now() } : x)),
+        })),
+      replaceItem: (k, id, item, snapshot) =>
+        staleCheck(dataRef.current?.[k] as { id: string }[] | undefined, id, snapshot) ??
+        commit((d) => ({
+          ...d,
+          [k]: (d[k] as { id: string; createdAt: string }[]).map((x) => (x.id === id ? { ...item, id, createdAt: x.createdAt, updatedAt: now() } : x)),
         })),
       removeItem: (k, id) => commit((d) => ({ ...d, [k]: (d[k] as { id: string }[]).filter((x) => x.id !== id) })),
       // 資格・科目を消すときは、その勉強記録も一緒に消す（どこにも属さない記録を残さない）

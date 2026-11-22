@@ -239,6 +239,9 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
   const [f, setF] = useState(initial);
   // 編集を始めたときの記録。保存の直前に今の記録と比べ、別のタブで変わっていたら上書きしない
   const editSnapshot = useRef(editing ? JSON.stringify(editing) : undefined);
+  // 編集を始めた記録の ID。別のタブで消されても「追加」に化けず、削除されたと知らせる
+  const editId = useRef(editing?.id);
+  const [wasEditing] = useState(Boolean(editing)); // 見出し用（消されても「編集」のまま）
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const lock = useRef(false);
@@ -271,7 +274,7 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
     if (Object.keys(e).length) return setErrors(e);
     lock.current = true;
     const input: TripInput = { title: f.title.trim(), startDate: f.startDate, endDate: f.endDate, destination: f.destination.trim(), budget, note: f.note.trim() };
-    const r = editing ? store.updateTrip(editing.id, input, editSnapshot.current) : store.addTrip(input);
+    const r = editId.current ? store.updateTrip(editId.current, input, editSnapshot.current) : store.addTrip(input);
     if (!r.ok) {
       lock.current = false;
       return setSaveError(r.error);
@@ -298,7 +301,7 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
 
   return (
     <Sheet
-      title={editing ? "旅行を編集" : "旅行を追加"}
+      title={wasEditing ? "旅行を編集" : "旅行を追加"}
       open
       onRequestClose={requestClose}
       footer={
