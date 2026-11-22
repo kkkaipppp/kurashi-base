@@ -66,7 +66,8 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
   const ui = useUI();
   const trip = ev.tripId ? data.trips.find((t) => t.id === ev.tripId) : undefined;
   const directions = ev.location ? mapsDirections(ev.location) : null;
-  const gcal = calendarTemplate({ ...ev, description: ev.note, location: ev.location });
+  // メモ（予約番号などが入りうる）とURLは Google に渡さない。予定名・日時・場所だけ
+  const gcal = calendarTemplate({ ...ev, location: ev.location });
   const link = ev.url ? safeExternalLink(ev.url) : null;
   const kind = EVENT_KINDS.find((k) => k.id === ev.kind)?.label;
 
@@ -170,9 +171,19 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
 
         <div className="grid gap-2">
           {directions && (
-            <a href={directions} target="_blank" rel="noopener noreferrer" className={linkBtn}>
-              行き方を調べる（Googleマップ）
-            </a>
+            <div>
+              <a href={directions} target="_blank" rel="noopener noreferrer" className={linkBtn}>
+                行き方を調べる（Googleマップ・電車やバス）
+              </a>
+              <div className="mt-1 flex justify-center gap-4 text-[13px]">
+                <a href={mapsDirections(ev.location!, "driving")!} target="_blank" rel="noopener noreferrer" className="min-h-9 py-2 font-semibold text-brand underline">
+                  車で
+                </a>
+                <a href={mapsDirections(ev.location!, "walking")!} target="_blank" rel="noopener noreferrer" className="min-h-9 py-2 font-semibold text-brand underline">
+                  歩いて
+                </a>
+              </div>
+            </div>
           )}
           {link && (
             <a href={link} target="_blank" rel="noopener noreferrer" className={linkBtn}>
@@ -184,7 +195,7 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
               Googleカレンダーに追加する
             </a>
           )}
-          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーの画面が開きます。そこで「保存」を押すと登録されます（このアプリとは連動しません）。</p>}
+          {gcal && <p className="text-[12px] text-ink-3">Googleカレンダーの画面が開きます。そこで「保存」を押すと登録されます（このアプリとは連動しません。メモは渡しません）。</p>}
         </div>
         {ev.repeat && ev.repeat !== "none" && (
           <p className="text-[12px] text-ink-3">繰り返しの予定です。編集・削除は、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。</p>

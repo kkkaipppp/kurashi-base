@@ -134,3 +134,16 @@ describe("資格の候補と勉強時間", () => {
     expect(formatMinutes(150)).toBe("2時間30分");
   });
 });
+
+describe("復元できないときの説明（BUG-10：内部の ID を出さない）", () => {
+  it("カテゴリが見つからない取引を、日付・金額・店名で説明する", async () => {
+    const { validateRelationships } = await import("@/lib/schema");
+    const d = emptyData();
+    d.transactions.push({ id: "tx_abc123", type: "expense", date: "2026-11-21", amount: 1200, currency: "JPY", categoryId: "nope", merchant: "スーパー", paymentMethod: "", note: "", source: "manual", createdAt: "x", updatedAt: "x" });
+    const r = validateRelationships(d);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toContain("2026-11-21の支出1,200円（スーパー）");
+    expect(r.error).not.toContain("tx_abc123");
+  });
+});

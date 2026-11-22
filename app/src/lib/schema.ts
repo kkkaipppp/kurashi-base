@@ -167,16 +167,17 @@ export function validateRelationships(data: AppData): { ok: true } | { ok: false
   const categories = new Map(data.categories.map((c) => [c.id, c]));
   for (const t of data.transactions) {
     const cat = categories.get(t.categoryId);
-    if (!cat) return { ok: false, error: `取引「${t.id}」が存在しないカテゴリを参照しています` };
-    if (cat.kind !== t.type) return { ok: false, error: `取引「${t.id}」の種別とカテゴリが一致しません` };
+    const label = `${t.date}の${t.type === "expense" ? "支出" : "収入"}${t.amount.toLocaleString("ja-JP")}円${t.merchant ? `（${t.merchant}）` : ""}`;
+    if (!cat) return { ok: false, error: `${label}のカテゴリが、バックアップの中に見つかりません` };
+    if (cat.kind !== t.type) return { ok: false, error: `${label}のカテゴリが、支出用・収入用で食い違っています` };
   }
   for (const r of data.recurring) {
     const cat = categories.get(r.categoryId);
-    if (!cat || cat.kind !== "expense") return { ok: false, error: `固定費「${r.id}」が支出用カテゴリを参照していません` };
+    if (!cat || cat.kind !== "expense") return { ok: false, error: `固定費「${r.name}」のカテゴリが、支出用のカテゴリになっていません` };
   }
   const subjects = new Set(data.studySubjects.map((s) => s.id));
   for (const l of data.studyLogs) {
-    if (!subjects.has(l.subjectId)) return { ok: false, error: `勉強記録「${l.id}」が存在しない資格を参照しています` };
+    if (!subjects.has(l.subjectId)) return { ok: false, error: `${l.date}の勉強の記録（${l.minutes}分）の資格が、バックアップの中に見つかりません` };
   }
   return { ok: true };
 }

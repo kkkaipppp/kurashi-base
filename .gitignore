@@ -5,3 +5,6 @@ out/
 next-env.d.ts
 .env*
 _review/
+
+# OCR の評価用画像（ライセンス上、Git に入れない）
+.ocr-eval-data/
