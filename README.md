@@ -18,7 +18,8 @@ npm run check      # 型・lint・テスト・ビルドをまとめて実行
 |---|---|
 | `app/` | アプリ本体（Next.js 16・TypeScript・Tailwind CSS v4・vitest） |
 | `docs/RELEASE_PREP.md` | GitHub・Vercel での公開手順と、公開後に確かめること |
-| `docs/BETA_RELEASE_REPORT.md` | 友人βの判定（GO / NO-GO）と残っている確認 |
+| `docs/release/GO_EVIDENCE_20261122.md` | 友人βの判定（GO / NO-GO）の証拠と残っている確認 |
+| `docs/release/FRIEND_BETA_TEST_SHEET.md` | 友人βの1週間で試してもらうこと・聞くこと・感想の記録のしかた |
 | `docs/` | 設計・テスト・進捗の記録 |
 | `00_受領資料/` | 最初に受け取った要件資料（変更しない） |
 

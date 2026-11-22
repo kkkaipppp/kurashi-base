@@ -205,7 +205,10 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
   const store = useStore();
   const ui = useUI();
   const today = todayStr();
-  const cur = id ? (data[config.key] as ItemOf<K>[]).find((x) => (x as { id: string }).id === id) : undefined;
+  const liveCur = id ? (data[config.key] as ItemOf<K>[]).find((x) => (x as { id: string }).id === id) : undefined;
+  // 編集中に別のタブで消されても入力を消さない。保存すると「削除されています」で止まる（作り直さない）
+  const [originalCur] = useState(liveCur);
+  const cur = liveCur ?? originalCur;
   const initial = useMemo(() => (cur ? config.toDraft(cur) : config.initial({ today, data })), []); // eslint-disable-line react-hooks/exhaustive-deps
   const fields = typeof config.fields === "function" ? config.fields({ data }) : config.fields;
   const [draft, setDraft] = useState<Draft>(initial);

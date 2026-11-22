@@ -30,7 +30,10 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   const data = useData();
   const store = useStore();
   const ui = useUI();
-  const editing = req.mode === "edit" ? data.transactions.find((t) => t.id === req.id) : undefined;
+  const liveEditing = req.mode === "edit" ? data.transactions.find((t) => t.id === req.id) : undefined;
+  // 編集中に別のタブで消されても入力を消さない。保存すると「削除されています」で止まる（作り直さない）
+  const [originalEditing] = useState(liveEditing);
+  const editing = liveEditing ?? originalEditing;
 
   const initialDraft = useMemo<TxDraft>(() => {
     if (editing)

@@ -44,4 +44,9 @@ describe("UI・UX の直し（友人β）", () => {
     expect(s).toContain('remaining === null ? "今月の支出" : "今月の残り予算"');
     expect(s).not.toContain(">未設定<");
   });
+
+  it("支出・収入とタスクなどのシートも、編集中に別のタブで消されても入力を消さない", () => {
+    expect(src("components/TxSheet.tsx")).toContain("const editing = liveEditing ?? originalEditing;");
+    expect(src("components/CollectionPage.tsx")).toContain("const cur = liveCur ?? originalCur;");
+  });
 });

@@ -15,8 +15,9 @@
    ```bash
    git remote add origin https://github.com/<アカウント>/kurashi-base.git
    git push -u origin master
-   git push origin beta/friend-v1
    ```
+   - master は、公開する版（`beta/friend-go` の最新）にこちらで先にそろえておく（fast-forward）。push するのは master だけでよい
+   - push の直前に `git log --oneline -1 master` と `git log --oneline -1 beta/friend-go` が同じことを確かめる
 3. 確認：`.gitignore` で `node_modules/`・`.next/`・`.env*`・`_review/` は入らない。秘密の鍵・トークンはリポジトリにない（2026-11-22 に `git grep` で確認）
 
 ## 2. Vercel（平尾さんの OK のあと）
@@ -27,7 +28,7 @@
    - Build Command・Output：既定のまま（`next build`）
    - 環境変数：なし（このアプリは使わない）
 3. 「Deploy」→ 数分で `https://<名前>.vercel.app` ができる
-4. 公開するブランチ：友人βは `master` に `beta/friend-v1` をマージしてから（Production Branch = master）。マージ前に試すなら、Vercel がブランチごとに作る Preview の URL を使う
+4. 公開するブランチ：`master`（Production Branch = master）。1章で master を `beta/friend-go` の最新にそろえてあるので、マージは要らない
 
 ## 3. 公開した URL で確かめること（HTTPS・iPhone の Safari）
 | # | 確かめること | 合格 |
@@ -38,7 +39,7 @@
 | R4 | 設定 → バックアップを書き出す → ファイルが「ファイル」アプリに保存される | 保存できる |
 | R5 | そのファイルで復元（追加）→ 件数のプレビュー → 「同じ記録」として二重にならない | 二重にならない |
 | R6 | 「直前の操作を取り消す」で、復元の前に戻る | 戻る |
-| R7 | キーボードを出しても「保存する」が見える／下のメニューが隠れない | 見える |
+| R7 | 支出の入力でキーボードを出しても「保存する」が見える／下のメニューが隠れない（B13 を最新の版で確かめる） | 見える |
 | R8 | 画面の右にはみ出しがない | ない |
 
 **注意**：記録はドメイン（URL）ごとに別に保存されます。iPhone で `http://172.17.183.12:3211`（開発用）に入れた記録は、公開した URL には出てきません。移すなら、開発用の画面でバックアップを書き出し、公開した URL で復元します。

@@ -1,6 +1,6 @@
 {
   "project_id": "kurashi-base",
-  "as_of": "2026-11-22T22:03:14+09:00",
+  "as_of": "2026-11-22T22:16:36+09:00",
   "blocker_items": [
     "B15 公開URLの作成（公開は平尾さんの OK 済み（11-22 夜）。GitHub・Vercel へのログイン待ち…",
     "V14 OCR 画像2,000件の取得と SHA の固定（tools/ocr_benchmark に取得・検査のスクリ…",
