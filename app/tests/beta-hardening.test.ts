@@ -70,10 +70,13 @@ describe("友人β前の保存・復元の安全性", () => {
     expect(updated.ok).toBe(true);
   });
   it("同じIDのカテゴリ競合時、別カテゴリへ取引を誤登録しない", () => {
+    // 2026-11-23：初期カテゴリは名前を変えられるようになったので、名前違いでも同じものとみなす（restore-safety で確認）。
+    // 自分で作ったカテゴリの ID がぶつかったときは、今までどおり取り込まない。
     const current = emptyData();
+    current.categories.push({ id: "cat_x", name: "ペット", kind: "expense", order: 99, archived: false });
     const incoming = structuredClone(current);
-    incoming.categories[0].name = "別の意味";
-    incoming.transactions.push(tx());
+    incoming.categories.find((c) => c.id === "cat_x")!.name = "別の意味";
+    incoming.transactions.push(tx({ categoryId: "cat_x" }));
     const r = applyRestore(current, incoming, "merge");
     expect(r.ok && r.data.transactions).toHaveLength(0);
   });

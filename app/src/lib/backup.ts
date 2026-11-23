@@ -1,5 +1,6 @@
 import { checksum, CURRENT_SCHEMA, validateAppData, validateRelationships } from "./schema";
-import { COLLECTION_KEYS, type AppData, type CollectionKey } from "./types";
+import { COLLECTION_KEYS, type AppData, type Category, type CollectionKey } from "./types";
+import { DEFAULT_CATEGORY_IDS } from "./defaults";
 
 export const BACKUP_FORMAT = "kurashi-base-backup";
 
@@ -124,7 +125,7 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
  * merge の規則：
  *  - 同じIDで中身も同じ → 取り込まない（同じ記録）
  *  - 同じIDで中身が違う → 今の記録を残す（競合）
- *  - カテゴリは「名前と種別」、資格は「名前」が同じなら同じものとみなす。意味が違えば競合とし、
+ *  - カテゴリは「名前と種別」（初期カテゴリは名前を変えられるので種別だけ）、資格は「名前」が同じなら同じものとみなす。意味が違えば競合とし、
  *    それを参照する取引・固定費・勉強記録は取り込まない（別の意味のものへ紐づくのを防ぐ）
  *  - 最後に結果全体を検証し、通らなければ何も返さない（呼び出し側は保存しない）
  * 新しいオブジェクトを返すだけで、保存は呼び出し側がまとめて1回行う。
@@ -148,9 +149,9 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
 
   // 意味が食い違うカテゴリ・資格のID
   const curCat = new Map(current.categories.map((c) => [c.id, c]));
-  const badCat = new Set(
-    incoming.categories.filter((c) => curCat.has(c.id) && (curCat.get(c.id)!.name !== c.name || curCat.get(c.id)!.kind !== c.kind)).map((c) => c.id),
-  );
+  // 初期カテゴリ（exp-1 など）は、どの端末でも同じ ID の同じ枠。名前を変えていても、種別が同じなら同じものとみなす
+  const sameCategory = (a: Category, b: Category) => a.kind === b.kind && (a.name === b.name || DEFAULT_CATEGORY_IDS.has(a.id));
+  const badCat = new Set(incoming.categories.filter((c) => curCat.has(c.id) && !sameCategory(curCat.get(c.id)!, c)).map((c) => c.id));
   const curSubj = new Map(current.studySubjects.map((s) => [s.id, s]));
   const badSubj = new Set(incoming.studySubjects.filter((s) => curSubj.has(s.id) && curSubj.get(s.id)!.name !== s.name).map((s) => s.id));
   // 旅行IDが一致していても行き先・期間・名前が異なるなら、別の旅行の可能性がある。
@@ -184,7 +185,7 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
     return out;
   };
 
-  const categories = mergeList(current.categories, incoming.categories, { sameMeaning: (x, y) => x.name === y.name && x.kind === y.kind });
+  const categories = mergeList(current.categories, incoming.categories, { sameMeaning: sameCategory });
   // 初期カテゴリはどのバックアップにも入っているので、「同じ記録」の件数には数えない
   duplicates = 0;
   const data: AppData = {

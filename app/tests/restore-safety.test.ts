@@ -47,6 +47,29 @@ describe("A03：同じIDで意味の違うカテゴリを含むバックアッ�
   });
 });
 
+describe("初期カテゴリの名前を変えたあとの追加復元（2026-11-23 カテゴリの名前変更を入れたとき）", () => {
+  it("名前を変えた初期カテゴリ（exp-1）の取引は、名前が違っても取り込む。今の名前を残す", () => {
+    const current = emptyData("2026-11-01T00:00:00.000Z"); // exp-1 は「食費」のまま（新しい端末）
+    const incoming = emptyData("2026-11-01T00:00:00.000Z");
+    incoming.categories.find((c) => c.id === "exp-1")!.name = "ごはん";
+    incoming.transactions.push(tx({ id: "tx_r", categoryId: "exp-1", amount: 1200 }));
+    const r = applyRestore(current, incoming, "merge");
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.transactions.map((t) => t.id)).toEqual(["tx_r"]);
+    expect(r.dependentSkipped).toBe(0);
+    expect(r.conflicts).toBe(0);
+    expect(r.data.categories.find((c) => c.id === "exp-1")?.name).toBe("食費");
+  });
+  it("自分で作ったカテゴリは、今までどおり名前が違えば取り込まない（A03）", () => {
+    const current = withCustomCategory("ペット");
+    const incoming = withCustomCategory("ゲーム課金");
+    incoming.transactions.push(tx({ id: "tx_b", categoryId: "cat_x" }));
+    const r = applyRestore(current, incoming, "merge");
+    expect(r.ok && r.dependentSkipped).toBe(1);
+  });
+});
+
 describe("A04：同じIDで別の資格＋勉強記録を追加復元", () => {
   it("勉強記録が別の資格に付け替わらない", () => {
     const current = emptyData();

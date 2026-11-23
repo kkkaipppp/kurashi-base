@@ -15,6 +15,9 @@ export function defaultCategories(): Category[] {
   ];
 }
 
+/** 初期カテゴリの ID（どの端末でも同じ） */
+export const DEFAULT_CATEGORY_IDS: ReadonlySet<string> = new Set(defaultCategories().map((c) => c.id));
+
 export function emptyData(nowIso: string = new Date().toISOString()): AppData {
   return {
     schemaVersion: 2,

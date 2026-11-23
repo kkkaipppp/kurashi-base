@@ -43,6 +43,15 @@ export default function SettingsPage() {
   // --- カテゴリ ---
   const [catKind, setCatKind] = useState<TxType>("expense");
   const [catName, setCatName] = useState("");
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editingCatName, setEditingCatName] = useState("");
+  const saveCatName = () => {
+    if (!editingCatId) return;
+    const r = store.renameCategory(editingCatId, editingCatName);
+    if (!r.ok) return ui.toast(r.error, "error");
+    setEditingCatId(null);
+    ui.toast("カテゴリ名を変更しました");
+  };
   const addCat = () => {
     const name = catName.trim();
     if (!name) return ui.toast("カテゴリ名を入力してください", "error");
@@ -170,7 +179,7 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>ホームに表示する項目</SectionTitle>
-        <p className="mb-2 text-[13px] text-ink-3">下の項目は、内容があるときだけ表示します。</p>
+        <p className="mb-2 text-[13px] text-ink-3">今月の残り予算（予算がなければ今月の支出）と今日の予定は、いつも表示します。下の3つは、オンにすると、内容があるときだけ表示します。</p>
         <ul className="divide-y divide-line">
           {toggles.map((t) => (
             <li key={t.key}>
@@ -196,7 +205,7 @@ export default function SettingsPage() {
         <SectionTitle>カテゴリ</SectionTitle>
         <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="カテゴリの種別">
           {(["expense", "income"] as const).map((k) => (
-            <button key={k} type="button" role="radio" aria-checked={catKind === k} onClick={() => setCatKind(k)} className={`min-h-10 rounded-lg text-[14px] font-semibold ${catKind === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
+            <button key={k} type="button" role="radio" aria-checked={catKind === k} onClick={() => { setCatKind(k); setEditingCatId(null); }} className={`min-h-10 rounded-lg text-[14px] font-semibold ${catKind === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
               {k === "expense" ? "支出" : "収入"}
             </button>
           ))}
@@ -206,23 +215,63 @@ export default function SettingsPage() {
             .filter((c) => c.kind === catKind)
             .map((c) => (
               <li key={c.id} className="flex min-h-12 items-center justify-between">
-                <span className={c.archived ? "text-ink-3 line-through" : ""}>{c.name}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const active = data.categories.filter((x) => x.kind === c.kind && !x.archived);
-                    if (!c.archived && active.length <= 1) return ui.toast("最後のカテゴリは非表示にできません", "error");
-                    const r = store.setCategoryArchived(c.id, !c.archived);
-                    if (!r.ok) ui.toast(r.error, "error");
-                  }}
-                  className="min-h-10 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
-                >
-                  {c.archived ? "再表示" : "非表示"}
-                </button>
+                {editingCatId === c.id ? (
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 py-2">
+                    <input
+                      aria-label="変更後のカテゴリ名"
+                      className={`${inputCls} min-w-0 flex-1`}
+                      maxLength={20}
+                      value={editingCatName}
+                      onChange={(e) => setEditingCatName(e.target.value)}
+                      onKeyDown={(e) => {
+                        // 日本語の変換を確定する Enter では保存しない（Safari は keyCode 229 で来る）
+                        if (e.key === "Enter" && !e.nativeEvent.isComposing && e.keyCode !== 229) saveCatName();
+                        if (e.key === "Escape") setEditingCatId(null);
+                      }}
+                    />
+                    <button type="button" className="min-h-11 rounded-lg px-3 font-semibold text-brand" onClick={saveCatName}>
+                      保存
+                    </button>
+                    <button type="button" className="min-h-11 rounded-lg px-3 text-ink-2" onClick={() => setEditingCatId(null)}>
+                      やめる
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span className={c.archived ? "text-ink-3 line-through" : ""}>{c.name}</span>
+                    <div className="flex items-center gap-1">
+                      {!c.archived && (
+                        <button
+                          type="button"
+                          className="min-h-10 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
+                          onClick={() => {
+                            setEditingCatId(c.id);
+                            setEditingCatName(c.name);
+                          }}
+                        >
+                          名前を変える
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const active = data.categories.filter((x) => x.kind === c.kind && !x.archived);
+                          if (!c.archived && active.length <= 1) return ui.toast("最後のカテゴリは非表示にできません", "error");
+                          if (c.archived && active.some((x) => x.name === c.name)) return ui.toast("同じ名前のカテゴリが表示中です。先にどちらかの名前を変えてください", "error");
+                          const r = store.setCategoryArchived(c.id, !c.archived);
+                          if (!r.ok) ui.toast(r.error, "error");
+                        }}
+                        className="min-h-10 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
+                      >
+                        {c.archived ? "再表示" : "非表示"}
+                      </button>
+                    </div>
+                  </>
+                )}
               </li>
             ))}
         </ul>
-        <p className="mt-1 text-[12px] text-ink-3">非表示にしても、登録済みの取引のカテゴリはそのまま残ります。</p>
+        <p className="mt-1 text-[12px] text-ink-3">名前を変えても、今までの取引はそのカテゴリのままです。非表示にしても、登録済みの取引は残ります。</p>
         <div className="mt-3 flex gap-2">
           <input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="新しいカテゴリ名" aria-label="新しいカテゴリ名" maxLength={20} className={inputCls} />
           <Button variant="secondary" onClick={addCat}>

@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { staleRecordError } from "@/lib/eventConcurrency";
 import { parseAddKind } from "@/components/AddFromQuery";
+import { renameCategoryIn } from "@/lib/categoryRename";
+import type { Category } from "@/lib/types";
 
 // 友人β の UI・UX の直し（2026-11-22、チャッピーのパッチ＋取り込み時の修正）を見張る
 const src = (p: string) => readFileSync(join(__dirname, "..", "src", p), "utf8");
@@ -66,5 +68,25 @@ describe("UI・UX の直し（友人β）", () => {
     expect(parseAddKind("bogus")).toBeNull();
     expect(parseAddKind(null)).toBeNull();
     expect(src("app/page.tsx")).toContain("<AddFromQuery />");
+  });
+
+  it("カテゴリの名前を変えられる。ID は変わらず、空・21文字以上・同じ種類で表示中の同名は断る", () => {
+    const cats: Category[] = [
+      { id: "a", name: "食費", kind: "expense", order: 0, archived: false },
+      { id: "b", name: "外食", kind: "expense", order: 1, archived: false },
+      { id: "c", name: "昔の", kind: "expense", order: 2, archived: true },
+      { id: "d", name: "給与", kind: "income", order: 0, archived: false },
+    ];
+    const ok = renameCategoryIn(cats, "a", "  ごはん  ");
+    expect(ok.ok && ok.categories.find((c) => c.id === "a")?.name).toBe("ごはん");
+    expect(ok.ok && ok.categories.length).toBe(4);
+    expect(renameCategoryIn(cats, "a", "   ").ok).toBe(false);
+    expect(renameCategoryIn(cats, "a", "あ".repeat(21)).ok).toBe(false);
+    expect(renameCategoryIn(cats, "a", "外食").ok).toBe(false);
+    expect(renameCategoryIn(cats, "a", "昔の").ok).toBe(true); // 非表示の同名は OK
+    expect(renameCategoryIn(cats, "a", "給与").ok).toBe(true); // 収入側の同名は OK
+    expect(renameCategoryIn(cats, "zz", "x").ok).toBe(false);
+    expect(cats[0].name).toBe("食費"); // 元の配列は変えない
+    expect(src("app/settings/page.tsx")).toContain("store.renameCategory(");
   });
 });

@@ -5,6 +5,7 @@ import { newId } from "./defaults";
 import { advanceDueDate } from "./recurring";
 import { replaceEventEditableFields } from "./eventMerge";
 import { staleRecordError } from "./eventConcurrency";
+import { renameCategoryIn } from "./categoryRename";
 import { loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, wipeAllAppData, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot, type WipeResult } from "./storage";
 import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
 
@@ -46,6 +47,7 @@ interface Store {
   setHomePref: (key: keyof HomePrefs, v: boolean) => SaveResult;
   addCategory: (c: Omit<Category, "id" | "order" | "archived">) => SaveResult;
   setCategoryArchived: (id: string, archived: boolean) => SaveResult;
+  renameCategory: (id: string, name: string) => SaveResult;
   /** 復元など、全体が大きく変わる保存。前の状態を1つ控える（reason は取り消すときに表示） */
   replaceAll: (d: AppData, reason: string) => SaveResult;
   /** すべて削除。控えも残さない */
@@ -219,6 +221,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             { ...c, id: newId("cat"), order: d.categories.filter((x) => x.kind === c.kind).length, archived: false },
           ],
         })),
+      renameCategory: (id, name) => {
+        const r = renameCategoryIn(dataRef.current?.categories ?? [], id, name);
+        if (!r.ok) return r;
+        return commit((d) => ({ ...d, categories: d.categories.map((c) => (c.id === id ? { ...c, name: name.trim() } : c)) }));
+      },
       setCategoryArchived: (id, archived) =>
         commit((d) => ({ ...d, categories: d.categories.map((c) => (c.id === id ? { ...c, archived } : c)) })),
       replaceAll: (next, reason) => {
