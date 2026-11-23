@@ -16,6 +16,7 @@
 4. `cd app && npm run check` を通す（落ちたまま終えない。落ちたら正直に書く）
 5. `py -3 -I tools/progress.py sync` を実行する。WBS・ロードマップ・論点から、進捗の画面（`docs/progress/PROGRESS.html`）と本部への報告（`portfolio/report.json`・`details.json`）が作り直され、親フォルダ `00_全体進捗/暮らしベース/` に同期される。そのあと本部の検査（`tools/report_check.py` と `../00_経営管理/scripts/details_check.py`）に通す
 6. 最後の返信で、sync が出す「WBS の変化」と「本部への報告」（今いるマイルストン・完了数・次の作業・判断待ち）を平尾さんに伝える
+7. 報告・相談の先は「定常本部」（このPJは収益化を目指さない【定常】の担当、2026-11-23 平尾さん指示）。セッションへの連絡は定常本部（local_4195b42d-0981-4d90-b2c4-e83b5fbab34e）に送る。`portfolio/report.json` はこれまでどおり書く（定常本部が直接読む）。プレイブックなど共通の決まりは同じ
 
 ## WBS・ロードマップ・論点の更新（2026-11-22 平尾さんの指示）
 - **本部への進捗報告は、ロードマップ（`docs/progress/ROADMAP.md` のマイルストン）と WBS をもとにする。** report.json を手で書かない（mode・quality・金額だけは人が決める）
