@@ -58,3 +58,5 @@
 - 7日の期限への対策（2026-11-23、平尾さん①＝無料のまま自動で入れ直す）：Mac の LaunchAgent `~/Library/LaunchAgents/jp.kurashibase.refresh.plist` が毎日12時・21時に `app/ios/tools/refresh-install.sh` を動かす。署名の期限まで3日を切ったら、古いプロファイルを消して作り直し、Wi-Fi 経由で iPhone に入れ直す（記録は消えない）。記録は `~/Library/Logs/kurashi-refresh.log`。iPhone の識別番号は Mac の `~/.config/kurashi-refresh.env` にだけ置く。21:48 に強制で1回動かし、Wi-Fi 経由で入れ直せた（新しい期限まで6日）
 - 条件：Mac の電源が入っていてスリープしていない・iPhone が同じ Wi-Fi。止めるときは `launchctl bootout gui/$(id -u)/jp.kurashibase.refresh`
 - 21:50 平尾さん：自動の入れ直しのあとも、アプリの記録は残っていた
+- 自動バックアップ（2026-11-23、平尾さん「自動バックアップ機能追加しよか」）：iPhone アプリの中だけ。アプリを開いた・閉じたときに、書類フォルダ「自動バックアップ」に `kurashi-base_backup_YYYYMMDD.json`（1日1ファイル、新しい14個）と、記録がいちばん多かったときの控え `kurashi-base_largest_backup.json`（消さない）を書く。記録が0件なら書かない。「ファイル」アプリ → このiPhone内 → くらしベース から見え、設定の「バックアップから復元」でそのまま読める形。点検役：合格（0034f87、9ca6f45）。22:02 に Mac から Wi-Fi で実機へ入れ直した
+- 注意：アプリを消すと自動バックアップも消える（アプリの中の書類フォルダのため）。週1回くらい、「ファイル」アプリで iCloud Drive などにコピーしておくと安心。閉じるときの書き込みと、控えからの復元は実機で未確認
