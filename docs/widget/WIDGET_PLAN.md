@@ -52,3 +52,6 @@
 - 未確認：ウィジェットの見た目（ホーム画面に置く操作が SSH からできない）、実機、無料の Apple ID で App Group が使えるか、アプリの記録が Safari の履歴を消しても残ること（作りの上では別の置き場）
 - 知っておくこと：アプリの記録は Safari・ホーム画面のアイコンとは別の置き場（アプリを消すと記録も消える。バックアップを書き出しておく）。入力の途中でウィジェットのボタンを押すと、書きかけ（未保存）は消える
 - Mac での組み立て：`cd app && npm run build:app && npx cap copy ios`、`cd ios/App && xcodebuild -project App.xcodeproj -scheme App -sdk iphonesimulator -derivedDataPath /tmp/kbdd build`
+- 2026-11-23 21:43 実機（平尾さんの iPhone）：無料の Apple ID（Personal Team）で App Group の署名が通った。Xcode の ▶ で入れ、「VPNとデバイス管理」で信頼。記録を取り込み、中くらいのウィジェットに「今日の予定」「今月の支出 ¥291,049・収入」「＋支出・＋収入・＋予定」が出たことをスクショで確認。ボタンを押したときの動きは未確認
+- SSH から iPhone 向けに署名すると errSecInternalComponent（Mac の鍵が SSH から使えない）。iPhone へ入れるときは Mac の Xcode の ▶ を使う
+- チームの ID は Mac の project.pbxproj にだけ入れて、Git には入れていない
