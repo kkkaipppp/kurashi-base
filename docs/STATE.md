@@ -2,10 +2,11 @@
 
 **このファイルが現在地の正本。** セッションの終わりに必ず更新する。（`docs/NEXT_SESSION_HANDOFF.md` は作りの要点、`docs/progress/STATUS.md` は WBS の集計用）
 
-- 更新：2026-11-22 夜
-- ブランチ：`beta/friend-go`。push はまだ。master は公開の直前にこのブランチの最新へ早送りする（`docs/RELEASE_PREP.md` 1章）
+- 更新：2026-11-23
+- ブランチ：`beta/friend-go`。**GitHub `kkkaipppp/kurashi-base`（Private）の master に push 済み（b55bc2c、11-23）**
+- **公開 URL：https://kurashi-base-tau.vercel.app/**（Vercel、master を自動でデプロイ）
 - 段階：M5 公開準備（ロードマップ `docs/progress/ROADMAP.md` の「友人β版」）
-- **判定：NO-GO（残りは公開 URL での確認だけ）**。必須受入 B01〜B15 のうち、残りは B01・B14 と B15 の公開部分。iPhone 実機の B02・B03・B04・B13 は PASS（B02・B13 は UI・UX パッチの後の 97a9bd6 で再確認、平尾さん）。証拠：`docs/release/GO_EVIDENCE_20261122.md`
+- **判定：NO-GO（残りは iPhone の Safari で公開 URL を確かめるだけ）**。必須受入 B01〜B15 のうち、残りは B01・B14。B15 の公開部分は 11-23 に PASS。iPhone 実機の B02・B03・B04・B13 は PASS（B02・B13 は UI・UX パッチの後の 97a9bd6 で再確認、平尾さん）。証拠：`docs/release/GO_EVIDENCE_20261122.md`
 - 11-22 夜にやったこと
   - 全画面の言葉を短くした（cdc19d7。`docs/JAPANESE_COPY_AUDIT.md`）
   - チャッピーの UI・UX レビュー（v7）のパッチを取り込み（97a9bd6）。これで B09 のレビューの反映は完了
@@ -19,10 +20,10 @@
 - 機能を足すのは 2026-11-25 まで。その後は不具合直しと言葉の直しだけ
 
 ## 次の3手
-1. 平尾さんが PC で GitHub・Vercel にログイン → Private のリポジトリを作る → master を早送りして push → Vercel（Root Directory=app）で公開（`docs/RELEASE_PREP.md` 1〜2章）。公開は平尾さんの OK 済み（11-22 夜）
-2. 公開 URL を iPhone で確認（R1〜R8 → B01・B14・B15）→ GO_EVIDENCE を GO に更新
-3. 友人に渡す（RELEASE_PREP 5章の一言＋テストのシート1章）→ 1日目・3日目・7日目に聞く → 感想を FRIEND_FEEDBACK に記録
+1. 平尾さんが iPhone の Safari で公開 URL を確かめる（RELEASE_PREP 3章の R1〜R8 → B01・B14。R7 は支出の入力で）→ GO_EVIDENCE を GO に更新
+2. 友人に渡す（RELEASE_PREP 5章の一言＋テストのシート1章）→ 1日目・3日目・7日目に聞く → 感想を FRIEND_FEEDBACK に記録
+3. 直しは master に push すると Vercel が自動で公開し直す（push は毎回 平尾さんの OK 後）
 
 ## ユーザー待ち
-- GitHub・Vercel へのログイン（平尾さんが PC に戻ってから）
+- iPhone の Safari での公開 URL の確認
 - 友人β の後：V21（ひも付け）・OCR・PWA を進めるか

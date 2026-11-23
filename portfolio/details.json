@@ -1,10 +1,8 @@
 {
   "project_id": "kurashi-base",
-  "as_of": "2026-11-22T22:16:36+09:00",
+  "as_of": "2026-11-23T14:19:46+09:00",
   "blocker_items": [
-    "B15 公開URLの作成（公開は平尾さんの OK 済み（11-22 夜）。GitHub・Vercel へのログイン待ち…",
-    "V14 OCR 画像2,000件の取得と SHA の固定（tools/ocr_benchmark に取得・検査のスクリ…",
-    "GO12 公開 URL での確認（B01・B14・B15 の公開部分）（公開は平尾さんの OK 済み（11-22 夜）…"
+    "V14 OCR 画像2,000件の取得と SHA の固定（tools/ocr_benchmark に取得・検査のスクリ…"
   ],
   "approval_items": [
     "Q06 友人に頼むタスク（3〜5個）と合格の基準（期限 2026-11-25）",

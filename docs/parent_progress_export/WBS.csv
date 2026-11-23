@@ -50,9 +50,9 @@ B09,M3,P0,主要画面の入力しやすさ,B05,320〜430px・キーボード確
 B10,M4,P0,自動テスト・ビルド,B03,npm run check PASS,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,Claude Code,DONE,npm run check PASS（テスト111件）3857d5d,2026-11-22,その後の件数：v5 で147件、最終修正で159件,2026-11-22,2026-11-22
 B11,M4,P0,バックアップ実機操作,B10,書出→復元→記録一致,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,User,DONE,iPhone 実機でバックアップを確認（平尾さんの報告 2026-11-22）,2026-11-22 11:09,,2026-11-22,2026-11-22
 B12,M4,P0,iPhone Safari実機,B10,U02〜U12主要項目 PASS,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,User,DONE,iPhone 実機でキーボード・表示・下部メニュー・支出追加を確認（平尾さんの報告とスクショ 2026-11-22）。日付ピッカー・取り消しは公開URLで確認,2026-11-22 11:09,,2026-11-22,2026-11-22
-B13,M5,P0,GitHubリポジトリ整備,B10,秘密/個人データなし、README、コミット,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,Claude Code,IN_PROGRESS,README・.gitignore 確認、秘密情報なし（git grep）。docs に氏名があるため Private を推奨。push は未実施（ユーザーOK待ち）,,2026-11-22 夜：秘密情報・メールアドレスなしを再確認（git grep）、README と RELEASE_PREP の push 手順を beta/friend-go に合わせた。push は GitHub へのログイン待ち,2026-11-22,2026-11-25
+B13,M5,P0,GitHubリポジトリ整備,B10,秘密/個人データなし、README、コミット,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,Claude Code,DONE,GitHub kkkaipppp/kurashi-base（Private）に master（b55bc2c）を push。秘密情報なし,2026-11-23,,2026-11-22,2026-11-25
 B14,M5,P0,Vercel等へのデプロイ準備,B13,手順・環境の整理,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,Claude Code,DONE,docs/RELEASE_PREP.md（Root Directory=app、環境変数なし、公開後の確認 R1〜R8、ロールバック）,2026-11-22,,2026-11-22,2026-11-22
-B15,M5,P0,公開URLの作成,B14,ユーザー承認、HTTPSで起動,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,User/Claude Code,BLOCKED,ユーザーの承認待ち（本番公開はしない指示）,,公開は平尾さんの OK 済み（11-22 夜）。GitHub・Vercel へのログイン待ち（平尾さんが PC に戻ってから）,2026-11-25,2026-11-25
+B15,M5,P0,公開URLの作成,B14,ユーザー承認、HTTPSで起動,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,User/Claude Code,DONE,https://kurashi-base-tau.vercel.app/（HTTPS・noindex・ソースマップなし・外への送信なし）。GO_EVIDENCE 3f,2026-11-23,,2026-11-25,2026-11-25
 B16,M6,P0,友人β招待・フィードバック回収,B15,招待・不具合管理・更新計画,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,User,NOT_STARTED,,,友人1人に1週間使ってもらう（Q04・Q05 決定）。テストのシート：docs/release/FRIEND_BETA_TEST_SHEET.md、感想：docs/release/FRIEND_FEEDBACK.md,2026-11-26,2026-12-02
 B17,M7,P1,β後の公開判断,B16,重大不具合0、利用実績、承認,受領 kurashi_v3_friend_beta 04_RELEASE_WBS,User,NOT_STARTED,,,,2026-12-03,2026-12-04
 V01,M8,P0,v5 の追加項目でも既存データを壊さない,,v4 のデータ・バックアップがそのまま読める,受領 v5_plus_brand 08_品質とWBS,Claude Code,DONE,tests/v5-data.test.ts（旅行なしのデータ・v1・v4 バックアップの追加）(0ab8395),2026-11-22,,2026-11-22,2026-11-22
@@ -94,6 +94,6 @@ GO08,M8,P0,iPhone：予定の詳細を消す→開き直す（B02）,GO07,B02 PA
 GO09,M8,P0,iPhone：バックアップ→復元→取り消し→やり直し（B03・B04）,GO07,B03・B04 PASS,受領 v5fix_GO_readiness 06_WBS,User,DONE,iPhone 実機でバックアップの書き出し→ファイルアプリ→復元（置き換え）→取り消し→やり直し→開き直し（平尾さんの報告 2026-11-22、ddb5dc3）,2026-11-22 16:15,同じ手順の4〜6,2026-11-23,2026-11-23
 GO10,M8,P0,iPhone：キーボード・二重保存（B13）,GO07,B13 PASS,受領 v5fix_GO_readiness 06_WBS,User,DONE,iPhone 実機でキーボード表示中に保存できる（平尾さんの報告 2026-11-22、ddb5dc3）,2026-11-22 16:15,同じ手順の1〜2,2026-11-23,2026-11-23
 GO11,M8,P0,公開前の点検（秘密・noindex）（B15 の静的部分）,GO07,秘密・個人情報なし,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,git grep・app/public・robots の確認、点検役,2026-11-22,公開 URL での点検は GO12,2026-11-22,2026-11-22
-GO12,M8,P0,公開 URL での確認（B01・B14・B15 の公開部分）,GO11,公開 URL で PASS,受領 v5fix_GO_readiness 06_WBS,User/Claude Code,BLOCKED,,,公開は平尾さんの OK 済み（11-22 夜）。GitHub・Vercel へのログイン待ち（平尾さんが PC に戻ってから）,2026-11-25,2026-11-25
+GO12,M8,P0,公開 URL での確認（B01・B14・B15 の公開部分）,GO11,公開 URL で PASS,受領 v5fix_GO_readiness 06_WBS,User/Claude Code,IN_PROGRESS,,,公開済み（11-23）。B15 の公開部分は PASS。B01・B14 は iPhone の Safari 待ち,2026-11-25,2026-11-25
 GO13,M8,P1,ホーム・予定・設定の文言を短く,GO07,初見の迷いを減らす,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,削除・復元・Googleカレンダーの文言、実画面のスクショ (28a7c74),2026-11-22,,2026-11-22,2026-11-22
 GO14,M8,P0,友人β の GO 判定,GO08,B01〜B15 全件 PASS＋平尾さんの承認,受領 v5fix_GO_readiness 06_WBS,User/Claude Code,IN_PROGRESS,,,docs/release/GO_EVIDENCE_20261122.md（今は NO-GO）,2026-11-22,2026-11-25
