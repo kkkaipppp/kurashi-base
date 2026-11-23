@@ -11,3 +11,6 @@ _review/
 
 # Python のキャッシュ
 __pycache__/
+
+# 個人の記録から作ったファイル（GitHub に上げない）
+_private/
