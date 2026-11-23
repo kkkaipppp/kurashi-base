@@ -42,3 +42,13 @@ describe("日本の祝日（2026-11-23 平尾さん：カレンダーで祝日�
     expect(s).toContain("赤い日付＝日曜と祝日");
   });
 });
+
+describe("カレンダーのマスに予定の名前を出す（2026-11-23 平尾さん：点だけでは見にくい）", () => {
+  it("名前は2件まで、それより多ければ +n。読み上げにも名前を入れる", () => {
+    const s = readFileSync(join(__dirname, "..", "src", "app", "calendar", "page.tsx"), "utf8");
+    expect(s).toContain("const EVENT_TITLES_IN_CELL = 2;");
+    expect(s).toContain("info.titles.map(");
+    expect(s).toContain("+{info.ev - info.titles.length}");
+    expect(s).toContain('info.titles.join("、")');
+  });
+});
