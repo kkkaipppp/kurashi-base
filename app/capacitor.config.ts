@@ -5,6 +5,8 @@ const config: CapacitorConfig = {
   appId: "jp.kurashibase.personal",
   appName: "くらしベース",
   webDir: "out",
+  // 画面の上（時計・ノッチ）と下（ホームバー）に中身が重ならないようにする
+  ios: { contentInset: "always" },
 };
 
 export default config;

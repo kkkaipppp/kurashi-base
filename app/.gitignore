@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Capacitor の iOS（Mac で npx cap add ios で作る。中身は out/ から写す）
+/ios/App/App/public/
+/ios/App/App/capacitor.config.json
