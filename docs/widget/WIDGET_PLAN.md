@@ -57,3 +57,4 @@
 - チームの ID は Mac の project.pbxproj にだけ入れて、Git には入れていない
 - 7日の期限への対策（2026-11-23、平尾さん①＝無料のまま自動で入れ直す）：Mac の LaunchAgent `~/Library/LaunchAgents/jp.kurashibase.refresh.plist` が毎日12時・21時に `app/ios/tools/refresh-install.sh` を動かす。署名の期限まで3日を切ったら、古いプロファイルを消して作り直し、Wi-Fi 経由で iPhone に入れ直す（記録は消えない）。記録は `~/Library/Logs/kurashi-refresh.log`。iPhone の識別番号は Mac の `~/.config/kurashi-refresh.env` にだけ置く。21:48 に強制で1回動かし、Wi-Fi 経由で入れ直せた（新しい期限まで6日）
 - 条件：Mac の電源が入っていてスリープしていない・iPhone が同じ Wi-Fi。止めるときは `launchctl bootout gui/$(id -u)/jp.kurashibase.refresh`
+- 21:50 平尾さん：自動の入れ直しのあとも、アプリの記録は残っていた
