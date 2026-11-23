@@ -55,3 +55,5 @@
 - 2026-11-23 21:43 実機（平尾さんの iPhone）：無料の Apple ID（Personal Team）で App Group の署名が通った。Xcode の ▶ で入れ、「VPNとデバイス管理」で信頼。記録を取り込み、中くらいのウィジェットに「今日の予定」「今月の支出 ¥291,049・収入」「＋支出・＋収入・＋予定」が出たことをスクショで確認。ボタンを押したときの動きは未確認
 - SSH から iPhone 向けに署名すると errSecInternalComponent（Mac の鍵が SSH から使えない）。iPhone へ入れるときは Mac の Xcode の ▶ を使う
 - チームの ID は Mac の project.pbxproj にだけ入れて、Git には入れていない
+- 7日の期限への対策（2026-11-23、平尾さん①＝無料のまま自動で入れ直す）：Mac の LaunchAgent `~/Library/LaunchAgents/jp.kurashibase.refresh.plist` が毎日12時・21時に `app/ios/tools/refresh-install.sh` を動かす。署名の期限まで3日を切ったら、古いプロファイルを消して作り直し、Wi-Fi 経由で iPhone に入れ直す（記録は消えない）。記録は `~/Library/Logs/kurashi-refresh.log`。iPhone の識別番号は Mac の `~/.config/kurashi-refresh.env` にだけ置く。21:48 に強制で1回動かし、Wi-Fi 経由で入れ直せた（新しい期限まで6日）
+- 条件：Mac の電源が入っていてスリープしていない・iPhone が同じ Wi-Fi。止めるときは `launchctl bootout gui/$(id -u)/jp.kurashibase.refresh`
