@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { StoreProvider, useStore } from "@/lib/store";
 import { UIProvider, useUI } from "./UIContext";
+import { WidgetSync } from "./WidgetSync";
 import { Button, IconCalendar, IconChart, IconGrid, IconHome, IconPlus } from "./ui";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -28,6 +29,7 @@ function Gate({ children }: { children: ReactNode }) {
   if (s.status === "corrupt") return <CorruptScreen />;
   return (
     <UIProvider>
+      <WidgetSync />
       <div className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pb-28">{children}</div>
       <BottomNav />
     </UIProvider>
