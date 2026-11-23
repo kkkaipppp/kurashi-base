@@ -1,7 +1,7 @@
 import WidgetKit
 import SwiftUI
 
-// くらしベースのウィジェット（平尾さん用）。アプリが App Group に置いた要約（lib/widgetSummary.ts）を読むだけ。
+// くらしベースのウィジェット（個人用）。アプリが App Group に置いた要約（lib/widgetSummary.ts）を読むだけ。
 // 記録の全部は読まない。ボタンは kurashibase://add/<種類> でアプリの入力画面を開く。
 
 private let appGroup = "group.jp.kurashibase.personal"
@@ -53,9 +53,11 @@ struct Provider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
         let now = Date()
-        // 日付が変わったら描き直す（前の日の予定を出したままにしない）
+        let summary = loadSummary()
+        // 日付が変わる時刻にも1枚用意する。その日の要約がまだないので「アプリを開くと出ます」になり、
+        // 作り直しが遅れても前の日の予定・前の月の支出を「今日」として出さない
         let tomorrow = Calendar.current.startOfDay(for: now.addingTimeInterval(24 * 60 * 60))
-        completion(Timeline(entries: [Entry(date: now, summary: loadSummary())], policy: .after(tomorrow)))
+        completion(Timeline(entries: [Entry(date: now, summary: summary), Entry(date: tomorrow, summary: summary)], policy: .atEnd))
     }
 }
 

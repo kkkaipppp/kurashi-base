@@ -27,8 +27,8 @@ export function buildWidgetSummary(data: AppData, today: string, nowIso: string)
     today,
     events: evs.slice(0, WIDGET_EVENTS_MAX).map((e) => ({
       title: e.title.trim() || "（名前なし）",
-      // 何日も続く予定の2日目以降は、時刻ではなく「終日」として出す
-      time: e.allDay || e.startDate < today ? "終日" : e.startTime,
+      // 何日も続く予定の2日目以降は、時刻ではなく「終日」として出す（くり返しの予定は毎回その時刻。aggregate.ts の並べ方と同じ判定）
+      time: e.allDay || (e.startDate < today && e.startDate !== e.endDate) ? "終日" : e.startTime,
     })),
     moreEvents: Math.max(0, evs.length - WIDGET_EVENTS_MAX),
     monthExpense: sum.expense,

@@ -1,6 +1,6 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-// 平尾さんが自分で使う iPhone アプリ（ウィジェット用）。docs/widget/WIDGET_PLAN.md
+// 個人で使う iPhone アプリ（ウィジェット用）。docs/widget/WIDGET_PLAN.md
 const config: CapacitorConfig = {
   appId: "jp.kurashibase.personal",
   appName: "くらしベース",

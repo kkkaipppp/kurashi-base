@@ -31,6 +31,11 @@ describe("ウィジェットに渡す要約", () => {
     ]);
     expect(s.moreEvents).toBe(1);
   });
+  it("毎週くり返す予定は、2回目からも時刻で出す（終日にしない）", () => {
+    const d = emptyData(now);
+    d.events = [ev({ id: "w", title: "ジム", startDate: "2026-11-16", endDate: "2026-11-16", startTime: "20:00", endTime: "21:00", repeat: "weekly" })];
+    expect(buildWidgetSummary(d, "2026-11-23", now).events).toEqual([{ title: "ジム", time: "20:00" }]);
+  });
   it("今月の支出・収入と、予算の残り（予算がなければ null）", () => {
     const d = emptyData(now);
     d.transactions = [
