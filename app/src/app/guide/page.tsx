@@ -46,6 +46,8 @@ export default function GuidePage() {
       <Card>
         <h2 className="text-[17px] font-bold">次からすぐに開く</h2>
         <p className="mt-2 text-[14px]">iPhoneのSafariで共有ボタンを押し、「ホーム画面に追加」を選ぶと、次からアイコンで開けます。</p>
+        <p className="mt-2 text-[14px] font-semibold">アイコンから開いたときと Safari で開いたときでは、記録が別々になります。使うのはどちらか1つに決めてください（おすすめはアイコン）。</p>
+        <p className="mt-2 text-[14px]">Safari で入れた記録を移すときは、Safari で「バックアップを書き出す」→ アイコンから開いて、同じ画面で復元します。</p>
       </Card>
 
       <Card>

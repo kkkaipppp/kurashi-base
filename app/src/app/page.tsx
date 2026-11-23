@@ -225,7 +225,7 @@ export default function HomePage() {
               </Link>
             </li>
           </ol>
-          <p className="mt-2 text-[13px] text-ink-2">記録は、この端末のこのブラウザの中だけに保存されます。</p>
+          <p className="mt-2 text-[13px] text-ink-2">記録は、この端末のこのブラウザの中だけに保存されます。ホーム画面のアイコンと Safari でも、記録は別々です。</p>
           <Link href="/guide" className="mt-1 inline-flex min-h-11 items-center text-[14px] font-semibold text-brand">
             使い方とデータの守り方
             <IconChevronR className="ml-1 size-4" />
