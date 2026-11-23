@@ -13,7 +13,7 @@
   - 支出・収入とタスクなどのシートも、編集中に別のタブで消されても入力を残すようにした（予定は 97a9bd6 で済み）
   - 決めたこと：支出と旅行のひも付け（V21）は友人βでは作らない。OCR は保留（評価用データの利用条件だけ確認：`docs/OCR_DATA_LICENSE_CHECK.md`）
   - 友人β の1週間テストのシート：`docs/release/FRIEND_BETA_TEST_SHEET.md`、感想の記録：`docs/release/FRIEND_FEEDBACK.md`
-- チェック：`cd app && npm run check` PASS（テスト200件）
+- チェック：`cd app && npm run check` PASS（テスト201件）
 - 11-23 に判明：iPhone のホーム画面のアイコンと Safari で記録が別々（BUG-17）。ホームと使い方に案内を足した（公開 URL に反映済み、11-23）。友人には補足を送る。ウィジェットは論点 Q25（友人β の後）
 - 画面の記録：`docs/screens/index.html`（最新は `2026-11-22_uiux_97a9bd6`）
 - 進捗の画面：`docs/progress/PROGRESS.html`。論点は `docs/progress/ISSUES.csv`
@@ -27,3 +27,4 @@
 
 ## ユーザー待ち
 - 友人β の後：V21（ひも付け）・OCR・PWA を進めるか
+- ウィジェット（自分用、Q25）：docs/widget/WIDGET_PLAN.md。Mac に SSH でつながる（kurashi-mac）・Node.js 入れた。macOS 27.2.1 への更新と Xcode は平尾さん待ち

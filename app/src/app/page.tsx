@@ -10,6 +10,7 @@ import { nextRecurring } from "@/lib/recurring";
 import { buildNavi } from "@/lib/navi";
 import { buildInsights } from "@/lib/report";
 import { useUI } from "@/components/UIContext";
+import { AddFromQuery } from "@/components/AddFromQuery";
 import { EventRow, TxRow } from "@/components/Rows";
 import { LogoLockup } from "@/components/Logo";
 import { Card, DevBadge, IconChevronR, SectionTitle } from "@/components/ui";
@@ -69,6 +70,7 @@ export default function HomePage() {
 
   return (
     <main className="space-y-4 pt-3">
+      <AddFromQuery />
       <header className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <LogoLockup size={30} />

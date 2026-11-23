@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { staleRecordError } from "@/lib/eventConcurrency";
+import { parseAddKind } from "@/components/AddFromQuery";
 
 // 友人β の UI・UX の直し（2026-11-22、チャッピーのパッチ＋取り込み時の修正）を見張る
 const src = (p: string) => readFileSync(join(__dirname, "..", "src", p), "utf8");
@@ -55,5 +56,15 @@ describe("UI・UX の直し（友人β）", () => {
     const g = src("app/guide/page.tsx");
     expect(g).toContain("記録が別々になります");
     expect(g).toContain("アイコンから開いて、同じ画面で復元");
+  });
+
+  it("?add= で入力画面を開ける（ウィジェット・ショートカットのボタン用）。知らない値では何も開かない", () => {
+    expect(parseAddKind("expense")).toBe("expense");
+    expect(parseAddKind("income")).toBe("income");
+    expect(parseAddKind("event")).toBe("event");
+    expect(parseAddKind("choose")).toBe("choose");
+    expect(parseAddKind("bogus")).toBeNull();
+    expect(parseAddKind(null)).toBeNull();
+    expect(src("app/page.tsx")).toContain("<AddFromQuery />");
   });
 });
