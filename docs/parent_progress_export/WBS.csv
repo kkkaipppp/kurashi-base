@@ -34,7 +34,7 @@ W032,M4,P1,友人β向け個人データ・注意書きを確認,W031,保存場�
 W033,M5,P0,友人βのタスクシナリオ実施,W029;W031,友人テスト実施結果と課題台帳,外部利用者,User,IN_PROGRESS,2026-11-23 に友人1人へ公開 URL とテストのシート1章を送った（平尾さん）。7日目は 11-30,,B16 と同じ（友人1人・1週間）。試してほしいこと・聞く日・記録のしかた：docs/release/FRIEND_BETA_TEST_SHEET.md,2026-11-26,2026-12-02
 W034,M5,P0,P0不具合ゼロを確認しβ判定,W033,重大障害0・影響既知/未知を評価,docs/UX_BUGS.md,User,NOT_STARTED,,,,2026-12-03,2026-12-03
 W035,M6,P0,公開・配布のリスク/プライバシー最終判定,W034,GO/NO-GO文書をユーザー承認,09_RELEASE_ROADMAP.md,User,NOT_STARTED,,,B17 と同じ,2026-12-03,2026-12-04
-W036,M6,P1,公開手順とロールバック手順準備,W035,安全に配布/戻せる（勝手に公開しない）,docs/UX_AUTONOMOUS_REPORT.md,Claude Code,NOT_STARTED,,,友人β用の手順は docs/RELEASE_PREP.md（B14）で用意済み,2026-12-04,2026-12-04
+W036,M6,P1,公開手順とロールバック手順準備,W035,安全に配布/戻せる（勝手に公開しない）,docs/UX_AUTONOMOUS_REPORT.md,Claude Code,DONE,docs/RELEASE_PREP.md 4章（戻し方）・4b章（公開したあとの直し方）,2026-11-23,,2026-12-04,2026-12-04
 W037,M7,P2,利用実態から改善優先度の見直し,W033,課題優先度/対応時期/責任者更新,10_PARENT_WBS.csv,Claude Code,NOT_STARTED,,,,2026-12-03,2026-12-05
 W038,M0,P0,親フォルダにROADMAP/WBS/STATUS同期,W001,他PJ未変更/同期先記録,11_STATUS_TEMPLATE.md,Claude Code,DONE,親フォルダ 00_全体進捗/暮らしベース/ に WBS/ROADMAP/STATUS を同期（docs/parent_progress_export にも）,2026-11-21 17:43,,2026-11-21,2026-11-21
 W039,M4,P0,親フォルダ進捗最終同期と引継ぎ,W031,証拠紐付DONEと残件を反映,11_STATUS_TEMPLATE.md,Claude Code,DONE,最終同期：根拠のある行だけDONE、残件はNOT_STARTED/NOT_RUN/IN_PROGRESS,2026-11-21 17:43,,2026-11-21,2026-11-21
@@ -73,7 +73,7 @@ V15,M8,P2,OCR の実装と精度の基準,V14,GT つきの精度と未ラベル�
 V16,M8,P0,npm run check,V12,型・lint・テスト・ビルド PASS,受領 v5_plus_brand 08_品質とWBS,Claude Code,DONE,npm run check PASS（テスト147件）,2026-11-22,,2026-11-22,2026-11-22
 V17,M8,P0,iPhone 実機で v5 の新しい画面,V16,入力・詳細・旅行・資格・外部リンクから戻る,受領 v5_plus_brand 08_品質とWBS,User,DONE,iPhone 実機で v5 の予定の追加（詳細・持ち物・キーボード・日付）・詳細（持ち物のチェック・Googleマップから戻る・Googleカレンダー）・旅行・資格を確認（平尾さんの報告 2026-11-22）,2026-11-22 12:42,CAL-017・018、TRIP-012 など,2026-11-23,2026-11-23
 V18,M8,P0,初見の友人のテスト,V17,支出と予定を迷わず登録,受領 v5_plus_brand 08_品質とWBS,User,IN_PROGRESS,2026-11-23 に友人1人へ公開 URL とテストのシート1章を送った（平尾さん）。7日目は 11-30,,友人1人・1週間（論点 Q04・Q05 決定）,2026-11-26,2026-12-02
-V19,M8,P0,友人β の GO 判定（v5）,V17,重大な不具合0・根拠つき,受領 v5_plus_brand 08_品質とWBS,Claude Code,IN_PROGRESS,,,docs/BETA_RELEASE_REPORT.md の v5 の章,2026-11-22,2026-11-25
+V19,M8,P0,友人β の GO 判定（v5）,V17,重大な不具合0・根拠つき,受領 v5_plus_brand 08_品質とWBS,Claude Code,DONE,GO14 と同じ：B01〜B15 全件 PASS＋平尾さんの承認（docs/release/GO_EVIDENCE_20261122.md 7章）,2026-11-23,docs/BETA_RELEASE_REPORT.md の v5 の章,2026-11-22,2026-11-25
 V20,M8,P3,Amazon アソシエイトの適法性,,登録・申告・開示・承認,受領 v5_plus_brand 08_品質とWBS,User,NOT_STARTED,,,今はタグなしの通常リンク,2026-12-10,2026-12-12
 V21,M8,P1,支出と旅行のひも付け,V07,旅行の支出を任意で関連付け,受領 v5_plus_brand 08_品質とWBS,Claude Code,NOT_STARTED,,,友人β では作らない（2026-11-22 平尾さん決定）。友人の感想を見てから決める。受入 TRIP-013。今は行程の「費用の目安」だけ,2026-11-24,2026-11-25
 F01,M8,P0,予定の編集で空にした詳細が戻る不具合,,場所・URL・持ち物・旅行・種類・費用を空にして保存→再読み込みでも空,受領 v5_friend_beta_fix 01_改善指示,Claude Code,DONE,テスト RED→GREEN（beta-final-guard・beta-final-paths）、アプリ内ブラウザで場所と持ち物を消して保存→再読み込みで空 (e005b04),2026-11-22,,2026-11-22,2026-11-22

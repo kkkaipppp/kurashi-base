@@ -49,6 +49,12 @@
 - コード：`git revert <コミット>` → push（Vercel が自動でデプロイし直す）
 - データの形式は v2 のまま。形式を変える修正は、`migrate()` とテストが先（PJ_RULES）
 
+## 4b. 公開したあとの直し方（2026-11-23 に公開済み）
+- 公開先：GitHub `kkkaipppp/kurashi-base`（Private）の master → Vercel `https://kurashi-base-tau.vercel.app/`（master に push すると自動で作り直す）
+- 手順：直す → `cd app && npm run check` → 必要ならアプリ内ブラウザで確かめる → コミット → **平尾さんの OK** → master を早送りして push → 公開 URL で直したところを確かめる → GO_EVIDENCE か UX_BUGS に記録
+- push は、Claude の自動の安全チェックに止められることがある（2026-11-23）。そのときは押し通さず、平尾さんに `git -C "C:\Users\kamik\AI開発\暮らしベース" push origin master` を実行してもらう
+- 保存の形式（キー `kurashi-base:data:v1`、schemaVersion 2）を変える直しは、友人β の間はしない（友人の記録を壊さないため）
+
 ## 5. 友人に渡すときの一言（案。2026-11-22 に v5 に合わせて更新＝W032）
 > くらしベース（試用版）です。予定とお金を1か所で記録できるアプリで、1週間ほど使ってみてほしいです。
 > URL を Safari で開いて、画面下の「＋」から支出や予定を入れてみてください。Safariの共有ボタンから「ホーム画面に追加」すると、次からアイコンで開けます。説明は「メニュー → 使い方」にあります。
