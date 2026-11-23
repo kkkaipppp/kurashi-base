@@ -58,3 +58,16 @@ describe("ウィジェットに渡す要約", () => {
     expect(s).not.toContain("メモ");
   });
 });
+
+describe("自動バックアップ（iPhone アプリ）", () => {
+  it("ファイル名の日付は YYYYMMDD、残すのは14日分。Web 版では動かない作り", async () => {
+    const { autoBackupDay, AUTO_BACKUP_KEEP_DAYS } = await import("@/lib/nativeBridge");
+    expect(autoBackupDay("2026-11-23")).toBe("20261123");
+    expect(AUTO_BACKUP_KEEP_DAYS).toBe(14);
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const s = readFileSync(join(__dirname, "..", "src", "components", "WidgetSync.tsx"), "utf8");
+    expect(s.match(/if \(!Capacitor\.isNativePlatform\(\)\) return;/g)?.length).toBe(2);
+    expect(s).toContain("buildBackup(latest.current");
+  });
+});

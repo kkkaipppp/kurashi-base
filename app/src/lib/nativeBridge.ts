@@ -1,0 +1,22 @@
+import { registerPlugin } from "@capacitor/core";
+
+/**
+ * iPhone アプリの中だけにある部品（ios/App/App/WidgetBridgePlugin.swift）。
+ * Web 版（Safari・ホーム画面のアイコン）では使わない（呼ぶ前に Capacitor.isNativePlatform() を確かめる）。
+ */
+export interface NativeBridge {
+  /** ウィジェット用の要約を App Group に置く */
+  setSummary(options: { json: string }): Promise<void>;
+  /** その日のバックアップを、アプリの書類フォルダ（「ファイル」アプリ → このiPhone内 → くらしベース）に書く */
+  writeBackup(options: { day: string; json: string }): Promise<{ name: string; kept: number }>;
+}
+
+export const NativeBridge = registerPlugin<NativeBridge>("WidgetBridge");
+
+/** 自動バックアップのファイル名（YYYYMMDD）。プレイブック 12-7 の名前の決まり */
+export function autoBackupDay(today: string): string {
+  return today.replaceAll("-", "");
+}
+
+/** 自動バックアップを残す日数（古いものから消す） */
+export const AUTO_BACKUP_KEEP_DAYS = 14;
