@@ -24,7 +24,7 @@ days_left() {
   for f in "$PROFILES"/*(N); do
     security cms -D -i "$f" 2>/dev/null | plutil -extract Entitlements.application-identifier raw -o - - 2>/dev/null | grep -q "\.${BUNDLE}$" || continue
     exp=$(security cms -D -i "$f" 2>/dev/null | plutil -extract ExpirationDate raw -o - - 2>/dev/null) || continue
-    left=$(( ( $(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$exp" +%s) - $(date +%s) ) / 86400 ))
+    left=$(( ( $(TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%SZ" "$exp" +%s) - $(date +%s) ) / 86400 ))
     (( left > best )) && best=$left
   done
   print $best
@@ -48,6 +48,14 @@ for f in "$PROFILES"/*(N); do
   security cms -D -i "$f" 2>/dev/null | plutil -extract Entitlements.application-identifier raw -o - - 2>/dev/null | grep -q "\.${BUNDLE}\(\.KurashiWidget\)\{0,1\}$" && rm -f "$f"
 done
 
+cd "$REPO" || { log "リポジトリがない"; exit 1; }
+# 試作中のコードを自動で iPhone に入れないため、決めた枝で、チームの設定（project.pbxproj）のほかに変更がないときだけ組み立てる
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+DIRTY=$(git status --porcelain | grep -v "app/ios/App/App.xcodeproj/project.pbxproj$")
+if [[ "$BRANCH" != "${KB_BRANCH:-feat/ios-widget}" || -n "$DIRTY" ]]; then
+  log "入れ直しを止めた：枝が ${BRANCH}、または作業中の変更がある。Mac のリポジトリを片付けてから"
+  exit 1
+fi
 cd "$REPO/app" || { log "リポジトリがない"; exit 1; }
 if ! npm run build:app >> "$LOG" 2>&1 || ! npx cap copy ios >> "$LOG" 2>&1; then
   log "画面の書き出しに失敗"

@@ -69,5 +69,9 @@ describe("自動バックアップ（iPhone アプリ）", () => {
     const s = readFileSync(join(__dirname, "..", "src", "components", "WidgetSync.tsx"), "utf8");
     expect(s.match(/if \(!Capacitor\.isNativePlatform\(\)\) return;/g)?.length).toBe(2);
     expect(s).toContain("buildBackup(latest.current");
+    expect(s).toContain("if (records === 0) return;");
+    const { backupRecordCount } = await import("@/lib/nativeBridge");
+    expect(backupRecordCount({ categories: 13, transactions: 0, nisa: 0 })).toBe(0);
+    expect(backupRecordCount({ categories: 13, transactions: 934, nisa: 1293 })).toBe(2227);
   });
 });

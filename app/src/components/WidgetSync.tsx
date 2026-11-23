@@ -6,7 +6,7 @@ import { useData } from "@/lib/store";
 import { todayStr } from "@/lib/date";
 import { buildBackup } from "@/lib/backup";
 import { buildWidgetSummary } from "@/lib/widgetSummary";
-import { autoBackupDay, NativeBridge } from "@/lib/nativeBridge";
+import { autoBackupDay, backupRecordCount, NativeBridge } from "@/lib/nativeBridge";
 
 /**
  * iPhone アプリの中だけで動く部品（Web 版では何もしない）。
@@ -35,8 +35,11 @@ export function WidgetSync() {
     if (!Capacitor.isNativePlatform()) return;
     const backup = () => {
       const now = new Date();
-      const json = JSON.stringify(buildBackup(latest.current, now.toISOString()));
-      NativeBridge.writeBackup({ day: autoBackupDay(todayStr(now)), json }).catch(() => {
+      const file = buildBackup(latest.current, now.toISOString());
+      const records = backupRecordCount(file.counts);
+      // 記録が空のとき（iOS に記録を消された・すべて削除した直後など）は書かない。良いバックアップを空で上書きしないため
+      if (records === 0) return;
+      NativeBridge.writeBackup({ day: autoBackupDay(todayStr(now)), json: JSON.stringify(file), records }).catch(() => {
         // 書けなくても記録には影響しない（設定の「バックアップを書き出す」は今までどおり使える）
       });
     };

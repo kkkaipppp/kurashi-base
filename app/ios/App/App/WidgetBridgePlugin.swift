@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import Capacitor
 import WidgetKit
 
@@ -39,6 +40,9 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     static let keepDays = 14
     static let backupFolder = "自動バックアップ"
     static let prefix = "kurashi-base_backup_"
+    /// これまでで記録がいちばん多かったときのバックアップ（日ごとの14個とは別に、消さずに残す）
+    static let largestName = "kurashi-base_largest_backup.json"
+    static let largestKey = "kbLargestBackupRecords"
 
     /// その日のバックアップを、書類フォルダの「自動バックアップ」に書く（同じ日は上書き）。古いものは14日分を残して消す。
     /// 書類フォルダは「ファイル」アプリ → このiPhone内 → くらしベース から見える（Info.plist の UIFileSharingEnabled）。
@@ -51,6 +55,18 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("バックアップの中身がありません")
             return
         }
+        let records = call.getInt("records") ?? 0
+        guard records > 0 else {
+            call.reject("記録が空なので書きません")
+            return
+        }
+        // アプリを閉じる瞬間でも書き終えられるよう、少しだけ時間をもらう
+        var task: UIBackgroundTaskIdentifier = .invalid
+        task = UIApplication.shared.beginBackgroundTask(withName: "kurashi-backup") {
+            UIApplication.shared.endBackgroundTask(task)
+            task = .invalid
+        }
+        defer { if task != .invalid { UIApplication.shared.endBackgroundTask(task) } }
         let fm = FileManager.default
         guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else {
             call.reject("書類フォルダが見つかりません")
@@ -60,7 +76,15 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         do {
             try fm.createDirectory(at: dir, withIntermediateDirectories: true)
             let name = "\(Self.prefix)\(day).json"
-            try Data(json.utf8).write(to: dir.appendingPathComponent(name), options: [.atomic])
+            let bytes = Data(json.utf8)
+            try bytes.write(to: dir.appendingPathComponent(name), options: [.atomic])
+            // 記録の件数がこれまでで最多（同じも含む）なら、消さない控えも更新する。
+            // その日のファイルを大量削除や誤った復元のあとの中身で上書きしても、いちばん多かったときの控えは残る
+            let largest = UserDefaults.standard.integer(forKey: Self.largestKey)
+            if records >= largest {
+                try bytes.write(to: dir.appendingPathComponent(Self.largestName), options: [.atomic])
+                UserDefaults.standard.set(records, forKey: Self.largestKey)
+            }
             // 古いものを消す（名前の日付の新しい順に14個を残す。自分で置いたほかのファイルには触らない）
             let files = try fm.contentsOfDirectory(atPath: dir.path)
                 .filter { $0.hasPrefix(Self.prefix) && $0.hasSuffix(".json") }

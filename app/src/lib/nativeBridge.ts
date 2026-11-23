@@ -8,7 +8,7 @@ export interface NativeBridge {
   /** ウィジェット用の要約を App Group に置く */
   setSummary(options: { json: string }): Promise<void>;
   /** その日のバックアップを、アプリの書類フォルダ（「ファイル」アプリ → このiPhone内 → くらしベース）に書く */
-  writeBackup(options: { day: string; json: string }): Promise<{ name: string; kept: number }>;
+  writeBackup(options: { day: string; json: string; records: number }): Promise<{ name: string; kept: number }>;
 }
 
 export const NativeBridge = registerPlugin<NativeBridge>("WidgetBridge");
@@ -16,6 +16,11 @@ export const NativeBridge = registerPlugin<NativeBridge>("WidgetBridge");
 /** 自動バックアップのファイル名（YYYYMMDD）。プレイブック 12-7 の名前の決まり */
 export function autoBackupDay(today: string): string {
   return today.replaceAll("-", "");
+}
+
+/** バックアップに入る記録の件数（カテゴリは数えない）。0件のときは自動バックアップを書かない */
+export function backupRecordCount(counts: Record<string, number>): number {
+  return Object.entries(counts).reduce((s, [k, n]) => (k === "categories" ? s : s + n), 0);
 }
 
 /** 自動バックアップを残す日数（古いものから消す） */
