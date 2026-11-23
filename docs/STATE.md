@@ -6,7 +6,7 @@
 - ブランチ：`beta/friend-go`。**GitHub `kkkaipppp/kurashi-base`（Private）の master に push 済み（b55bc2c、11-23）**
 - **公開 URL：https://kurashi-base-tau.vercel.app/**（Vercel、master を自動でデプロイ）
 - 段階：M5 公開準備（ロードマップ `docs/progress/ROADMAP.md` の「友人β版」）
-- **判定：NO-GO（残りは iPhone の Safari で公開 URL を確かめるだけ）**。必須受入 B01〜B15 のうち、残りは B01・B14。B15 の公開部分は 11-23 に PASS。iPhone 実機の B02・B03・B04・B13 は PASS（B02・B13 は UI・UX パッチの後の 97a9bd6 で再確認、平尾さん）。証拠：`docs/release/GO_EVIDENCE_20261122.md`
+- **判定：GO（B01〜B15 全件 PASS、11-23。iPhone の Safari で公開 URL の R1〜R8 全部 OK＝平尾さん）**。友人に渡す承認を確認中。iPhone 実機の B02・B03・B04・B13 は PASS（B02・B13 は UI・UX パッチの後の 97a9bd6 で再確認、平尾さん）。証拠：`docs/release/GO_EVIDENCE_20261122.md`
 - 11-22 夜にやったこと
   - 全画面の言葉を短くした（cdc19d7。`docs/JAPANESE_COPY_AUDIT.md`）
   - チャッピーの UI・UX レビュー（v7）のパッチを取り込み（97a9bd6）。これで B09 のレビューの反映は完了
@@ -20,10 +20,10 @@
 - 機能を足すのは 2026-11-25 まで。その後は不具合直しと言葉の直しだけ
 
 ## 次の3手
-1. 平尾さんが iPhone の Safari で公開 URL を確かめる（RELEASE_PREP 3章の R1〜R8 → B01・B14。R7 は支出の入力で）→ GO_EVIDENCE を GO に更新
+1. 平尾さんの承認のあと、友人に渡す
 2. 友人に渡す（RELEASE_PREP 5章の一言＋テストのシート1章）→ 1日目・3日目・7日目に聞く → 感想を FRIEND_FEEDBACK に記録
 3. 直しは master に push すると Vercel が自動で公開し直す（push は毎回 平尾さんの OK 後）
 
 ## ユーザー待ち
-- iPhone の Safari での公開 URL の確認
+- 友人に渡すことの承認（GO14）
 - 友人β の後：V21（ひも付け）・OCR・PWA を進めるか
