@@ -3,7 +3,7 @@
 **このファイルが現在地の正本。** セッションの終わりに必ず更新する。（`docs/NEXT_SESSION_HANDOFF.md` は作りの要点、`docs/progress/STATUS.md` は WBS の集計用）
 
 - 更新：2026-11-23
-- ブランチ：`beta/friend-go`。**GitHub `kkkaipppp/kurashi-base`（Private）の master に push 済み（b55bc2c、11-23）**
+- ブランチ：`beta/friend-go`。**GitHub `kkkaipppp/kurashi-base`（Private）の master に push 済み（aa49fde、11-23。記録の分は平尾さんが push）**
 - **公開 URL：https://kurashi-base-tau.vercel.app/**（Vercel、master を自動でデプロイ）
 - 段階：M5 公開準備（ロードマップ `docs/progress/ROADMAP.md` の「友人β版」）
 - **判定：GO（B01〜B15 全件 PASS、11-23。iPhone の Safari で公開 URL の R1〜R8 全部 OK＝平尾さん）**。友人に渡すことを平尾さんが承認（11-23）。iPhone 実機の B02・B03・B04・B13 は PASS（B02・B13 は UI・UX パッチの後の 97a9bd6 で再確認、平尾さん）。証拠：`docs/release/GO_EVIDENCE_20261122.md`
@@ -25,5 +25,4 @@
 3. 直しは master に push すると Vercel が自動で公開し直す（push は毎回 平尾さんの OK 後）
 
 ## ユーザー待ち
-- 記録の push（手元の master の最新。Claude の push は自動の安全チェックに止められたので、平尾さんが実行）
 - 友人β の後：V21（ひも付け）・OCR・PWA を進めるか
