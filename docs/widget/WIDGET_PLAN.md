@@ -43,3 +43,12 @@
 4. 要約を書くプラグインとウィジェットを作り、シミュレーターで確かめる
 5. 平尾さんの iPhone を Mac につないで入れる（iPhone の「デベロッパモード」をオンにする操作が1回要る）
 6. 自分で数日使って、直す
+
+## 6. 進み具合（2026-11-23）
+- ブランチ `feat/ios-widget`（master・公開版には入れていない）
+- できた：Capacitor 8.6.0 で iPhone アプリ化（`npm run build:app` → `npx cap copy ios`）、要約（`lib/widgetSummary.ts`）を App Group に書く `WidgetBridgePlugin.swift`、ボタン `kurashibase://add/<種類>` で入力画面を開く `MainViewController.swift`、ウィジェット `ios/App/KurashiWidget`（小・中）、アイコン
+- シミュレーター（iOS 27.2、Mac の DeviceHub を開いておく）で確かめた：アプリの表示、App Group に要約が書かれる、デバッグ用の起動引数 `-kbOpenURL kurashibase://add/expense` で「支出を追加」が開く
+- 点検役：合格（個人用として、e0fb56d）
+- 未確認：ウィジェットの見た目（ホーム画面に置く操作が SSH からできない）、実機、無料の Apple ID で App Group が使えるか、アプリの記録が Safari の履歴を消しても残ること（作りの上では別の置き場）
+- 知っておくこと：アプリの記録は Safari・ホーム画面のアイコンとは別の置き場（アプリを消すと記録も消える。バックアップを書き出しておく）。入力の途中でウィジェットのボタンを押すと、書きかけ（未保存）は消える
+- Mac での組み立て：`cd app && npm run build:app && npx cap copy ios`、`cd ios/App && xcodebuild -project App.xcodeproj -scheme App -sdk iphonesimulator -derivedDataPath /tmp/kbdd build`
