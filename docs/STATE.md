@@ -25,5 +25,5 @@
 3. 直しは master に push すると Vercel が自動で公開し直す（push は毎回 平尾さんの OK 後）
 
 ## ユーザー待ち
-- 記録の push（master＝8591241。Claude の push は自動の安全チェックに止められたので、平尾さんが実行）
+- 記録の push（手元の master の最新。Claude の push は自動の安全チェックに止められたので、平尾さんが実行）
 - 友人β の後：V21（ひも付け）・OCR・PWA を進めるか
