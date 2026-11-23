@@ -96,4 +96,4 @@ GO10,M8,P0,iPhone：キーボード・二重保存（B13）,GO07,B13 PASS,受領
 GO11,M8,P0,公開前の点検（秘密・noindex）（B15 の静的部分）,GO07,秘密・個人情報なし,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,git grep・app/public・robots の確認、点検役,2026-11-22,公開 URL での点検は GO12,2026-11-22,2026-11-22
 GO12,M8,P0,公開 URL での確認（B01・B14・B15 の公開部分）,GO11,公開 URL で PASS,受領 v5fix_GO_readiness 06_WBS,User/Claude Code,DONE,iPhone の Safari で公開 URL の R1〜R8 全部 OK（平尾さんの報告）。B01・B14・B15 PASS,2026-11-23,,2026-11-25,2026-11-25
 GO13,M8,P1,ホーム・予定・設定の文言を短く,GO07,初見の迷いを減らす,受領 v5fix_GO_readiness 06_WBS,Claude Code,DONE,削除・復元・Googleカレンダーの文言、実画面のスクショ (28a7c74),2026-11-22,,2026-11-22,2026-11-22
-GO14,M8,P0,友人β の GO 判定,GO08,B01〜B15 全件 PASS＋平尾さんの承認,受領 v5fix_GO_readiness 06_WBS,User/Claude Code,IN_PROGRESS,,,B01〜B15 全件 PASS（11-23）。友人に渡す承認を平尾さんに確認中,2026-11-22,2026-11-25
+GO14,M8,P0,友人β の GO 判定,GO08,B01〜B15 全件 PASS＋平尾さんの承認,受領 v5fix_GO_readiness 06_WBS,User/Claude Code,DONE,B01〜B15 全件 PASS＋平尾さんの承認（「①渡していい」）。docs/release/GO_EVIDENCE_20261122.md 7章,2026-11-23,,2026-11-22,2026-11-25
