@@ -14,7 +14,7 @@
   - 決めたこと：支出と旅行のひも付け（V21）は友人βでは作らない。OCR は保留（評価用データの利用条件だけ確認：`docs/OCR_DATA_LICENSE_CHECK.md`）
   - 友人β の1週間テストのシート：`docs/release/FRIEND_BETA_TEST_SHEET.md`、感想の記録：`docs/release/FRIEND_FEEDBACK.md`
 - チェック：`cd app && npm run check` PASS（テスト200件）
-- 11-23 に判明：iPhone のホーム画面のアイコンと Safari で記録が別々（BUG-17）。ホームと使い方に案内を足した（未 push）。友人には補足を送る。ウィジェットは論点 Q25（友人β の後）
+- 11-23 に判明：iPhone のホーム画面のアイコンと Safari で記録が別々（BUG-17）。ホームと使い方に案内を足した（公開 URL に反映済み、11-23）。友人には補足を送る。ウィジェットは論点 Q25（友人β の後）
 - 画面の記録：`docs/screens/index.html`（最新は `2026-11-22_uiux_97a9bd6`）
 - 進捗の画面：`docs/progress/PROGRESS.html`。論点は `docs/progress/ISSUES.csv`
 - iPhone 用サーバー（開発用の 3211）：11-23 に止めた。友人用は公開 URL だけ
