@@ -16,7 +16,7 @@
 - チェック：`cd app && npm run check` PASS（テスト199件）
 - 画面の記録：`docs/screens/index.html`（最新は `2026-11-22_uiux_97a9bd6`）
 - 進捗の画面：`docs/progress/PROGRESS.html`。論点は `docs/progress/ISSUES.csv`
-- iPhone 用サーバー：`http://172.17.183.12:3211`（iPhone は XN-002-5G で開く。このセッションが動いている間だけ）
+- iPhone 用サーバー（開発用の 3211）：11-23 に止めた。友人用は公開 URL だけ
 - 機能を足すのは 2026-11-25 まで。その後は不具合直しと言葉の直しだけ
 
 ## 次の3手
@@ -25,4 +25,5 @@
 3. 直しは master に push すると Vercel が自動で公開し直す（push は毎回 平尾さんの OK 後）
 
 ## ユーザー待ち
+- 記録の push（master＝8591241。Claude の push は自動の安全チェックに止められたので、平尾さんが実行）
 - 友人β の後：V21（ひも付け）・OCR・PWA を進めるか
