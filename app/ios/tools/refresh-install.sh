@@ -43,11 +43,6 @@ if ! xcrun devicectl device info details --device "$DEVICE" >/dev/null 2>&1; the
   exit 1
 fi
 
-# 古いプロファイルを消して、新しい7日分を作らせる（このアプリとウィジェットの分だけ）
-for f in "$PROFILES"/*(N); do
-  security cms -D -i "$f" 2>/dev/null | plutil -extract Entitlements.application-identifier raw -o - - 2>/dev/null | grep -q "\.${BUNDLE}\(\.KurashiWidget\)\{0,1\}$" && rm -f "$f"
-done
-
 cd "$REPO" || { log "リポジトリがない"; exit 1; }
 # 試作中のコードを自動で iPhone に入れないため、決めた枝で、チームの設定（project.pbxproj）のほかに変更がないときだけ組み立てる
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -56,6 +51,11 @@ if [[ "$BRANCH" != "${KB_BRANCH:-feat/ios-widget}" || -n "$DIRTY" ]]; then
   log "入れ直しを止めた：枝が ${BRANCH}、または作業中の変更がある。Mac のリポジトリを片付けてから"
   exit 1
 fi
+# 古いプロファイルを消して、新しい7日分を作らせる（このアプリとウィジェットの分だけ）
+for f in "$PROFILES"/*(N); do
+  security cms -D -i "$f" 2>/dev/null | plutil -extract Entitlements.application-identifier raw -o - - 2>/dev/null | grep -q "\.${BUNDLE}\(\.KurashiWidget\)\{0,1\}$" && rm -f "$f"
+done
+
 cd "$REPO/app" || { log "リポジトリがない"; exit 1; }
 if ! npm run build:app >> "$LOG" 2>&1 || ! npx cap copy ios >> "$LOG" 2>&1; then
   log "画面の書き出しに失敗"
