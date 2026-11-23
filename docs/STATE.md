@@ -30,3 +30,4 @@
 - ウィジェット（自分用、Q25）：docs/widget/WIDGET_PLAN.md。Mac に SSH でつながる（kurashi-mac）・Node.js 入れた。macOS 27.2.1 には更新済み（11-23）。Xcode は平尾さん待ち
 - 11-23：平尾さんのジップ（custom_settings）から「カテゴリの名前を変える」を取り込んだ。追加の復元で、初期カテゴリは名前が違っても同じものとみなすよう直した（点検役の指摘、再点検で合格）。テスト204件。push して公開 URL に反映済み（11-23）。iPhone 実機は未確認
 - 11-23：カレンダーに祝日（赤い日付・選んだ日に名前、2022〜2099年をネットなしで計算）と、収入の金額（青い +数字）を出した（平尾さんの要望、点検役で合格、テスト209件）。iPhone 実機は未確認。ほかに：NISA（1293件）・カード明細（44件）の取り込み用ファイルを作って渡した（_private、Git に入れない）。iPhone アプリの準備は feat/ios-widget（Capacitor 8.6.0、静的書き出し）。Mac に Xcode 27.2 が入り、iOS の部品をダウンロード中
+- 11-23：自分用の iPhone アプリとウィジェットを feat/ios-widget で作った（Capacitor 8.6.0・WidgetKit、無料の Apple ID で App Group が通った）。平尾さんの iPhone でウィジェットの表示と、Mac からの自動の入れ直し（7日の期限の前、Wi-Fi 経由）・入れ直し後も記録が残ることを確認。ウィジェットのボタンの動きは未確認。詳しくは feat/ios-widget の docs/widget/WIDGET_PLAN.md
