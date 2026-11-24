@@ -35,15 +35,22 @@ function Bars({ rows, max }: { rows: { label: string; expense: number; income: n
       {rows.map((r) => (
         <li key={r.label} className="grid grid-cols-[2.5rem_1fr] items-center gap-2">
           <span className={`text-[12px] ${r.strong ? "font-bold text-ink" : "text-ink-3"}`}>{r.label}</span>
-          <div className="space-y-0.5" aria-label={`${r.label} 支出${formatYen(r.expense)} 収入${formatYen(r.income)}`}>
+          <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
               <div className="h-2 rounded-full bg-expense" style={{ width: `${Math.max(r.expense ? 2 : 0, (r.expense / max) * 100) * 0.7}%` }} />
-              {r.expense > 0 && <span className="num text-[11px] text-expense">{formatYen(r.expense)}</span>}
+              {r.expense > 0 && (
+                <span className="num text-[11px] text-expense">
+                  <span className="sr-only">支出 </span>
+                  {formatYen(r.expense)}
+                </span>
+              )}
             </div>
             {r.income > 0 && (
               <div className="flex items-center gap-1.5">
                 <div className="h-2 rounded-full bg-income" style={{ width: `${Math.max(2, (r.income / max) * 100) * 0.7}%` }} />
-                <span className="num text-[11px] text-income">+{formatYen(r.income)}</span>
+                <span className="num text-[11px] text-income">
+                  <span className="sr-only">収入 </span>+{formatYen(r.income)}
+                </span>
               </div>
             )}
           </div>
