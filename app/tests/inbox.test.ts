@@ -33,7 +33,7 @@ describe("未整理の記録", () => {
     expect(g.map((x) => [x.merchant, x.ids.length, x.total])).toEqual([["セブン", 2, 800], ["副業", 1, 5000], ["謎の店", 1, 900], ["（店名なし）", 1, 100]]); // 件数の同じものは金額の大きい順
     expect(g[0].firstDate).toBe("2026-11-01");
     expect(g[0].lastDate).toBe("2026-11-05");
-    expect(inboxCount(data())).toBe(4);
+    expect(inboxCount(data())).toBe(5); // 記録は5件（セブンの2件を1つにまとめて、グループは4つ）
   });
   it("候補は、同じ店名がほかのカテゴリに入っているときだけ（いちばん多いカテゴリ）。なければ出さない", () => {
     const g = inboxGroups(data());
