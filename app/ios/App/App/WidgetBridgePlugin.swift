@@ -213,10 +213,19 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                     let end = Calendar.current.date(byAdding: .day, value: 1, to: endDay) ?? endDay
                     let old = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: [cal]))
                     // くらしベースが書いた予定（印つき）だけを消す。手で入れた予定は残す。
-                    // 印を付ける前の版で書いた予定は印がないので、最初の1回だけ全部を書き直す
+                    // 印を付ける前の版で書いた予定は印がないので、最初の1回だけ、これから書く予定と
+                    // 名前・始まりの日が同じで印のないものに限って消す（手で入れた予定を巻き込まない。点検役の指摘）
                     let migrated = UserDefaults.standard.bool(forKey: Self.ownedMigratedKey)
-                    for e in old where !migrated || e.url == Self.ownedMark {
-                        try store.remove(e, span: .thisEvent, commit: false)
+                    let dayF = DateFormatter()
+                    dayF.calendar = Calendar(identifier: .gregorian)
+                    dayF.locale = Locale(identifier: "en_US_POSIX")
+                    dayF.timeZone = .current
+                    dayF.dateFormat = "yyyy-MM-dd"
+                    let ours = Set(items.map { "\($0.title)|\($0.startDate)" })
+                    for e in old {
+                        let isOurs = e.url == Self.ownedMark
+                        let oldVersion = !migrated && e.url == nil && ours.contains("\(e.title ?? "")|\(dayF.string(from: e.startDate))")
+                        if isOurs || oldVersion { try store.remove(e, span: .thisEvent, commit: false) }
                     }
                     var written = 0
                     for it in items {

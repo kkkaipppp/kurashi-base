@@ -36,10 +36,20 @@ export function WidgetSync() {
   const calendarBusy = useRef(false);
   // 設定の「カレンダーに反映し直す」（components/NativeStatusCard.tsx）
   const [resync, setResync] = useState(0);
+  const immediate = useRef(false);
   useEffect(() => {
     const on = () => {
       lastCalendar.current = "";
+      immediate.current = true;
       setResync((n) => n + 1);
+      // 書き込みの最中だったら、この合図は捨てられるので、少しあとにもう一度だけやる
+      if (calendarBusy.current) {
+        setTimeout(() => {
+          lastCalendar.current = "";
+          immediate.current = true;
+          setResync((n) => n + 1);
+        }, 5000);
+      }
     };
     window.addEventListener("kb-calendar-resync", on);
     return () => window.removeEventListener("kb-calendar-resync", on);
@@ -63,7 +73,8 @@ export function WidgetSync() {
         .finally(() => {
           calendarBusy.current = false;
         });
-    }, resync ? 0 : 3000);
+    }, immediate.current ? 0 : 3000);
+    immediate.current = false;
     return () => clearTimeout(t);
   }, [data, resync]);
 

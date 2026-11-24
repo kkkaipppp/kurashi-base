@@ -31,6 +31,12 @@ describe("ウィジェットに渡す要約", () => {
     ]);
     expect(s.moreEvents).toBe(1);
   });
+  it("明日の予定も渡す（日付が変わってアプリを開く前のウィジェット用。レビュー o1 の P12）", () => {
+    const d = emptyData(now);
+    d.events = [ev({ id: "t", title: "明日の歯医者", startDate: "2026-11-24", endDate: "2026-11-24", startTime: "09:00", endTime: "10:00" }), ev({ id: "x", title: "今日" })];
+    const s = buildWidgetSummary(d, "2026-11-23", now);
+    expect(s.tomorrow).toEqual({ date: "2026-11-24", events: [{ title: "明日の歯医者", time: "09:00" }] });
+  });
   it("毎週くり返す予定は、2回目からも時刻で出す（終日にしない）", () => {
     const d = emptyData(now);
     d.events = [ev({ id: "w", title: "ジム", startDate: "2026-11-16", endDate: "2026-11-16", startTime: "20:00", endTime: "21:00", repeat: "weekly" })];
