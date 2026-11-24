@@ -21,6 +21,7 @@ export interface Transaction {
   /** 100点化で追加（どれも任意。古い記録には無い。形式の番号は 2 のまま） */
   countAs?: "life" | "invest" | "transfer"; // この記録だけの数え方（カテゴリの分類より優先。lib/classify.ts）。transfer＝収支に数えない（カード引落・口座間の移動など。NEXT v21 X03）
   tripId?: string; // 旅行の支出（Trip.id）
+  importBatchId?: string; // 取り込みの単位（CSV の取り込みごと。取り消しに使う。NEXT v21 CSV:C08）
   createdAt: string; // ISO
   updatedAt: string; // ISO
 }
@@ -85,6 +86,18 @@ export interface StudyBook {
   note: string;
 }
 
+/** 取り込みの履歴（CSV を取り込んだ記録。取り消し・件数の確認に使う。NEXT v21 CSV:C08） */
+export interface ImportBatch {
+  id: string;
+  at: string; // ISO
+  source: string; // ファイル名など
+  added: number; // 実際に足した取引の件数
+  from: string | null;
+  to: string | null;
+  /** 取り消した日時（取り消したあとも履歴は残す） */
+  undoneAt?: string;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -274,7 +287,7 @@ export interface AppData extends Collections {
   trips: Trip[];
   budget: { monthly: number | null }; // 毎月の支出予算（円）。null = 未設定
   prefs: { home: HomePrefs };
-  meta: { createdAt: string; lastBackupAt: string | null };
+  meta: { createdAt: string; lastBackupAt: string | null; /** 取り込みの履歴（任意。100点化以降に追加） */ imports?: ImportBatch[] };
 }
 
 export const PAYMENT_METHODS: { id: string; label: string }[] = [
