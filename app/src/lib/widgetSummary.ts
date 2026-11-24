@@ -1,5 +1,6 @@
 import { eventsOnDay, summarizeMonth } from "./aggregate";
 import { addDays, monthKey } from "./date";
+import { budgetSpent } from "./ledger";
 import type { AppData } from "./types";
 
 /** iPhone のウィジェットに渡す要約。記録の全部は渡さず、表示に要る数字と予定名だけ（docs/widget/WIDGET_PLAN.md） */
@@ -42,6 +43,7 @@ export function buildWidgetSummary(data: AppData, today: string, nowIso: string)
     monthExpense: sum.expense,
     monthIncome: sum.income,
     budget,
-    remaining: budget === null ? null : budget - sum.expense,
+    // 予算の残りは、ホームの予算カードと同じ額と比べる（自分用は投資を除いた生活費。lib/ledger.ts）
+    remaining: budget === null ? null : budget - budgetSpent(data, monthKey(today), today),
   };
 }

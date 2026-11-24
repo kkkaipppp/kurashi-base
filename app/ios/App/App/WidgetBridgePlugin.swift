@@ -352,18 +352,32 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func removeCalendarEvents(_ call: CAPPluginCall) {
         Self.calendarQueue.async {
             let store = Self.eventStore
+            // 予定を読めない（許可しない・追加のみ）ときは、消せたことにしない（点検役の指摘）
+            let canRead: Bool
+            if #available(iOS 17.0, *) {
+                canRead = EKEventStore.authorizationStatus(for: .event) == .fullAccess
+            } else {
+                canRead = EKEventStore.authorizationStatus(for: .event) == .authorized
+            }
+            guard canRead else {
+                call.reject("カレンダーへのフルアクセスがないので、予定を消せません")
+                return
+            }
             guard let id = UserDefaults.standard.string(forKey: Self.calendarIdKey), let cal = store.calendar(withIdentifier: id) else {
                 call.resolve(["removed": 0])
                 return
             }
             do {
                 var removed = 0
+                // 1年ずつの区切りの境目にかかる予定は2回出てくるので、同じ予定は1回だけ消す
+                var seen = Set<String>()
                 // EventKit は一度に4年までしか探せないので、1年ずつ（3年前〜3年先）
                 let now = Date()
                 for y in -3..<3 {
                     guard let s = Calendar.current.date(byAdding: .year, value: y, to: now),
                           let e = Calendar.current.date(byAdding: .year, value: y + 1, to: now) else { continue }
                     for ev in store.events(matching: store.predicateForEvents(withStart: s, end: e, calendars: [cal])) where ev.url == Self.ownedMark {
+                        guard seen.insert(ev.calendarItemIdentifier).inserted else { continue }
                         try store.remove(ev, span: .thisEvent, commit: false)
                         removed += 1
                     }

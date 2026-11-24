@@ -164,3 +164,18 @@ describe("B iPhone のカレンダーへの反映のオン・オフ（アプリ�
     expect(s.indexOf('call("setCalendarSync", { enabled: false })')).toBeLessThan(s.indexOf('call("removeCalendarEvents")'));
   });
 });
+
+describe("点検の直し（アプリ）：カレンダーの削除とウィジェットの予算", () => {
+  const swift = () => readFileSync(join(__dirname, "..", "ios", "App", "App", "WidgetBridgePlugin.swift"), "utf8");
+  it("予定を読めないときは、消せたことにしない。同じ予定は1回だけ消す", () => {
+    const body = swift().slice(swift().indexOf("func removeCalendarEvents"), swift().indexOf("func openAppSettings"));
+    expect(body.indexOf("guard canRead else")).toBeLessThan(body.indexOf("store.remove("));
+    expect(body).toContain("seen.insert(ev.calendarItemIdentifier).inserted");
+  });
+  it("止めているあいだも「入れた予定を消す」でやり直せる", () => {
+    expect(src("components/NativeStatusCard.tsx")).toContain("入れた予定を消す");
+  });
+  it("ウィジェットの予算の残りは、ホームと同じ額と比べる", () => {
+    expect(src("lib/widgetSummary.ts")).toContain("budgetSpent(data, monthKey(today), today)");
+  });
+});

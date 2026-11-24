@@ -89,8 +89,7 @@ export function NativeStatusCard() {
           danger: true,
         });
         if (remove) {
-          const r = await call("removeCalendarEvents");
-          ui.toast(`反映を止めて、${Number(r.removed ?? 0)}件の予定を消しました`);
+          await removeEvents("反映を止めて、");
         } else {
           ui.toast("反映を止めました（入れた予定は残しています）");
         }
@@ -114,6 +113,29 @@ export function NativeStatusCard() {
       setBusy(false);
       load();
     }
+  };
+
+  // くらしベースが入れた予定を消す（止めたあとにもう一度試せるよう、止めているあいだはボタンも出す）
+  const removeEvents = async (prefix = "") => {
+    try {
+      const r = await call("removeCalendarEvents");
+      ui.toast(`${prefix}${Number(r.removed ?? 0)}件の予定を消しました`);
+    } catch (e) {
+      ui.toast(`${prefix ? "反映は止めました。" : ""}予定は消せませんでした${e instanceof Error && e.message ? `（${e.message}）` : ""}。「入れた予定を消す」でもう一度試せます`, "error");
+    }
+  };
+  const removeLater = async () => {
+    const ok = await ui.confirm({
+      title: "くらしベースが入れた予定を消しますか？",
+      body: "「くらしベース」カレンダーにある、くらしベースが入れた予定を消します。自分で入れた予定とカレンダーそのものは消しません。",
+      ok: "予定を消す",
+      danger: true,
+    });
+    if (!ok) return;
+    setBusy(true);
+    await removeEvents();
+    setBusy(false);
+    load();
   };
 
   const accessText =
@@ -152,6 +174,11 @@ export function NativeStatusCard() {
         {calOn && cal && cal.access !== "full" && (
           <Button variant="secondary" onClick={() => call("openAppSettings").catch(() => {})}>
             設定を開く
+          </Button>
+        )}
+        {!calOn && (
+          <Button variant="secondary" onClick={removeLater} disabled={busy} className="col-span-2">
+            入れた予定を消す
           </Button>
         )}
         {calOn && (
