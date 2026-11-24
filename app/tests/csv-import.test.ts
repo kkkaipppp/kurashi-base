@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { applyRestore } from "@/lib/backup";
 import { emptyData } from "@/lib/defaults";
-import { csvToIncoming, parseCsv } from "@/lib/csvImport";
+import { csvToIncoming, parseCsv, parseCsvChecked } from "@/lib/csvImport";
 import { validateAppData } from "@/lib/schema";
 
 const now = "2026-11-24T00:00:00.000Z";
@@ -79,5 +79,48 @@ describe("家計簿の CSV の取り込み（Web 版、2026-11-24 平尾さん�
     const s = readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8");
     expect(s).toContain("家計簿の CSV を取り込む");
     expect(s).toContain('store.replaceAll(res.data, "家計簿の CSV から追加")');
+  });
+});
+
+describe("NEXT v21 CSV：弱点の修正（V06）", () => {
+  const TXH = "日付,種類,金額,カテゴリ,内容,支払い方法,メモ,元ID\n";
+  it("引用符が閉じないまま終わる CSV は、始まった行を示して断る（後ろの行を黙って吸い込まない）", () => {
+    const text = TXH + '2026-11-01,支出,100,食費,"閉じない,,,\n2026-11-02,支出,200,食費,,,,\n';
+    const r = csvToIncoming(text, emptyData(now), now);
+    expect(r).toMatchObject({ ok: false, error: expect.stringContaining("2行目の引用符") });
+    expect(parseCsvChecked('a,"b\nc').unclosedLine).toBe(1);
+    expect(parseCsvChecked('a,"b"\nc').unclosedLine).toBeNull();
+  });
+  it("エラーは最初の1行で止めず、最大10件を行番号つきでまとめる。確定できるのはエラー0件のときだけ", () => {
+    const bad = Array.from({ length: 12 }, (_, i) => `2026-13-0${(i % 9) + 1},支出,100,食費,,,,`).join("\n");
+    const r = csvToIncoming(TXH + bad + "\n", emptyData(now), now);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toContain("12件");
+    expect(r.error).toContain("2行目の日付");
+    expect(r.error).toContain("11行目の日付");
+    expect(r.error).not.toContain("12行目の日付");
+    expect(r.error).toContain("ほか2件");
+    // 正しい行が混ざっていても、1行でも誤りがあれば何も取り込まない
+    const mixed = csvToIncoming(TXH + "2026-11-01,支出,100,食費,,,,\n2026-11-02,出費,100,食費,,,,\n", emptyData(now), now);
+    expect(mixed.ok).toBe(false);
+  });
+  it("足さなかった固定費は、理由つきで返す（前方一致で黙って除かない）", () => {
+    const cur = emptyData(now);
+    cur.recurring.push({ id: "r1", name: "家賃", amount: 81330, cycle: "monthly", anchorDay: 27, nextDueDate: "2026-11-27", categoryId: "exp-4", paymentMethod: "", active: true, createdAt: now, updatedAt: now });
+    const text = "名前,金額,周期,支払日,次の支払日,カテゴリ,支払い方法\n家賃（全保連）,81330,毎月,27,2026-11-27,家賃,口座振替・振込\n家賃,81330,毎月,27,2026-11-27,家賃,\nNetflix,1590,毎月,1,2026-12-01,趣味・娯楽,\n";
+    const r = csvToIncoming(text, cur, now);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.skipped.map((x) => x.name)).toEqual(["家賃（全保連）", "家賃"]);
+    expect(r.skipped[0].reason).toContain("「家賃」で始まり");
+    expect(r.skipped[1].reason).toContain("同じ名前・金額");
+    expect(r.incoming.recurring.map((x) => x.name)).toEqual(["Netflix"]);
+  });
+  it("確認画面に、似た記録の数・足さない固定費・複数行のエラーが出る", () => {
+    const s = readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8");
+    expect(s).toContain("similarButDifferentId(data.transactions, csv.result.incoming.transactions)");
+    expect(s).toContain("足さない固定費：");
+    expect(s).toContain("whitespace-pre-line");
   });
 });

@@ -117,6 +117,7 @@ export default function SettingsPage() {
   // --- 家計簿の CSV の取り込み（追加だけ。同じ記録は二重に入れない） ---
   const csvRef = useRef<HTMLInputElement>(null);
   const [csv, setCsv] = useState<{ name: string; result: CsvResult } | null>(null);
+  const csvSimilar = useMemo(() => (csv?.result.ok && csv.result.kind === "transactions" ? similarButDifferentId(data.transactions, csv.result.incoming.transactions) : 0), [csv, data.transactions]);
   const csvPlan = useMemo(() => (csv?.result.ok ? applyRestore(data, csv.result.incoming, "merge") : null), [csv, data]);
   const onCsv = async (f: File | undefined) => {
     if (!f) return;
@@ -414,7 +415,7 @@ export default function SettingsPage() {
             <div className="mt-3 space-y-2 rounded-2xl border border-line p-3" aria-label="CSV の取り込みの確認">
               <p className="text-[13px] font-semibold break-all">{csv.name}</p>
               {!csv.result.ok ? (
-                <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[13px] font-medium text-danger">
+                <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[13px] font-medium whitespace-pre-line text-danger">
                   {csv.result.error}
                 </p>
               ) : (
@@ -453,6 +454,25 @@ export default function SettingsPage() {
                   {csvPlan?.ok && csvPlan.added === 0 && <li className="text-ink-2">新しく追加する記録はありません（すでに入っています）</li>}
                   {csvPlan && !csvPlan.ok && <li className="text-danger">{csvPlan.error}</li>}
                   {csv.result.newCategories.length > 0 && <li className="text-ink-2">新しく作るカテゴリ：{csv.result.newCategories.join("・")}</li>}
+                  {/* ID が違うのに日付・種類・金額が同じ記録（二重かもしれない）。自動では消さず、数を見せる（NEXT v21 CSV:C03） */}
+                  {csv.result.kind === "transactions" && csvSimilar > 0 && (
+                    <li className="text-warn">
+                      今の記録に、日付・種類・金額が同じで別の記録が{csvSimilar}件あります。同じ明細なら、取り込む前に「やめる」を選んでください（別の記録として追加します）。
+                    </li>
+                  )}
+                  {/* 足さなかった固定費と理由（黙って除かない。NEXT v21 CSV:C05） */}
+                  {csv.result.skipped.length > 0 && (
+                    <li className="text-ink-2">
+                      足さない固定費：{csv.result.skipped.length}件
+                      <ul className="mt-0.5 space-y-0.5 pl-3 text-[12px]">
+                        {csv.result.skipped.slice(0, 5).map((x) => (
+                          <li key={x.name}>
+                            {x.name}（{x.reason}）
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  )}
                 </ul>
               )}
               <div className="grid grid-cols-2 gap-2">
