@@ -115,6 +115,7 @@ export default function TripsPage() {
 function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; onEdit: () => void }) {
   const data = useData();
   const ui = useUI();
+  const today = todayStr();
   const [q, setQ] = useState(trip.destination ? `${trip.destination} 観光` : "");
   const evs = data.events.filter((e) => e.tripId === trip.id);
   const days: string[] = [];
@@ -152,6 +153,21 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
             {costTotal > 0 && <>行程の費用の目安 {formatYen(costTotal)}</>}
           </p>
         )}
+        {/* 旅行の支出をすぐ記録（レビュー o1 の P17。記録は旅行と結びつけず、メモに旅行の名前を入れるだけ＝保存の形式は変えない） */}
+        <button
+          type="button"
+          onClick={() =>
+            ui.openTx({
+              mode: "new",
+              type: "expense",
+              date: today >= trip.startDate && today <= trip.endDate ? today : trip.startDate,
+              initial: { note: `旅行：${trip.title}` },
+            })
+          }
+          className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-soft text-[14px] font-semibold text-brand"
+        >
+          ＋ この旅行の支出を追加
+        </button>
         {trip.note && <p className="mt-2 text-[14px] whitespace-pre-wrap break-words">{trip.note}</p>}
         <div className="mt-3 grid gap-2">
           {directions && (

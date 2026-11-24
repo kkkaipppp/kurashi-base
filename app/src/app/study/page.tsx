@@ -137,7 +137,13 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
           合計 {formatMinutes(st.totalMinutes)}
           {s.targetHours ? `／${s.targetHours}時間（${st.targetPct}%）` : ""}
         </p>
-        <p className="num text-[13px] text-ink-2">この7日間 {formatMinutes(st.weekMinutes)}</p>
+        <p className="num text-[13px] text-ink-2">
+          この7日間 {formatMinutes(st.weekMinutes)}
+          {/* 1週間の目安と比べる（レビュー o1 の P18） */}
+          {target.kind === "ok" && (
+            <span className={st.weekMinutes >= target.minutes * 7 ? "text-brand" : ""}>／1週間の目安 {formatMinutes(target.minutes * 7)}</span>
+          )}
+        </p>
         {s.targetHours ? (
           <div className="mt-1 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={st.targetPct ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label="目標の勉強時間に対する進み具合">
             <div className="h-full rounded-full bg-brand" style={{ width: `${st.targetPct ?? 0}%` }} />

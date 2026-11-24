@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, IconChevronR, PageHeader } from "@/components/ui";
 import { BRAND, LogoMark } from "@/components/Logo";
+import { useIsNativeApp } from "@/lib/platform";
 
-const linkCls = "flex min-h-11 items-center justify-between rounded-xl px-1 text-[14px] font-semibold text-brand hover:bg-brand-soft";
+const linkCls =
+  "flex min-h-11 items-center justify-between rounded-xl px-1 text-[14px] font-semibold text-brand hover:bg-brand-soft";
 
 export default function GuidePage() {
+  const nativeApp = useIsNativeApp();
   const ui = useUI();
   return (
     <main className="space-y-3">
@@ -16,10 +19,16 @@ export default function GuidePage() {
       <Card className="flex items-center gap-3">
         <LogoMark size={48} />
         <div>
-          <p className="text-[17px] font-bold" style={{ color: "var(--logo-ink)" }}>
+          <p
+            className="text-[17px] font-bold"
+            style={{ color: "var(--logo-ink)" }}
+          >
             {BRAND.name}
           </p>
-          <p className="text-[13px] text-ink-2">{BRAND.message}予定・お金・旅行・勉強を、ここにまとめて記録できます。</p>
+          <p className="text-[13px] text-ink-2">
+            {BRAND.message}
+            予定・お金・旅行・勉強を、ここにまとめて記録できます。
+          </p>
         </div>
       </Card>
 
@@ -43,12 +52,23 @@ export default function GuidePage() {
         </div>
       </Card>
 
-      <Card>
-        <h2 className="text-[17px] font-bold">次からすぐに開く</h2>
-        <p className="mt-2 text-[14px]">iPhoneのSafariで共有ボタンを押し、「ホーム画面に追加」を選ぶと、次からアイコンで開けます。</p>
-        <p className="mt-2 text-[14px] font-semibold">アイコンから開いたときと Safari で開いたときでは、記録が別々になります。使うのはどちらか1つに決めてください（おすすめはアイコン）。</p>
-        <p className="mt-2 text-[14px]">Safari で入れた記録を移すときは、Safari で「バックアップを書き出す」→ アイコンから開いて、同じ画面で復元します。</p>
-      </Card>
+      {!nativeApp && (
+        <Card>
+          <h2 className="text-[17px] font-bold">次からすぐに開く</h2>
+          <p className="mt-2 text-[14px]">
+            iPhoneのSafariで共有ボタンを押し、「ホーム画面に追加」を選ぶと、次からアイコンで開けます。
+          </p>
+          <p className="mt-2 text-[14px] font-semibold">
+            アイコンから開いたときと Safari
+            で開いたときでは、記録が別々になります。使うのはどちらか1つに決めてください（おすすめはアイコン）。
+          </p>
+          <p className="mt-2 text-[14px]">
+            Safari で入れた記録を移すときは、Safari
+            で「バックアップを書き出す」→
+            アイコンから開いて、同じ画面で復元します。
+          </p>
+        </Card>
+      )}
 
       <Card>
         <h2 className="text-[17px] font-bold">ほかにできること</h2>
@@ -72,11 +92,30 @@ export default function GuidePage() {
       <Card>
         <h2 className="text-[17px] font-bold">記録を守るために</h2>
         <ul className="mt-2 list-disc space-y-2 pl-5 text-[14px]">
-          <li>記録はこの端末の、このブラウザの中だけ（Safari など）</li>
-          <li>Safari のデータを消すと、記録も消えます</li>
-          <li>週に1回、バックアップを書き出す</li>
+          {nativeApp ? (
+            <>
+              <li>記録はこのアプリの中（Safari の Web 版とは別）</li>
+              <li>
+                毎日、自動でバックアップ（「ファイル」アプリ → このiPhone内 →
+                くらしベース）
+              </li>
+              <li>
+                アプリを削除すると、記録と自動バックアップが消えます。ときどき書き出して
+                iCloud Drive などにも保存
+              </li>
+            </>
+          ) : (
+            <>
+              <li>記録はこの端末の、このブラウザの中だけ（Safari など）</li>
+              <li>Safari のデータを消すと、記録も消えます</li>
+              <li>週に1回、バックアップを書き出す</li>
+            </>
+          )}
         </ul>
-        <Link href="/settings#backup" className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink">
+        <Link
+          href="/settings#backup"
+          className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink"
+        >
           バックアップを書き出す
         </Link>
       </Card>
@@ -84,12 +123,18 @@ export default function GuidePage() {
       <Card>
         <h2 className="text-[17px] font-bold">まだできないこと</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-[14px]">
-          <li>レシートの文字の自動読み取り（OCR。「レシートを見て入力」で、画像を見ながら手で入力できます）</li>
-          <li>Googleカレンダーとの同期（予定を Google の画面に渡すだけです）</li>
+          <li>
+            レシートの文字の自動読み取り（OCR。「レシートを見て入力」で、画像を見ながら手で入力できます）
+          </li>
+          <li>
+            Googleカレンダーとの同期（予定を Google の画面に渡すだけです）
+          </li>
           <li>友達や家族とのデータの共有、端末どうしの同期</li>
           <li>通知、iPhone のホーム画面のウィジェット</li>
         </ul>
-        <p className="mt-2 text-[13px] text-ink-3">このアプリは試用版（β版）です。使い勝手や表示は、これから変わることがあります。</p>
+        <p className="mt-2 text-[13px] text-ink-3">
+          このアプリは試用版（β版）です。使い勝手や表示は、これから変わることがあります。
+        </p>
       </Card>
     </main>
   );

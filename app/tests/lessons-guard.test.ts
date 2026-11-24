@@ -46,7 +46,9 @@ describe("LESSONS L-04：選択肢が並列になっていない", () => {
 
 describe("友人β：初めて使う人に保存場所とバックアップが伝わる（U01・U08）", () => {
   it("ホームのはじめての案内と使い方の画面に「このブラウザの中だけ」と、バックアップへの入口がある", () => {
-    expect(src("app/page.tsx")).toContain("このブラウザの中だけ");
+    // 2026-11-24 レビュー o1 の P03：説明は lib/platform.ts にまとめ、Web 版とアプリで出し分ける
+    expect(src("lib/platform.ts")).toContain("このブラウザの中だけ");
+    expect(src("app/page.tsx")).toContain('STORAGE_TEXT[nativeApp ? "app" : "web"].short');
     const guide = src("app/guide/page.tsx");
     expect(guide).toContain("このブラウザの中だけ");
     expect(guide).toContain("/settings#backup");

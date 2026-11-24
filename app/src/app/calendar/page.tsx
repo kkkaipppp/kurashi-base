@@ -29,6 +29,10 @@ export default function CalendarPage() {
   const today = todayStr();
   const [month, setMonth] = useState(monthKey(today));
   const [selected, setSelected] = useState(today);
+  // マスに出すもの（レビュー o1 の P10：狭いマスに予定と金額が混ざるので、見たいほうだけにもできる）
+  const [show, setShow] = useState<"all" | "event" | "money">("all");
+  const showEv = show !== "money";
+  const showMoney = show !== "event";
   // 選んだ日を＋ボタンに引き継ぐ
   const { setCalendarDate } = ui;
   useEffect(() => {
@@ -92,6 +96,19 @@ export default function CalendarPage() {
         <p className="num mb-2 text-center text-[12px] text-ink-3">
           支出 {formatYen(sum.expense)} ・ 収入 {formatYen(sum.income)}
         </p>
+        <div className="mb-2 grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="マスに出すもの">
+          {(
+            [
+              ["all", "予定とお金"],
+              ["event", "予定"],
+              ["money", "お金"],
+            ] as const
+          ).map(([k, label]) => (
+            <button key={k} type="button" role="radio" aria-checked={show === k} onClick={() => setShow(k)} className={`min-h-9 rounded-lg text-[13px] font-semibold ${show === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
         <table className="w-full table-fixed border-separate border-spacing-0.5" role="grid" aria-label={`${formatMonthJa(month)}のカレンダー`}>
           <thead>
             <tr>
@@ -130,7 +147,7 @@ export default function CalendarPage() {
                         <span className="mt-0.5 flex h-1.5 gap-0.5" aria-hidden="true">
                           {dlDays.has(d) && <span className={`size-1.5 rounded-full ${isSel ? "bg-white" : "bg-warn"}`} />}
                         </span>
-                        {info.titles.map((t, k) => (
+                        {showEv && info.titles.map((t, k) => (
                           <span
                             key={k}
                             className={`mt-0.5 w-full truncate rounded px-0.5 text-left text-[10px] leading-[14px] font-semibold ${isSel ? "bg-white/20 text-white" : "bg-event-soft text-event"}`}
@@ -139,17 +156,17 @@ export default function CalendarPage() {
                             {t}
                           </span>
                         ))}
-                        {info.ev > info.titles.length && (
+                        {showEv && info.ev > info.titles.length && (
                           <span className={`text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-event"}`} aria-hidden="true">
                             +{info.ev - info.titles.length}
                           </span>
                         )}
-                        {info.exp > 0 && (
+                        {showMoney && info.exp > 0 && (
                           <span className={`num mt-0.5 max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-expense"}`} aria-hidden="true">
-                            {shortYen(info.exp)}
+                            −{shortYen(info.exp)}
                           </span>
                         )}
-                        {info.inc > 0 && (
+                        {showMoney && info.inc > 0 && (
                           <span className={`num max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-income"}`} aria-hidden="true">
                             +{shortYen(info.inc)}
                           </span>
@@ -167,11 +184,11 @@ export default function CalendarPage() {
             <span className="rounded bg-event-soft px-1 text-event">名前</span>予定
           </span>
           <span className="flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-warn" />期限
+            <span className="size-1.5 rounded-full bg-warn" />期限・固定費の支払日
           </span>
         </div>
         <p className="mt-1 text-center text-[11px] text-ink-3" aria-hidden="true">
-          <span className="text-expense">赤い数字＝支出</span>・<span className="text-income">青い＋数字＝収入</span>・赤い日付＝日曜と祝日
+          <span className="text-expense">赤い −数字＝支出</span>・<span className="text-income">青い＋数字＝収入</span>・赤い日付＝日曜と祝日
         </p>
       </Card>
 
@@ -181,6 +198,10 @@ export default function CalendarPage() {
             {formatDateJa(selected, true)}
             {holidayName(selected) && <span className="ml-2 text-[14px] font-semibold text-expense">{holidayName(selected)}</span>}
           </h2>
+          <p className="num text-[13px] text-ink-2">
+            予定 {dayEvents.length}件・<span className="text-expense">支出 {formatYen(day.expense)}</span>・<span className="text-income">収入 {formatYen(day.income)}</span>
+            {dayDeadlines.length > 0 && `・期限など ${dayDeadlines.length}件`}
+          </p>
           <button
             type="button"
             onClick={() => ui.openAdd({ date: selected })}

@@ -16,7 +16,7 @@ const CHOICES: { kind: AddKind; label: string; desc: string; cls: string; mark: 
 export function AddChooser({ date, onClose, onPick }: { date?: string; onClose: () => void; onPick: (k: AddKind) => void }) {
   const d = date ?? todayStr();
   return (
-    <Sheet title="何を追加しますか？" open onRequestClose={onClose}>
+    <Sheet title="何を記録しますか？" open onRequestClose={onClose}>
       <p className="mb-3 text-[13px] text-ink-3">{formatDateJa(d, true)}の記録として入力を始めます（日付は入力の画面で変えられます）。</p>
       <div className="grid grid-cols-2 gap-3">
         {CHOICES.map((c) => (
