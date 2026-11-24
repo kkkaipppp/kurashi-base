@@ -19,6 +19,7 @@ const YearReport = PERIOD_REPORT ? dynamic(() => import("@/components/PeriodRepo
 // 月の「固定費と変動費・生活と投資・増えたカテゴリ」も自分用だけ（レビュー o1 の P11、家計の機能 2・3）
 // 週・年とは別に公開を決められるよう、自分の条件にする（今はどちらも自分用だけ）
 const MONTH_BREAKDOWN = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+const ForecastCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/ForecastCard").then((m) => m.ForecastCard)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
 
 // 円グラフの色（カテゴリの順に使う。意味は持たせず、凡例と金額で読めるようにする）
@@ -169,6 +170,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
             </dl>
           </Card>
 
+          <ForecastCard month={month} />
           <MonthBreakdownCard month={month} />
 
           {insights.length > 0 && (
