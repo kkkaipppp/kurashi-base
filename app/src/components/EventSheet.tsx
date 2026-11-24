@@ -342,7 +342,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     if (busy) return;
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true })))
       return;
-    if ((dirty || resumed.current) && !(pending && !resumeAsked)) clearSheetDraft("event", draftTarget);
+    if ((dirty || resumed.current) && !(pending && !resumeAsked) && !copySrc) clearSheetDraft("event", draftTarget);
     onClose();
   };
 
@@ -396,7 +396,8 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       }
       saved.current = true;
       // 保存がうまくいったときだけ下書きを消す（前の書きかけに答えていないときは、それは残す）
-      if (!(pending && !resumeAsked) || asNew) clearSheetDraft("event", draftTarget);
+      // 複製のときは、通常の「新しい予定」の書きかけを消さない（点検役の指摘）
+      if (!copySrc && (!(pending && !resumeAsked) || asNew)) clearSheetDraft("event", draftTarget);
       ui.toast(asNew ? "新しい予定として保存しました" : editing ? "保存しました" : "予定を追加しました");
       onClose();
     } finally {

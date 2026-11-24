@@ -1,6 +1,6 @@
 import { dailyAllowance } from "./allowance";
 import { summarizeMonth } from "./aggregate";
-import { categoryIsInvest } from "./classify";
+import { categoryIsInvest, categoryMap } from "./classify";
 import { IS_PERSONAL } from "./edition";
 import { monthBreakdown } from "./monthBreakdown";
 import type { AppData } from "./types";
@@ -29,7 +29,9 @@ export interface MonthLedger {
 export function monthLedger(data: AppData, month: string, today: string): MonthLedger {
   const b = monthBreakdown(data, month, today);
   const budget = data.budget.monthly ?? null;
-  const a = dailyAllowance(budget, b.lifeExpense, data.recurring, today);
+  // 投資の固定費（積立など）は、自由に使える残りから引かない（生活費の予算と比べる額に入れていないため）
+  const cats = categoryMap(data);
+  const a = dailyAllowance(budget, b.lifeExpense, data.recurring.filter((r) => !categoryIsInvest(cats.get(r.categoryId))), today);
   return {
     budget,
     lifeExpense: b.lifeExpense,

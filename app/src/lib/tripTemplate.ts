@@ -1,4 +1,4 @@
-import { addDays, daysBetween } from "./date";
+import { addDays, daysBetween, isValidDateStr } from "./date";
 import { newId } from "./defaults";
 import type { AppData, CalendarEvent, Trip } from "./types";
 
@@ -14,11 +14,11 @@ export function cloneTrip(
   tripId: string,
   newStart: string,
   ts: string,
-  ids: { trip: () => string; event: () => string } = { trip: () => newId("trip"), event: () => newId("ev") },
+  ids: { trip: () => string; event: () => string; item: () => string } = { trip: () => newId("trip"), event: () => newId("ev"), item: () => newId("it") },
 ): { ok: true; next: AppData; tripId: string; events: number } | { ok: false; error: string } {
   const src = (d.trips ?? []).find((t) => t.id === tripId);
   if (!src) return { ok: false, error: "元の旅行が見つかりません" };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(newStart)) return { ok: false, error: "出発日を選んでください" };
+  if (!isValidDateStr(newStart)) return { ok: false, error: "出発日を選んでください" };
   const shift = daysBetween(src.startDate, newStart);
   const id = ids.trip();
   const trip: Trip = {
@@ -44,7 +44,7 @@ export function cloneTrip(
         updatedAt: ts,
       };
       if (e.repeatUntil) copy.repeatUntil = addDays(e.repeatUntil, shift);
-      if (items) copy.items = items.map((i) => ({ ...i, id: ids.event(), done: false }));
+      if (items) copy.items = items.map((i) => ({ ...i, id: ids.item(), done: false }));
       return copy;
     });
   return { ok: true, next: { ...d, trips: [...(d.trips ?? []), trip], events: [...d.events, ...events] }, tripId: id, events: events.length };

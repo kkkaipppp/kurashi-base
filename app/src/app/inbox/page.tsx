@@ -5,7 +5,8 @@ import { useData, useStore } from "@/lib/store";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, Empty, PageHeader, inputCls } from "@/components/ui";
 import { FEATURES } from "@/lib/edition";
-import { inboxGroups, recategorize } from "@/lib/inbox";
+import { inboxGroups, recategorize, UNSORTED_NAMES } from "@/lib/inbox";
+import { categoryIsInvest } from "@/lib/classify";
 import { formatDateJa } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 
@@ -27,9 +28,12 @@ export default function InboxPage() {
   const apply = async (ids: string[], merchant: string, toId: string) => {
     const to = data.categories.find((c) => c.id === toId);
     if (!to) return ui.toast("移すカテゴリを選んでください", "error");
+    // 「その他」から、投資として数えるカテゴリへ移すと、予算と比べる額（生活費）が減る
+    const from = data.categories.find((c) => c.name === UNSORTED_NAMES[to.kind] && c.kind === to.kind);
+    const differ = from ? categoryIsInvest(from) !== categoryIsInvest(to) : false;
     const ok = await ui.confirm({
       title: `「${merchant}」の${ids.length}件を「${to.name}」にしますか？`,
-      body: "カテゴリだけが変わります（金額・日付はそのまま）。設定の「直前の操作を取り消す」で戻せます。",
+      body: `カテゴリだけが変わります（金額・日付はそのまま）。${differ ? `「${to.name}」は${categoryIsInvest(to) ? "投資として数えるカテゴリ" : "生活費として数えるカテゴリ"}なので、予算と比べる額（生活費）が変わります。` : ""}設定の「直前の操作を取り消す」で戻せます。`,
       ok: "変える",
     });
     if (!ok) return;

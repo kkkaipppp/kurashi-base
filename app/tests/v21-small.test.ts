@@ -221,3 +221,65 @@ describe("予定の複製（自分用。CAL:C05）", () => {
     expect(s()).toContain("if (saved.current || copySrc) return;");
   });
 });
+
+// --- 第2回の点検の直し ---
+import { csvToIncoming } from "@/lib/csvImport";
+import { genericToIncoming, parseTable, suggestConfig } from "@/lib/csvGeneric";
+import { figures } from "@/lib/restoreView";
+import { weeklyReview } from "@/lib/weeklyReview";
+
+describe("点検の直し（第2回）", () => {
+  it("投資の固定費（積立など）は、月末の見込みにも、自由に使える残りにも入れない", () => {
+    const d = withInvest();
+    d.budget.monthly = 100000;
+    d.recurring = [
+      { id: "r1", name: "スマホ", amount: 8000, cycle: "monthly", anchorDay: 28, nextDueDate: "2026-11-28", categoryId: "exp-5", paymentMethod: "", active: true, createdAt: now, updatedAt: now },
+      { id: "r2", name: "積立", amount: 30000, cycle: "monthly", anchorDay: 28, nextDueDate: "2026-11-28", categoryId: "inv", paymentMethod: "", active: true, createdAt: now, updatedAt: now },
+    ];
+    d.transactions = Array.from({ length: 4 }, (_, i) => tx({ id: `v${i}`, date: `2026-11-0${i + 1}`, amount: 1000 }));
+    const f = forecastMonthEnd(d, "2026-11-25");
+    expect(f.ok && f.unpaidFixed).toBe(8000);
+    expect(monthLedger(d, "2026-11", "2026-11-25").unpaidFixed).toBe(8000);
+  });
+  it("汎用 CSV：元 ID がない行の ID は、カテゴリを足しても・チェックを切り替えても変わらない（取り込み直しで二重にならない）", () => {
+    const text = "日付,金額,内容,カテゴリ\n2026-11-01,-500,カフェ,外食\n2026-11-01,-500,カフェ,外食\n";
+    const t = parseTable(text);
+    if (!t.ok) throw new Error("parse");
+    const cur = emptyData(now);
+    const a = genericToIncoming(t.table, suggestConfig(t.table), cur, now);
+    // 間にカテゴリ「外食」が増えた状態で、もう一度
+    const cur2 = emptyData(now);
+    cur2.categories.push({ id: "c-gaisyoku", name: "外食", kind: "expense", order: 50, archived: false });
+    const b = genericToIncoming(t.table, suggestConfig(t.table), cur2, now);
+    const cfg = suggestConfig(t.table);
+    cfg.newCategories = true;
+    const c = genericToIncoming(t.table, cfg, cur, now);
+    if (!a.ok || !b.ok || !c.ok) throw new Error("import");
+    const ids = (r: typeof a) => r.incoming.transactions.map((x) => x.id);
+    expect(ids(a)).toEqual(ids(b));
+    expect(ids(a)).toEqual(ids(c));
+    expect(new Set(ids(a)).size).toBe(2); // 同じ内容が2行あっても、別の記録（同じファイルの中の何番目か）
+    // 決まった形の CSV の ID の作り方は変えていない
+    const std = "日付,種類,金額,カテゴリ,内容,支払い方法,メモ,元ID\n2026-11-01,支出,500,食費,カフェ,,,\n";
+    expect(csvToIncoming(std, cur, now).ok).toBe(true);
+  });
+  it("復元前の確認の合計も、収支に数えない記録を入れない（復元後の画面と同じ）", () => {
+    const d = withInvest();
+    d.transactions = [tx({ id: "a", amount: 1000 }), tx({ id: "b", amount: 50000, countAs: "transfer" })];
+    expect(figures(d).expense).toBe(1000);
+  });
+  it("週の見直し：何日かにまたがる予定は1件。前の週が投資だけなら比べない", () => {
+    const d = withInvest();
+    d.events = [{ id: "e", title: "出張", startDate: "2026-11-23", endDate: "2026-11-27", allDay: true, startTime: "", endTime: "", note: "", createdAt: now, updatedAt: now }];
+    d.transactions = [tx({ id: "a", date: "2026-11-24", amount: 100 }), tx({ id: "p", date: "2026-11-17", categoryId: "inv", amount: 50000 })];
+    const r = weeklyReview(d, "2026-11-23", "2026-11-25");
+    expect(r.events).toBe(1);
+    expect(r.prevSpent).toBeNull();
+  });
+  it("予定の複製では、通常の「新しい予定」の書きかけを消さない。投資への一括変更は、確認の文に数え方の変化を書く", () => {
+    const ev = src("components/EventSheet.tsx");
+    expect(ev).toContain("&& !copySrc) clearSheetDraft(");
+    expect(ev).toContain("if (!copySrc && (!(pending && !resumeAsked) || asNew)) clearSheetDraft(");
+    expect(src("app/inbox/page.tsx")).toContain("予算と比べる額（生活費）が変わります");
+  });
+});

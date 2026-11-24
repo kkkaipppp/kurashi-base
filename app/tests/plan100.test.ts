@@ -147,8 +147,10 @@ describe("再点検の直し：書きかけ", () => {
   it("前の書きかけに答えていないときは、閉じても別の1件を保存しても、その書きかけは消さない", () => {
     for (const f of ["components/TxSheet.tsx", "components/EventSheet.tsx"]) {
       const s = src(f);
-      expect(s).toContain("&& !(pending && !resumeAsked)) clearSheetDraft(");
-      expect(s).toContain("if (!(pending && !resumeAsked) || asNew) clearSheetDraft(");
+      // 前の書きかけに答えていないあいだは消さない（予定は、さらに「複製のとき」も消さない条件が加わった。v21 第2回の点検）
+      expect(s).toContain("!(pending && !resumeAsked)");
+      expect(s).toMatch(/\(dirty \|\| resumed\.current\) && !\(pending && !resumeAsked\)/);
+      expect(s).toMatch(/!\(pending && !resumeAsked\) \|\| asNew\)/);
     }
   });
   it("編集の途中で記録が消されたら、その場で新しい記録として保存できる", () => {

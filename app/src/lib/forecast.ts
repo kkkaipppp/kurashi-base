@@ -1,4 +1,4 @@
-import { categoryMap, isMoveOnly, txIsFixed, txIsInvest } from "./classify";
+import { categoryIsInvest, categoryMap, isMoveOnly, txIsFixed, txIsInvest } from "./classify";
 import { unpaidRecurringThisMonth } from "./allowance";
 import { addDays, daysBetween, daysInMonth, parseDateStr } from "./date";
 import type { AppData } from "./types";
@@ -43,7 +43,8 @@ export function forecastMonthEnd(data: AppData, today: string): Forecast {
   if (expenses.length === 0) return { ok: false, reason: "noData" };
 
   const spent = expenses.filter((t) => t.date.slice(0, 7) === month && t.date <= today).reduce((a, t) => a + t.amount, 0);
-  const unpaidFixed = unpaidRecurringThisMonth(data.recurring, today);
+  // 投資の固定費（積立など）は、生活費の見込みに入れない
+  const unpaidFixed = unpaidRecurringThisMonth(data.recurring, today, (r) => categoryIsInvest(cats.get(r.categoryId)));
 
   // 変動費の窓：今日の前日から28日さかのぼる。いちばん古い記録より前は、記録がなかっただけかもしれないので数えない
   const first = expenses.reduce((a, t) => (t.date < a ? t.date : a), expenses[0].date);

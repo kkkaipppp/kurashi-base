@@ -20,7 +20,7 @@ const mk = (): AppData => {
   return d;
 };
 let n = 0;
-const ids = { trip: () => `NT${++n}`, event: () => `NE${++n}` };
+const ids = { trip: () => `NT${++n}`, event: () => `NE${++n}`, item: () => `NI${++n}` };
 
 describe("旅行のコピー", () => {
   it("日付を同じだけずらし、旅行・行程を新しい ID で作る。持ち物は未チェックに戻す", () => {

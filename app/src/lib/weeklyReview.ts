@@ -34,18 +34,22 @@ export function weeklyReview(data: AppData, from: string, today: string): Weekly
   const span = Math.max(0, Math.round((Date.parse(`${upTo}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000));
   const prevFrom = addDays(from, -7);
   const prevTo = addDays(prevFrom, span);
-  const prevAny = data.transactions.some((t) => t.date >= prevFrom && t.date <= addDays(prevFrom, 6));
+  // 前の週に、生活費の記録が1件でもあるときだけ比べる（投資・収支に数えないものだけの週は、比べない）
+  const prevAny = life(prevFrom, addDays(prevFrom, 6)).length > 0;
   const prevSpent = prevAny ? life(prevFrom, prevTo).reduce((s, t) => s + t.amount, 0) : null;
   const byCat = new Map<string, number>();
   for (const t of cur) byCat.set(t.categoryId, (byCat.get(t.categoryId) ?? 0) + t.amount);
   const top = [...byCat.entries()].sort((a, b) => b[1] - a[1])[0];
-  let events = 0;
-  for (let d = from; d <= to; d = addDays(d, 1)) events += eventsOnDay(data.events, d).length;
+  // 何日かにまたがる予定は、1件と数える
+  const evIds = new Set<string>();
+  for (let d = from; d <= to; d = addDays(d, 1)) for (const e of eventsOnDay(data.events, d)) evIds.add(e.id);
+  const events = evIds.size;
 
   const nf = addDays(to, 1);
   const nt = addDays(nf, 6);
-  let nEvents = 0;
-  for (let d = nf; d <= nt; d = addDays(d, 1)) nEvents += eventsOnDay(data.events, d).length;
+  const nIds = new Set<string>();
+  for (let d = nf; d <= nt; d = addDays(d, 1)) for (const e of eventsOnDay(data.events, d)) nIds.add(e.id);
+  const nEvents = nIds.size;
   const fixed = data.recurring
     .filter((r) => r.active && r.nextDueDate >= nf && r.nextDueDate <= nt)
     .map((r) => ({ name: r.name, amount: r.amount, date: r.nextDueDate }))
