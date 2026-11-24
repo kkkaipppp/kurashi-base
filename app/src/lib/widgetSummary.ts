@@ -1,5 +1,5 @@
 import { eventsOnDay, summarizeMonth } from "./aggregate";
-import { monthKey } from "./date";
+import { addDays, monthKey } from "./date";
 import type { AppData } from "./types";
 
 /** iPhone のウィジェットに渡す要約。記録の全部は渡さず、表示に要る数字と予定名だけ（docs/widget/WIDGET_PLAN.md） */
@@ -9,6 +9,8 @@ export interface WidgetSummary {
   today: string; // YYYY-MM-DD
   events: { title: string; time: string }[]; // 今日の予定（最大3件。time は "終日" か "10:00"）
   moreEvents: number; // 4件目から
+  /** 明日の予定（日付が変わってアプリを開くまでの間、ウィジェットが使う。レビュー o1 の P12） */
+  tomorrow: { date: string; events: { title: string; time: string }[] };
   monthExpense: number; // 今月の支出
   monthIncome: number; // 今月の収入
   budget: number | null; // 1か月の予算
@@ -31,6 +33,12 @@ export function buildWidgetSummary(data: AppData, today: string, nowIso: string)
       time: e.allDay || (e.startDate < today && e.startDate !== e.endDate) ? "終日" : e.startTime,
     })),
     moreEvents: Math.max(0, evs.length - WIDGET_EVENTS_MAX),
+    tomorrow: {
+      date: addDays(today, 1),
+      events: eventsOnDay(data.events, addDays(today, 1))
+        .slice(0, WIDGET_EVENTS_MAX)
+        .map((e) => ({ title: e.title.trim() || "（名前なし）", time: e.allDay || (e.startDate < addDays(today, 1) && e.startDate !== e.endDate) ? "終日" : e.startTime })),
+    },
     monthExpense: sum.expense,
     monthIncome: sum.income,
     budget,

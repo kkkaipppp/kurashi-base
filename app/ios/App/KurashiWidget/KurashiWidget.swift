@@ -15,12 +15,25 @@ struct Summary: Decodable {
     let monthIncome: Int
     let budget: Int?
     let remaining: Int?
+    let updatedAt: String?
+    /// 明日の予定（日付が変わってアプリを開くまでの間に使う。古い要約にはない）
+    struct Day: Decodable { let date: String; let events: [Ev] }
+    let tomorrow: Day?
 }
 
 private func loadSummary() -> Summary? {
     guard let s = UserDefaults(suiteName: appGroup)?.string(forKey: "summary"),
           let data = s.data(using: .utf8) else { return nil }
     return try? JSONDecoder().decode(Summary.self, from: data)
+}
+
+extension ISO8601DateFormatter {
+    /// 「2026-11-24T03:37:40.441Z」のような、小数の秒つきの時刻を読む
+    static let withFraction: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
 }
 
 private func todayString(_ d: Date = Date()) -> String {
@@ -77,6 +90,21 @@ struct KurashiWidgetView: View {
 
     /// 要約が今日のものか（アプリを開いていない日は、予定が古い）
     private var fresh: Bool { entry.summary?.today == todayString(entry.date) }
+    /// 今日の予定：要約が今日のものならそれ、昨日の要約なら「明日の予定」として渡されたものを使う（レビュー o1 の P12）
+    private var todaysEvents: [Summary.Ev]? {
+        guard let s = entry.summary else { return nil }
+        if s.today == todayString(entry.date) { return s.events }
+        if let t = s.tomorrow, t.date == todayString(entry.date) { return t.events }
+        return nil
+    }
+    /// 要約を作った時刻（「12:34 更新」）
+    private var updatedText: String? {
+        guard let iso = entry.summary?.updatedAt, let d = ISO8601DateFormatter.withFraction.date(from: iso) ?? ISO8601DateFormatter().date(from: iso) else { return nil }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "ja_JP")
+        f.dateFormat = Calendar.current.isDate(d, inSameDayAs: entry.date) ? "H:mm 更新" : "M/d H:mm 更新"
+        return f.string(from: d)
+    }
     /// 要約が今月のものか
     private var sameMonth: Bool { entry.summary.map { $0.today.prefix(7) == todayString(entry.date).prefix(7) } ?? false }
 
@@ -93,6 +121,10 @@ struct KurashiWidgetView: View {
             money
             Spacer(minLength: 2)
             events(max: 2)
+            // 小さいウィジェットは全体が「支出を記録」のボタン。そのことを書いておく
+            Text("押すと ＋支出")
+                .font(.caption2.bold())
+                .foregroundStyle(KB.expense)
         }
         .widgetURL(URL(string: "kurashibase://add/expense"))
     }
@@ -129,6 +161,9 @@ struct KurashiWidgetView: View {
                         Text("収入 +\(yen(s.monthIncome))").font(.caption2).foregroundStyle(KB.income).lineLimit(1)
                     }
                 }
+                if family != .systemSmall, let u = updatedText {
+                    Text(u).font(.system(size: 9)).foregroundStyle(KB.ink3)
+                }
             } else {
                 Text("今月の支出").font(.caption2).foregroundStyle(KB.ink3)
                 Text("アプリを開くと出ます").font(.caption).foregroundStyle(KB.ink3)
@@ -139,17 +174,17 @@ struct KurashiWidgetView: View {
     private func events(max: Int) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("今日の予定").font(.caption2.bold()).foregroundStyle(KB.ink)
-            if let s = entry.summary, fresh {
-                if s.events.isEmpty {
+            if let evs = todaysEvents, let s = entry.summary {
+                if evs.isEmpty {
                     Text("予定はありません").font(.caption).foregroundStyle(KB.ink3)
                 } else {
-                    ForEach(Array(s.events.prefix(max).enumerated()), id: \.offset) { _, e in
+                    ForEach(Array(evs.prefix(max).enumerated()), id: \.offset) { _, e in
                         HStack(spacing: 4) {
                             Text(e.time).font(.caption2.monospacedDigit()).foregroundStyle(KB.event)
                             Text(e.title).font(.caption).foregroundStyle(KB.ink).lineLimit(1)
                         }
                     }
-                    let rest = s.events.count - min(max, s.events.count) + s.moreEvents
+                    let rest = evs.count - min(max, evs.count) + (fresh ? s.moreEvents : 0)
                     if rest > 0 { Text("ほか\(rest)件").font(.caption2).foregroundStyle(KB.ink3) }
                 }
             } else {

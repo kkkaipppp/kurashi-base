@@ -15,16 +15,22 @@ class MainViewController: CAPBridgeViewController {
         super.viewDidLoad()
         if let url = MainViewController.pendingURL {
             MainViewController.pendingURL = nil
-            openAdd(from: url)
+            openAdd(from: url, warm: false)
         }
     }
 
-    /// kurashibase://add/<種類> → アプリの /?add=<種類> を開く（components/AddFromQuery.tsx）
-    func openAdd(from url: URL) {
+    /// kurashibase://add/<種類> → 入力の窓を開く。
+    /// アプリが開いているとき（warm）は、ページを読み込み直さずに合図だけ送る（書きかけを守る。components/UIContext.tsx の kb-open-add）。
+    /// アプリが閉じていたときは /?add=<種類> を開く（components/AddFromQuery.tsx）
+    func openAdd(from url: URL, warm: Bool = true) {
         guard url.scheme == "kurashibase", url.host == "add" else { return }
         let kind = url.lastPathComponent
-        guard ["expense", "income", "event", "choose"].contains(kind),
-              let base = bridge?.config.serverURL,
+        guard ["expense", "income", "event", "choose"].contains(kind) else { return }
+        if warm, let webView = bridge?.webView, webView.url != nil {
+            webView.evaluateJavaScript("window.dispatchEvent(new CustomEvent('kb-open-add', { detail: '\(kind)' }))", completionHandler: nil)
+            return
+        }
+        guard let base = bridge?.config.serverURL,
               var c = URLComponents(url: base, resolvingAgainstBaseURL: false) else { return }
         c.path = "/"
         c.queryItems = [URLQueryItem(name: "add", value: kind)]

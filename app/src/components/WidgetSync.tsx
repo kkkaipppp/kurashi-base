@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { useData } from "@/lib/store";
 import { todayStr } from "@/lib/date";
@@ -34,6 +34,16 @@ export function WidgetSync() {
   // iPhone のカレンダーへの反映（記録が変わって3秒たったら。中身が前と同じなら書かない）
   const lastCalendar = useRef("");
   const calendarBusy = useRef(false);
+  // 設定の「カレンダーに反映し直す」（components/NativeStatusCard.tsx）
+  const [resync, setResync] = useState(0);
+  useEffect(() => {
+    const on = () => {
+      lastCalendar.current = "";
+      setResync((n) => n + 1);
+    };
+    window.addEventListener("kb-calendar-resync", on);
+    return () => window.removeEventListener("kb-calendar-resync", on);
+  }, []);
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     const t = setTimeout(() => {
@@ -53,9 +63,9 @@ export function WidgetSync() {
         .finally(() => {
           calendarBusy.current = false;
         });
-    }, 3000);
+    }, resync ? 0 : 3000);
     return () => clearTimeout(t);
-  }, [data]);
+  }, [data, resync]);
 
   // 自動バックアップと、日付が変わったときの要約の更新
   useEffect(() => {

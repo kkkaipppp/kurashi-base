@@ -14,7 +14,11 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "setSummary", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "writeBackup", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "syncCalendar", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "syncCalendar", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "backupStatus", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "calendarStatus", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "requestCalendarResync", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "openAppSettings", returnType: CAPPluginReturnPromise)
     ]
 
     static let appGroup = "group.jp.kurashibase.personal"
@@ -116,6 +120,11 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     private static let eventStore = EKEventStore()
     private static let calendarIdKey = "kbCalendarIdentifier"
     private static let lastSyncKey = "kbCalendarLastSync"
+    private static let lastSyncAtKey = "kbCalendarLastSyncAt"
+    /// くらしベースが書いた予定の印（これが付いた予定だけを書き直す。レビュー o1 の P05）
+    private static let ownedMark = URL(string: "kurashibase://calendar-item")!
+    /// 印を付ける前の版で書いた予定を、1回だけまとめて消したか
+    private static let ownedMigratedKey = "kbCalendarOwnedV2"
     private static let calendarTitle = "くらしベース"
     /// 書き込みは1つずつ（同時に2回動かさない）
     private static let calendarQueue = DispatchQueue(label: "jp.kurashibase.calendar")
@@ -203,12 +212,18 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                     let cal = try Self.kurashiCalendar()
                     let end = Calendar.current.date(byAdding: .day, value: 1, to: endDay) ?? endDay
                     let old = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: [cal]))
-                    for e in old { try store.remove(e, span: .thisEvent, commit: false) }
+                    // くらしベースが書いた予定（印つき）だけを消す。手で入れた予定は残す。
+                    // 印を付ける前の版で書いた予定は印がないので、最初の1回だけ全部を書き直す
+                    let migrated = UserDefaults.standard.bool(forKey: Self.ownedMigratedKey)
+                    for e in old where !migrated || e.url == Self.ownedMark {
+                        try store.remove(e, span: .thisEvent, commit: false)
+                    }
                     var written = 0
                     for it in items {
                         guard let s = Self.date(it.startDate, it.allDay ? "00:00" : it.startTime) else { continue }
                         let e = EKEvent(eventStore: store)
                         e.calendar = cal
+                        e.url = Self.ownedMark
                         e.title = it.title
                         e.isAllDay = it.allDay
                         e.startDate = s
@@ -224,6 +239,8 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                     }
                     try store.commit()
                     UserDefaults.standard.set(stamp, forKey: Self.lastSyncKey)
+                    UserDefaults.standard.set(true, forKey: Self.ownedMigratedKey)
+                    UserDefaults.standard.set(ISO8601DateFormatter().string(from: Date()), forKey: Self.lastSyncAtKey)
                     call.resolve(["written": written])
                 } catch {
                     store.reset()
@@ -235,6 +252,74 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             store.requestFullAccessToEvents { granted, _ in work(granted) }
         } else {
             store.requestAccess(to: .event) { granted, _ in work(granted) }
+        }
+    }
+
+    // MARK: - 状態（設定の「iPhone の連携」。components/NativeStatusCard.tsx）
+
+    /// いちばん新しい自動バックアップ
+    @objc func backupStatus(_ call: CAPPluginCall) {
+        let fm = FileManager.default
+        guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            call.resolve(["kept": 0])
+            return
+        }
+        let dir = docs.appendingPathComponent(Self.backupFolder, isDirectory: true)
+        let files = ((try? fm.contentsOfDirectory(atPath: dir.path)) ?? [])
+            .filter { $0.hasPrefix(Self.prefix) && $0.hasSuffix(".json") }
+            .sorted(by: >)
+        var out: [String: Any] = ["kept": files.count]
+        if let latest = files.first {
+            out["latestName"] = latest
+            if let attr = try? fm.attributesOfItem(atPath: dir.appendingPathComponent(latest).path),
+               let d = attr[.modificationDate] as? Date {
+                out["latestAt"] = ISO8601DateFormatter().string(from: d)
+            }
+        }
+        call.resolve(out)
+    }
+
+    /// カレンダーへのアクセスと、最後に反映した時刻
+    @objc func calendarStatus(_ call: CAPPluginCall) {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        var access = "notDetermined"
+        if #available(iOS 17.0, *) {
+            switch status {
+            case .fullAccess: access = "full"
+            case .writeOnly: access = "writeOnly"
+            case .denied: access = "denied"
+            case .restricted: access = "restricted"
+            default: access = "notDetermined"
+            }
+        } else {
+            switch status {
+            case .authorized: access = "full"
+            case .denied: access = "denied"
+            case .restricted: access = "restricted"
+            default: access = "notDetermined"
+            }
+        }
+        var out: [String: Any] = ["access": access]
+        if let at = UserDefaults.standard.string(forKey: Self.lastSyncAtKey) { out["lastSyncAt"] = at }
+        if let id = UserDefaults.standard.string(forKey: Self.calendarIdKey) {
+            out["calendarExists"] = Self.eventStore.calendar(withIdentifier: id) != nil
+        }
+        call.resolve(out)
+    }
+
+    /// 次の反映で、中身が同じでも書き直す
+    @objc func requestCalendarResync(_ call: CAPPluginCall) {
+        UserDefaults.standard.removeObject(forKey: Self.lastSyncKey)
+        call.resolve()
+    }
+
+    /// iPhone の「設定」のこのアプリの画面を開く（カレンダーへのアクセスを変えるため）
+    @objc func openAppSettings(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+            call.resolve()
         }
     }
 }
