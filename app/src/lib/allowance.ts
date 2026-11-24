@@ -5,16 +5,19 @@ import type { RecurringExpense } from "./types";
 /**
  * 今月あと使える生活費（レビュー o1 の「家計を良くする機能」1）。
  * 予算 − 今月の支出 − 今日から月末までにまだ来る固定費、を月末までの日数（今日を含む）で割る。
- * 予算がなければ出さない（null）。固定費の支払日がまだ来ていないものだけ引く（すでに払って記録した分を二重に引かないため）。
+ * 予算がなければ出さない（null）。固定費は、次の支払日が今月の中にあるもの（支払日を過ぎてまだ記録していないものも）を引く。
+ * 固定費の画面から記録すると次の支払日が来月へ進むので、払って記録した分を二重に引くことはない。
+ * 支出は「生活の支出」（名前に「投資」が入ったカテゴリを除く。月の振り返りと同じ考え方）を渡す。
  */
 export function unpaidRecurringThisMonth(list: RecurringExpense[], today: string): number {
+  const start = `${monthKey(today)}-01`;
   const end = `${monthKey(today)}-${String(daysInMonth(parseDateStr(today).y, parseDateStr(today).m)).padStart(2, "0")}`;
   let sum = 0;
   for (const r of list) {
     if (!r.active) continue;
     let d = r.nextDueDate;
     for (let guard = 0; d <= end && guard < 10; guard++) {
-      if (d >= today) sum += r.amount;
+      if (d >= start) sum += r.amount;
       d = advanceDueDate(d, r.cycle, r.anchorDay);
     }
   }

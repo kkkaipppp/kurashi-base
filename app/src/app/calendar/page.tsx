@@ -104,7 +104,7 @@ export default function CalendarPage() {
               ["money", "お金"],
             ] as const
           ).map(([k, label]) => (
-            <button key={k} type="button" role="radio" aria-checked={show === k} onClick={() => setShow(k)} className={`min-h-9 rounded-lg text-[13px] font-semibold ${show === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
+            <button key={k} type="button" role="radio" aria-checked={show === k} onClick={() => setShow(k)} className={`min-h-11 rounded-lg text-[13px] font-semibold ${show === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
               {label}
             </button>
           ))}

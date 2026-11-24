@@ -45,7 +45,7 @@ describe("P03 保存場所の説明をアプリと Web 版で分ける", () => {
   it("Web 版はブラウザの中・アプリはアプリの中と自動バックアップ・削除で消えること", async () => {
     const { STORAGE_TEXT, isNativeApp } = await import("@/lib/platform");
     expect(STORAGE_TEXT.web.short).toContain("このブラウザの中だけ");
-    expect(STORAGE_TEXT.app.backup).toContain("自動でバックアップ");
+    expect(STORAGE_TEXT.app.backup).toContain("自動で書きます");
     expect(STORAGE_TEXT.app.backup).toContain("アプリを削除すると、自動バックアップも一緒に消える");
     expect(isNativeApp()).toBe(false); // テスト（ブラウザなし）では Web 版扱い
     for (const p of ["app/page.tsx", "app/settings/page.tsx", "app/guide/page.tsx"]) expect(src(p)).toContain("useIsNativeApp()");
@@ -73,10 +73,11 @@ describe("家計の機能 1〜3・P08・P09・P11・P16", () => {
     const { dailyAllowance, unpaidRecurringThisMonth } = await import("@/lib/allowance");
     const rec = (p: object) => ({ id: "r", name: "家賃", amount: 80000, cycle: "monthly" as const, anchorDay: 27, nextDueDate: "2026-11-27", categoryId: "exp-4", paymentMethod: "", active: true, createdAt: now, updatedAt: now, ...p });
     const list = [rec({}), rec({ id: "x", amount: 1000, nextDueDate: "2026-11-20" }), rec({ id: "y", amount: 500, active: false })];
-    expect(unpaidRecurringThisMonth(list, "2026-11-24")).toBe(80000);
+    // 11/20 の分は支払日を過ぎてもまだ記録していない（記録すると次の支払日が進む）ので引く。来月の分は引かない
+    expect(unpaidRecurringThisMonth([...list, rec({ id: "z", amount: 7, nextDueDate: "2026-12-01" })], "2026-11-24")).toBe(81000);
     const a = dailyAllowance(200000, 50000, list, "2026-11-24");
-    // 11/24〜11/30 は7日。(200000 − 50000 − 80000) / 7 = 10000
-    expect(a).toMatchObject({ daysLeft: 7, unpaidFixed: 80000, left: 70000, perDay: 10000 });
+    // 11/24〜11/30 は7日。(200000 − 50000 − 81000) / 7 = 9857
+    expect(a).toMatchObject({ daysLeft: 7, unpaidFixed: 81000, left: 69000, perDay: 9857 });
     expect(dailyAllowance(null, 0, list, "2026-11-24")).toBeNull();
     expect(dailyAllowance(1000, 5000, [], "2026-11-24")?.perDay).toBe(0);
   });

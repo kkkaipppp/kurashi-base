@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Button } from "./ui";
 import { TxSheet, type TxSheetRequest } from "./TxSheet";
 import { EventSheet, type EventSheetRequest } from "./EventSheet";
@@ -31,11 +40,17 @@ const Ctx = createContext<UI | null>(null);
 
 export function UIProvider({ children }: { children: ReactNode }) {
   const [tx, setTx] = useState<(TxSheetRequest & { key: number }) | null>(null);
-  const [ev, setEv] = useState<(EventSheetRequest & { key: number }) | null>(null);
-  const [cf, setCf] = useState<(ConfirmOpts & { resolve: (v: boolean) => void }) | null>(null);
+  const [ev, setEv] = useState<(EventSheetRequest & { key: number }) | null>(
+    null,
+  );
+  const [cf, setCf] = useState<
+    (ConfirmOpts & { resolve: (v: boolean) => void }) | null
+  >(null);
   const [add, setAdd] = useState<{ date?: string; key: number } | null>(null);
   const [calendarDate, setCalendarDate] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<{ id: number; msg: string; kind: "ok" | "error" }[]>([]);
+  const [toasts, setToasts] = useState<
+    { id: number; msg: string; kind: "ok" | "error" }[]
+  >([]);
   const seq = useRef(0);
   const router = useRouter();
   const pathname = usePathname();
@@ -47,13 +62,19 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setAdd(null);
     setTx(null);
     setEv(null);
-    setCf((current) => { current?.resolve(false); return null; });
+    setCf((current) => {
+      current?.resolve(false);
+      return null;
+    });
   }, [pathname]);
 
   const toast = useCallback((msg: string, kind: "ok" | "error" = "ok") => {
     const id = ++seq.current;
     setToasts((t) => [...t, { id, msg, kind }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === "error" ? 6000 : 2600);
+    setTimeout(
+      () => setToasts((t) => t.filter((x) => x.id !== id)),
+      kind === "error" ? 6000 : 2600,
+    );
   }, []);
 
   // iPhone アプリのウィジェットのボタン（アプリが開いているとき）。ページを読み込み直さずに、ここで入力の窓を開く。
@@ -68,20 +89,25 @@ export function UIProvider({ children }: { children: ReactNode }) {
       if (!["expense", "income", "event", "choose"].includes(kind)) return;
       if (openSheets.current.tx || openSheets.current.ev) {
         const ok = await new Promise<boolean>((resolve) =>
-          setCf({
-            title: "入力の途中です",
-            body: "今の入力はまだ保存していません。新しく入力すると、今の入力は消えます。",
-            ok: "新しく入力する",
-            cancel: "入力を続ける",
-            danger: true,
-            resolve,
+          setCf((current) => {
+            // ほかの確認が開いていたら、その答えは「いいえ」にしてから聞く（答えが返らないままにしない）
+            current?.resolve(false);
+            return {
+              title: "入力の途中です",
+              body: "今の入力はまだ保存していません。新しく入力すると、今の入力は消えます。",
+              ok: "新しく入力する",
+              cancel: "入力を続ける",
+              danger: true,
+              resolve,
+            };
           }),
         );
         if (!ok) return;
       }
       setTx(null);
       setEv(null);
-      if (kind === "expense" || kind === "income") setTx({ mode: "new", type: kind, key: ++seq.current });
+      if (kind === "expense" || kind === "income")
+        setTx({ mode: "new", type: kind, key: ++seq.current });
       else if (kind === "event") setEv({ mode: "new", key: ++seq.current });
       else setAdd({ key: ++seq.current });
     };
@@ -126,8 +152,10 @@ export function UIProvider({ children }: { children: ReactNode }) {
           onPick={(kind) => {
             const date = add.date;
             setAdd(null);
-            if (kind === "expense" || kind === "income") setTx({ mode: "new", type: kind, date, key: ++seq.current });
-            else if (kind === "event") setEv({ mode: "new", date, key: ++seq.current });
+            if (kind === "expense" || kind === "income")
+              setTx({ mode: "new", type: kind, date, key: ++seq.current });
+            else if (kind === "event")
+              setEv({ mode: "new", date, key: ++seq.current });
             else router.push("/tasks?open=new");
           }}
         />
@@ -135,25 +163,48 @@ export function UIProvider({ children }: { children: ReactNode }) {
       {tx && <TxSheet key={tx.key} req={tx} onClose={() => setTx(null)} />}
       {ev && <EventSheet key={ev.key} req={ev} onClose={() => setEv(null)} />}
       {cf && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" role="alertdialog" aria-modal="true" aria-labelledby="cf-title">
-          <div className="absolute inset-0 bg-black/40" onClick={() => closeCf(false)} aria-hidden="true" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="cf-title"
+        >
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => closeCf(false)}
+            aria-hidden="true"
+          />
           <div className="relative w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
             <h2 id="cf-title" className="text-[17px] font-bold">
               {cf.title}
             </h2>
-            {cf.body && <p className="mt-2 text-[14px] whitespace-pre-line text-ink-2">{cf.body}</p>}
+            {cf.body && (
+              <p className="mt-2 text-[14px] whitespace-pre-line text-ink-2">
+                {cf.body}
+              </p>
+            )}
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <Button variant="secondary" onClick={() => closeCf(false)} autoFocus>
+              <Button
+                variant="secondary"
+                onClick={() => closeCf(false)}
+                autoFocus
+              >
                 {cf.cancel ?? "キャンセル"}
               </Button>
-              <Button variant={cf.danger ? "danger" : "primary"} onClick={() => closeCf(true)}>
+              <Button
+                variant={cf.danger ? "danger" : "primary"}
+                onClick={() => closeCf(true)}
+              >
                 {cf.ok ?? "OK"}
               </Button>
             </div>
           </div>
         </div>
       )}
-      <div className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4" aria-live="polite">
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-24 z-[60] flex flex-col items-center gap-2 px-4"
+        aria-live="polite"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}

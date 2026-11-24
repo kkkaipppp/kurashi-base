@@ -233,7 +233,7 @@ export default function SettingsPage() {
             ["#backup", "バックアップ・データ"],
           ] as const
         ).map(([href, label]) => (
-          <a key={href} href={href} className="inline-flex min-h-9 items-center rounded-full border border-line bg-surface px-3 font-semibold text-ink-2 hover:bg-surface-2">
+          <a key={href} href={href} className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface px-3 font-semibold text-ink-2 hover:bg-surface-2">
             {label}
           </a>
         ))}
@@ -544,7 +544,7 @@ export default function SettingsPage() {
             )}
             {mode === "merge" && similar > 0 && (
               <p role="alert" className="rounded-xl bg-warn-soft px-3 py-2 text-[13px] font-medium text-warn">
-                日付・種類・金額が今の記録と同じものが{similar}件あります。別の家計簿から入れた同じ明細だと、二重になります。消したい記録をまとめて入れ替えるときは「バックアップの状態に戻す」を選んでください。
+                日付・種類・金額が今の記録と同じものが{similar}件あります。別の家計簿から入れた同じ明細だと、二重になります。前に入れた記録をまとめて入れ替えたいときは「バックアップの状態に戻す」を選べますが、バックアップより後に入れた記録は消えます（「直前の操作を取り消す」で戻せます）。
               </p>
             )}
             {plan && !plan.ok && (
@@ -610,7 +610,7 @@ export default function SettingsPage() {
           <li>レシートの画像は保存しません。</li>
         </ul>
         <details className="rounded-xl border border-danger/30 p-3">
-          <summary className="min-h-9 cursor-pointer py-1 text-[14px] font-semibold text-danger">記録をすべて削除する（危険な操作）</summary>
+          <summary className="flex min-h-11 cursor-pointer items-center text-[14px] font-semibold text-danger">記録をすべて削除する（危険な操作）</summary>
           <div className="mt-2 space-y-2">
             <p className="text-[13px] text-ink-2">
               今ある記録：支出・収入 {data.transactions.length}件、予定 {data.events.length}件{data.nisa.length > 0 ? `、NISA ${data.nisa.length}件` : ""}

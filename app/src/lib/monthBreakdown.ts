@@ -62,7 +62,8 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
   };
   const now = byCat(key);
   const prev = byCat(prevKey);
-  const hasPrev = prev.size > 0;
+  // 先月に記録が1件でもあれば比べる（同じ日までに無くても「増えた」は出せる）
+  const hasPrev = data.transactions.some((t) => t.type === "expense" && t.date.slice(0, 7) === prevKey);
   const increases = hasPrev
     ? [...now]
         .map(([categoryId, v]) => ({ categoryId, now: v, prev: prev.get(categoryId) ?? 0, diff: v - (prev.get(categoryId) ?? 0) }))

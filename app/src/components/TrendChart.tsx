@@ -47,11 +47,13 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
   const barMax = Math.max(1, ...rows.flatMap((r) => [r.expense, r.income]));
   const lMax = Math.max(0, ...lineCum);
   const lMin = Math.min(0, ...lineCum);
+  // 累計がずっと0のときは、線を棒の0と同じ高さ（下）に描く
   const lSpan = lMax - lMin || 1;
+  const flat = lMax === lMin;
   const plotW = W - PAD_L - PAD_R;
   const plotH = H - PAD_T - PAD_B;
   const yb = (v: number) => PAD_T + (1 - v / barMax) * plotH;
-  const yl = (v: number) => PAD_T + ((lMax - v) / lSpan) * plotH;
+  const yl = (v: number) => (flat ? PAD_T + plotH : PAD_T + ((lMax - v) / lSpan) * plotH);
   const slot = plotW / Math.max(1, rows.length);
   const barW = Math.max(2, Math.min(12, slot * 0.32));
   const cx = (i: number) => PAD_L + slot * i + slot / 2;
