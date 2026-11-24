@@ -13,7 +13,7 @@ export type HomeCardId = "budget" | "todayAll" | "today" | "nextFixed" | "todo" 
 
 export const HOME_CARDS: { id: HomeCardId; label: string; desc: string }[] = [
   { id: "budget", label: "今月の残り予算", desc: "予算・使った額（投資を除く）・1日あたり" },
-  { id: "todayAll", label: "今日のまとめ", desc: "今日の予定・固定費・タスク・期限を時間の順に" },
+  { id: "todayAll", label: "今日のまとめ", desc: "予定・固定費・タスク・期限を時間順に" },
   { id: "today", label: "今日の予定", desc: "今日の予定（なければ次の予定）" },
   { id: "nextFixed", label: "次の固定費", desc: "いちばん近い固定費の支払い" },
   { id: "todo", label: "今日やること", desc: "期限が今日までのタスク" },
