@@ -96,6 +96,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // localStorage はブラウザでのみ読めるため、マウント後に読み込む
     // eslint-disable-next-line react-hooks/set-state-in-effect
     applyLoad(loadData());
+    // ブラウザに「この記録を消さないで」と頼む（容量が足りないときなどに、ブラウザが自分で消すのを防ぐ。
+    // 履歴の消去など、本人が消すのは防げない）。対応していないブラウザでは何もしない
+    navigator.storage?.persist?.().catch(() => {});
     // 他のタブでの変更を反映
     const onStorage = (e: StorageEvent) => {
       if (e.key === null || e.key.startsWith("kurashi-base:data")) applyLoad(loadData());

@@ -13,7 +13,7 @@ const rec = (p: Partial<RecurringExpense>): RecurringExpense => ({
   paymentMethod: "bank", active: true, createdAt: now, updatedAt: now, ...p,
 });
 
-describe("iPhone のカレンダーに書く予定（2026-11-24 平尾さん：アプリから自動で反映）", () => {
+describe("iPhone のカレンダーに入れる予定（2026-11-24 平尾さん：Web 版はファイル、アプリは自動）", () => {
   it("期間は30日前から180日先まで", () => {
     expect(calendarWindow("2026-11-24")).toEqual({ from: "2026-10-25", to: "2027-05-23" });
   });

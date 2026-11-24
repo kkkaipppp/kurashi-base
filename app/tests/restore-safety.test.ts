@@ -168,6 +168,13 @@ describe("移行：v1 と書かれていても、すでにある新しい一覧�
 });
 
 describe("今日のナビ（UX-004 / UX-010）", () => {
+  it("バックアップの案内は7日たったら出る（Web 版は自動で書き出せないため。2026-11-24）", () => {
+    const d = emptyData("2026-11-01T00:00:00.000Z");
+    d.tasks.push({ id: "t", title: "a", due: "", done: false, note: "", createdAt: "", updatedAt: "" });
+    d.meta.lastBackupAt = "2026-11-15T00:00:00.000Z";
+    expect(buildNavi(d, "2026-11-21").some((i) => i.key === "backup")).toBe(false);
+    expect(buildNavi(d, "2026-11-22").find((i) => i.key === "backup")?.title).toBe("7日以上バックアップしていません");
+  });
   it("バックアップの案内は、タスクだけ使う人にも出る（0件では出ない）", () => {
     const d = emptyData("2026-10-01T00:00:00.000Z");
     expect(buildNavi(d, "2026-11-21").some((i) => i.key === "backup")).toBe(false);

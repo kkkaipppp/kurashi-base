@@ -34,7 +34,7 @@
 - **無料の Apple ID の制限（未確認）**：無料のまま App Group が使えるか、アプリが何日で切れるか（7日と言われる）は、Apple の公式ページでまだ確かめられていない。使えなければ Apple の開発者登録（年1万円台）が要る → その前に平尾さんに相談
 - **パッケージの追加**：Capacitor（`@capacitor/core`・`@capacitor/cli`・`@capacitor/ios`）を入れる。入れる前に、名前と出どころを平尾さんに伝える
 - **友人β への影響を出さない**：ウィジェット用の作業は、`beta/friend-go` と分けたブランチ（例 `feat/ios-widget`）で行い、公開中の Web アプリ（master）は変えない。`?add=` は Web アプリにも入れたが、指定がなければ何も起きない
-- 個人の記録（`_private/`）は、Mac にも GitHub にも置かない。取り込みは iPhone の上で行う
+- 個人の記録（`自分用/`）は、Mac にも GitHub にも置かない。取り込みは iPhone の上で行う
 
 ## 5. 順番
 1. macOS 更新・Xcode（平尾さん）

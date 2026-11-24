@@ -1,6 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { IS_PERSONAL } from "@/lib/edition";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 
@@ -98,6 +99,8 @@ export function Empty({ children, action }: { children: ReactNode; action?: Reac
 }
 
 export function DevBadge() {
+  // 自分用（personal）の版は、公開版と見分けられるように「自分用」と出す
+  if (IS_PERSONAL) return <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand">自分用</span>;
   return <span className="rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">β版</span>;
 }
 

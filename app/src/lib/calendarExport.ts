@@ -5,8 +5,8 @@ import { formatYen } from "./money";
 import type { AppData } from "./types";
 
 /**
- * iPhone のカレンダー（「くらしベース」カレンダー）に書く予定の一覧。
- * iPhone アプリの中だけで使う（components/WidgetSync.tsx → WidgetBridgePlugin.swift の syncCalendar）。
+ * iPhone のカレンダーに入れる予定の一覧。
+ * Web 版は設定の「カレンダー用ファイルを書き出す」（lib/ics.ts）で、iPhone アプリは「くらしベース」カレンダーへの自動の書き込みで使う。
  * 書くのは、くらしベースの予定と、固定費の支払日。前の日から先の期間ぶんを、毎回まるごと書き直す。
  */
 export interface CalendarItem {
