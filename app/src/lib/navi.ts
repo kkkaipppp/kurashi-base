@@ -1,4 +1,6 @@
-import { remainingBudget, summarizeMonth } from "./aggregate";
+import { remainingBudget } from "./aggregate";
+import { IS_PERSONAL } from "./edition";
+import { budgetSpent } from "./ledger";
 import { daysBetween, formatDateJa, monthKey } from "./date";
 import { formatYen } from "./money";
 import { daysLeft, dueLabel, formatMinutes, goalProgress, studyStats } from "./life";
@@ -72,10 +74,10 @@ export function buildNavi(data: AppData, today: string): NaviItem[] {
     else if (d <= WITHIN_DAYS) items.push({ key: `doc-${doc.id}`, tone: d <= 7 ? "today" : "info", title: `${doc.title}の期限まであと${d}日`, sub: `書類・${formatDateJa(doc.expiry)}`, href: `/documents?open=${doc.id}` });
   }
 
-  const month = summarizeMonth(data.transactions, monthKey(today));
-  const remaining = remainingBudget(data.budget.monthly, month.expense);
+  // 予算と比べるのは、ホームの予算カードと同じ額（自分用は投資を除いた生活費）
+  const remaining = remainingBudget(data.budget.monthly, budgetSpent(data, monthKey(today), today));
   if (remaining !== null && remaining < 0)
-    items.push({ key: "budget", tone: "warn", title: "今月の予算を超えています", sub: `${formatYen(-remaining)}オーバー`, href: "/history" });
+    items.push({ key: "budget", tone: "warn", title: "今月の予算を超えています", sub: `${formatYen(-remaining)}オーバー${IS_PERSONAL ? "（投資を除く）" : ""}`, href: "/history" });
 
   // 何か1つでも記録があれば対象（取引・予定だけでなく、タスクや資格だけ使う人も）
   const hasData =

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SHEET_DRAFT_KEY, clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from "@/lib/sheetDraft";
+import { SHEET_DRAFT_KEY, clearSheetDraft, draftTimeLabel, loadSheetDraft, moveSheetDraftToNew, saveSheetDraft, sheetDraftKey } from "@/lib/sheetDraft";
 
 // 2026-11-24 ChatGPT「100点化 開発指示 v1」（kurashi-base_100point_plan_209b0cd）のうち、保存の形を変えない分
 const src = (p: string) => readFileSync(join(__dirname, "..", "src", p), "utf8");
@@ -11,26 +11,61 @@ const mem = () => {
 };
 
 describe("B 入力の下書き（端末の中の別のキー。記録の保存の形は変えない）", () => {
-  it("新規と編集を取り違えず、種類も分ける。消すのは同じ入力の下書きだけ", () => {
+  it("新規と編集を取り違えず、種類も分ける。入力ごとに別のキーなので、ほかの入力で上書きしない", () => {
     const kv = mem();
     expect(SHEET_DRAFT_KEY.startsWith("kurashi-base:")).toBe(true); // すべて削除で一緒に消える
+    expect(sheetDraftKey("tx", null).startsWith("kurashi-base:sheet-draft:")).toBe(true);
     expect(saveSheetDraft("tx", null, { amount: "1200" }, new Date("2026-11-24T12:05:00Z"), kv)).toBe(true);
+    // 予定の入力・別の記録の編集を始めても、支出の書きかけは残る
+    saveSheetDraft("event", null, { title: "歯医者" }, new Date(), kv);
+    saveSheetDraft("tx", "id-2", { amount: "50" }, new Date(), kv, '{"id":"id-2"}');
     expect(loadSheetDraft<{ amount: string }>("tx", null, kv)?.draft.amount).toBe("1200");
     expect(loadSheetDraft("tx", "id-1", kv)).toBeNull(); // 編集の下書きではない
-    expect(loadSheetDraft("event", null, kv)).toBeNull(); // 予定の下書きではない
-    clearSheetDraft("event", null, kv); // 別の入力なので消さない
-    expect(kv.m.has(SHEET_DRAFT_KEY)).toBe(true);
+    expect(loadSheetDraft<{ title: string }>("event", null, kv)?.draft.title).toBe("歯医者");
+    expect(loadSheetDraft("tx", "id-2", kv)?.base).toBe('{"id":"id-2"}'); // 編集は元の記録も控える
+    clearSheetDraft("event", null, kv); // 消すのはその入力の下書きだけ
+    expect(loadSheetDraft("tx", null, kv)).not.toBeNull();
     clearSheetDraft("tx", null, kv);
+    expect(kv.m.has(sheetDraftKey("tx", null))).toBe(false);
+    expect(kv.m.has(sheetDraftKey("tx", "id-2"))).toBe(true);
+  });
+  it("前の版（キーが1つ）の書きかけは、同じ入力を開いたときに引き継ぐ", () => {
+    const kv = mem();
+    kv.setItem(SHEET_DRAFT_KEY, JSON.stringify({ kind: "tx", targetId: null, draft: { amount: "300" }, savedAt: "2026-11-24T00:00:00Z" }));
+    expect(loadSheetDraft("event", null, kv)).toBeNull();
+    expect(kv.m.has(SHEET_DRAFT_KEY)).toBe(true);
+    expect(loadSheetDraft<{ amount: string }>("tx", null, kv)?.draft.amount).toBe("300");
     expect(kv.m.has(SHEET_DRAFT_KEY)).toBe(false);
+    expect(kv.m.has(sheetDraftKey("tx", null))).toBe(true);
+  });
+  it("編集元が消えたときは、書きかけを新しい入力へ移せる。新しい入力に別の書きかけがあれば上書きしない", () => {
+    const kv = mem();
+    saveSheetDraft("tx", "gone", { amount: "980" }, new Date("2026-11-24T00:00:00Z"), kv, "{}");
+    saveSheetDraft("tx", null, { amount: "1" }, new Date(), kv);
+    expect(moveSheetDraftToNew("tx", "gone", kv)).toBe("busy");
+    expect(loadSheetDraft<{ amount: string }>("tx", null, kv)?.draft.amount).toBe("1");
+    clearSheetDraft("tx", null, kv);
+    expect(moveSheetDraftToNew("tx", "gone", kv)).toBe("ok");
+    expect(loadSheetDraft<{ amount: string }>("tx", null, kv)?.draft.amount).toBe("980");
+    expect(loadSheetDraft("tx", null, kv)?.base).toBeUndefined();
+    expect(loadSheetDraft("tx", "gone", kv)).toBeNull();
   });
   it("壊れた下書きは捨てる。保存できない端末では false", () => {
     const kv = mem();
-    kv.setItem(SHEET_DRAFT_KEY, "{壊れた");
+    kv.setItem(sheetDraftKey("tx", null), "{壊れた");
     expect(loadSheetDraft("tx", null, kv)).toBeNull();
-    expect(kv.m.has(SHEET_DRAFT_KEY)).toBe(false);
+    expect(kv.m.has(sheetDraftKey("tx", null))).toBe(false);
     const bad = { getItem: () => null, setItem: () => { throw new Error("full"); }, removeItem: () => {} };
     expect(saveSheetDraft("tx", null, {}, new Date(), bad)).toBe(false);
     expect(draftTimeLabel("x")).toBe("前回");
+  });
+  it("前の書きかけに答えるまでは控えない。元の記録が変わっていたら知らせる", () => {
+    for (const f of ["components/TxSheet.tsx", "components/EventSheet.tsx"]) {
+      const s = src(f);
+      expect(s).toContain("if (pending && !resumeAsked) return;");
+      expect(s).toContain("書きかけのあとに変わっています");
+      expect(s).toContain("<OrphanDraft");
+    }
   });
   it("支出・収入と予定の入力で、書きかけを控え、保存がうまくいったときだけ消す", () => {
     for (const f of ["components/TxSheet.tsx", "components/EventSheet.tsx"]) {
@@ -61,6 +96,20 @@ describe("D 家計の計算をひとつに（指示書の検証データ）", ()
     d.recurring[0].nextDueDate = "2026-12-28";
     const after = monthLedger(d, "2026-11", "2026-11-24");
     expect([after.unpaidFixed, after.lifeExpense, after.freeLeft]).toEqual([0, 104420, 15580]);
+  });
+  it("予算と比べる額は、自分用は投資を除いた生活費、公開版はすべての支出（ホーム・ナビ・振り返り・ウィジェットで同じ）", async () => {
+    const { budgetSpent } = await import("@/lib/ledger");
+    const { emptyData } = await import("@/lib/defaults");
+    const now = "2026-11-24T00:00:00.000Z";
+    const d = emptyData(now);
+    d.categories.push({ id: "inv", name: "投資", kind: "expense", order: 99, archived: false });
+    const tx = (id: string, amount: number, categoryId: string) => ({ id, type: "expense" as const, date: "2026-11-10", amount, currency: "JPY" as const, categoryId, merchant: "", paymentMethod: "", note: "", source: "manual" as const, createdAt: now, updatedAt: now });
+    d.transactions = [tx("a", 96420, "exp-1"), tx("b", 100000, "inv")];
+    expect(budgetSpent(d, "2026-11", "2026-11-24", true)).toBe(96420);
+    expect(budgetSpent(d, "2026-11", "2026-11-24", false)).toBe(196420);
+    expect(src("lib/navi.ts")).toContain("budgetSpent(data, monthKey(today), today)");
+    expect(src("app/report/page.tsx")).toContain("budgetSpent(data, month, today)");
+    expect(src("app/page.tsx")).toContain("足りません");
   });
   it("ホームは自分用で ledger を使い、月の比べ方は増えた・減った・差の合計", () => {
     expect(src("app/page.tsx")).toContain("const ledger = PERSONAL ? monthLedger(data, month, today) : null;");

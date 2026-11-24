@@ -6,6 +6,7 @@ import { Card, Empty, IconChevronL, IconChevronR, PageHeader, SectionTitle } fro
 import { addMonthsToKey, formatMonthJa, monthKey, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { buildInsights, monthReport, weeklyBuckets } from "@/lib/report";
+import { budgetSpent } from "@/lib/ledger";
 import { cycleLabel } from "@/lib/recurring";
 import { useData } from "@/lib/store";
 import dynamic from "next/dynamic";
@@ -96,7 +97,8 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
   const insights = buildInsights(data, month, today);
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "（不明なカテゴリ）";
   const budget = data.budget.monthly;
-  const pct = budget ? Math.round((r.expense / budget) * 100) : null;
+  // 予算と比べるのは、ホームと同じ額（自分用は投資を除いた生活費。lib/ledger.ts）
+  const pct = budget ? Math.round((budgetSpent(data, month, today) / budget) * 100) : null;
   const maxWeek = Math.max(1, ...weeks.map((w) => w.expense));
 
   // 内訳：上位6件＋その他
@@ -148,7 +150,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
                 <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-label="予算の使用率">
                   <div className={`h-full rounded-full ${pct > 100 ? "bg-expense" : "bg-brand"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                 </div>
-                <p className="num mt-1 text-right text-[12px] text-ink-3">予算の{pct}%</p>
+                <p className="num mt-1 text-right text-[12px] text-ink-3">予算の{pct}%{PERIOD_REPORT ? "（投資を除く）" : ""}</p>
               </div>
             )}
             <dl className="num mt-3 grid grid-cols-3 gap-2 text-center">

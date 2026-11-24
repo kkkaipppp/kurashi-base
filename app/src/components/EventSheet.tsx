@@ -11,6 +11,7 @@ import { validateEvent, type EventDraft, type FieldErrors } from "@/lib/validate
 import { formatDateJa, todayStr } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from "@/lib/sheetDraft";
+import { OrphanDraft } from "./OrphanDraft";
 import { newId } from "@/lib/defaults";
 import { calendarTemplate, isSavableUrl, mapsDirections, safeExternalLink } from "@/lib/externalLinks";
 import { EVENT_KINDS, type CalendarEvent, type CheckItem, type EventKind } from "@/lib/types";
@@ -44,6 +45,7 @@ const hasExtra = (x: Extra, d: EventDraft) =>
 
 export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: () => void }) {
   const data = useData();
+  const ui = useUI();
   const [mode, setMode] = useState<"view" | "edit" | "new">(req.mode);
   const id = req.mode === "new" ? undefined : req.id;
   const ev = id ? data.events.find((e) => e.id === id) : undefined;
@@ -57,6 +59,7 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
     return (
       <Sheet title="予定" open onRequestClose={onClose}>
         <p className="text-ink-2">この予定は見つかりません（削除された可能性があります）。</p>
+        {id && <OrphanDraft kind="event" id={id} onNew={() => ui.openEvent({ mode: "new" })} onDone={onClose} />}
       </Sheet>
     );
   }
@@ -245,17 +248,45 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
   const dirty = JSON.stringify([draft, extra]) !== JSON.stringify([initial, initialExtra]) || newItem.trim() !== "";
 
   // 書きかけの控え（100点化の指示 B）。新しい予定は targetId=null、編集は予定の ID
-  type Saved = { draft: EventDraft; extra: Extra };
+  type Saved = { draft: EventDraft; extra: Extra; newItem?: string };
   const draftTarget = editing?.id ?? null;
   const [pending] = useState(() => loadSheetDraft<Saved>("event", draftTarget));
   const [resumeAsked, setResumeAsked] = useState(false);
+  const resumed = useRef(false);
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   useEffect(() => {
     if (saved.current) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 端末に控えられたかを画面に出すため
-    if (dirty) setDraftSaveFailed(!saveSheetDraft<Saved>("event", draftTarget, { draft, extra }));
+    // 前の書きかけに答えるまでは控えない（答える前に打った分で、前の書きかけを消さない）
+    if (pending && !resumeAsked) return;
+     
+    if (dirty) setDraftSaveFailed(!saveSheetDraft<Saved>("event", draftTarget, { draft, extra, newItem }, undefined, undefined, initialEventSnapshot.current));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, extra, dirty]);
+  }, [draft, extra, newItem, dirty, resumeAsked]);
+  const pendingTrip = pending?.draft.extra.tripId ? trips.find((t) => t.id === pending.draft.extra.tripId) : undefined;
+  const resume = async () => {
+    if (!pending) return setResumeAsked(true);
+    if (pending.base && initialEventSnapshot.current && pending.base !== initialEventSnapshot.current) {
+      const ok = await ui.confirm({
+        title: "元の予定が、書きかけのあとに変わっています",
+        body: "続きからにすると、今の予定の中身が書きかけの中身に置き換わります（保存するまでは変わりません）。今の予定のまま直す場合は「今の予定を使う」を選んでください（書きかけは捨てます）。",
+        ok: "書きかけを使う",
+        cancel: "今の予定を使う",
+      });
+      if (!ok) {
+        clearSheetDraft("event", draftTarget);
+        return setResumeAsked(true);
+      }
+    }
+    if (dirty && !(await ui.confirm({ title: "書きかけに置き換えますか？", body: "今この画面で打った分は消えて、書きかけの中身になります。", ok: "置き換える" }))) return;
+    setDraft({ ...pending.draft.draft });
+    // 旅行は、今ある旅行だけつなぐ（消えた旅行にはつながない）
+    const tripOk = !pending.draft.extra.tripId || trips.some((t) => t.id === pending.draft.extra.tripId);
+    setExtra({ ...pending.draft.extra, tripId: tripOk ? pending.draft.extra.tripId : "" });
+    setNewItem(pending.draft.newItem ?? "");
+    if (hasExtra(pending.draft.extra, pending.draft.draft)) setShowMore(true);
+    resumed.current = true;
+    setResumeAsked(true);
+  };
 
   const set = <K extends keyof EventDraft>(k: K, v: EventDraft[K]) => {
     setDraft((d) => {
@@ -287,7 +318,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     if (busy) return;
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true })))
       return;
-    if (dirty) clearSheetDraft("event", draftTarget);
+    if (dirty || resumed.current) clearSheetDraft("event", draftTarget);
     onClose();
   };
 
@@ -382,6 +413,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
           <p className="text-[14px] font-semibold">{draftTimeLabel(pending.savedAt)} の書きかけがあります</p>
           <p className="mt-0.5 text-[12px] text-ink-2">
             {pending.draft.draft.title || "（名前なし）"} {pending.draft.draft.startDate}
+            {pendingTrip ? `（旅行：${pendingTrip.title}）` : ""}
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Button
@@ -393,13 +425,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
             >
               捨てる
             </Button>
-            <Button
-              onClick={() => {
-                setDraft({ ...pending.draft.draft });
-                setExtra({ ...pending.draft.extra });
-                setResumeAsked(true);
-              }}
-            >
+            <Button onClick={resume}>
               続きから
             </Button>
           </div>

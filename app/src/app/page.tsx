@@ -80,7 +80,7 @@ export default function HomePage() {
   const next = nextRecurring(data.recurring);
   const recent = sortTxDesc(data.transactions).slice(0, 3);
   const firstUse = data.transactions.length === 0 && data.events.length === 0;
-  const allowance = ledger && ledger.perDay !== null ? { perDay: ledger.perDay, daysLeft: ledger.daysLeft, unpaidFixed: ledger.unpaidFixed } : null;
+  const allowance = ledger && ledger.perDay !== null ? { perDay: ledger.perDay, daysLeft: ledger.daysLeft, unpaidFixed: ledger.unpaidFixed, freeLeft: ledger.freeLeft ?? 0 } : null;
   const lastMonthExpense = summarizeMonth(data.transactions, addMonthsToKey(month, -1)).expense;
 
   return (
@@ -142,7 +142,16 @@ export default function HomePage() {
             </div>
             {allowance && (
               <p className="num mt-2 rounded-xl bg-white/15 px-3 py-2 text-[13px]">
-                月末まで（{allowance.daysLeft}日）<strong className="text-[16px]">1日あたり {formatYen(allowance.perDay)}</strong> 使えます
+                {allowance.freeLeft < 0 ? (
+                  // 自由に使える残りがマイナスのときは「¥0 使えます」ではなく、どれだけ超えるかを出す（指示書 D）
+                  <>
+                    月末まで（{allowance.daysLeft}日）<strong className="text-[16px]">{formatYen(-allowance.freeLeft)} 足りません</strong>
+                  </>
+                ) : (
+                  <>
+                    月末まで（{allowance.daysLeft}日）<strong className="text-[16px]">1日あたり {formatYen(allowance.perDay)}</strong> 使えます
+                  </>
+                )}
                 <span className="block text-[11px] opacity-90">
                   {allowance.unpaidFixed > 0 ? `まだ記録していない今月の固定費 ${formatYen(allowance.unpaidFixed)} を引いた額です` : "今月の固定費は記録済みです"}
                 </span>

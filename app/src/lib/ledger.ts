@@ -1,4 +1,6 @@
 import { dailyAllowance } from "./allowance";
+import { summarizeMonth } from "./aggregate";
+import { IS_PERSONAL } from "./edition";
 import { monthBreakdown } from "./monthBreakdown";
 import type { AppData } from "./types";
 
@@ -38,6 +40,14 @@ export function monthLedger(data: AppData, month: string, today: string): MonthL
     perDay: a ? a.perDay : null,
     daysLeft: a?.daysLeft ?? 0,
   };
+}
+
+/**
+ * 予算と比べる「使った額」。自分用は投資を除いた生活費、公開版は今までどおりすべての支出。
+ * ホーム・今日のナビ・振り返り・ウィジェットで同じものを使う（点検役の指摘：画面ごとに数字が食い違っていた）
+ */
+export function budgetSpent(data: AppData, month: string, today: string, personal: boolean = IS_PERSONAL): number {
+  return personal ? monthBreakdown(data, month, today).lifeExpense : summarizeMonth(data.transactions, month).expense;
 }
 
 /** 投資として数えているカテゴリの名前（画面に出して、分け方を本人が確かめられるように） */
