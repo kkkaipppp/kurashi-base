@@ -13,13 +13,14 @@ import { formatYen } from "@/lib/money";
 import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from "@/lib/sheetDraft";
 import { OrphanDraft } from "./OrphanDraft";
 import { newId } from "@/lib/defaults";
+import { IS_PERSONAL } from "@/lib/edition";
 import { calendarTemplate, isSavableUrl, mapsDirections, safeExternalLink } from "@/lib/externalLinks";
 import { EVENT_KINDS, type CalendarEvent, type CheckItem, type EventKind } from "@/lib/types";
 
 export type EventSheetRequest =
   | { mode: "view"; id: string } // 予定の詳細（押したときに開く）
   | { mode: "edit"; id: string }
-  | { mode: "new"; date?: string; tripId?: string };
+  | { mode: "new"; date?: string; tripId?: string; /** 複製：この予定の内容を引き継いで新しい予定にする（完了・実績は引き継がない。NEXT v21 CAL:C05） */ copyOf?: string };
 
 /** 詳細（場所・URL・持ち物など）の入力。予定名と日時だけで保存でき、あとから足せる */
 interface Extra {
@@ -106,6 +107,17 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
           <Button variant="danger" onClick={remove}>
             削除
           </Button>
+          {IS_PERSONAL && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                onClose();
+                ui.openEvent({ mode: "new", copyOf: ev.id });
+              }}
+            >
+              複製
+            </Button>
+          )}
           <Button className="flex-1" onClick={onEdit}>
             編集する
           </Button>
@@ -222,8 +234,14 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
   const ui = useUI();
   const newReq = req.mode === "new" ? req : undefined;
   const trips = data.trips ?? [];
+  // 複製のとき：元の予定（内容だけ引き継ぐ。新しい ID で保存される）
+  const copySrc = !editing && newReq?.copyOf ? data.events.find((e) => e.id === newReq.copyOf) : undefined;
 
   const initial = useMemo<EventDraft>(() => {
+    if (copySrc) {
+      const { title, startDate, endDate, allDay, startTime, endTime, note } = copySrc;
+      return { title, startDate, endDate, allDay, startTime, endTime, note, repeat: copySrc.repeat ?? "none", repeatUntil: copySrc.repeatUntil ?? "" };
+    }
     if (editing) {
       const { title, startDate, endDate, allDay, startTime, endTime, note } = editing;
       return { title, startDate, endDate, allDay, startTime, endTime, note, repeat: editing.repeat ?? "none", repeatUntil: editing.repeatUntil ?? "" };
@@ -233,7 +251,12 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     return { title: "", startDate: d, endDate: d, allDay: false, startTime: "10:00", endTime: "11:00", note: "", repeat: "none", repeatUntil: "" };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const initialExtra = useMemo(() => extraOf(editing, newReq?.tripId ?? ""), []); // eslint-disable-line react-hooks/exhaustive-deps
+  // 持ち物は、複製のときは未チェックに戻す
+  const initialExtra = useMemo(() => {
+    if (!copySrc) return extraOf(editing, newReq?.tripId ?? "");
+    const x = extraOf(copySrc);
+    return { ...x, items: x.items.map((i) => ({ ...i, id: newId("it"), done: false })) };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const initialEventSnapshot = useRef(editing ? JSON.stringify(editing) : undefined);
   const [draft, setDraft] = useState<EventDraft>(initial);
@@ -250,12 +273,13 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
   // 書きかけの控え（100点化の指示 B）。新しい予定は targetId=null、編集は予定の ID
   type Saved = { draft: EventDraft; extra: Extra; newItem?: string };
   const draftTarget = editing?.id ?? null;
-  const [pending] = useState(() => loadSheetDraft<Saved>("event", draftTarget));
+  // 複製のときは、書きかけの控えを使わない・上書きしない（空の新しい入力の書きかけを壊さない）
+  const [pending] = useState(() => (copySrc ? null : loadSheetDraft<Saved>("event", draftTarget)));
   const [resumeAsked, setResumeAsked] = useState(false);
   const resumed = useRef(false);
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   useEffect(() => {
-    if (saved.current) return;
+    if (saved.current || copySrc) return;
     // 前の書きかけに答えるまでは控えない（答える前に打った分で、前の書きかけを消さない）
     if (pending && !resumeAsked) return;
      

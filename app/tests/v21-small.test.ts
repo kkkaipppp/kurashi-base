@@ -208,3 +208,16 @@ describe("X03 カードで買った支出は一度だけ。翌月の引落は収
     expect(src("components/Rows.tsx")).toContain("収支に数えない");
   });
 });
+
+describe("予定の複製（自分用。CAL:C05）", () => {
+  const s = () => src("components/EventSheet.tsx");
+  it("詳細に「複製」。内容だけ引き継ぎ、持ち物は未チェック・新しい ID。完了・実績は引き継がない", () => {
+    expect(s()).toContain("ui.openEvent({ mode: \"new\", copyOf: ev.id })");
+    expect(s()).toContain("items: x.items.map((i) => ({ ...i, id: newId(\"it\"), done: false }))");
+    expect(s()).toContain("{IS_PERSONAL && (");
+  });
+  it("複製のときは、書きかけの控えを使わず、上書きもしない（空の新しい入力の書きかけを壊さない）", () => {
+    expect(s()).toContain("copySrc ? null : loadSheetDraft");
+    expect(s()).toContain("if (saved.current || copySrc) return;");
+  });
+});
