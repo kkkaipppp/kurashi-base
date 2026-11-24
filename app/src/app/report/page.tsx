@@ -8,6 +8,13 @@ import { formatSignedYen, formatYen } from "@/lib/money";
 import { buildInsights, monthReport, weeklyBuckets } from "@/lib/report";
 import { cycleLabel } from "@/lib/recurring";
 import { useData } from "@/lib/store";
+import dynamic from "next/dynamic";
+
+// 週・年の振り返りは自分用（personal）だけ（lib/edition.ts の periodReport）。
+// 組み立てるときに決まる値で分けるので、公開版（public）には週・年の画面のコードが入らない
+const PERIOD_REPORT = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+const WeekReport = PERIOD_REPORT ? dynamic(() => import("@/components/PeriodReport").then((m) => m.WeekReport)) : () => null;
+const YearReport = PERIOD_REPORT ? dynamic(() => import("@/components/PeriodReport").then((m) => m.YearReport)) : () => null;
 
 // 円グラフの色（カテゴリの順に使う。意味は持たせず、凡例と金額で読めるようにする）
 const PIE = ["#2f6f5e", "#c9853a", "#7a5ab3", "#2f6f9e", "#b4503c", "#6b8f3a", "#9aa19c"];
@@ -43,7 +50,40 @@ function Donut({ parts, total }: { parts: { value: number; color: string }[]; to
   );
 }
 
+type Span = "week" | "month" | "year";
+const SPANS: { key: Span; label: string }[] = [
+  { key: "week", label: "週" },
+  { key: "month", label: "月" },
+  { key: "year", label: "年" },
+];
+
 export default function ReportPage() {
+  const [span, setSpan] = useState<Span>("month");
+  if (!PERIOD_REPORT) return <MonthReportPage />;
+  return (
+    <main className="space-y-4">
+      <PageHeader title="振り返り" />
+      <div className="grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="振り返る期間">
+        {SPANS.map((s) => (
+          <button
+            key={s.key}
+            type="button"
+            role="radio"
+            aria-checked={span === s.key}
+            onClick={() => setSpan(s.key)}
+            className={`min-h-10 rounded-lg text-[14px] font-semibold ${span === s.key ? "bg-surface shadow-sm" : "text-ink-2"}`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+      {span === "week" ? <WeekReport /> : span === "year" ? <YearReport /> : <MonthReportPage embedded />}
+    </main>
+  );
+}
+
+/** 月の振り返り（今までの画面）。embedded のときは見出しと外側の main を付けない */
+function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
   const data = useData();
   const today = todayStr();
   const [month, setMonth] = useState(monthKey(today));
@@ -63,9 +103,10 @@ export default function ReportPage() {
   const fixed = data.recurring.filter((x) => x.active);
   const fixedMonthly = Math.round(fixed.reduce((s, x) => s + (x.cycle === "weekly" ? (x.amount * 52) / 12 : x.cycle === "yearly" ? x.amount / 12 : x.amount), 0));
 
+  const Wrap = embedded ? "div" : "main";
   return (
-    <main className="space-y-4">
-      <PageHeader title="振り返り" />
+    <Wrap className="space-y-4">
+      {!embedded && <PageHeader title="振り返り" />}
 
       <Card className="py-2">
         <div className="flex items-center justify-between">
@@ -223,6 +264,6 @@ export default function ReportPage() {
           <IconChevronR className="size-5 text-ink-3" />
         </Card>
       </Link>
-    </main>
+    </Wrap>
   );
 }

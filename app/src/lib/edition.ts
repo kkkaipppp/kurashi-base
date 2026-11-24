@@ -17,6 +17,8 @@ export const FEATURE_EDITIONS = {
   calendarFile: { personal: true, public: true },
   /** 家計簿の CSV の取り込み（2026-11-24 公開済み） */
   csvImport: { personal: true, public: true },
+  /** 振り返りの「週」「年」の収支（2026-11-24 平尾さん。まず自分用だけ） */
+  periodReport: { personal: true, public: false },
 } as const satisfies Record<string, Record<Edition, boolean>>;
 
 export type FeatureName = keyof typeof FEATURE_EDITIONS;
