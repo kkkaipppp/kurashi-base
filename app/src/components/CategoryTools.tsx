@@ -28,9 +28,10 @@ export function CategoryTools({ kind }: { kind: TxType }) {
     if (!fromCat || !toCat || fromCat.id === toCat.id) return ui.toast("まとめる元と先を選んでください", "error");
     const n = count(fromCat.id);
     const rc = data.recurring.filter((r) => r.categoryId === fromCat.id).length;
+    const differ = categoryIsInvest(fromCat) !== categoryIsInvest(toCat);
     const ok = await ui.confirm({
       title: `「${fromCat.name}」を「${toCat.name}」にまとめますか？`,
-      body: `記録${n}件${rc ? `と固定費${rc}件` : ""}を「${toCat.name}」に移し、「${fromCat.name}」は非表示にします（消しません）。設定の「直前の操作を取り消す」で戻せます。`,
+      body: `記録${n}件${rc ? `と固定費${rc}件` : ""}を「${toCat.name}」に移し、「${fromCat.name}」は非表示にします（消しません）。${differ ? `数え方が違うので、移す記録は今までどおり「${categoryIsInvest(fromCat) ? "投資" : "生活費"}」として数えます。` : ""}設定の「直前の操作を取り消す」で戻せます。`,
       ok: "まとめる",
     });
     if (!ok) return;
@@ -43,7 +44,7 @@ export function CategoryTools({ kind }: { kind: TxType }) {
 
   return (
     <details className="mt-3 rounded-xl border border-line p-3">
-      <summary className="flex min-h-11 cursor-pointer items-center text-[14px] font-semibold text-ink-2">数え方とまとめる</summary>
+      <summary className="flex min-h-11 cursor-pointer items-center text-[14px] font-semibold text-ink-2">生活費・投資の分け方／カテゴリをまとめる</summary>
       {kind === "expense" && (
         <div className="mt-2">
           <p className="text-[12px] text-ink-3">投資として数えたカテゴリは、予算と比べる「生活費」に入れません。決めていないものは名前（「投資」が入っているか）で数えます。</p>

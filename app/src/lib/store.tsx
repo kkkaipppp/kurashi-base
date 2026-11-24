@@ -47,7 +47,7 @@ interface Store {
   setBudget: (monthly: number | null) => SaveResult;
   setHomePref: (key: HomeToggle, v: boolean) => SaveResult;
   /** 自分用のホームのカードの並びと、隠したカード（100点化 E） */
-  setHomeLayout: (order: string[], hidden: string[]) => SaveResult;
+  setHomeLayout: (order: string[], hidden: string[], flags: { nextRecurring: boolean; needsReview: boolean }) => SaveResult;
   /** カテゴリを生活費・投資のどちらで数えるか。null で「名前から判断」に戻す（100点化 D） */
   setCategoryRole: (id: string, role: "life" | "invest" | null) => SaveResult;
   /** from のカテゴリの記録と固定費を to に移して、from を非表示にする（消さない。取り消しの控えを残す。100点化 E） */
@@ -225,7 +225,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       deleteRecurring: (id) => commit((d) => ({ ...d, recurring: d.recurring.filter((x) => x.id !== id) })),
       setBudget: (monthly) => commit((d) => ({ ...d, budget: { monthly } })),
       setHomePref: (key, v) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, [key]: v } } })),
-      setHomeLayout: (order, hidden) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, order: [...order], hidden: [...hidden] } } })),
+      setHomeLayout: (order, hidden, flags) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, ...flags, order: [...order], hidden: [...hidden] } } })),
       setCategoryRole: (id, role) =>
         commit((d) => ({
           ...d,

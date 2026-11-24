@@ -53,5 +53,7 @@ export function budgetSpent(data: AppData, month: string, today: string, persona
 
 /** 投資として数えているカテゴリの名前（画面に出して、分け方を本人が確かめられるように） */
 export function investCategoryNames(data: AppData): string[] {
-  return data.categories.filter((c) => !c.archived && categoryIsInvest(c)).map((c) => c.name);
+  // 非表示でも、記録があれば出す（そのカテゴリの記録は投資として数えているため）
+  const used = new Set(data.transactions.map((t) => t.categoryId));
+  return data.categories.filter((c) => categoryIsInvest(c) && (!c.archived || used.has(c.id))).map((c) => c.name);
 }

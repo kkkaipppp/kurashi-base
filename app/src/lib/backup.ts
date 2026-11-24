@@ -191,7 +191,7 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
   const data: AppData = {
     ...current,
     categories,
-    transactions: mergeList(current.transactions, incoming.transactions, { skipIf: (t) => badCat.has(t.categoryId) }),
+    transactions: mergeList(current.transactions, incoming.transactions, { skipIf: (t) => badCat.has(t.categoryId) || (!!t.tripId && badTrip.has(t.tripId)) }),
     events: mergeList(current.events, incoming.events, { skipIf: (e) => !!e.tripId && badTrip.has(e.tripId) }),
     trips: mergeList(current.trips ?? [], incoming.trips ?? []),
     recurring: mergeList(current.recurring, incoming.recurring, { skipIf: (r) => badCat.has(r.categoryId) }),
