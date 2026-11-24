@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { newId } from "./defaults";
-import { applyRecurringPayment, applyTxUpdate, mergeCategoryData, revertPartialPayment, setTxTripData, unlinkTripFromTx } from "./dataOps";
+import { applyRecurringPayment, applyTxUpdate, mergeCategoryData, partialMark, revertPartialPayment, setTxTripData, unlinkTripFromTx } from "./dataOps";
 import { replaceEventEditableFields } from "./eventMerge";
 import { staleRecordError } from "./eventConcurrency";
 import { renameCategoryIn } from "./categoryRename";
@@ -160,7 +160,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           let recurring = d.recurring;
           // 固定費から記録したら、その固定費の次回予定日を進める（同じ保存で一括）。一部の支払いは、進めずに払った額を足す（X02）
           if (t.recurringId) recurring = applyRecurringPayment(d.recurring, t.recurringId, t.amount, !!t.recurringPartial, ts);
-          return { ...d, recurring, transactions: [...d.transactions, { ...t, id, currency: "JPY", createdAt: ts, updatedAt: ts }] };
+          // 一部の支払いは、どの支払日の分かも記録に持たせる（全部払い終わる記録は、一部の印を付けない）
+          const mark = t.recurringId ? partialMark(d.recurring, t.recurringId, t.amount, !!t.recurringPartial) : {};
+          const { recurringPartial: _p, ...base } = t; // eslint-disable-line @typescript-eslint/no-unused-vars
+          return { ...d, recurring, transactions: [...d.transactions, { ...base, ...mark, id, currency: "JPY", createdAt: ts, updatedAt: ts }] };
         });
         return r.ok ? { ...r, id } : r;
       },

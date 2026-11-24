@@ -178,7 +178,9 @@ export default function SettingsPage() {
     if (!res.ok) return ui.toast(res.error, "error");
     let next = res.data;
     if (IS_PERSONAL && csv.result.kind === "transactions") {
-      next = recordBatch(res.data, { id: batchId, at: new Date().toISOString(), source: csv.name, from: csv.result.from, to: csv.result.to }).data;
+      const rec = recordBatch(res.data, { id: batchId, at: new Date().toISOString(), source: csv.name, from: csv.result.from, to: csv.result.to });
+      // 足した記録が0件の取り込みは、履歴に残さない（取り消すものがないため）
+      if (rec.added > 0) next = rec.data;
     }
     const r = store.replaceAll(next, "家計簿の CSV から追加");
     if (!r.ok) return ui.toast(`${r.error}（今のデータは変更していません）`, "error");

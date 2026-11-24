@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { emptyData } from "@/lib/defaults";
-import { applyRecurringPayment, revertPartialPayment, applyTxUpdate } from "@/lib/dataOps";
+import { applyRecurringPayment, revertPartialPayment, applyTxUpdate, partialMark } from "@/lib/dataOps";
 import { unpaidRecurringThisMonth } from "@/lib/allowance";
 import { buildTodayItems } from "@/lib/todayItems";
 import { validateAppData } from "@/lib/schema";
@@ -34,9 +34,9 @@ describe("固定費の一部の支払い（X02）", () => {
   });
   it("一部の支払いの記録を消すと、その分を戻す（0になったら一部払いの記録も消す）。一部でない記録は触らない", () => {
     const a = applyRecurringPayment([rc()], "r", 3000, true, now);
-    const r1 = revertPartialPayment(a, tx({ id: "t", recurringId: "r", recurringPartial: true, amount: 1000 }), now);
+    const r1 = revertPartialPayment(a, tx({ id: "t", recurringId: "r", recurringPartial: true, recurringDue: "2026-11-28", amount: 1000 }), now);
     expect(r1[0].partialPaid?.paid).toBe(2000);
-    const r2 = revertPartialPayment(a, tx({ id: "t", recurringId: "r", recurringPartial: true, amount: 3000 }), now);
+    const r2 = revertPartialPayment(a, tx({ id: "t", recurringId: "r", recurringPartial: true, recurringDue: "2026-11-28", amount: 3000 }), now);
     expect(r2[0].partialPaid).toBeUndefined();
     expect(revertPartialPayment(a, tx({ id: "t", recurringId: "r", amount: 3000 }), now)).toBe(a);
   });
@@ -52,6 +52,7 @@ describe("固定費の一部の支払い（X02）", () => {
     const before = monthLedger(d, "2026-11", "2026-11-25");
     expect(before.unpaidFixed).toBe(5000);
     const next = applyTxUpdate(d, "t", { ...base, recurringId: "r", recurringPartial: true }, now);
+    expect(next.transactions[0]).toMatchObject({ recurringPartial: true, recurringDue: "2026-11-28" });
     expect(next.recurring[0].nextDueDate).toBe("2026-11-28");
     expect(next.recurring[0].partialPaid?.paid).toBe(3000);
     const after = monthLedger(next, "2026-11", "2026-11-25");
@@ -84,3 +85,35 @@ describe("固定費の一部の支払い（X02）", () => {
     expect(src("lib/store.tsx")).toContain("revertPartialPayment(d.recurring, tx, now())");
   });
 });
+
+describe("一部の支払い：取り消しが別の回を巻き込まない・完了の記録に一部の印を付けない（点検役の指摘）", () => {
+  it("1回目の一部払いの記録を消しても、2回目の払い分は戻らない", () => {
+    // 1回目：3000＋2000（完了）→ 次の支払日へ。2回目：1000 を一部払い
+    let list = [rc()];
+    const first = tx({ id: "a", recurringId: "r", amount: 3000, ...partialMark(list, "r", 3000, true) });
+    list = applyRecurringPayment(list, "r", 3000, true, now);
+    const second = tx({ id: "b", recurringId: "r", amount: 2000, ...partialMark(list, "r", 2000, true) });
+    list = applyRecurringPayment(list, "r", 2000, true, now);
+    expect(list[0].nextDueDate).toBe("2026-12-28");
+    expect(second.recurringPartial).toBeUndefined(); // 完了させた記録に、一部の印は付かない
+    const third = tx({ id: "c", recurringId: "r", amount: 1000, ...partialMark(list, "r", 1000, true) });
+    list = applyRecurringPayment(list, "r", 1000, true, now);
+    expect(third).toMatchObject({ recurringPartial: true, recurringDue: "2026-12-28" });
+    expect(list[0].partialPaid).toEqual({ due: "2026-12-28", paid: 1000 });
+    // 1回目（11/28 の分）の記録を消す：今の払い分（12/28 の分）は動かない
+    const after = revertPartialPayment(list, first, now);
+    expect(after[0].partialPaid).toEqual({ due: "2026-12-28", paid: 1000 });
+    // 同じ回の記録を消すと戻る
+    expect(revertPartialPayment(list, third, now)[0].partialPaid).toBeUndefined();
+  });
+  it("全部払い終わる額は、一部の印を付けない。印のない記録・支払日のない記録は、消しても何も戻さない", () => {
+    const list = [rc()];
+    expect(partialMark(list, "r", 5000, true)).toEqual({});
+    expect(partialMark(list, "r", 6000, true)).toEqual({});
+    expect(partialMark(list, "r", 2000, false)).toEqual({});
+    expect(partialMark(list, "r", 2000, true)).toEqual({ recurringPartial: true, recurringDue: "2026-11-28" });
+    const a = applyRecurringPayment(list, "r", 3000, true, now);
+    expect(revertPartialPayment(a, tx({ id: "x", recurringId: "r", recurringPartial: true, amount: 3000 }), now)).toBe(a);
+  });
+});
+
