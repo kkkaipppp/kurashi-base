@@ -10,6 +10,7 @@ import { buildCalendarItems, CAL_FUTURE_DAYS, CAL_PAST_DAYS } from "@/lib/calend
 import { buildIcs } from "@/lib/ics";
 import { csvToIncoming, type CsvResult } from "@/lib/csvImport";
 import { FEATURES } from "@/lib/edition";
+import { figures, sampleRows, similarButDifferentId, type DataFigures } from "@/lib/restoreView";
 import type { HomePrefs, TxType } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, Field, PageHeader, SectionTitle, inputCls } from "@/components/ui";
@@ -130,10 +131,12 @@ export default function SettingsPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<RestorePreview | null>(null);
   const [restoreErr, setRestoreErr] = useState<string | null>(null);
-  const [mode, setMode] = useState<"merge" | "replace">("merge");
+  // 復元方法は、ファイルを選ぶたびに「まだ選んでいない」に戻す（置き換えのつもりで追加してしまうのを防ぐ。レビュー o1 の P01）
+  const [mode, setMode] = useState<"merge" | "replace" | null>(null);
   const onFile = async (f: File | undefined) => {
     setPreview(null);
     setRestoreErr(null);
+    setMode(null);
     if (!f) return;
     if (f.size > MAX_BACKUP_BYTES) return setRestoreErr("ファイルが大きすぎます（20MBまで）");
     let text: string;
@@ -147,18 +150,21 @@ export default function SettingsPage() {
     setPreview(r.preview);
   };
   // 確定前に、合成した結果（何件入る・入らない）を計算して見せる。ここではまだ保存しない
-  const plan = preview ? applyRestore(data, preview.data, mode) : null;
+  const plan = preview && mode ? applyRestore(data, preview.data, mode) : null;
+  const nowFig = figures(data);
+  const afterFig: DataFigures | null = plan?.ok ? figures(plan.data) : null;
+  const similar = preview && mode === "merge" ? similarButDifferentId(data.transactions, preview.data.transactions) : 0;
 
   const doRestore = async () => {
-    if (!preview || !plan) return;
+    if (!preview || !plan || !mode) return;
     if (!plan.ok) return ui.toast(plan.error, "error");
     const ok = await ui.confirm({
       title: mode === "replace" ? "すべての記録をバックアップの内容に置き換えますか？" : "バックアップの記録を追加しますか？",
       body:
         mode === "replace"
           ? "今のすべての記録と設定が、バックアップの内容に置き換わります。置き換える前の状態はこの端末に1つだけ控えるので、この画面の「直前の操作を取り消す」で戻せます。"
-          : `${plan.added}件を追加します。すでにある記録はそのまま残ります。追加する前の状態は「直前の操作を取り消す」で戻せます。`,
-      ok: mode === "replace" ? "置き換える" : "追加する",
+          : `${plan.added}件を追加します。すでにある記録はそのまま残ります。${similar > 0 ? `日付・金額が同じ記録が${similar}件あり、二重になるかもしれません。` : ""}追加する前の状態は「直前の操作を取り消す」で戻せます。`,
+      ok: mode === "replace" ? "すべて置き換える" : `${plan.added}件を追加`,
       danger: mode === "replace",
     });
     if (!ok) return;
@@ -189,7 +195,10 @@ export default function SettingsPage() {
   };
 
   // --- 全削除 ---
+  // すべて削除は、「削除」と打ち込んでから（レビュー o1 の P04。取り消しの控えも消えるため）
+  const [wipeWord, setWipeWord] = useState("");
   const wipe = async () => {
+    if (wipeWord.trim() !== "削除") return ui.toast("確認のため「削除」と入力してください", "error");
     const ok = await ui.confirm({
       title: "この端末の記録をすべて削除しますか？",
       body: `${Object.entries(countData(data))
@@ -202,6 +211,7 @@ export default function SettingsPage() {
     });
     if (!ok) return;
     const r = store.wipeAll(emptyData());
+    setWipeWord("");
     if (r.ok) ui.toast("この端末の記録をすべて削除しました");
     else ui.toast(r.error, "error");
   };
@@ -380,7 +390,25 @@ export default function SettingsPage() {
                       {csvPlan.conflicts > 0 && <li className="text-warn">同じ記録なのに内容が違うもの：{csvPlan.conflicts}件（今の内容を残します）</li>}
                     </>
                   )}
-                  {csvPlan?.ok && csvPlan.dependentSkipped > 0 && (
+                  {csv.result.kind === "transactions" && (
+                  <li className="num text-ink-2">
+                    CSV の合計：支出 {formatYen(csv.result.incoming.transactions.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0))}・収入{" "}
+                    {formatYen(csv.result.incoming.transactions.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0))}
+                  </li>
+                )}
+                {csv.result.kind === "transactions" && csv.result.incoming.transactions.length > 0 && (
+                  <li>
+                    <span className="text-ink-2">例（新しい5件）：</span>
+                    <ul className="num mt-0.5 space-y-0.5 pl-3 text-[12px] text-ink-2">
+                      {sampleRows(csv.result.incoming.transactions).map((t) => (
+                        <li key={t.id}>
+                          {t.date} {t.type === "expense" ? "支出" : "収入"} {formatYen(t.amount)} {t.merchant}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                )}
+                {csvPlan?.ok && csvPlan.dependentSkipped > 0 && (
                     <li className="text-warn">カテゴリの内容が今と違うため取り込まない記録：{csvPlan.dependentSkipped}件</li>
                   )}
                   {csvPlan?.ok && csvPlan.added === 0 && <li className="text-ink-2">新しく追加する記録はありません（すでに入っています）</li>}
@@ -444,17 +472,59 @@ export default function SettingsPage() {
                 ⚠ {w}
               </p>
             ))}
-            <fieldset className="space-y-1">
-              <legend className="text-[13px] font-semibold text-ink-2">復元方法を選ぶ</legend>
-              <label className="flex min-h-11 items-center gap-2">
-                <input type="radio" name="restore-mode" checked={mode === "merge"} onChange={() => setMode("merge")} className="size-5 accent-[var(--brand)]" />
-                今のデータに追加する（同じデータは二重に入れない）
-              </label>
-              <label className="flex min-h-11 items-center gap-2">
-                <input type="radio" name="restore-mode" checked={mode === "replace"} onChange={() => setMode("replace")} className="size-5 accent-[var(--brand)]" />
-                今のデータをすべて置き換える
-              </label>
+            <fieldset className="space-y-2">
+              <legend className="mb-1 text-[13px] font-semibold text-ink-2">復元方法を選んでください（選ぶまで実行できません）</legend>
+              {(
+                [
+                  ["merge", "記録を追加する", "今の記録は残したまま、バックアップにしかない記録を足します。同じ記録は二重に入れません。"],
+                  ["replace", "バックアップの状態に戻す", "今の記録と設定を消して、バックアップの中身だけにします。バックアップにない記録は消えます。"],
+                ] as const
+              ).map(([m, title, desc]) => (
+                <label
+                  key={m}
+                  className={`flex cursor-pointer gap-3 rounded-xl border p-3 ${mode === m ? (m === "replace" ? "border-danger bg-expense-soft" : "border-brand bg-brand-soft") : "border-line bg-surface"}`}
+                >
+                  <input type="radio" name="restore-mode" checked={mode === m} onChange={() => setMode(m)} className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]" />
+                  <span>
+                    <span className="block text-[15px] font-bold">{title}</span>
+                    <span className="block text-[12px] text-ink-2">{desc}</span>
+                  </span>
+                </label>
+              ))}
             </fieldset>
+            {afterFig && (
+              <table className="num w-full rounded-xl bg-surface text-[13px]" aria-label="今と、実行したあとの件数">
+                <thead>
+                  <tr className="text-ink-3">
+                    <th className="px-2 py-1 text-left font-semibold"> </th>
+                    <th className="px-2 py-1 text-right font-semibold">今</th>
+                    <th className="px-2 py-1 text-right font-semibold">実行したあと</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(
+                    [
+                      ["支出・収入", nowFig.transactions, afterFig.transactions, "件"],
+                      ["予定", nowFig.events, afterFig.events, "件"],
+                      ["NISA", nowFig.nisa, afterFig.nisa, "件"],
+                      ["支出の合計", nowFig.expense, afterFig.expense, "円"],
+                      ["収入の合計", nowFig.income, afterFig.income, "円"],
+                    ] as const
+                  ).map(([label, a, b, unit]) => (
+                    <tr key={label} className={b < a ? "text-danger" : ""}>
+                      <td className="px-2 py-0.5">{label}</td>
+                      <td className="px-2 py-0.5 text-right">{unit === "円" ? formatYen(a) : `${a}件`}</td>
+                      <td className="px-2 py-0.5 text-right font-semibold">{unit === "円" ? formatYen(b) : `${b}件`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {mode === "merge" && similar > 0 && (
+              <p role="alert" className="rounded-xl bg-warn-soft px-3 py-2 text-[13px] font-medium text-warn">
+                日付・種類・金額が今の記録と同じものが{similar}件あります。別の家計簿から入れた同じ明細だと、二重になります。消したい記録をまとめて入れ替えるときは「バックアップの状態に戻す」を選んでください。
+              </p>
+            )}
             {plan && !plan.ok && (
               <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[13px] font-medium text-danger">
                 {plan.error}
@@ -489,8 +559,8 @@ export default function SettingsPage() {
               >
                 やめる
               </Button>
-              <Button variant={mode === "replace" ? "danger" : "primary"} onClick={doRestore} disabled={!plan?.ok}>
-                {mode === "replace" ? "今の記録を置き換える" : "復元する"}
+              <Button variant={mode === "replace" ? "danger" : "primary"} onClick={doRestore} disabled={!mode || !plan?.ok}>
+                {mode === "replace" ? "すべて置き換える" : mode === "merge" && plan?.ok ? `${plan.added}件を追加` : "方法を選んでください"}
               </Button>
             </div>
           </div>
@@ -501,6 +571,7 @@ export default function SettingsPage() {
             <p className="mt-1 text-[13px] text-ink-2">
               「{undo.reason}」（{new Date(undo.savedAt).toLocaleString("ja-JP")}）の前の状態に戻せます。
             </p>
+            <p className="mt-1 text-[12px] font-semibold text-warn">取り消すと、そのあとに入れた記録も消えます。</p>
             <Button variant="secondary" onClick={doUndo} className="mt-2 w-full">
               取り消して前の状態に戻す
             </Button>
@@ -516,10 +587,24 @@ export default function SettingsPage() {
           <li>ブラウザの履歴・Webサイトデータを消したときや、機種変更したときに、記録が消えることがあります。定期的にバックアップしてください。</li>
           <li>レシートの画像は保存しません。</li>
         </ul>
-        <p className="mb-2 text-[13px] font-semibold text-danger">削除すると元に戻せません。残したい記録は先にバックアップしてください。</p>
-        <Button variant="danger" onClick={wipe} className="w-full">
-          この端末の記録をすべて削除
-        </Button>
+        <details className="rounded-xl border border-danger/30 p-3">
+          <summary className="min-h-9 cursor-pointer py-1 text-[14px] font-semibold text-danger">記録をすべて削除する（危険な操作）</summary>
+          <div className="mt-2 space-y-2">
+            <p className="text-[13px] text-ink-2">
+              今ある記録：支出・収入 {data.transactions.length}件、予定 {data.events.length}件{data.nisa.length > 0 ? `、NISA ${data.nisa.length}件` : ""}
+            </p>
+            <p className="text-[13px] font-semibold text-danger">削除すると元に戻せません。「直前の操作を取り消す」の控えも消えます。</p>
+            <Button variant="secondary" onClick={exportBackup} className="w-full">
+              先にバックアップを書き出す
+            </Button>
+            <Field label="確認のため「削除」と入力" htmlFor="wipe-word">
+              <input id="wipe-word" value={wipeWord} onChange={(e) => setWipeWord(e.target.value)} className={inputCls} autoComplete="off" />
+            </Field>
+            <Button variant="danger" onClick={wipe} className="w-full" disabled={wipeWord.trim() !== "削除"}>
+              この端末の記録をすべて削除
+            </Button>
+          </div>
+        </details>
       </Card>
 
       <Card>

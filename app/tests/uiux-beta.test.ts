@@ -31,10 +31,10 @@ describe("UI・UX の直し（友人β）", () => {
     expect(src("app/guide/page.tsx")).toContain("ホーム画面に追加");
   });
 
-  it("置き換えの復元は、押す前に何が起きるかを出し、ボタンも「今の記録を置き換える」", () => {
+  it("置き換えの復元は、押す前に何が起きるかを出す（2026-11-24 レビュー o1 の P01 でボタンを「すべて置き換える」に）", () => {
     const s = src("app/settings/page.tsx");
     expect(s).toContain("バックアップにない記録は残りません");
-    expect(s).toContain("今の記録を置き換える");
+    expect(s).toContain('"すべて置き換える"');
   });
 
   it("小さいボタン（行き方の車で・歩いて、資格の候補）は 44px 以上（BUG-12）", () => {
