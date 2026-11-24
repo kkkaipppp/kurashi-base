@@ -24,6 +24,7 @@ const GROUPS = IS_PERSONAL;
 // カテゴリの数え方・まとめる（自分用だけ。公開版では読み込まない）
 // 決まった形ではない CSV の列の対応づけ（自分用だけ。NEXT v21 CSV:C03）
 const CsvGenericPanel = IS_PERSONAL ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
+const DiagnosticsCard = IS_PERSONAL ? dynamic(() => import("@/components/DiagnosticsCard").then((m) => m.DiagnosticsCard)) : null;
 const CategoryTools = IS_PERSONAL ? dynamic(() => import("@/components/CategoryTools").then((m) => m.CategoryTools)) : null;
 function GroupLabel({ id, children }: { id: string; children: string }) {
   if (!GROUPS) return null;
@@ -699,6 +700,8 @@ export default function SettingsPage() {
           </div>
         )}
       </Card>
+
+      {DiagnosticsCard && <DiagnosticsCard />}
 
       <Card>
         <SectionTitle>データとプライバシー</SectionTitle>
