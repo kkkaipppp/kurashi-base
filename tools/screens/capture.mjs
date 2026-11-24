@@ -48,12 +48,16 @@ const SCREENS = [
   { id: "04b_event_edit", name: "予定を編集", path: "/", act: [`(() => { const b = document.querySelector('main li button'); if (b) { b.click(); return true } return false })()`, clickText("編集する")], sampleOnly: true },
   { id: "05_calendar", name: "カレンダー", path: "/calendar" },
   { id: "06_report", name: "振り返り", path: "/report" },
+  // 自分用（personal）の版だけにある画面（2026-11-24 から）。公開用の版では切り替えが無いので飛ばす
+  { id: "06b_report_week", name: "振り返り（週）", path: "/report", act: [clickText("週")] },
+  { id: "06c_report_year", name: "振り返り（年）", path: "/report", act: [clickText("年")] },
   { id: "07_trips", name: "旅行", path: "/trips" },
   { id: "08_trip_detail", name: "旅行の詳細", path: "/trips?open=trip_sample_kyoto", sampleOnly: true },
   { id: "09_study", name: "資格の学習", path: "/study" },
   { id: "10_menu", name: "メニュー", path: "/menu" },
   { id: "11_guide", name: "使い方", path: "/guide" },
   { id: "12_settings", name: "設定", path: "/settings" },
+  { id: "12a_csv_calendar", name: "カレンダー用ファイル・CSV の取り込み", path: "/settings", act: [`(() => { const e = document.getElementById("calendar-file"); if (e) { e.scrollIntoView(); return true } return false })()`] },
   { id: "12b_backup", name: "バックアップと復元", path: "/settings", act: [`(() => { const e = document.getElementById("backup"); if (e) { e.scrollIntoView(); return true } return false })()`] },
   { id: "13_history", name: "取引履歴", path: "/history" },
 ];
