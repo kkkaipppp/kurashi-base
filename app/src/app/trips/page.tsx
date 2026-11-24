@@ -12,6 +12,7 @@ import { OpenFromQuery } from "@/components/OpenFromQuery";
 import { Sheet } from "@/components/Sheet";
 import { Button, Card, Empty, Field, IconChevronL, IconChevronR, PageHeader, inputCls } from "@/components/ui";
 import { IS_PERSONAL } from "@/lib/edition";
+import { tripMemoCandidates } from "@/lib/tripMemo";
 import type { Trip } from "@/lib/types";
 
 const MAX_TRIP_DAYS = 60;
@@ -130,7 +131,7 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
   const linkedTx = IS_PERSONAL ? data.transactions.filter((t) => t.tripId === trip.id).sort((a, b) => b.date.localeCompare(a.date)) : [];
   const spentTotal = linkedTx.reduce((s, t) => s + (t.type === "expense" ? t.amount : 0), 0);
   // 前の作り（メモに「旅行：名前」）で入れた支出は、候補として出して、本人が「つなぐ」を押したときだけつなぐ
-  const memoCands = IS_PERSONAL ? data.transactions.filter((t) => !t.tripId && t.note.includes(`旅行：${trip.title}`)) : [];
+  const memoCands = IS_PERSONAL ? tripMemoCandidates(data.transactions, trip) : [];
 
   return (
     <>
@@ -393,9 +394,13 @@ function TripSpending({ trip, linked, cands }: { trip: Trip; linked: import("@/l
   const store = useStore();
   const ui = useUI();
   const link = async () => {
+    const list = cands
+      .slice(0, 6)
+      .map((t) => `・${formatDateJa(t.date)} ${formatYen(t.amount)} ${t.merchant}`.trimEnd())
+      .join("\n");
     const ok = await ui.confirm({
       title: `${cands.length}件をこの旅行につなぎますか？`,
-      body: `メモに「旅行：${trip.title}」がある支出です。つなぐと、この旅行の支出として数えます（メモはそのまま残します）。`,
+      body: `メモに「旅行：${trip.title}」があり、旅行の期間の前後7日の支出です。\n${list}${cands.length > 6 ? `\nほか${cands.length - 6}件` : ""}\nつなぐと、この旅行の支出として数えます（メモはそのまま残します）。`,
       ok: "つなぐ",
     });
     if (!ok) return;

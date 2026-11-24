@@ -7,6 +7,8 @@ import { categoryIsInvest, categoryMap, fixedCandidates, txIsFixed, txIsInvest }
 import { monthBreakdown } from "@/lib/monthBreakdown";
 import { monthLedger, investCategoryNames } from "@/lib/ledger";
 import { applyTxUpdate, mergeCategoryData, setTxTripData, unlinkTripFromTx } from "@/lib/dataOps";
+import { tripMemoCandidates } from "@/lib/tripMemo";
+import { applyRestore } from "@/lib/backup";
 import { PUBLIC_ORDER, currentLayout, defaultLayout, layoutFor, moveCard, saveLayout, toggleCard } from "@/lib/homeLayout";
 import type { AppData, Transaction } from "@/lib/types";
 
@@ -189,11 +191,11 @@ describe("E ホームのカードの並び（自分用）", () => {
   it("保存は、並び・隠したもの・今までの設定（次の固定費・確認したいこと）に分けて書く", () => {
     const calls: unknown[] = [];
     const store = {
-      setHomeLayout: (o: string[], h: string[]) => (calls.push(["layout", o.length, h]), { ok: true as const }),
-      setHomePref: (k: string, v: boolean) => (calls.push([k, v]), { ok: true as const }),
+      setHomeLayout: (o: string[], h: string[], f: { nextRecurring: boolean; needsReview: boolean }) => (calls.push(["layout", o.length, h, f]), { ok: true as const }),
     };
     saveLayout(store, { order: defaultLayout().order, hidden: ["today", "nextFixed"] });
-    expect(calls).toEqual([["layout", 8, ["today"]], ["nextRecurring", false], ["needsReview", true]]);
+    // 1回の保存で書く（途中で失敗して一部だけ変わらない）
+    expect(calls).toEqual([["layout", 8, ["today"], { nextRecurring: false, needsReview: true }]]);
   });
   it("自分用だけ読み込む（公開版のホームは今のまま）", () => {
     const s = src("app/page.tsx");
@@ -222,5 +224,55 @@ describe("F 旅行と支出を ID でつなぐ（メモは候補として確か�
   });
   it("メニューの「準備中」は、自分用では開いたときだけ出す", () => {
     expect(src("app/menu/page.tsx")).toContain("準備中のもの（{g.items.length}件）を見る");
+  });
+});
+
+describe("点検の直し（100点化 D・E・F）", () => {
+  it("続けて追加・種別の切り替えで、固定費のつなぎを次に残さない。保存の直前にも今の候補か確かめる", () => {
+    const s = src("components/TxSheet.tsx");
+    expect(s).toContain('const next: TxDraft = { ...draft, amount: "", merchant: "", note: "", linkRecurringId: "" };');
+    expect(s).toContain('categoryId: first, linkRecurringId: "", countAs: ""');
+    expect(s).toContain(".some((r) => r.id === draft.linkRecurringId)");
+  });
+  it("公開版の「はじめにやること」は、今までどおり「今日やること」の下", () => {
+    expect(src("app/page.tsx")).toContain('{(PERSONAL ? i === 0 : id === "todo") && cards.firstUse}');
+    expect(PUBLIC_ORDER.indexOf("todo")).toBe(3);
+  });
+  it("数え方の違うカテゴリにまとめても、移した記録は元の数え方のまま（予算の数字が黙って変わらない）", () => {
+    const d = base();
+    d.transactions = [tx({ id: "a", categoryId: "inv", amount: 50000 }), tx({ id: "b", categoryId: "inv", countAs: "life" })];
+    const before = monthBreakdown(d, "2026-11", "2026-11-24");
+    const m = mergeCategoryData(d, "inv", "exp-1", now);
+    expect(m.ok).toBe(true);
+    if (!m.ok) return;
+    expect(m.next.transactions.map((t) => t.countAs)).toEqual(["invest", "life"]);
+    const after = monthBreakdown(m.next, "2026-11", "2026-11-24");
+    expect([after.invest, after.lifeExpense]).toEqual([before.invest, before.lifeExpense]);
+  });
+  it("追加の復元で、取引も意味の違う旅行（同じ ID で名前・期間が違う）にはつながない", () => {
+    const cur = base();
+    cur.trips = [{ id: "trip1", title: "京都", startDate: "2026-11-01", endDate: "2026-11-02", destination: "", budget: null, note: "", createdAt: now, updatedAt: now }];
+    const inc = base();
+    inc.trips = [{ id: "trip1", title: "沖縄", startDate: "2027-01-01", endDate: "2027-01-03", destination: "", budget: null, note: "", createdAt: now, updatedAt: now }];
+    inc.transactions = [tx({ id: "x", tripId: "trip1" }), tx({ id: "y" })];
+    const r = applyRestore(cur, inc, "merge");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.data.transactions.map((t) => t.id)).toEqual(["y"]);
+  });
+  it("旅行のメモの候補：名前は最後まで一致・旅行の期間の前後7日・まだつないでいないもの", () => {
+    const trip = { title: "沖縄", startDate: "2026-08-10", endDate: "2026-08-12" };
+    const list = [
+      tx({ id: "ok", date: "2026-08-11", note: "旅行：沖縄" }),
+      tx({ id: "ok2", date: "2026-08-05", note: "旅行：沖縄 おみやげ" }),
+      tx({ id: "name", date: "2026-08-11", note: "旅行：沖縄2025" }),
+      tx({ id: "far", date: "2025-08-11", note: "旅行：沖縄" }),
+      tx({ id: "linked", date: "2026-08-11", note: "旅行：沖縄", tripId: "t" }),
+    ];
+    expect(tripMemoCandidates(list, trip).map((t) => t.id)).toEqual(["ok", "ok2"]);
+  });
+  it("毎週の固定費は、支払日の前後3日だけ候補にする（前の回につながない）", () => {
+    const rc = [{ id: "w", name: "ジム", amount: 2000, cycle: "weekly" as const, anchorDay: 1, nextDueDate: "2026-11-30", categoryId: "exp-5", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
+    expect(fixedCandidates({ type: "expense", categoryId: "exp-5", amount: 2000, merchant: "", date: "2026-11-28" }, rc)).toHaveLength(1);
+    expect(fixedCandidates({ type: "expense", categoryId: "exp-5", amount: 2000, merchant: "", date: "2026-11-24" }, rc)).toHaveLength(0);
   });
 });

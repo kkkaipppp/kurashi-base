@@ -140,7 +140,7 @@ export function TodayAll({ today }: { today: string }) {
     <Card>
       <SectionTitle
         action={
-          <Link href="/calendar" className="min-h-9 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+          <Link href="/calendar" className="inline-flex min-h-11 items-center rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
             カレンダー
           </Link>
         }
@@ -191,7 +191,7 @@ export function TodayAll({ today }: { today: string }) {
         </div>
       )}
       {items.length > 8 && <p className="mt-1 text-center text-[12px] text-ink-3">ほか{items.length - 8}件</p>}
-      <button type="button" onClick={() => ui.openEvent({ mode: "new", date: today })} className="mt-1 min-h-10 w-full rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft">
+      <button type="button" onClick={() => ui.openEvent({ mode: "new", date: today })} className="mt-1 min-h-11 w-full rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft">
         ＋ 今日の予定を追加
       </button>
     </Card>

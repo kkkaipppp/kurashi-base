@@ -1,3 +1,4 @@
+import { categoryIsInvest } from "./classify";
 import { advanceDueDate } from "./recurring";
 import type { AppData, Transaction } from "./types";
 
@@ -31,12 +32,14 @@ export function mergeCategoryData(d: AppData, fromId: string, toId: string, ts: 
   const to = d.categories.find((c) => c.id === toId);
   if (!from || !to || fromId === toId || from.kind !== to.kind || to.archived) return { ok: false, error: "まとめる先のカテゴリを選び直してください" };
   let moved = 0;
+  // 元と先で数え方（生活費・投資）が違うときは、移す記録に元の数え方を残す（まとめても予算の数字が黙って変わらない）
+  const keep = categoryIsInvest(from) !== categoryIsInvest(to) ? (categoryIsInvest(from) ? "invest" : "life") : null;
   const next: AppData = {
     ...d,
     transactions: d.transactions.map((x) => {
       if (x.categoryId !== fromId) return x;
       moved++;
-      return { ...x, categoryId: toId, updatedAt: ts };
+      return { ...x, categoryId: toId, ...(keep && x.type === "expense" && !x.countAs ? { countAs: keep } : {}), updatedAt: ts };
     }),
     recurring: d.recurring.map((x) => (x.categoryId === fromId ? { ...x, categoryId: toId, updatedAt: ts } : x)),
     categories: d.categories.map((c) => (c.id === fromId ? { ...c, archived: true } : c)),

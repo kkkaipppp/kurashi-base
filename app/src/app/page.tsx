@@ -213,7 +213,7 @@ export default function HomePage() {
     nextFixed: (
     <>
         {/* 次の固定費（今日の予定の近くに。レビュー o1 の P09） */}
-        {prefs.nextRecurring && next && (
+        {(PERSONAL || prefs.nextRecurring) && next && (
           <Link href={`/recurring?open=${next.id}`} className="block">
             <Card className="flex items-center justify-between py-3 hover:bg-surface-2">
               <div>
@@ -306,7 +306,7 @@ export default function HomePage() {
     navi: (
     <>
         {/* ここから下は補足（あるときだけ） */}
-        {prefs.needsReview && navi.length > 0 && (
+        {(PERSONAL || prefs.needsReview) && navi.length > 0 && (
           <Card className="py-3">
             <h2 className="mb-1 text-[15px] font-bold">
               確認したいこと<span className="ml-1 text-[13px] font-medium text-ink-3">{navi.length}件</span>
@@ -390,21 +390,22 @@ export default function HomePage() {
           <LogoLockup size={30} />
           <p className="mt-1 text-[13px] font-medium text-ink-3">{formatDateJa(today, true)}</p>
         </div>
-        <DevBadge />
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <DevBadge />
+          {/* ホームの編集（右上。自分用だけ。100点化の指示 E） */}
+          {PERSONAL && (
+            <button type="button" aria-label="ホームを編集" onClick={() => setEditLayout(currentLayout(prefs))} className="min-h-11 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+              編集
+            </button>
+          )}
+        </div>
       </header>
 
-      {PERSONAL && (
-        <div className="-mt-2 flex justify-end">
-          <button type="button" onClick={() => setEditLayout(currentLayout(prefs))} className="min-h-11 rounded-lg px-3 text-[13px] font-semibold text-brand hover:bg-brand-soft">
-            ホームを編集
-          </button>
-        </div>
-      )}
       {shown.map((id, i) => (
         <Fragment key={id}>
           {cards[id]}
-          {/* はじめにやることは、いつも最初のカードのすぐ下（隠せない） */}
-          {i === 0 && cards.firstUse}
+          {/* はじめにやること（隠せない）：自分用は最初のカードのすぐ下、公開版は今までどおり「今日やること」の下 */}
+          {(PERSONAL ? i === 0 : id === "todo") && cards.firstUse}
         </Fragment>
       ))}
       {HomeEditor && editLayout && (

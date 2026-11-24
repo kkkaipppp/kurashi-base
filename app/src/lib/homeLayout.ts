@@ -70,15 +70,15 @@ export function toggleCard(l: LayoutDraft, id: HomeCardId): LayoutDraft {
 }
 
 type LayoutStore = {
-  setHomeLayout: (order: string[], hidden: string[]) => SaveResult;
-  setHomePref: (key: "nextRecurring" | "needsReview", v: boolean) => SaveResult;
+  setHomeLayout: (order: string[], hidden: string[], flags: { nextRecurring: boolean; needsReview: boolean }) => SaveResult;
 };
 
 /** 並びを保存する。「次の固定費」「確認したいこと」は今までの設定に書く（設定画面のオン・オフと食い違わない） */
 export function saveLayout(store: LayoutStore, l: LayoutDraft): SaveResult {
-  const r1 = store.setHomeLayout(l.order, l.hidden.filter((id) => id !== "nextFixed" && id !== "navi"));
-  if (!r1.ok) return r1;
-  const r2 = store.setHomePref("nextRecurring", !l.hidden.includes("nextFixed"));
-  if (!r2.ok) return r2;
-  return store.setHomePref("needsReview", !l.hidden.includes("navi"));
+  // 1回の保存で書く（途中で失敗して一部だけ変わることがないように）
+  return store.setHomeLayout(
+    l.order,
+    l.hidden.filter((id) => id !== "nextFixed" && id !== "navi"),
+    { nextRecurring: !l.hidden.includes("nextFixed"), needsReview: !l.hidden.includes("navi") },
+  );
 }

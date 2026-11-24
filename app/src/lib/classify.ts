@@ -56,7 +56,9 @@ export function fixedCandidates(
   return recurring.filter((r) => {
     if (!r.active) return false;
     const due = Date.parse(`${r.nextDueDate}T00:00:00`);
-    if (Number.isNaN(due) || Math.abs(due - day) > 10 * 86_400_000) return false;
+    // 毎週の固定費は前後3日（10日だと、すでに記録した前の回にもつながってしまう。点検役の指摘）
+    const range = r.cycle === "weekly" ? 3 : 10;
+    if (Number.isNaN(due) || Math.abs(due - day) > range * 86_400_000) return false;
     const sameCatAmount = r.categoryId === draft.categoryId && draft.amount !== null && r.amount === draft.amount;
     const nameHit = r.name.trim().length >= 2 && draft.merchant.includes(r.name.trim());
     return sameCatAmount || nameHit;

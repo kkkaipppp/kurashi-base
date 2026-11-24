@@ -163,7 +163,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   const switchType = (type: TxType) => {
     if (type === draft.type) return;
     const first = data.categories.find((c) => c.kind === type && !c.archived)?.id ?? "";
-    setDraft((d) => ({ ...d, type, categoryId: first }));
+    // 種別を変えたら、固定費のつなぎ・数え方は外す（収入に固定費をつながない。点検役の指摘）
+    setDraft((d) => ({ ...d, type, categoryId: first, linkRecurringId: "", countAs: "" }));
     setDups(null);
   };
 
@@ -195,6 +196,11 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         setErrors(v.errors);
         return;
       }
+      // 手でつないだ固定費は、保存の直前にも「今も候補か」を確かめる（書きかけの再開・金額の変更で古い指定が残らないように）
+      const linkOk =
+        draft.type === "expense" && draft.linkRecurringId && fixedCandidates({ type: draft.type, categoryId: draft.categoryId, amount: v.amount, merchant: draft.merchant, date: draft.date }, data.recurring).some((r) => r.id === draft.linkRecurringId)
+          ? draft.linkRecurringId
+          : undefined;
       const input: TxInput = {
         type: draft.type,
         date: draft.date,
@@ -207,8 +213,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         ...(editing?.sourceFingerprint || (req.mode === "new" && req.sourceFingerprint)
           ? { sourceFingerprint: editing?.sourceFingerprint ?? (req.mode === "new" ? req.sourceFingerprint : undefined) }
           : {}),
-        ...(editing?.recurringId || (req.mode === "new" && req.recurringId) || draft.linkRecurringId
-          ? { recurringId: editing?.recurringId ?? (req.mode === "new" && req.recurringId ? req.recurringId : draft.linkRecurringId) }
+        ...(editing?.recurringId || (req.mode === "new" && req.recurringId) || linkOk
+          ? { recurringId: editing?.recurringId ?? (req.mode === "new" && req.recurringId ? req.recurringId : linkOk) }
           : {}),
         // 数え方・旅行は、空なら持たない（編集で外したときは store が消す）
         countAs: draft.type === "expense" && draft.countAs ? draft.countAs : undefined,
@@ -234,7 +240,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
       ui.toast(asNew ? "新しい記録として保存しました" : editing ? "保存しました" : `${draft.type === "expense" ? "支出" : "収入"}を追加しました`);
       if (keepOpen && canContinue) {
         // 日付・種別・カテゴリ・支払方法はそのまま、金額・店名・メモだけ空にして次の1件へ
-        const next: TxDraft = { ...draft, amount: "", merchant: "", note: "" };
+        // 固定費のつなぎは1件ごと（次の1件に残すと、同じ固定費の支払日が2回進む。点検役の指摘）
+        const next: TxDraft = { ...draft, amount: "", merchant: "", note: "", linkRecurringId: "" };
         setDraft(next);
         setBase(next);
         setErrors({});
