@@ -56,6 +56,7 @@ export default function CalendarPage() {
   const dayEvents = eventsOnDay(data.events, selected);
   const day = daySummary(data.transactions, selected);
   const dayDeadlines = deadlinesOn(data, selected);
+  const dayFixed = data.recurring.filter((r) => r.active && r.nextDueDate === selected).reduce((a, r) => a + r.amount, 0);
   const dlDays = useMemo(() => deadlineDays(data, month), [data, month]);
   const dayNotes = data.notes.filter((n) => n.date === selected);
   const dayStudy = data.studyLogs.filter((l) => l.date === selected).reduce((s, l) => s + l.minutes, 0);
@@ -200,6 +201,8 @@ export default function CalendarPage() {
           </h2>
           <p className="num text-[13px] text-ink-2">
             予定 {dayEvents.length}件・<span className="text-expense">支出 {formatYen(day.expense)}</span>・<span className="text-income">収入 {formatYen(day.income)}</span>
+            {/* 固定費の支払い予定（実績の支出とは分けて出す。100点化の指示 A） */}
+            {dayFixed > 0 && <span className="text-warn">・固定費の支払い予定 {formatYen(dayFixed)}</span>}
             {dayDeadlines.length > 0 && `・期限など ${dayDeadlines.length}件`}
           </p>
           <button

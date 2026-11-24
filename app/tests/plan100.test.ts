@@ -68,3 +68,15 @@ describe("D 家計の計算をひとつに（指示書の検証データ）", ()
     expect(src("components/MonthBreakdownCard.tsx")).toContain("投資として数えているカテゴリ");
   });
 });
+
+describe("A 入力とカレンダー", () => {
+  it("よく使うカテゴリ・前回の支払方法は、押したときだけ入る候補（自分用だけ）", () => {
+    const s = src("components/TxSheet.tsx");
+    expect(s).toContain('const SUGGEST = process.env.NEXT_PUBLIC_KB_EDITION === "personal";');
+    expect(s).toContain('aria-label="よく使うカテゴリ"');
+    expect(s).toContain("前回と同じ：");
+  });
+  it("カレンダーの選んだ日に、固定費の支払い予定を実績と分けて出す", () => {
+    expect(src("app/calendar/page.tsx")).toContain("固定費の支払い予定");
+  });
+});

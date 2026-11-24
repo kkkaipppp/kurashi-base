@@ -7,7 +7,7 @@ import { useUI } from "./UIContext";
 import { useData, useStore, type TxInput } from "@/lib/store";
 import { validateTx, type FieldErrors, type TxDraft } from "@/lib/validate";
 import { findDuplicates, type DupCandidate } from "@/lib/duplicates";
-import { formatDateJa, todayStr } from "@/lib/date";
+import { addDays, formatDateJa, todayStr } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from "@/lib/sheetDraft";
 import { PAYMENT_METHODS, type TxSource, type TxType } from "@/lib/types";
@@ -26,6 +26,9 @@ export type TxSheetRequest =
       previewUrl?: string; // 画像取込時：見ながら入力するためのプレビュー
       onSaved?: () => void;
     };
+
+// よく使うカテゴリ・前回の支払方法の候補（100点化の指示 A）。まず自分用だけ。候補は押したときだけ入る（勝手に変えない）
+const SUGGEST = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 
 export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => void }) {
   const data = useData();
@@ -102,6 +105,27 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   };
   const cats = data.categories.filter((c) => c.kind === draft.type && (!c.archived || c.id === draft.categoryId));
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "（削除済みカテゴリ）";
+  // 直近90日でよく使ったカテゴリ（上位4つ）と、同じ種類の前回の支払方法
+  const suggest = useMemo(() => {
+    if (!SUGGEST) return { cats: [] as string[], pay: "" };
+    const since = addDays(todayStr(), -90);
+    const count = new Map<string, number>();
+    let lastPay = "";
+    let lastAt = "";
+    for (const t of data.transactions) {
+      if (t.type !== draft.type) continue;
+      if (t.date >= since) count.set(t.categoryId, (count.get(t.categoryId) ?? 0) + 1);
+      if (t.createdAt > lastAt) {
+        lastAt = t.createdAt;
+        lastPay = t.paymentMethod;
+      }
+    }
+    const usable = new Set(data.categories.filter((c) => c.kind === draft.type && !c.archived).map((c) => c.id));
+    return {
+      cats: [...count].filter(([id]) => usable.has(id)).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id]) => id),
+      pay: lastPay,
+    };
+  }, [data.transactions, data.categories, draft.type]);
 
   const set = <K extends keyof TxDraft>(k: K, v: TxDraft[K]) => {
     setDraft((d) => ({ ...d, [k]: v }));
@@ -336,6 +360,22 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
             </select>
           </Field>
         </div>
+        {suggest.cats.length > 0 && (
+          <div className="-mt-2 flex flex-wrap items-center gap-1.5" aria-label="よく使うカテゴリ">
+            <span className="text-[12px] text-ink-3">よく使う：</span>
+            {suggest.cats.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => set("categoryId", id)}
+                aria-pressed={draft.categoryId === id}
+                className={`min-h-11 rounded-full border px-3 text-[13px] font-semibold ${draft.categoryId === id ? "border-brand bg-brand-soft text-brand" : "border-line bg-surface text-ink-2"}`}
+              >
+                {catName(id)}
+              </button>
+            ))}
+          </div>
+        )}
 
         <Field label={draft.type === "expense" ? "店名" : "相手先"} optional htmlFor="tx-merchant" error={errors.merchant}>
           <input id="tx-merchant" value={draft.merchant} onChange={(e) => set("merchant", e.target.value)} className={inputCls} maxLength={100} />
@@ -349,6 +389,11 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
               </option>
             ))}
           </select>
+          {suggest.pay && suggest.pay !== draft.paymentMethod && (
+            <button type="button" onClick={() => set("paymentMethod", suggest.pay)} className="mt-1 min-h-11 rounded-full border border-line bg-surface px-3 text-[13px] font-semibold text-ink-2">
+              前回と同じ：{PAYMENT_METHODS.find((p) => p.id === suggest.pay)?.label ?? "その他"}
+            </button>
+          )}
         </Field>
 
         <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
