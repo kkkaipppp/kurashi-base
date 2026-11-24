@@ -18,7 +18,8 @@ export function unpaidRecurringThisMonth(list: RecurringExpense[], today: string
     if (!r.active || exclude?.(r)) continue;
     let d = r.nextDueDate;
     for (let guard = 0; d <= end && guard < 10; guard++) {
-      if (d >= start) sum += r.amount;
+      // 一部だけ払った分は、残りだけ数える（予定と実績を別の値で持つ。NEXT v21 X02）
+      if (d >= start) sum += r.partialPaid && r.partialPaid.due === d ? Math.max(0, r.amount - r.partialPaid.paid) : r.amount;
       d = advanceDueDate(d, r.cycle, r.anchorDay);
     }
   }

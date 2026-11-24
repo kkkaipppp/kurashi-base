@@ -99,7 +99,7 @@ export function validateAppData(input: unknown): R {
       !isStr(t.date) || !isValidDateStr(t.date) || !isAmt(t.amount) || !isStr(t.categoryId) ||
       !isStr(t.merchant) || !isStr(t.paymentMethod) || !isStr(t.note) || !isStr(t.createdAt) ||
       // 100点化で足した任意の項目（無くてもよい。あれば形を確かめる）
-      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isStr)(t.recurringId)
+      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringId)
     )
       return { ok: false, error: "取引のデータが壊れています" };
     if (ids.has(t.id)) return { ok: false, error: "取引IDが重複しています" };
@@ -132,7 +132,8 @@ export function validateAppData(input: unknown): R {
   const recurringIds = new Set<string>();
   for (const r of raw.recurring as unknown[]) {
     if (
-      !isObj(r) || !isStr(r.id) || !isStr(r.name) || !isAmt(r.amount) || !["weekly", "monthly", "yearly"].includes(r.cycle as string) ||
+      !isObj(r) || !isStr(r.id) || !isStr(r.name) || !isAmt(r.amount) || !["weekly", "monthly", "yearly"].includes(r.cycle as string) ||
+      !optional((v) => isObj(v) && isDate(v.due) && isNum(v.paid) && (v.paid as number) >= 0)(r.partialPaid) ||
       !Number.isInteger(r.anchorDay) || !isStr(r.nextDueDate) || !isValidDateStr(r.nextDueDate) || typeof r.active !== "boolean"
     )
       return { ok: false, error: "固定費のデータが壊れています" };

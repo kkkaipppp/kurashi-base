@@ -18,6 +18,8 @@ export interface TxDraft {
   tripId?: string;
   /** 手で入れた支出を、固定費の支払いとしてつなぐ（"" = つながない） */
   linkRecurringId?: string;
+  /** つなぐ固定費の、一部だけの支払い（残りは、まだ。NEXT v21 X02） */
+  linkPartial?: boolean;
 }
 
 export function validateTx(

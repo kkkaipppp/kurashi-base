@@ -2,8 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { newId } from "./defaults";
-import { advanceDueDate } from "./recurring";
-import { applyTxUpdate, mergeCategoryData, setTxTripData, unlinkTripFromTx } from "./dataOps";
+import { applyRecurringPayment, applyTxUpdate, mergeCategoryData, revertPartialPayment, setTxTripData, unlinkTripFromTx } from "./dataOps";
 import { replaceEventEditableFields } from "./eventMerge";
 import { staleRecordError } from "./eventConcurrency";
 import { renameCategoryIn } from "./categoryRename";
@@ -159,14 +158,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const ts = now();
         const r = commit((d) => {
           let recurring = d.recurring;
-          // 固定費から記録したら、その固定費の次回予定日を進める（同じ保存で一括）
-          if (t.recurringId) {
-            recurring = d.recurring.map((rc) =>
-              rc.id === t.recurringId
-                ? { ...rc, nextDueDate: advanceDueDate(rc.nextDueDate, rc.cycle, rc.anchorDay), updatedAt: ts }
-                : rc,
-            );
-          }
+          // 固定費から記録したら、その固定費の次回予定日を進める（同じ保存で一括）。一部の支払いは、進めずに払った額を足す（X02）
+          if (t.recurringId) recurring = applyRecurringPayment(d.recurring, t.recurringId, t.amount, !!t.recurringPartial, ts);
           return { ...d, recurring, transactions: [...d.transactions, { ...t, id, currency: "JPY", createdAt: ts, updatedAt: ts }] };
         });
         return r.ok ? { ...r, id } : r;
@@ -174,7 +167,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       updateTx: (id, t, snapshot) =>
         staleCheck(dataRef.current?.transactions, id, snapshot) ??
         commit((d) => applyTxUpdate(d, id, t, now())),
-      deleteTx: (id) => commit((d) => ({ ...d, transactions: d.transactions.filter((x) => x.id !== id) })),
+      deleteTx: (id) =>
+        commit((d) => {
+          const tx = d.transactions.find((x) => x.id === id);
+          return { ...d, recurring: tx ? revertPartialPayment(d.recurring, tx, now()) : d.recurring, transactions: d.transactions.filter((x) => x.id !== id) };
+        }),
       addEvent: (e) => {
         const ts = now();
         const id = newId("ev");

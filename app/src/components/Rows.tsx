@@ -1,82 +1,82 @@
-"use client";
-
-import { formatDateJa } from "@/lib/date";
-import { formatYen } from "@/lib/money";
-import { useData } from "@/lib/store";
-import { paymentLabel, type CalendarEvent, type Transaction } from "@/lib/types";
-import { useUI } from "./UIContext";
-
-const SOURCE_LABEL = { manual: "", image: "画像から", recurring: "固定費" } as const;
-
-export function TxRow({ tx, showDate = false }: { tx: Transaction; showDate?: boolean }) {
-  const data = useData();
-  const ui = useUI();
-  const cat = data.categories.find((c) => c.id === tx.categoryId)?.name ?? "（不明なカテゴリ）";
-  const exp = tx.type === "expense";
-  const moveOnly = tx.countAs === "transfer";
-  const sub = [showDate ? formatDateJa(tx.date) : "", moveOnly ? "収支に数えない" : "", tx.merchant ? cat : "", tx.paymentMethod ? paymentLabel(tx.paymentMethod) : "", SOURCE_LABEL[tx.source]]
-    .filter(Boolean)
-    .join("・");
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={() => ui.openTx({ mode: "edit", id: tx.id })}
-        className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2"
-      >
-        <span
-          className={`inline-flex size-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${
-            exp ? "bg-expense-soft text-expense" : "bg-income-soft text-income"
-          }`}
-          aria-hidden="true"
-        >
-          {exp ? "支" : "収"}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-semibold">{tx.merchant || cat}</span>
-          <span className="block truncate text-[12px] text-ink-3">{sub}</span>
-        </span>
-        <span className={`num shrink-0 text-[15px] font-bold ${exp ? "text-ink" : "text-income"}`}>
-          <span className="sr-only">{exp ? "支出" : "収入"}</span>
-          {exp ? "-" : "+"}
-          {formatYen(tx.amount)}
-        </span>
-      </button>
-    </li>
-  );
-}
-
-const REPEAT_LABEL = { none: "", weekly: "毎週", monthly: "毎月", yearly: "毎年" } as const;
-
-export function eventTimeLabel(e: CalendarEvent, day?: string): string {
-  const rep = REPEAT_LABEL[e.repeat ?? "none"];
-  if (rep && e.startDate === e.endDate) return `${rep}・${e.allDay ? "終日" : `${e.startTime}〜${e.endTime}`}`;
-  if (e.allDay) return e.startDate === e.endDate ? "終日" : `終日（${formatDateJa(e.startDate)}〜${formatDateJa(e.endDate)}）`;
-  const multi = e.startDate !== e.endDate;
-  if (!multi) return `${e.startTime}〜${e.endTime}`;
-  if (day && day !== e.startDate && day !== e.endDate) return "終日（期間中）";
-  if (day === e.endDate && day !== e.startDate) return `〜${e.endTime}`;
-  return `${e.startTime}〜（${formatDateJa(e.endDate)} ${e.endTime}まで）`;
-}
-
-export function EventRow({ ev, day }: { ev: CalendarEvent; day?: string }) {
-  const ui = useUI();
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={() => ui.openEvent({ mode: "view", id: ev.id })}
-        className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2"
-      >
-        <span className="h-9 w-1.5 shrink-0 rounded-full bg-event" aria-hidden="true" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-semibold">{ev.title}</span>
-          <span className="block truncate text-[12px] text-ink-3">
-            {eventTimeLabel(ev, day)}
-            {ev.location ? `・${ev.location}` : ""}
-          </span>
-        </span>
-      </button>
-    </li>
-  );
-}
+"use client";
+
+import { formatDateJa } from "@/lib/date";
+import { formatYen } from "@/lib/money";
+import { useData } from "@/lib/store";
+import { paymentLabel, type CalendarEvent, type Transaction } from "@/lib/types";
+import { useUI } from "./UIContext";
+
+const SOURCE_LABEL = { manual: "", image: "画像から", recurring: "固定費" } as const;
+
+export function TxRow({ tx, showDate = false }: { tx: Transaction; showDate?: boolean }) {
+  const data = useData();
+  const ui = useUI();
+  const cat = data.categories.find((c) => c.id === tx.categoryId)?.name ?? "（不明なカテゴリ）";
+  const exp = tx.type === "expense";
+  const moveOnly = tx.countAs === "transfer";
+  const sub = [showDate ? formatDateJa(tx.date) : "", moveOnly ? "収支に数えない" : "", tx.merchant ? cat : "", tx.paymentMethod ? paymentLabel(tx.paymentMethod) : "", SOURCE_LABEL[tx.source]]
+    .filter(Boolean)
+    .join("・");
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => ui.openTx({ mode: "edit", id: tx.id })}
+        className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2"
+      >
+        <span
+          className={`inline-flex size-9 shrink-0 items-center justify-center rounded-full text-[12px] font-bold ${
+            exp ? "bg-expense-soft text-expense" : "bg-income-soft text-income"
+          }`}
+          aria-hidden="true"
+        >
+          {exp ? "支" : "収"}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[15px] font-semibold">{tx.merchant || cat}</span>
+          <span className="block truncate text-[12px] text-ink-3">{sub}</span>
+        </span>
+        <span className={`num shrink-0 text-[15px] font-bold ${exp ? "text-ink" : "text-income"}`}>
+          <span className="sr-only">{exp ? "支出" : "収入"}</span>
+          {exp ? "-" : "+"}
+          {formatYen(tx.amount)}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+const REPEAT_LABEL = { none: "", weekly: "毎週", monthly: "毎月", yearly: "毎年" } as const;
+
+export function eventTimeLabel(e: CalendarEvent, day?: string): string {
+  const rep = REPEAT_LABEL[e.repeat ?? "none"];
+  if (rep && e.startDate === e.endDate) return `${rep}・${e.allDay ? "終日" : `${e.startTime}〜${e.endTime}`}`;
+  if (e.allDay) return e.startDate === e.endDate ? "終日" : `終日（${formatDateJa(e.startDate)}〜${formatDateJa(e.endDate)}）`;
+  const multi = e.startDate !== e.endDate;
+  if (!multi) return `${e.startTime}〜${e.endTime}`;
+  if (day && day !== e.startDate && day !== e.endDate) return "終日（期間中）";
+  if (day === e.endDate && day !== e.startDate) return `〜${e.endTime}`;
+  return `${e.startTime}〜（${formatDateJa(e.endDate)} ${e.endTime}まで）`;
+}
+
+export function EventRow({ ev, day }: { ev: CalendarEvent; day?: string }) {
+  const ui = useUI();
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => ui.openEvent({ mode: "view", id: ev.id })}
+        className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2"
+      >
+        <span className="h-9 w-1.5 shrink-0 rounded-full bg-event" aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[15px] font-semibold">{ev.title}</span>
+          <span className="block truncate text-[12px] text-ink-3">
+            {eventTimeLabel(ev, day)}
+            {ev.location ? `・${ev.location}` : ""}
+          </span>
+        </span>
+      </button>
+    </li>
+  );
+}
