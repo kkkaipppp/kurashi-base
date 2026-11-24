@@ -5,6 +5,7 @@ import { Card, IconChevronR, PageHeader } from "@/components/ui";
 import { useData } from "@/lib/store";
 import { todayStr } from "@/lib/date";
 import { IS_PERSONAL } from "@/lib/edition";
+import { inboxCount } from "@/lib/inbox";
 import type { AppData } from "@/lib/types";
 
 type Item = { href: string; label: string; desc: string; count?: (d: AppData) => number; soon?: boolean };
@@ -14,7 +15,12 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "よく使う",
     items: [
-      ...(IS_PERSONAL ? [{ href: "/search", label: "さがす", desc: "記録・予定・メモ・契約などを、1つの言葉で探す" }] : []),
+      ...(IS_PERSONAL
+        ? [
+            { href: "/search", label: "さがす", desc: "記録・予定・メモ・契約などを、1つの言葉で探す" },
+            { href: "/inbox", label: "未整理の記録", desc: "「その他」の記録を、店名ごとにまとめて整理", count: (d: AppData) => inboxCount(d) },
+          ]
+        : []),
       { href: "/history", label: "取引履歴", desc: "月ごとの支出・収入と検索", count: (d) => d.transactions.length },
       { href: "/recurring", label: "固定費", desc: "家賃・通信費などの決まった支払い", count: (d) => d.recurring.filter((r) => r.active).length },
       { href: "/tasks", label: "タスク", desc: "やることと期限", count: (d) => d.tasks.filter((t) => !t.done).length },
