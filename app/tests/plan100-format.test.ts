@@ -264,11 +264,12 @@ describe("点検の直し（100点化 D・E・F）", () => {
     const list = [
       tx({ id: "ok", date: "2026-08-11", note: "旅行：沖縄" }),
       tx({ id: "ok2", date: "2026-08-05", note: "旅行：沖縄 おみやげ" }),
+      tx({ id: "ok3", date: "2026-08-12", note: "旅行：沖縄・ランチ" }),
       tx({ id: "name", date: "2026-08-11", note: "旅行：沖縄2025" }),
       tx({ id: "far", date: "2025-08-11", note: "旅行：沖縄" }),
       tx({ id: "linked", date: "2026-08-11", note: "旅行：沖縄", tripId: "t" }),
     ];
-    expect(tripMemoCandidates(list, trip).map((t) => t.id)).toEqual(["ok", "ok2"]);
+    expect(tripMemoCandidates(list, trip).map((t) => t.id)).toEqual(["ok", "ok2", "ok3"]);
   });
   it("毎週の固定費は、支払日の前後3日だけ候補にする（前の回につながない）", () => {
     const rc = [{ id: "w", name: "ジム", amount: 2000, cycle: "weekly" as const, anchorDay: 1, nextDueDate: "2026-11-30", categoryId: "exp-5", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
