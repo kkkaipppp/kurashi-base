@@ -58,7 +58,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
     <figure className="space-y-2">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${title}の縦の棒グラフと、${lineLabel}の推移`}>
         {/* 目盛りの線：上・0・下 */}
-        {[top, 0, ...(bottom < 0 ? [bottom] : [])].map((v, k) => (
+        {[...(top > 1 ? [top] : []), 0, ...(bottom < 0 ? [bottom] : [])].map((v, k) => (
           <g key={k}>
             <line x1={PAD_L} x2={W - PAD_R} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeWidth={v === 0 ? 1 : 0.6} strokeDasharray={v === 0 ? undefined : "3 3"} />
             <text x={PAD_L - 4} y={y(v) + 3} textAnchor="end" fontSize="9" fill="var(--ink-3)">

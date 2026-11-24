@@ -85,7 +85,7 @@ export function WeekReport() {
         <SectionTitle>12週の推移</SectionTitle>
         <TrendChart
           title="直近12週"
-          rows={trend.map((w) => ({ label: `${Number(w.from.slice(5, 7))}/${Number(w.from.slice(8))}`, expense: w.expense, income: w.income, strong: w.from === thisWeekFrom }))}
+          rows={trend.map((w) => ({ label: `${Number(w.from.slice(5, 7))}/${Number(w.from.slice(8))}`, expense: w.expense, income: w.income, strong: w.from === thisWeekFrom, future: w.from > thisWeekFrom }))}
           lineLabel="12週の収支の累計"
         />
       </Card>
