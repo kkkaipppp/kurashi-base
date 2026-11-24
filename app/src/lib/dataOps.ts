@@ -1,6 +1,6 @@
 import { categoryIsInvest } from "./classify";
 import { advanceDueDate } from "./recurring";
-import type { AppData, Transaction } from "./types";
+import type { AppData, RecurringExpense, Transaction } from "./types";
 
 /**
  * 保存の前の計算だけ（store.tsx から使う。テストできるように分けた。100点化の指示 D・E・F）。
@@ -15,12 +15,12 @@ export function applyTxUpdate(d: AppData, id: string, t: TxPatch, ts: string): A
   const link = t.recurringId && before && !before.recurringId ? t.recurringId : null;
   return {
     ...d,
-    recurring: link ? d.recurring.map((rc) => (rc.id === link ? { ...rc, nextDueDate: advanceDueDate(rc.nextDueDate, rc.cycle, rc.anchorDay), updatedAt: ts } : rc)) : d.recurring,
+    recurring: link ? applyRecurringPayment(d.recurring, link, t.amount, !!t.recurringPartial, ts) : d.recurring,
     transactions: d.transactions.map((x) => {
       if (x.id !== id) return x;
       const merged: Transaction = { ...x, ...t, id, updatedAt: ts };
       // 空にした任意の項目は残さない
-      for (const k of ["countAs", "tripId", "recurringId"] as const) if (merged[k] === undefined) delete merged[k];
+      for (const k of ["countAs", "tripId", "recurringId", "recurringPartial"] as const) if (merged[k] === undefined || merged[k] === false) delete merged[k];
       return merged;
     }),
   };
@@ -66,5 +66,38 @@ export function unlinkTripFromTx(d: AppData, tripId: string, ts: string): Transa
     if (x.tripId !== tripId) return x;
     const { tripId: _drop, ...rest } = x; // eslint-disable-line @typescript-eslint/no-unused-vars
     return { ...rest, updatedAt: ts };
+  });
+}
+
+/**
+ * 固定費の支払いを記録したときの、固定費の更新（NEXT v21 X02：予定と実績を別の値で持つ）。
+ * - 全額（partial なし）：次の支払日を進め、一部払いの記録を消す
+ * - 一部（partial）：次の支払日は進めず、払った額を足す。足した額が予定額に届いたら、全額と同じ（次の支払日を進める）
+ * 返金・取り消しは別の処理（支払いの記録を消すと、一部の分は戻す。次の支払日を進めた分は戻さない＝今までと同じ）
+ */
+export function applyRecurringPayment(list: RecurringExpense[], rcId: string, amount: number, partial: boolean, ts: string): RecurringExpense[] {
+  return list.map((rc) => {
+    if (rc.id !== rcId) return rc;
+    const prev = rc.partialPaid && rc.partialPaid.due === rc.nextDueDate ? rc.partialPaid.paid : 0;
+    const paid = partial ? prev + amount : rc.amount;
+    if (paid >= rc.amount) {
+      const { partialPaid: _drop, ...rest } = rc; // eslint-disable-line @typescript-eslint/no-unused-vars
+      return { ...rest, nextDueDate: advanceDueDate(rc.nextDueDate, rc.cycle, rc.anchorDay), updatedAt: ts };
+    }
+    return { ...rc, partialPaid: { due: rc.nextDueDate, paid }, updatedAt: ts };
+  });
+}
+
+/** 一部の支払いの記録を消したとき、その分を戻す（0 になったら一部払いの記録を消す） */
+export function revertPartialPayment(list: RecurringExpense[], tx: Pick<Transaction, "recurringId" | "recurringPartial" | "amount">, ts: string): RecurringExpense[] {
+  if (!tx.recurringId || !tx.recurringPartial) return list;
+  return list.map((rc) => {
+    if (rc.id !== tx.recurringId || !rc.partialPaid) return rc;
+    const paid = Math.max(0, rc.partialPaid.paid - tx.amount);
+    if (paid === 0) {
+      const { partialPaid: _drop, ...rest } = rc; // eslint-disable-line @typescript-eslint/no-unused-vars
+      return { ...rest, updatedAt: ts };
+    }
+    return { ...rc, partialPaid: { ...rc.partialPaid, paid }, updatedAt: ts };
   });
 }

@@ -19,8 +19,10 @@ export interface Transaction {
   sourceFingerprint?: string; // 画像取込時の画像指紋
   recurringId?: string; // 固定費から記録した場合（手で入れた支出を固定費の支払いとしてつないだ場合も）
   /** 100点化で追加（どれも任意。古い記録には無い。形式の番号は 2 のまま） */
-  countAs?: "life" | "invest"; // この記録だけの数え方（カテゴリの分類より優先。lib/classify.ts）
+  countAs?: "life" | "invest" | "transfer"; // この記録だけの数え方（カテゴリの分類より優先。lib/classify.ts）。transfer＝収支に数えない（カード引落・口座間の移動など。NEXT v21 X03）
   tripId?: string; // 旅行の支出（Trip.id）
+  recurringPartial?: boolean; // 固定費の「一部の支払い」として記録した（残りは、まだ払っていない。NEXT v21 X02）
+  importBatchId?: string; // 取り込みの単位（CSV の取り込みごと。取り消しに使う。NEXT v21 CSV:C08）
   createdAt: string; // ISO
   updatedAt: string; // ISO
 }
@@ -85,6 +87,18 @@ export interface StudyBook {
   note: string;
 }
 
+/** 取り込みの履歴（CSV を取り込んだ記録。取り消し・件数の確認に使う。NEXT v21 CSV:C08） */
+export interface ImportBatch {
+  id: string;
+  at: string; // ISO
+  source: string; // ファイル名など
+  added: number; // 実際に足した取引の件数
+  from: string | null;
+  to: string | null;
+  /** 取り消した日時（取り消したあとも履歴は残す） */
+  undoneAt?: string;
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -107,6 +121,8 @@ export interface RecurringExpense {
   categoryId: string;
   paymentMethod: string;
   active: boolean;
+  /** 次の支払日の分を、一部だけ払ったとき（任意。NEXT v21 X02：予定と実績を別の値で持ち、未払い分だけ残す）。全部払ったら消える */
+  partialPaid?: { due: string; paid: number };
   createdAt: string;
   updatedAt: string;
 }
@@ -273,8 +289,8 @@ export interface AppData extends Collections {
   /** v5 で追加。古いデータには無いので、読み込み時に空の一覧を足す（schema.ts の migrate） */
   trips: Trip[];
   budget: { monthly: number | null }; // 毎月の支出予算（円）。null = 未設定
-  prefs: { home: HomePrefs };
-  meta: { createdAt: string; lastBackupAt: string | null };
+  prefs: { home: HomePrefs; /** メニューに出さない機能の道筋（任意。非表示でも記録は消えない。NEXT v21 X16・D11） */ menuHidden?: string[] };
+  meta: { createdAt: string; lastBackupAt: string | null; /** 取り込みの履歴（任意。100点化以降に追加） */ imports?: ImportBatch[] };
 }
 
 export const PAYMENT_METHODS: { id: string; label: string }[] = [

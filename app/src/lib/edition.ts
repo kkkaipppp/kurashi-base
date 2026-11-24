@@ -19,6 +19,10 @@ export const FEATURE_EDITIONS = {
   csvImport: { personal: true, public: true },
   /** 振り返りの「週」「年」の収支（2026-11-24 平尾さん。まず自分用だけ） */
   periodReport: { personal: true, public: false },
+  /** 横断検索（2026-11-25 NEXT v21。まず自分用だけ） */
+  search: { personal: true, public: false },
+  /** 未整理の記録（「その他」を店名ごとに整理。2026-11-25 NEXT v21。まず自分用だけ） */
+  inbox: { personal: true, public: false },
 } as const satisfies Record<string, Record<Edition, boolean>>;
 
 export type FeatureName = keyof typeof FEATURE_EDITIONS;

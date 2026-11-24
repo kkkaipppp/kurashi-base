@@ -24,6 +24,12 @@ export interface TodayItem {
 /** 「今日のまとめ」に出す件数。これを超えた分は、まとめには出さないので、確認したいことからも除かない */
 export const TODAY_SHOWN = 8;
 
+/** 一部だけ払った固定費の、残りの額（予定額 − 払った額）。一部払いがなければ予定額 */
+const partialLeft = (r: { amount: number; nextDueDate: string; partialPaid?: { due: string; paid: number } }) =>
+  r.partialPaid && r.partialPaid.due === r.nextDueDate ? Math.max(0, r.amount - r.partialPaid.paid) : r.amount;
+const partialNote = (r: { amount: number; nextDueDate: string; partialPaid?: { due: string; paid: number } }) =>
+  r.partialPaid && r.partialPaid.due === r.nextDueDate ? `（一部 ${formatYen(r.partialPaid.paid)} は支払い済み）` : "";
+
 export function buildTodayItems(data: AppData, today: string): TodayItem[] {
   const out: TodayItem[] = [];
   for (const r of data.recurring) {
@@ -33,8 +39,8 @@ export function buildTodayItems(data: AppData, today: string): TodayItem[] {
       key: `rc-${r.id}`,
       sort: late ? `0${r.nextDueDate}` : "1",
       time: late ? "未記録" : "今日",
-      title: `固定費 ${r.name} ${formatYen(r.amount)}`,
-      sub: late ? `${formatDateJa(r.nextDueDate)}の支払いがまだ記録されていません` : "今日が支払日",
+      title: `固定費 ${r.name} ${formatYen(partialLeft(r))}`,
+      sub: late ? `${formatDateJa(r.nextDueDate)}の支払いがまだ記録されていません${partialNote(r)}` : `今日が支払日${partialNote(r)}`,
       warn: late,
       href: `/recurring?open=${r.id}`,
     });

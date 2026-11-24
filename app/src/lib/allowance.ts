@@ -9,15 +9,17 @@ import type { RecurringExpense } from "./types";
  * 固定費の画面から記録すると次の支払日が来月へ進むので、払って記録した分を二重に引くことはない。
  * 支出は「生活の支出」（名前に「投資」が入ったカテゴリを除く。月の振り返りと同じ考え方）を渡す。
  */
-export function unpaidRecurringThisMonth(list: RecurringExpense[], today: string): number {
+/** exclude：数えない固定費（例：投資の積立。生活費の予算と比べる額には入れない） */
+export function unpaidRecurringThisMonth(list: RecurringExpense[], today: string, exclude?: (r: RecurringExpense) => boolean): number {
   const start = `${monthKey(today)}-01`;
   const end = `${monthKey(today)}-${String(daysInMonth(parseDateStr(today).y, parseDateStr(today).m)).padStart(2, "0")}`;
   let sum = 0;
   for (const r of list) {
-    if (!r.active) continue;
+    if (!r.active || exclude?.(r)) continue;
     let d = r.nextDueDate;
     for (let guard = 0; d <= end && guard < 10; guard++) {
-      if (d >= start) sum += r.amount;
+      // 一部だけ払った分は、残りだけ数える（予定と実績を別の値で持つ。NEXT v21 X02）
+      if (d >= start) sum += r.partialPaid && r.partialPaid.due === d ? Math.max(0, r.amount - r.partialPaid.paid) : r.amount;
       d = advanceDueDate(d, r.cycle, r.anchorDay);
     }
   }

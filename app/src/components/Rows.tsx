@@ -13,7 +13,8 @@ export function TxRow({ tx, showDate = false }: { tx: Transaction; showDate?: bo
   const ui = useUI();
   const cat = data.categories.find((c) => c.id === tx.categoryId)?.name ?? "（不明なカテゴリ）";
   const exp = tx.type === "expense";
-  const sub = [showDate ? formatDateJa(tx.date) : "", tx.merchant ? cat : "", tx.paymentMethod ? paymentLabel(tx.paymentMethod) : "", SOURCE_LABEL[tx.source]]
+  const moveOnly = tx.countAs === "transfer";
+  const sub = [showDate ? formatDateJa(tx.date) : "", moveOnly ? "収支に数えない" : "", tx.merchant ? cat : "", tx.paymentMethod ? paymentLabel(tx.paymentMethod) : "", SOURCE_LABEL[tx.source]]
     .filter(Boolean)
     .join("・");
   return (

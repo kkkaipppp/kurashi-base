@@ -149,9 +149,10 @@ export function normalizeAmount(raw: string): number | null {
 
 const PAY_WORDS: [RegExp, string][] = [
   [/現金/, "現金"],
+  [/デビット/, "口座振替・振込"],
   [/クレジット|カード|visa|master|jcb|amex/i, "クレジットカード"],
   [/qr|paypay|ペイ|pay/i, "QRコード決済"],
-  [/電子マネー|suica|pasmo|icoca|nanaco|waon|edy|楽天edy|id|交通系/i, "電子マネー"],
+  [/電子マネー|suica|pasmo|icoca|nanaco|waon|edy|楽天edy|交通系/i, "電子マネー"],
   [/銀行|口座|振込|振替|引落|ゆうちょ|信金|信用金庫|農協/, "口座振替・振込"],
 ];
 function payName(raw: string): string {
@@ -189,6 +190,7 @@ export function buildStandardRows(table: Table, cfg: GenericConfig, current: App
   const lines: number[] = [table.headerLine];
   const held: HeldRow[] = [];
   const unknown = new Map<string, number>();
+  const seen = new Map<string, number>();
 
   table.body.forEach((r, idx) => {
     const line = table.lines[idx] ?? idx + 2;
@@ -230,7 +232,8 @@ export function buildStandardRows(table: Table, cfg: GenericConfig, current: App
     // 金額が読めない行は、そのまま渡して、検証で「金額は…」と行番号つきのエラーにする（種類のエラーにならないように、仮に支出とする）
     if (amount === null && !type) type = "支出";
     const date = normalizeDate(cell(r, m.date)) ?? cell(r, m.date);
-    let cat = cell(r, m.category);
+    const origCat = cell(r, m.category);
+    let cat = origCat;
     if (type && cat) {
       const known = (type === "支出" ? expenseCats : incomeCats).has(cat);
       if (!known && !cfg.newCategories) {
@@ -240,7 +243,16 @@ export function buildStandardRows(table: Table, cfg: GenericConfig, current: App
     }
     if (!cat) cat = type === "収入" ? "その他の収入" : "その他";
     // 種類・金額が決められなかった行は、そのまま渡す（検証で、行番号つきのエラーになる）
-    rows.push([date, type ?? "", amount !== null ? String(amount) : raw, cat, cell(r, m.merchant), payName(cell(r, m.pay)), cell(r, m.memo), cell(r, m.srcId)]);
+    // 元 ID がない行は、読み取った内容（変換前のカテゴリを含む）と、同じ内容の何番目かから、元 ID を作る。
+    // 変換後のカテゴリ（「その他」にしたか）で ID が変わると、同じファイルを取り込み直したときに二重になるため
+    let srcId = cell(r, m.srcId);
+    if (!srcId) {
+      const base = `gen|${date}|${type ?? ""}|${amount ?? raw}|${cell(r, m.merchant)}|${origCat}`;
+      const n = (seen.get(base) ?? 0) + 1;
+      seen.set(base, n);
+      srcId = `${base}#${n}`;
+    }
+    rows.push([date, type ?? "", amount !== null ? String(amount) : raw, cat, cell(r, m.merchant), payName(cell(r, m.pay)), cell(r, m.memo), srcId]);
     lines.push(line);
   });
 

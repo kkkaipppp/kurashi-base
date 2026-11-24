@@ -15,6 +15,7 @@ export function figures(d: AppData): DataFigures {
   let expense = 0;
   let income = 0;
   for (const t of d.transactions) {
+    if (t.countAs === "transfer") continue; // 収支に数えない記録は、復元後の画面の合計と同じく入れない
     if (t.type === "expense") expense += t.amount;
     else income += t.amount;
   }

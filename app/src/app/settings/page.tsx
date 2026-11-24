@@ -9,6 +9,7 @@ import { formatDateJa, todayStr } from "@/lib/date";
 import { buildCalendarItems, CAL_FUTURE_DAYS, CAL_PAST_DAYS } from "@/lib/calendarExport";
 import { buildIcs } from "@/lib/ics";
 import { csvToIncoming, type CsvResult } from "@/lib/csvImport";
+import { newBatchId, recordBatch, stampBatch } from "@/lib/importBatch";
 import { genericToIncoming, parseTable, suggestConfig, type GenericConfig, type Table } from "@/lib/csvGeneric";
 import { FEATURES, IS_PERSONAL } from "@/lib/edition";
 import dynamic from "next/dynamic";
@@ -24,6 +25,10 @@ const GROUPS = IS_PERSONAL;
 // カテゴリの数え方・まとめる（自分用だけ。公開版では読み込まない）
 // 決まった形ではない CSV の列の対応づけ（自分用だけ。NEXT v21 CSV:C03）
 const CsvGenericPanel = IS_PERSONAL ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
+const MenuVisibilityCard = IS_PERSONAL ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
+const ImportHistoryCard = IS_PERSONAL ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
+const DataHealthCard = IS_PERSONAL ? dynamic(() => import("@/components/DataHealthCard").then((m) => m.DataHealthCard)) : null;
+const DiagnosticsCard = IS_PERSONAL ? dynamic(() => import("@/components/DiagnosticsCard").then((m) => m.DiagnosticsCard)) : null;
 const CategoryTools = IS_PERSONAL ? dynamic(() => import("@/components/CategoryTools").then((m) => m.CategoryTools)) : null;
 function GroupLabel({ id, children }: { id: string; children: string }) {
   if (!GROUPS) return null;
@@ -166,9 +171,16 @@ export default function SettingsPage() {
       ok: "追加する",
     });
     if (!ok) return;
-    const res = applyRestore(store.data ?? data, csv.result.incoming, "merge");
+    // 自分用は、この取り込みで足した記録に取り込みの ID を付け、履歴に残す（あとで取り消せる。NEXT v21 CSV:C08）
+    const batchId = newBatchId(new Date().toISOString());
+    const incoming = IS_PERSONAL && csv.result.kind === "transactions" ? { ...csv.result.incoming, transactions: stampBatch(csv.result.incoming.transactions, batchId) } : csv.result.incoming;
+    const res = applyRestore(store.data ?? data, incoming, "merge");
     if (!res.ok) return ui.toast(res.error, "error");
-    const r = store.replaceAll(res.data, "家計簿の CSV から追加");
+    let next = res.data;
+    if (IS_PERSONAL && csv.result.kind === "transactions") {
+      next = recordBatch(res.data, { id: batchId, at: new Date().toISOString(), source: csv.name, from: csv.result.from, to: csv.result.to }).data;
+    }
+    const r = store.replaceAll(next, "家計簿の CSV から追加");
     if (!r.ok) return ui.toast(`${r.error}（今のデータは変更していません）`, "error");
     ui.toast(`${res.added}件を追加しました`);
     closeCsv();
@@ -324,6 +336,8 @@ export default function SettingsPage() {
         </ul>
       </Card>
 
+
+      {MenuVisibilityCard && <MenuVisibilityCard />}
 
       <Card>
         <div id="categories" className="scroll-mt-20" />
@@ -699,6 +713,10 @@ export default function SettingsPage() {
           </div>
         )}
       </Card>
+
+      {ImportHistoryCard && <ImportHistoryCard />}
+      {DataHealthCard && <DataHealthCard />}
+      {DiagnosticsCard && <DiagnosticsCard />}
 
       <Card>
         <SectionTitle>データとプライバシー</SectionTitle>

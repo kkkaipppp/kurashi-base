@@ -2,8 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { newId } from "./defaults";
-import { advanceDueDate } from "./recurring";
-import { applyTxUpdate, mergeCategoryData, setTxTripData, unlinkTripFromTx } from "./dataOps";
+import { applyRecurringPayment, applyTxUpdate, mergeCategoryData, revertPartialPayment, setTxTripData, unlinkTripFromTx } from "./dataOps";
 import { replaceEventEditableFields } from "./eventMerge";
 import { staleRecordError } from "./eventConcurrency";
 import { renameCategoryIn } from "./categoryRename";
@@ -48,6 +47,8 @@ interface Store {
   setHomePref: (key: HomeToggle, v: boolean) => SaveResult;
   /** 自分用のホームのカードの並びと、隠したカード（100点化 E） */
   setHomeLayout: (order: string[], hidden: string[], flags: { nextRecurring: boolean; needsReview: boolean }) => SaveResult;
+  /** メニューに出さない機能（道筋の一覧。記録は消さない） */
+  setMenuHidden: (hrefs: string[]) => SaveResult;
   /** カテゴリを生活費・投資のどちらで数えるか。null で「名前から判断」に戻す（100点化 D） */
   setCategoryRole: (id: string, role: "life" | "invest" | null) => SaveResult;
   /** from のカテゴリの記録と固定費を to に移して、from を非表示にする（消さない。取り消しの控えを残す。100点化 E） */
@@ -157,14 +158,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const ts = now();
         const r = commit((d) => {
           let recurring = d.recurring;
-          // 固定費から記録したら、その固定費の次回予定日を進める（同じ保存で一括）
-          if (t.recurringId) {
-            recurring = d.recurring.map((rc) =>
-              rc.id === t.recurringId
-                ? { ...rc, nextDueDate: advanceDueDate(rc.nextDueDate, rc.cycle, rc.anchorDay), updatedAt: ts }
-                : rc,
-            );
-          }
+          // 固定費から記録したら、その固定費の次回予定日を進める（同じ保存で一括）。一部の支払いは、進めずに払った額を足す（X02）
+          if (t.recurringId) recurring = applyRecurringPayment(d.recurring, t.recurringId, t.amount, !!t.recurringPartial, ts);
           return { ...d, recurring, transactions: [...d.transactions, { ...t, id, currency: "JPY", createdAt: ts, updatedAt: ts }] };
         });
         return r.ok ? { ...r, id } : r;
@@ -172,7 +167,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       updateTx: (id, t, snapshot) =>
         staleCheck(dataRef.current?.transactions, id, snapshot) ??
         commit((d) => applyTxUpdate(d, id, t, now())),
-      deleteTx: (id) => commit((d) => ({ ...d, transactions: d.transactions.filter((x) => x.id !== id) })),
+      deleteTx: (id) =>
+        commit((d) => {
+          const tx = d.transactions.find((x) => x.id === id);
+          return { ...d, recurring: tx ? revertPartialPayment(d.recurring, tx, now()) : d.recurring, transactions: d.transactions.filter((x) => x.id !== id) };
+        }),
       addEvent: (e) => {
         const ts = now();
         const id = newId("ev");
@@ -225,6 +224,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       deleteRecurring: (id) => commit((d) => ({ ...d, recurring: d.recurring.filter((x) => x.id !== id) })),
       setBudget: (monthly) => commit((d) => ({ ...d, budget: { monthly } })),
       setHomePref: (key, v) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, [key]: v } } })),
+      setMenuHidden: (hrefs) => commit((d) => ({ ...d, prefs: { ...d.prefs, menuHidden: [...new Set(hrefs)] } })),
       setHomeLayout: (order, hidden, flags) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, ...flags, order: [...order], hidden: [...hidden] } } })),
       setCategoryRole: (id, role) =>
         commit((d) => ({

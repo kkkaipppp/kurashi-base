@@ -5,6 +5,7 @@ import { Card, IconChevronR, PageHeader } from "@/components/ui";
 import { useData } from "@/lib/store";
 import { todayStr } from "@/lib/date";
 import { IS_PERSONAL } from "@/lib/edition";
+import { inboxCount } from "@/lib/inbox";
 import type { AppData } from "@/lib/types";
 
 type Item = { href: string; label: string; desc: string; count?: (d: AppData) => number; soon?: boolean };
@@ -14,6 +15,12 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "よく使う",
     items: [
+      ...(IS_PERSONAL
+        ? [
+            { href: "/search", label: "さがす", desc: "記録・予定・メモ・契約などを、1つの言葉で探す" },
+            { href: "/inbox", label: "未整理の記録", desc: "「その他」の記録を、店名ごとにまとめて整理", count: (d: AppData) => inboxCount(d) },
+          ]
+        : []),
       { href: "/history", label: "取引履歴", desc: "月ごとの支出・収入と検索", count: (d) => d.transactions.length },
       { href: "/recurring", label: "固定費", desc: "家賃・通信費などの決まった支払い", count: (d) => d.recurring.filter((r) => r.active).length },
       { href: "/tasks", label: "タスク", desc: "やることと期限", count: (d) => d.tasks.filter((t) => !t.done).length },
@@ -68,11 +75,15 @@ export default function MenuPage() {
     <main className="space-y-4">
       <PageHeader title="すべての機能" />
       {GROUPS.map((g) => {
-        const soon = g.items.every((i) => i.soon);
+        // 自分用：本人が隠した機能は出さない（記録は消えていない。設定の「メニューに出す機能」でいつでも戻せる）
+        const hidden = IS_PERSONAL ? new Set(data.prefs.menuHidden ?? []) : null;
+        const items = hidden ? g.items.filter((i) => !hidden.has(i.href)) : g.items;
+        if (items.length === 0) return null;
+        const soon = items.every((i) => i.soon);
         const list = (
           <Card className="p-0">
             <ul className="divide-y divide-line">
-              {g.items.map((i) => {
+              {items.map((i) => {
                 const n = i.count?.(data);
                 return (
                   <li key={i.href}>
@@ -97,7 +108,7 @@ export default function MenuPage() {
         if (IS_PERSONAL && soon)
           return (
             <details key={g.title} className="rounded-xl">
-              <summary className="flex min-h-11 cursor-pointer items-center px-1 text-[13px] font-semibold text-ink-3">準備中のもの（{g.items.length}件）を見る</summary>
+              <summary className="flex min-h-11 cursor-pointer items-center px-1 text-[13px] font-semibold text-ink-3">準備中のもの（{items.length}件）を見る</summary>
               {list}
             </details>
           );

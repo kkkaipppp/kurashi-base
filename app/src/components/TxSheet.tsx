@@ -56,6 +56,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         countAs: editing.countAs ?? "",
         tripId: editing.tripId ?? "",
         linkRecurringId: "",
+        linkPartial: false,
       };
     const r = req.mode === "new" ? req : null;
     const type = r?.type ?? "expense";
@@ -71,6 +72,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
       countAs: r?.initial?.countAs ?? "",
       tripId: r?.initial?.tripId ?? "",
       linkRecurringId: "",
+      linkPartial: false,
     };
     // 開いた時点の値で固定する
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -216,6 +218,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         ...(editing?.recurringId || (req.mode === "new" && req.recurringId) || linkOk
           ? { recurringId: editing?.recurringId ?? (req.mode === "new" && req.recurringId ? req.recurringId : linkOk) }
           : {}),
+        // 一部だけの支払い（選んだ固定費の予定額より少ないときだけ。残りは、まだ払っていない）
+        ...(linkOk && draft.linkPartial && v.amount < (data.recurring.find((r) => r.id === linkOk)?.amount ?? 0) ? { recurringPartial: true } : {}),
         // 数え方・旅行は、空なら持たない（編集で外したときは store が消す）
         countAs: draft.type === "expense" && draft.countAs ? draft.countAs : undefined,
         tripId: draft.tripId && (data.trips ?? []).some((t) => t.id === draft.tripId) ? draft.tripId : undefined,
@@ -536,7 +540,10 @@ function TxExtras({
                   key={r.id}
                   type="button"
                   aria-pressed={draft.linkRecurringId === r.id}
-                  onClick={() => set("linkRecurringId", draft.linkRecurringId === r.id ? "" : r.id)}
+                  onClick={() => {
+                    set("linkRecurringId", draft.linkRecurringId === r.id ? "" : r.id);
+                    set("linkPartial", false);
+                  }}
                   className={`min-h-11 rounded-full border px-3 text-[13px] font-semibold ${draft.linkRecurringId === r.id ? "border-brand bg-brand-soft text-brand" : "border-line bg-surface text-ink-2"}`}
                 >
                   {draft.linkRecurringId === r.id ? "✓ " : ""}
@@ -544,7 +551,18 @@ function TxExtras({
                 </button>
               ))}
             </div>
-            <p className="mt-1 text-[12px] text-ink-3">つなぐと、その固定費の次の支払日が進み、「まだ記録していない固定費」から外れます（二重に数えません）。</p>
+            {(() => {
+              const sel = cands.find((r) => r.id === draft.linkRecurringId);
+              const remaining = sel ? sel.amount - (sel.partialPaid && sel.partialPaid.due === sel.nextDueDate ? sel.partialPaid.paid : 0) : 0;
+              // 予定額（残り）より少ないときだけ、「一部の支払い」を選べる
+              return sel && amount !== null && amount < remaining ? (
+                <label className="mt-1 flex min-h-11 cursor-pointer items-center gap-2 text-[13px]">
+                  <input type="checkbox" checked={!!draft.linkPartial} onChange={(e) => set("linkPartial", e.target.checked)} className="size-5 accent-[var(--brand)]" />
+                  一部だけの支払い（残り{formatYen(remaining - amount)}は、まだ払っていない）
+                </label>
+              ) : null;
+            })()}
+            <p className="mt-1 text-[12px] text-ink-3">つなぐと、その固定費の次の支払日が進み、「まだ記録していない固定費」から外れます（二重に数えません）。「一部だけの支払い」にすると、次の支払日は進まず、残りだけが未払いのまま残ります。</p>
           </div>
         )
       )}
@@ -553,6 +571,7 @@ function TxExtras({
           <option value="">カテゴリどおり（{catInvest ? "投資" : "生活費"}）</option>
           <option value="life">生活費として数える</option>
           <option value="invest">投資として数える（予算と比べない）</option>
+          <option value="transfer">収支に数えない（カード引落・口座間の移動など）</option>
         </select>
       </Field>
       {trips.length > 0 && (

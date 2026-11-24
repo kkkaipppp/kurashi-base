@@ -1,4 +1,5 @@
 import { summarizeMonth, txInMonth } from "./aggregate";
+import { isMoveOnly } from "./classify";
 import { addMonthsToKey, daysInMonth, monthKey } from "./date";
 import { formatYen } from "./money";
 import type { AppData, Transaction } from "./types";
@@ -11,7 +12,7 @@ export function expenseUntilDay(txs: Transaction[], key: string, day: number): n
   const last = Math.min(day, daysInMonth(y, m));
   const until = `${key}-${String(last).padStart(2, "0")}`;
   return txInMonth(txs, key)
-    .filter((t) => t.type === "expense" && t.date <= until)
+    .filter((t) => t.type === "expense" && !isMoveOnly(t) && t.date <= until)
     .reduce((s, t) => s + t.amount, 0);
 }
 
@@ -31,7 +32,7 @@ export function weeklyBuckets(txs: Transaction[], key: string): WeekBucket[] {
     const end = Math.min(start + 6, dim);
     const from = `${key}-${String(start).padStart(2, "0")}`;
     const to = `${key}-${String(end).padStart(2, "0")}`;
-    const expense = txs.filter((t) => t.type === "expense" && t.date >= from && t.date <= to).reduce((s, t) => s + t.amount, 0);
+    const expense = txs.filter((t) => t.type === "expense" && !isMoveOnly(t) && t.date >= from && t.date <= to).reduce((s, t) => s + t.amount, 0);
     out.push({ label: start === end ? `${start}日` : `${start}〜${end}日`, from, to, expense });
   }
   return out;
@@ -80,7 +81,7 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
     };
     const byCat = (k: string) => {
       const m = new Map<string, number>();
-      for (const t of txInMonth(data.transactions, k)) if (t.type === "expense" && t.date <= until(k)) m.set(t.categoryId, (m.get(t.categoryId) ?? 0) + t.amount);
+      for (const t of txInMonth(data.transactions, k)) if (t.type === "expense" && !isMoveOnly(t) && t.date <= until(k)) m.set(t.categoryId, (m.get(t.categoryId) ?? 0) + t.amount);
       return m;
     };
     const a = byCat(key);

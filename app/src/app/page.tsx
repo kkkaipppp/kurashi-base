@@ -14,7 +14,7 @@ import { useUI } from "@/components/UIContext";
 import { AddFromQuery } from "@/components/AddFromQuery";
 import { EventRow, TxRow } from "@/components/Rows";
 import { LogoLockup } from "@/components/Logo";
-import { Card, DevBadge, IconChevronR, SectionTitle } from "@/components/ui";
+import { Card, DevBadge, IconChevronR, IconSearch, SectionTitle } from "@/components/ui";
 import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
 import { monthLedger } from "@/lib/ledger";
 import { addMonthsToKey } from "@/lib/date";
@@ -399,9 +399,14 @@ export default function HomePage() {
           <DevBadge />
           {/* ホームの編集（右上。自分用だけ。100点化の指示 E） */}
           {PERSONAL && (
-            <button type="button" aria-label="ホームを編集" onClick={() => setEditLayout(currentLayout(prefs))} className="min-h-11 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
-              編集
-            </button>
+            <div className="flex items-center gap-0.5">
+              <Link href="/search" aria-label="さがす" className="inline-flex size-11 items-center justify-center rounded-lg text-brand hover:bg-brand-soft">
+                <IconSearch className="size-5" />
+              </Link>
+              <button type="button" aria-label="ホームを編集" onClick={() => setEditLayout(currentLayout(prefs))} className="min-h-11 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+                編集
+              </button>
+            </div>
           )}
         </div>
       </header>

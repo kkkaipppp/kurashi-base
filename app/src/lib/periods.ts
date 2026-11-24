@@ -1,3 +1,4 @@
+import { isMoveOnly } from "./classify";
 import { addDays, weekdayOf } from "./date";
 import type { Transaction } from "./types";
 
@@ -30,6 +31,7 @@ export function summarizePeriod(txs: Transaction[], from: string, to: string): P
   const cat = new Map<string, number>();
   for (const t of txs) {
     if (t.date < from || t.date > to) continue;
+    if (isMoveOnly(t)) continue;
     count++;
     if (t.type === "expense") {
       expense += t.amount;
@@ -46,7 +48,7 @@ export function dailyInWeek(txs: Transaction[], from: string): { date: string; e
   const idx = new Map(days.map((d, i) => [d.date, i]));
   for (const t of txs) {
     const i = idx.get(t.date);
-    if (i === undefined) continue;
+    if (i === undefined || isMoveOnly(t)) continue;
     if (t.type === "expense") days[i].expense += t.amount;
     else days[i].income += t.amount;
   }
@@ -58,7 +60,7 @@ export function monthlyInYear(txs: Transaction[], year: number): { month: number
   const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, expense: 0, income: 0 }));
   const y = String(year);
   for (const t of txs) {
-    if (t.date.slice(0, 4) !== y) continue;
+    if (t.date.slice(0, 4) !== y || isMoveOnly(t)) continue;
     const m = Number(t.date.slice(5, 7)) - 1;
     if (t.type === "expense") months[m].expense += t.amount;
     else months[m].income += t.amount;
@@ -76,7 +78,7 @@ export function weeklyTrend(txs: Transaction[], lastFrom: string, n = 12): { fro
   const start = weeks[0].from;
   const end = addDays(lastFrom, 6);
   for (const t of txs) {
-    if (t.date < start || t.date > end) continue;
+    if (t.date < start || t.date > end || isMoveOnly(t)) continue;
     const i = weeks.findIndex((w, k) => t.date >= w.from && (k === n - 1 || t.date < weeks[k + 1].from));
     if (i < 0) continue;
     if (t.type === "expense") weeks[i].expense += t.amount;

@@ -12,7 +12,11 @@ import type { AppData, Category, RecurringExpense, Transaction } from "./types";
  *      （同じカテゴリの変動費を固定費に数えないため）
  * どれも記録を書き換えない。計算のときに見るだけ。
  */
-export type CountAs = "life" | "invest";
+export type CountAs = "life" | "invest" | "transfer";
+
+/** 収支に数えない記録（カード引落・口座間の移動・証券口座への入金など）。支出にも収入にも、投資にも入れない（NEXT v21 X03・D01）。
+ * カードで買った支出は、買った日に1回だけ数え、あとの引落はこれにする。記録は消さず、一覧には残る */
+export const isMoveOnly = (t: { countAs?: string }) => t.countAs === "transfer";
 
 export const isInvestByName = (name: string) => name.includes("投資");
 

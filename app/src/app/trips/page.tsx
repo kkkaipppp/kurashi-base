@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useData, useStore, type TripInput } from "@/lib/store";
 import { addDays, daysBetween, formatDateJa, isValidDateStr, todayStr } from "@/lib/date";
@@ -16,6 +17,8 @@ import { tripMemoCandidates } from "@/lib/tripMemo";
 import type { Trip } from "@/lib/types";
 
 const MAX_TRIP_DAYS = 60;
+// 旅行のコピー（自分用だけ。NEXT v21 X17）
+const TripCopy = IS_PERSONAL ? dynamic(() => import("@/components/TripCopy").then((m) => m.TripCopy)) : null;
 
 function tripStatus(t: Trip, today: string): string {
   if (today < t.startDate) {
@@ -47,7 +50,7 @@ export default function TripsPage() {
     <main className="space-y-3">
       <OpenFromQuery ids={[...trips.map((t) => t.id), "new"]} onOpen={onOpen} />
       {open ? (
-        <TripDetail trip={open} onBack={() => setOpenId(null)} onEdit={() => setForm({ mode: "edit", id: open.id })} />
+        <TripDetail trip={open} onBack={() => setOpenId(null)} onEdit={() => setForm({ mode: "edit", id: open.id })} onOpenTrip={(id) => setOpenId(id)} />
       ) : (
         <>
           <PageHeader
@@ -114,7 +117,8 @@ export default function TripsPage() {
 
 /* ---------------- 旅行の詳細（日ごとの行程） ---------------- */
 
-function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; onEdit: () => void }) {
+function TripDetail({ trip, onBack, onEdit, onOpenTrip }: { trip: Trip; onBack: () => void; onEdit: () => void; onOpenTrip: (id: string) => void }) {
+  const [copying, setCopying] = useState(false);
   const data = useData();
   const ui = useUI();
   const today = todayStr();
@@ -129,7 +133,7 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
   const search = webSearch(q);
   // 自分用：旅行につないだ支出（100点化の指示 F。メモの文字ではなく旅行の ID でつなぐ）
   const linkedTx = IS_PERSONAL ? data.transactions.filter((t) => t.tripId === trip.id).sort((a, b) => b.date.localeCompare(a.date)) : [];
-  const spentTotal = linkedTx.reduce((s, t) => s + (t.type === "expense" ? t.amount : 0), 0);
+  const spentTotal = linkedTx.reduce((s, t) => s + (t.type === "expense" && t.countAs !== "transfer" ? t.amount : 0), 0);
   // 前の作り（メモに「旅行：名前」）で入れた支出は、候補として出して、本人が「つなぐ」を押したときだけつなぐ
   const memoCands = IS_PERSONAL ? tripMemoCandidates(data.transactions, trip) : [];
 
@@ -182,6 +186,23 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
           ＋ この旅行の支出を追加
         </button>
         {trip.note && <p className="mt-2 text-[14px] whitespace-pre-wrap break-words">{trip.note}</p>}
+        {TripCopy && (
+          <>
+            <button type="button" onClick={() => setCopying(true)} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl border border-line text-[14px] font-semibold text-ink-2">
+              この旅行を元に新しい旅行を作る
+            </button>
+            {copying && (
+              <TripCopy
+                trip={trip}
+                onClose={() => setCopying(false)}
+                onCreated={(id) => {
+                  setCopying(false);
+                  onOpenTrip(id);
+                }}
+              />
+            )}
+          </>
+        )}
         <div className="mt-3 grid gap-2">
           {directions && (
             <a href={directions} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-center rounded-xl border border-line text-[14px] font-semibold text-brand hover:bg-brand-soft">

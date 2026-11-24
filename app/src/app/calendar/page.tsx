@@ -78,7 +78,7 @@ export default function CalendarPage() {
   const day = daySummary(data.transactions, selected);
   const dayDeadlines = deadlinesOn(data, selected);
   // 選んだ日の固定費の支払い予定（実績の支出とは分ける。自分用だけ：公開版は友人β中なので今のまま）
-  const dayFixed = IS_PERSONAL ? data.recurring.filter((r) => r.active && r.nextDueDate === selected).reduce((a, r) => a + r.amount, 0) : 0;
+  const dayFixed = IS_PERSONAL ? data.recurring.filter((r) => r.active && r.nextDueDate === selected).reduce((a, r) => a + (r.partialPaid && r.partialPaid.due === r.nextDueDate ? Math.max(0, r.amount - r.partialPaid.paid) : r.amount), 0) : 0;
   const dlDays = useMemo(() => deadlineDays(data, month), [data, month]);
   const dayNotes = data.notes.filter((n) => n.date === selected);
   const dayStudy = data.studyLogs.filter((l) => l.date === selected).reduce((s, l) => s + l.minutes, 0);
