@@ -1,9 +1,9 @@
+import { categoryMap, txIsFixed, txIsInvest } from "./classify";
 import type { AppData } from "./types";
 
 /**
  * 月の振り返りの「固定費と変動費」「生活と投資」（レビュー o1 の P11 と、家計を良くする機能 2・3）。記録からの計算だけ。
- * - 固定費：固定費（定期の支払い）に登録したカテゴリの支出。それ以外は変動費
- * - 投資：名前に「投資」を含む支出のカテゴリ（例：証券口座への入金）。生活の支出からは外す
+ * - 固定費・投資の分け方は lib/classify.ts（取引ごとの上書き → カテゴリの分類 → 名前、の順。固定費は支払いとしてつないだ記録）
  * - NISA の買付は、投資の記録とは別に数える（入金と買付を足すと二重になるため、足さない）
  */
 export interface MonthBreakdown {
@@ -24,11 +24,9 @@ export interface MonthBreakdown {
   hasPrev: boolean;
 }
 
-const isInvestName = (name: string) => name.includes("投資");
 
 export function monthBreakdown(data: AppData, key: string, today: string): MonthBreakdown {
-  const fixedCats = new Set(data.recurring.filter((r) => r.active).map((r) => r.categoryId));
-  const investCats = new Set(data.categories.filter((c) => c.kind === "expense" && isInvestName(c.name)).map((c) => c.id));
+  const cats = categoryMap(data);
   let fixed = 0;
   let variable = 0;
   let invest = 0;
@@ -39,8 +37,8 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
       income += t.amount;
       continue;
     }
-    if (investCats.has(t.categoryId)) invest += t.amount;
-    else if (fixedCats.has(t.categoryId)) fixed += t.amount;
+    if (txIsInvest(t, cats)) invest += t.amount;
+    else if (txIsFixed(t, data.recurring)) fixed += t.amount;
     else variable += t.amount;
   }
   let nisaBuy = 0;
@@ -59,7 +57,7 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
     const mp = new Map<string, number>();
     for (const t of data.transactions) {
       // 投資は「使った」ではないので、増えたものには入れない
-      if (t.type !== "expense" || investCats.has(t.categoryId) || t.date.slice(0, 7) !== k || Number(t.date.slice(8, 10)) > day) continue;
+      if (t.type !== "expense" || txIsInvest(t, cats) || t.date.slice(0, 7) !== k || Number(t.date.slice(8, 10)) > day) continue;
       mp.set(t.categoryId, (mp.get(t.categoryId) ?? 0) + t.amount);
     }
     return mp;

@@ -3,11 +3,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { newId } from "./defaults";
 import { advanceDueDate } from "./recurring";
+import { applyTxUpdate, mergeCategoryData, setTxTripData, unlinkTripFromTx } from "./dataOps";
 import { replaceEventEditableFields } from "./eventMerge";
 import { staleRecordError } from "./eventConcurrency";
 import { renameCategoryIn } from "./categoryRename";
 import { loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, wipeAllAppData, type GuardedSaveResult, type LoadResult, type SaveResult, type UndoSnapshot, type WipeResult } from "./storage";
-import type { AppData, CalendarEvent, Category, CollectionKey, HomePrefs, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
+import type { AppData, CalendarEvent, Category, CollectionKey, HomeToggle, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
 
 export type TxInput = Omit<Transaction, "id" | "createdAt" | "updatedAt" | "currency">;
 export type EventInput = Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">;
@@ -44,7 +45,15 @@ interface Store {
   updateRecurring: (id: string, r: RecurringInput, snapshot?: string) => SaveResult;
   deleteRecurring: (id: string) => SaveResult;
   setBudget: (monthly: number | null) => SaveResult;
-  setHomePref: (key: keyof HomePrefs, v: boolean) => SaveResult;
+  setHomePref: (key: HomeToggle, v: boolean) => SaveResult;
+  /** 自分用のホームのカードの並びと、隠したカード（100点化 E） */
+  setHomeLayout: (order: string[], hidden: string[]) => SaveResult;
+  /** カテゴリを生活費・投資のどちらで数えるか。null で「名前から判断」に戻す（100点化 D） */
+  setCategoryRole: (id: string, role: "life" | "invest" | null) => SaveResult;
+  /** from のカテゴリの記録と固定費を to に移して、from を非表示にする（消さない。取り消しの控えを残す。100点化 E） */
+  mergeCategory: (fromId: string, toId: string) => SaveResult & { moved?: number };
+  /** 支出を旅行につなぐ・外す（tripId が null なら外す。100点化 F） */
+  setTxTrip: (txIds: string[], tripId: string | null) => SaveResult;
   addCategory: (c: Omit<Category, "id" | "order" | "archived">) => SaveResult;
   setCategoryArchived: (id: string, archived: boolean) => SaveResult;
   renameCategory: (id: string, name: string) => SaveResult;
@@ -162,10 +171,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       updateTx: (id, t, snapshot) =>
         staleCheck(dataRef.current?.transactions, id, snapshot) ??
-        commit((d) => ({
-          ...d,
-          transactions: d.transactions.map((x) => (x.id === id ? { ...x, ...t, id, updatedAt: now() } : x)),
-        })),
+        commit((d) => applyTxUpdate(d, id, t, now())),
       deleteTx: (id) => commit((d) => ({ ...d, transactions: d.transactions.filter((x) => x.id !== id) })),
       addEvent: (e) => {
         const ts = now();
@@ -205,7 +211,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const { tripId: _drop, ...rest } = e; // eslint-disable-line @typescript-eslint/no-unused-vars
             return { ...rest, updatedAt: now() };
           }),
+          // つないだ支出は消さずに、旅行から外すだけ
+          transactions: unlinkTripFromTx(d, id, now()),
         })),
+      setTxTrip: (txIds, tripId) => commit((d) => setTxTripData(d, txIds, tripId, now())),
       addRecurring: (rc) => {
         const ts = now();
         return commit((d) => ({ ...d, recurring: [...d.recurring, { ...rc, id: newId("rc"), createdAt: ts, updatedAt: ts }] }));
@@ -216,6 +225,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       deleteRecurring: (id) => commit((d) => ({ ...d, recurring: d.recurring.filter((x) => x.id !== id) })),
       setBudget: (monthly) => commit((d) => ({ ...d, budget: { monthly } })),
       setHomePref: (key, v) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, [key]: v } } })),
+      setHomeLayout: (order, hidden) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, order: [...order], hidden: [...hidden] } } })),
+      setCategoryRole: (id, role) =>
+        commit((d) => ({
+          ...d,
+          categories: d.categories.map((c) => {
+            if (c.id !== id) return c;
+            const { role: _drop, ...rest } = c; // eslint-disable-line @typescript-eslint/no-unused-vars
+            return role ? { ...rest, role } : rest;
+          }),
+        })),
+      mergeCategory: (fromId, toId) => {
+        const d = dataRef.current;
+        if (!d) return { ok: false, error: "保存できませんでした。データを読み込めていません。再読み込みしてください" };
+        const ts = now();
+        const m = mergeCategoryData(d, fromId, toId, ts);
+        if (!m.ok) return m;
+        const r = finish(m.next, saveWithUndo(m.next, persistedRawRef.current, m.label, ts));
+        return r.ok ? { ...r, moved: m.moved } : r;
+      },
       addCategory: (c) =>
         commit((d) => ({
           ...d,

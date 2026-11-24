@@ -10,8 +10,9 @@ import { buildCalendarItems, CAL_FUTURE_DAYS, CAL_PAST_DAYS } from "@/lib/calend
 import { buildIcs } from "@/lib/ics";
 import { csvToIncoming, type CsvResult } from "@/lib/csvImport";
 import { FEATURES, IS_PERSONAL } from "@/lib/edition";
+import dynamic from "next/dynamic";
 import { figures, sampleRows, similarButDifferentId, type DataFigures } from "@/lib/restoreView";
-import type { HomePrefs, TxType } from "@/lib/types";
+import type { HomeToggle, TxType } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, Field, PageHeader, SectionTitle, inputCls } from "@/components/ui";
 import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
@@ -19,6 +20,8 @@ import { NativeStatusCard } from "@/components/NativeStatusCard";
 
 // 設定を目的ごとのまとまりに分ける見出し（100点化の指示 C。自分用だけ。公開版は友人β中なので今のまま）
 const GROUPS = IS_PERSONAL;
+// カテゴリの数え方・まとめる（自分用だけ。公開版では読み込まない）
+const CategoryTools = IS_PERSONAL ? dynamic(() => import("@/components/CategoryTools").then((m) => m.CategoryTools)) : null;
 function GroupLabel({ id, children }: { id: string; children: string }) {
   if (!GROUPS) return null;
   return (
@@ -53,7 +56,7 @@ export default function SettingsPage() {
   };
 
   // --- ホーム表示 ---
-  const toggles: { key: keyof HomePrefs; label: string }[] = [
+  const toggles: { key: HomeToggle; label: string }[] = [
     { key: "todaySpent", label: "今日の支出（今月の残り予算の横）" },
     { key: "nextRecurring", label: "次の固定費" },
     { key: "needsReview", label: "確認したいこと（支払日・試験日・更新日など）" },
@@ -364,6 +367,7 @@ export default function SettingsPage() {
             ))}
         </ul>
         <p className="mt-1 text-[12px] text-ink-3">名前を変えても、今までの取引はそのカテゴリのままです。非表示にしても、登録済みの取引は残ります。</p>
+        {CategoryTools && <CategoryTools kind={catKind} />}
         <div className="mt-3 flex gap-2">
           <input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="新しいカテゴリ名" aria-label="新しいカテゴリ名" maxLength={20} className={inputCls} />
           <Button variant="secondary" onClick={addCat}>
