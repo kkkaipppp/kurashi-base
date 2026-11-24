@@ -9,6 +9,7 @@ import { formatDateJa, todayStr } from "@/lib/date";
 import { buildCalendarItems, CAL_FUTURE_DAYS, CAL_PAST_DAYS } from "@/lib/calendarExport";
 import { buildIcs } from "@/lib/ics";
 import { csvToIncoming, type CsvResult } from "@/lib/csvImport";
+import { genericToIncoming, parseTable, suggestConfig, type GenericConfig, type Table } from "@/lib/csvGeneric";
 import { FEATURES, IS_PERSONAL } from "@/lib/edition";
 import dynamic from "next/dynamic";
 import { figures, sampleRows, similarButDifferentId, type DataFigures } from "@/lib/restoreView";
@@ -21,6 +22,8 @@ import { NativeStatusCard } from "@/components/NativeStatusCard";
 // 設定を目的ごとのまとまりに分ける見出し（100点化の指示 C。自分用だけ。公開版は友人β中なので今のまま）
 const GROUPS = IS_PERSONAL;
 // カテゴリの数え方・まとめる（自分用だけ。公開版では読み込まない）
+// 決まった形ではない CSV の列の対応づけ（自分用だけ。NEXT v21 CSV:C03）
+const CsvGenericPanel = IS_PERSONAL ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
 const CategoryTools = IS_PERSONAL ? dynamic(() => import("@/components/CategoryTools").then((m) => m.CategoryTools)) : null;
 function GroupLabel({ id, children }: { id: string; children: string }) {
   if (!GROUPS) return null;
@@ -116,17 +119,43 @@ export default function SettingsPage() {
 
   // --- 家計簿の CSV の取り込み（追加だけ。同じ記録は二重に入れない） ---
   const csvRef = useRef<HTMLInputElement>(null);
-  const [csv, setCsv] = useState<{ name: string; result: CsvResult } | null>(null);
+  const [csvStd, setCsv] = useState<{ name: string; result: CsvResult } | null>(null);
+  // 決まった形ではない CSV：列の対応づけの状態
+  const [gen, setGen] = useState<{ name: string; table: Table; cfg: GenericConfig; encoding: string } | null>(null);
+  const genResult = useMemo(() => (gen ? genericToIncoming(gen.table, gen.cfg, data, new Date().toISOString()) : null), [gen, data]);
+  const csv = useMemo<{ name: string; result: CsvResult } | null>(() => (gen && genResult ? { name: gen.name, result: genResult } : csvStd), [gen, genResult, csvStd]);
   const csvSimilar = useMemo(() => (csv?.result.ok && csv.result.kind === "transactions" ? similarButDifferentId(data.transactions, csv.result.incoming.transactions) : 0), [csv, data.transactions]);
   const csvPlan = useMemo(() => (csv?.result.ok ? applyRestore(data, csv.result.incoming, "merge") : null), [csv, data]);
   const onCsv = async (f: File | undefined) => {
     if (!f) return;
     if (f.size > 20 * 1024 * 1024) return ui.toast("ファイルが大きすぎます（20MB まで）", "error");
-    const text = await f.text();
-    setCsv({ name: f.name, result: csvToIncoming(text, data, new Date().toISOString()) });
+    // 文字コード：UTF-8 のあと Shift_JIS（銀行・カードの CSV に多い）
+    const buf = await f.arrayBuffer();
+    let text: string;
+    let encoding = "UTF-8";
+    try {
+      text = new TextDecoder("utf-8", { fatal: true }).decode(buf);
+    } catch {
+      try {
+        text = new TextDecoder("shift_jis").decode(buf);
+        encoding = "Shift_JIS";
+      } catch {
+        return ui.toast("この文字コードは読めません。UTF-8 で保存し直してください", "error");
+      }
+    }
+    const std = csvToIncoming(text, data, new Date().toISOString());
+    setGen(null);
+    // 決まった形ではない CSV は、自分用では列の対応づけへ（公開版は今までどおり、見出しが違うと案内する）
+    if (!std.ok && std.error.startsWith("1行目の見出しが違います") && CsvGenericPanel) {
+      const t = parseTable(text);
+      if (t.ok) return void (setCsv(null), setGen({ name: f.name, table: t.table, cfg: suggestConfig(t.table), encoding }));
+      return setCsv({ name: f.name, result: { ok: false, error: t.error } });
+    }
+    setCsv({ name: f.name, result: std });
   };
   const closeCsv = () => {
     setCsv(null);
+    setGen(null);
     if (csvRef.current) csvRef.current.value = "";
   };
   const doCsv = async () => {
@@ -415,6 +444,7 @@ export default function SettingsPage() {
           {csv && (
             <div className="mt-3 space-y-2 rounded-2xl border border-line p-3" aria-label="CSV の取り込みの確認">
               <p className="text-[13px] font-semibold break-all">{csv.name}</p>
+              {gen && CsvGenericPanel && <CsvGenericPanel table={gen.table} cfg={gen.cfg} encoding={gen.encoding} onChange={(cfg) => setGen({ ...gen, cfg })} />}
               {!csv.result.ok ? (
                 <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[13px] font-medium whitespace-pre-line text-danger">
                   {csv.result.error}
@@ -455,6 +485,33 @@ export default function SettingsPage() {
                   {csvPlan?.ok && csvPlan.added === 0 && <li className="text-ink-2">新しく追加する記録はありません（すでに入っています）</li>}
                   {csvPlan && !csvPlan.ok && <li className="text-danger">{csvPlan.error}</li>}
                   {csv.result.newCategories.length > 0 && <li className="text-ink-2">新しく作るカテゴリ：{csv.result.newCategories.join("・")}</li>}
+                  {/* 取り込まない行（振替・計算対象外・0円など）と、分類が分からなかったもの（黙って捨てない。NEXT v21 CSV:C04・C06・C07） */}
+                  {(() => {
+                    const x = csv.result as { held?: { line: number; reason: string }[]; unknownCategories?: { name: string; count: number }[] };
+                    return (
+                      <>
+                        {x.held && x.held.length > 0 && (
+                          <li className="text-ink-2">
+                            取り込まない行：{x.held.length}行
+                            <ul className="mt-0.5 space-y-0.5 pl-3 text-[12px]">
+                              {x.held.slice(0, 3).map((h) => (
+                                <li key={h.line}>
+                                  {h.line}行目：{h.reason}
+                                </li>
+                              ))}
+                              {x.held.length > 3 && <li>ほか{x.held.length - 3}行</li>}
+                            </ul>
+                          </li>
+                        )}
+                        {x.unknownCategories && x.unknownCategories.length > 0 && (
+                          <li className="text-warn">
+                            今のカテゴリにないので「その他」にします：{x.unknownCategories.slice(0, 5).map((c) => `${c.name}（${c.count}件）`).join("・")}
+                            {x.unknownCategories.length > 5 ? ` ほか${x.unknownCategories.length - 5}種類` : ""}
+                          </li>
+                        )}
+                      </>
+                    );
+                  })()}
                   {/* ID が違うのに日付・種類・金額が同じ記録（二重かもしれない）。自動では消さず、数を見せる（NEXT v21 CSV:C03） */}
                   {csv.result.kind === "transactions" && csvSimilar > 0 && (
                     <li className="text-warn">

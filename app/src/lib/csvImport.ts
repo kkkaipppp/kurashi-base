@@ -39,7 +39,7 @@ export function parseCsv(text: string): string[][] {
  * parseCsv に加えて、引用符（"）が閉じないまま終わったときの、その引用符が始まった行（1始まり）を返す。
  * 閉じていないと、後ろの行が全部1つのセルに吸い込まれて、記録が黙って欠けるため（NEXT v21 CSV:C04）
  */
-export function parseCsvChecked(text: string): { rows: string[][]; unclosedLine: number | null; rowLines: number[] } {
+export function parseCsvChecked(text: string, delim: string = ","): { rows: string[][]; unclosedLine: number | null; rowLines: number[] } {
   const t = text.replace(/^﻿/, "");
   let line = 1;
   let qLine = 0;
@@ -64,7 +64,7 @@ export function parseCsvChecked(text: string): { rows: string[][]; unclosedLine:
     } else if (c === '"') {
       q = true;
       qLine = line;
-    } else if (c === ",") {
+    } else if (c === delim) {
       row.push(cur);
       cur = "";
     } else if (c === "\n" || c === "\r") {
@@ -111,6 +111,15 @@ export type CsvResult =
 export function csvToIncoming(text: string, current: AppData, nowIso: string): CsvResult {
   const { rows, unclosedLine, rowLines } = parseCsvChecked(text);
   if (unclosedLine !== null) return { ok: false, error: `${unclosedLine}行目の引用符（"）が閉じていません。閉じるか、引用符を消してから、もう一度選んでください` };
+  return rowsToIncoming(rows, rowLines, current, nowIso);
+}
+
+/**
+ * 決まった形（TX_HEADER か REC_HEADER）の行から、取り込む記録を作って検証する。
+ * 汎用の取り込み（lib/csvGeneric.ts）も、決まった形の行にしてからここへ渡すので、検証・ID の作り方は同じ。
+ * rowLines は、各行がもとのファイルの何行目か（エラーの行番号に使う）
+ */
+export function rowsToIncoming(rows: string[][], rowLines: number[], current: AppData, nowIso: string): CsvResult {
   if (rows.length < 2) return { ok: false, error: "CSV に記録がありません" };
   const header = rows[0].map((h) => h.trim());
   const kind: CsvKind | null =
