@@ -33,6 +33,7 @@ export function WidgetSync() {
 
   // iPhone のカレンダーへの反映（記録が変わって3秒たったら。中身が前と同じなら書かない）
   const lastCalendar = useRef("");
+  const calendarBusy = useRef(false);
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     const t = setTimeout(() => {
@@ -40,13 +41,17 @@ export function WidgetSync() {
       const json = JSON.stringify(buildCalendarItems(data, today));
       const { from, to } = calendarWindow(today);
       const key = `${from}|${to}|${json}`;
-      if (key === lastCalendar.current) return;
+      if (key === lastCalendar.current || calendarBusy.current) return;
+      calendarBusy.current = true;
       NativeBridge.syncCalendar({ from, to, json })
         .then(() => {
           lastCalendar.current = key;
         })
         .catch(() => {
           // カレンダーへのアクセスを許可していないときなど。記録には影響しない
+        })
+        .finally(() => {
+          calendarBusy.current = false;
         });
     }, 3000);
     return () => clearTimeout(t);

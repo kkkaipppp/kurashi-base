@@ -30,6 +30,13 @@ describe("iPhone のカレンダーに書く予定（2026-11-24 平尾さん：�
       ["札幌出張", "2026-12-01", "2026-12-03", true, ""],
     ]);
   });
+  it("予定のメモは渡さない（場所は渡す）", () => {
+    const d = emptyData(now);
+    d.events = [ev({ title: "通院", note: "薬の名前など", location: "〇〇クリニック" })];
+    const [it0] = buildCalendarItems(d, "2026-11-24");
+    expect(it0.notes).toBe("");
+    expect(it0.location).toBe("〇〇クリニック");
+  });
   it("毎週の予定は期間の中の1回ずつ（終わりの日まで）", () => {
     const d = emptyData(now);
     d.events = [ev({ title: "ジム", startDate: "2026-11-17", endDate: "2026-11-17", repeat: "weekly", repeatUntil: "2026-12-08" })];

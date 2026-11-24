@@ -115,7 +115,10 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
 
     private static let eventStore = EKEventStore()
     private static let calendarIdKey = "kbCalendarIdentifier"
+    private static let lastSyncKey = "kbCalendarLastSync"
     private static let calendarTitle = "くらしベース"
+    /// 書き込みは1つずつ（同時に2回動かさない）
+    private static let calendarQueue = DispatchQueue(label: "jp.kurashibase.calendar")
 
     private static func date(_ day: String, _ time: String = "00:00") -> Date? {
         let f = DateFormatter()
@@ -126,26 +129,55 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         return f.date(from: "\(day) \(time.isEmpty ? "00:00" : time)")
     }
 
+    /// 起動をまたいでも同じになる簡単な指紋（同じ中身なら書き直さないため）
+    private static func fingerprint(_ s: String) -> String {
+        var h: UInt64 = 0xcbf29ce484222325
+        for b in s.utf8 { h ^= UInt64(b); h = h &* 0x100000001b3 }
+        return String(h, radix: 16)
+    }
+
+    /// カレンダーを作ってよいアカウント：iCloud か、この iPhone の中（ローカル）だけ。
+    /// 仕事の Exchange や Google などのアカウントには作らない（固定費や予定を勤め先などのサーバーに送らないため）
+    private static func isAllowedSource(_ src: EKSource) -> Bool {
+        return src.sourceType == .local || (src.sourceType == .calDAV && src.title.lowercased().contains("icloud"))
+    }
+
+    private static func allowedSource(_ store: EKEventStore) -> EKSource? {
+        return store.sources.first(where: { $0.sourceType == .calDAV && $0.title.lowercased().contains("icloud") })
+            ?? store.sources.first(where: { $0.sourceType == .local })
+    }
+
+    private static func isAllowed(_ c: EKCalendar) -> Bool {
+        guard c.allowsContentModifications, let src = c.source else { return false }
+        return isAllowedSource(src)
+    }
+
     /// 「くらしベース」カレンダー（なければ作る）。ほかのカレンダーには書かない
     private static func kurashiCalendar() throws -> EKCalendar {
         let store = eventStore
-        if let id = UserDefaults.standard.string(forKey: calendarIdKey), let c = store.calendar(withIdentifier: id) {
+        if let id = UserDefaults.standard.string(forKey: calendarIdKey), let c = store.calendar(withIdentifier: id),
+           c.title == calendarTitle, isAllowed(c) {
             return c
+        }
+        // ID が変わっていても、同じ名前で書き込める「くらしベース」カレンダーがあれば、それを使う（2つ作らない）
+        if let c = store.calendars(for: .event).first(where: { $0.title == calendarTitle && isAllowed($0) }) {
+            UserDefaults.standard.set(c.calendarIdentifier, forKey: calendarIdKey)
+            return c
+        }
+        guard let source = allowedSource(store) else {
+            throw NSError(domain: "kurashi", code: 1, userInfo: [NSLocalizedDescriptionKey: "iCloud か この iPhone のカレンダーが見つかりません"])
         }
         let c = EKCalendar(for: .event, eventStore: store)
         c.title = calendarTitle
         c.cgColor = UIColor(red: 0.184, green: 0.435, blue: 0.369, alpha: 1).cgColor
-        guard let source = store.defaultCalendarForNewEvents?.source
-                ?? store.sources.first(where: { $0.sourceType == .local }) else {
-            throw NSError(domain: "kurashi", code: 1)
-        }
         c.source = source
         try store.saveCalendar(c, commit: true)
         UserDefaults.standard.set(c.calendarIdentifier, forKey: calendarIdKey)
         return c
     }
 
-    /// from〜to の「くらしベース」カレンダーの予定を消して、受け取った一覧で書き直す
+    /// from〜to の「くらしベース」カレンダーの予定を消して、受け取った一覧で書き直す。
+    /// 中身と期間が前回と同じなら何もしない。メモ（予定の説明）は渡さない
     @objc func syncCalendar(_ call: CAPPluginCall) {
         guard let from = call.getString("from"), let to = call.getString("to"),
               let start = Self.date(from), let endDay = Self.date(to),
@@ -155,46 +187,54 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         let store = Self.eventStore
-        let done: (Bool) -> Void = { granted in
-            guard granted else {
-                call.reject("カレンダーへのアクセスが許可されていません")
-                return
-            }
-            do {
-                let cal = try Self.kurashiCalendar()
-                let end = Calendar.current.date(byAdding: .day, value: 1, to: endDay) ?? endDay
-                let old = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: [cal]))
-                for e in old { try store.remove(e, span: .thisEvent, commit: false) }
-                var written = 0
-                for it in items {
-                    guard let s = Self.date(it.startDate, it.allDay ? "00:00" : it.startTime) else { continue }
-                    let e = EKEvent(eventStore: store)
-                    e.calendar = cal
-                    e.title = it.title
-                    e.isAllDay = it.allDay
-                    e.startDate = s
-                    if it.allDay {
-                        e.endDate = Self.date(it.endDate) ?? s
-                    } else {
-                        let en = Self.date(it.endDate, it.endTime) ?? s
-                        e.endDate = en > s ? en : s.addingTimeInterval(3600)
-                    }
-                    if !it.location.isEmpty { e.location = it.location }
-                    if !it.notes.isEmpty { e.notes = it.notes }
-                    try store.save(e, span: .thisEvent, commit: false)
-                    written += 1
+        let stamp = Self.fingerprint("\(from)|\(to)|\(json)")
+        let work: (Bool) -> Void = { granted in
+            Self.calendarQueue.async {
+                guard granted else {
+                    call.reject("カレンダーへのアクセスが許可されていません")
+                    return
                 }
-                try store.commit()
-                call.resolve(["written": written])
-            } catch {
-                store.reset()
-                call.reject("カレンダーに書けませんでした")
+                if UserDefaults.standard.string(forKey: Self.lastSyncKey) == stamp,
+                   let id = UserDefaults.standard.string(forKey: Self.calendarIdKey), store.calendar(withIdentifier: id) != nil {
+                    call.resolve(["written": 0])
+                    return
+                }
+                do {
+                    let cal = try Self.kurashiCalendar()
+                    let end = Calendar.current.date(byAdding: .day, value: 1, to: endDay) ?? endDay
+                    let old = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: [cal]))
+                    for e in old { try store.remove(e, span: .thisEvent, commit: false) }
+                    var written = 0
+                    for it in items {
+                        guard let s = Self.date(it.startDate, it.allDay ? "00:00" : it.startTime) else { continue }
+                        let e = EKEvent(eventStore: store)
+                        e.calendar = cal
+                        e.title = it.title
+                        e.isAllDay = it.allDay
+                        e.startDate = s
+                        if it.allDay {
+                            e.endDate = Self.date(it.endDate) ?? s
+                        } else {
+                            let en = Self.date(it.endDate, it.endTime) ?? s
+                            e.endDate = en > s ? en : s.addingTimeInterval(3600)
+                        }
+                        if !it.location.isEmpty { e.location = it.location }
+                        try store.save(e, span: .thisEvent, commit: false)
+                        written += 1
+                    }
+                    try store.commit()
+                    UserDefaults.standard.set(stamp, forKey: Self.lastSyncKey)
+                    call.resolve(["written": written])
+                } catch {
+                    store.reset()
+                    call.reject("カレンダーに書けませんでした：\(error.localizedDescription)")
+                }
             }
         }
         if #available(iOS 17.0, *) {
-            store.requestFullAccessToEvents { granted, _ in done(granted) }
+            store.requestFullAccessToEvents { granted, _ in work(granted) }
         } else {
-            store.requestAccess(to: .event) { granted, _ in done(granted) }
+            store.requestAccess(to: .event) { granted, _ in work(granted) }
         }
     }
 }

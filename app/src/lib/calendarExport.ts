@@ -34,7 +34,8 @@ export function buildCalendarItems(data: AppData, today: string): CalendarItem[]
 
   for (const e of data.events) {
     const title = e.title.trim() || "（名前なし）";
-    const base = { title, allDay: e.allDay, location: e.location ?? "", notes: e.note ?? "" };
+    // メモ（説明）は渡さない（iCloud に同期され、ロック画面などにも出るため）
+    const base = { title, allDay: e.allDay, location: e.location ?? "", notes: "" };
     const rep = e.repeat ?? "none";
     if (rep === "none" || e.startDate !== e.endDate) {
       // 1回だけの予定・何日も続く予定：期間に少しでもかかれば、そのまま1件
