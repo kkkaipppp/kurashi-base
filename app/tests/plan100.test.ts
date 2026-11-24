@@ -80,3 +80,16 @@ describe("A 入力とカレンダー", () => {
     expect(src("app/calendar/page.tsx")).toContain("固定費の支払い予定");
   });
 });
+
+describe("C グラフの単位と設定のまとまり", () => {
+  it("週・年のグラフに、単位（円）と左右の目盛りの読み方を書く", () => {
+    const s = src("components/TrendChart.tsx");
+    expect(s).toContain("単位は円。棒は左の目盛り、線は右の紫の目盛り");
+  });
+  it("設定は目的ごとの見出しで分ける（自分用だけ）。今までのアンカーは残す", () => {
+    const s = src("app/settings/page.tsx");
+    expect(s).toContain("const GROUPS = IS_PERSONAL;");
+    for (const id of ['id="budget"', 'id="categories"', 'id="calendar-file"', 'id="csv-import"', 'id="backup"', 'id="danger"']) expect(s).toContain(id);
+    for (const g of ["ふだんの設定", "ほかとつなぐ・取り込む", "記録を守る"]) expect(s).toContain(g);
+  });
+});
