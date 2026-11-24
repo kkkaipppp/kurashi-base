@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Card, IconChevronL, IconChevronR, SectionTitle } from "./ui";
 import { addDays, formatDateJa, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
-import { dailyInWeek, monthlyInYear, summarizePeriod, weekRange, yearRange } from "@/lib/periods";
+import { dailyInWeek, monthlyInYear, summarizePeriod, weekRange, weeklyTrend, yearRange } from "@/lib/periods";
+import { TrendChart } from "./TrendChart";
 import { useData } from "@/lib/store";
 
 const WD = ["月", "火", "水", "木", "金", "土", "日"];
@@ -25,38 +26,6 @@ function Totals({ expense, income, balance }: { expense: number; income: number;
         <dd className={`text-[14px] font-bold ${balance < 0 ? "text-expense" : ""}`}>{formatSignedYen(balance)}</dd>
       </div>
     </dl>
-  );
-}
-
-/** 支出（赤）と収入（青）の2本の棒 */
-function Bars({ rows, max }: { rows: { label: string; expense: number; income: number; strong?: boolean }[]; max: number }) {
-  return (
-    <ul className="space-y-1.5" aria-label="支出と収入の棒グラフ">
-      {rows.map((r) => (
-        <li key={r.label} className="grid grid-cols-[2.5rem_1fr] items-center gap-2">
-          <span className={`text-[12px] ${r.strong ? "font-bold text-ink" : "text-ink-3"}`}>{r.label}</span>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1.5">
-              <div className="h-2 rounded-full bg-expense" style={{ width: `${Math.max(r.expense ? 2 : 0, (r.expense / max) * 100) * 0.7}%` }} />
-              {r.expense > 0 && (
-                <span className="num text-[11px] text-expense">
-                  <span className="sr-only">支出 </span>
-                  {formatYen(r.expense)}
-                </span>
-              )}
-            </div>
-            {r.income > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="h-2 rounded-full bg-income" style={{ width: `${Math.max(2, (r.income / max) * 100) * 0.7}%` }} />
-                <span className="num text-[11px] text-income">
-                  <span className="sr-only">収入 </span>+{formatYen(r.income)}
-                </span>
-              </div>
-            )}
-          </div>
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -84,7 +53,8 @@ export function WeekReport() {
   const { from, to } = weekRange(anchor);
   const s = summarizePeriod(data.transactions, from, to);
   const days = dailyInWeek(data.transactions, from);
-  const max = Math.max(1, ...days.flatMap((d) => [d.expense, d.income]));
+  const trend = weeklyTrend(data.transactions, from, 12);
+  const thisWeekFrom = weekRange(today).from;
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "（不明なカテゴリ）";
   const isThisWeek = from === weekRange(today).from;
   return (
@@ -109,7 +79,15 @@ export function WeekReport() {
       </Card>
       <Card>
         <SectionTitle>曜日ごと</SectionTitle>
-        <Bars rows={days.map((d, i) => ({ label: `${WD[i]} ${Number(d.date.slice(8))}`, expense: d.expense, income: d.income, strong: d.date === today }))} max={max} />
+        <TrendChart title="この週の曜日ごと" rows={days.map((d, i) => ({ label: `${WD[i]}${Number(d.date.slice(8))}`, expense: d.expense, income: d.income, strong: d.date === today, future: d.date > today }))} lineLabel="この週の収支の累計" />
+      </Card>
+      <Card>
+        <SectionTitle>12週の推移</SectionTitle>
+        <TrendChart
+          title="直近12週"
+          rows={trend.map((w) => ({ label: `${Number(w.from.slice(5, 7))}/${Number(w.from.slice(8))}`, expense: w.expense, income: w.income, strong: w.from === thisWeekFrom, future: w.from > thisWeekFrom }))}
+          lineLabel="12週の収支の累計"
+        />
       </Card>
       <TopCategories list={s.byCategory} catName={catName} />
     </>
@@ -123,7 +101,6 @@ export function YearReport() {
   const { from, to } = yearRange(year);
   const s = summarizePeriod(data.transactions, from, to);
   const months = monthlyInYear(data.transactions, year);
-  const max = Math.max(1, ...months.flatMap((m) => [m.expense, m.income]));
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "（不明なカテゴリ）";
   const thisMonth = Number(today.slice(5, 7));
   const thisYear = Number(today.slice(0, 4));
@@ -151,8 +128,8 @@ export function YearReport() {
         )}
       </Card>
       <Card>
-        <SectionTitle>月ごと</SectionTitle>
-        <Bars rows={months.map((m) => ({ label: `${m.month}月`, expense: m.expense, income: m.income, strong: year === thisYear && m.month === thisMonth }))} max={max} />
+        <SectionTitle>月ごとの推移</SectionTitle>
+        <TrendChart title={`${year}年の月ごと`} rows={months.map((m) => ({ label: `${m.month}月`, expense: m.expense, income: m.income, strong: year === thisYear && m.month === thisMonth, future: year > thisYear || (year === thisYear && m.month > thisMonth) }))} lineLabel="この年の収支の累計" />
       </Card>
       <TopCategories list={s.byCategory} catName={catName} />
     </>

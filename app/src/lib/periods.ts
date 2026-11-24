@@ -69,3 +69,18 @@ export function monthlyInYear(txs: Transaction[], year: number): { month: number
 export function yearRange(year: number): { from: string; to: string } {
   return { from: `${year}-01-01`, to: `${year}-12-31` };
 }
+
+/** 直近 n 週（最後の週の月曜 lastFrom まで）の、週ごとの支出・収入（推移用） */
+export function weeklyTrend(txs: Transaction[], lastFrom: string, n = 12): { from: string; expense: number; income: number }[] {
+  const weeks = Array.from({ length: n }, (_, i) => ({ from: addDays(lastFrom, -7 * (n - 1 - i)), expense: 0, income: 0 }));
+  const start = weeks[0].from;
+  const end = addDays(lastFrom, 6);
+  for (const t of txs) {
+    if (t.date < start || t.date > end) continue;
+    const i = weeks.findIndex((w, k) => t.date >= w.from && (k === n - 1 || t.date < weeks[k + 1].from));
+    if (i < 0) continue;
+    if (t.type === "expense") weeks[i].expense += t.amount;
+    else weeks[i].income += t.amount;
+  }
+  return weeks;
+}
