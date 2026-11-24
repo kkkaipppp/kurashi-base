@@ -176,7 +176,10 @@ describe("点検の直し（アプリ）：カレンダーの削除とウィジ�
     expect(src("components/NativeStatusCard.tsx")).toContain("入れた予定を消す");
   });
   it("ウィジェットの予算の残りは、ホームと同じ額と比べる", () => {
-    expect(src("lib/widgetSummary.ts")).toContain("budgetSpent(data, monthKey(today), today)");
+    expect(src("lib/widgetSummary.ts")).toContain("const spent = budgetSpent(data, monthKey(today), today);");
+    expect(readFileSync(join(__dirname, "..", "ios", "App", "KurashiWidget", "KurashiWidget.swift"), "utf8")).toContain(String.raw`生活費 \(yen(s.budgetSpent ?? s.monthExpense))`);
+  });
+});
 
 describe("再点検の直し：書きかけ", () => {
   it("前の書きかけに答えていないときは、閉じても別の1件を保存しても、その書きかけは消さない", () => {

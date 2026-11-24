@@ -15,6 +15,8 @@ struct Summary: Decodable {
     let monthIncome: Int
     let budget: Int?
     let remaining: Int?
+    /// 予算と比べる額（投資を除いた生活費）。古い要約には無い
+    let budgetSpent: Int?
     let updatedAt: String?
     /// 明日の予定（日付が変わってアプリを開くまでの間に使う。古い要約にはない）
     struct Day: Decodable { let date: String; let events: [Ev] }
@@ -152,7 +154,8 @@ struct KurashiWidgetView: View {
                     Text("今月の残り予算").font(.caption2).foregroundStyle(KB.ink3)
                     Text(yen(r)).font(.title3.bold()).foregroundStyle(r < 0 ? KB.expense : KB.brand)
                         .minimumScaleFactor(0.6).lineLimit(1)
-                    Text("支出 \(yen(s.monthExpense))").font(.caption2).foregroundStyle(KB.ink3).lineLimit(1)
+                    // 残り予算の下は、予算から引いた額（生活費）を出す（支出の合計だと数字が合わない。点検役の指摘）
+                    Text("生活費 \(yen(s.budgetSpent ?? s.monthExpense))").font(.caption2).foregroundStyle(KB.ink3).lineLimit(1)
                 } else {
                     Text("今月の支出").font(.caption2).foregroundStyle(KB.ink3)
                     Text(yen(s.monthExpense)).font(.title3.bold()).foregroundStyle(KB.expense)

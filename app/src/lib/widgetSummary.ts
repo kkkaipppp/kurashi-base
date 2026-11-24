@@ -15,7 +15,8 @@ export interface WidgetSummary {
   monthExpense: number; // 今月の支出
   monthIncome: number; // 今月の収入
   budget: number | null; // 1か月の予算
-  remaining: number | null; // 予算 − 今月の支出（予算がなければ null）
+  remaining: number | null; // 予算 − 予算と比べる額（予算がなければ null）
+  budgetSpent: number; // 予算と比べる額（自分用は投資を除いた生活費。lib/ledger.ts）
 }
 
 export const WIDGET_EVENTS_MAX = 3;
@@ -24,6 +25,7 @@ export function buildWidgetSummary(data: AppData, today: string, nowIso: string)
   const evs = eventsOnDay(data.events, today);
   const sum = summarizeMonth(data.transactions, monthKey(today));
   const budget = data.budget.monthly ?? null;
+  const spent = budgetSpent(data, monthKey(today), today);
   return {
     v: 1,
     updatedAt: nowIso,
@@ -44,6 +46,7 @@ export function buildWidgetSummary(data: AppData, today: string, nowIso: string)
     monthIncome: sum.income,
     budget,
     // 予算の残りは、ホームの予算カードと同じ額と比べる（自分用は投資を除いた生活費。lib/ledger.ts）
-    remaining: budget === null ? null : budget - budgetSpent(data, monthKey(today), today),
+    remaining: budget === null ? null : budget - spent,
+    budgetSpent: spent,
   };
 }
