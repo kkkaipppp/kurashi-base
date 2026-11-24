@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { dailyInWeek, monthlyInYear, summarizePeriod, weekRange, yearRange } from "@/lib/periods";
+import { dailyInWeek, monthlyInYear, summarizePeriod, weekRange, weeklyTrend, yearRange } from "@/lib/periods";
+import { cumulativeBalance, shortAmount } from "@/components/TrendChart";
 import { FEATURE_EDITIONS } from "@/lib/edition";
 import type { Transaction } from "@/lib/types";
 
@@ -35,6 +36,19 @@ describe("週・年の収支（2026-11-24 平尾さん：年間と週の収支�
     expect(m).toHaveLength(12);
     expect([m[0].expense, m[11].income]).toEqual([100, 300]);
     expect(yearRange(2026)).toEqual({ from: "2026-01-01", to: "2026-12-31" });
+  });
+  it("直近12週の推移：週ごとの支出・収入（最後が選んだ週）", () => {
+    const txs = [tx({ date: "2026-11-23", amount: 100 }), tx({ date: "2026-11-22", amount: 50 }), tx({ date: "2026-09-01", amount: 7 }), tx({ date: "2026-11-30", amount: 999 })];
+    const w = weeklyTrend(txs, "2026-11-23", 12);
+    expect(w).toHaveLength(12);
+    expect(w[11]).toMatchObject({ from: "2026-11-23", expense: 100 });
+    expect(w[10]).toMatchObject({ from: "2026-11-16", expense: 50 });
+    expect(w[0].from).toBe("2026-09-07");
+    expect(w.reduce((s, x) => s + x.expense, 0)).toBe(150);
+  });
+  it("推移の折れ線は収支の累計。目盛りの金額は短く", () => {
+    expect(cumulativeBalance([{ label: "a", expense: 100, income: 0 }, { label: "b", expense: 0, income: 300 }, { label: "c", expense: 50, income: 0 }])).toEqual([-100, 200, 150]);
+    expect([shortAmount(8000), shortAmount(35000), shortAmount(120000), shortAmount(-250000)]).toEqual(["8,000", "3.5万", "12万", "-25万"]);
   });
   it("まず自分用だけで有効（公開版には出さない）", () => {
     expect(FEATURE_EDITIONS.periodReport).toEqual({ personal: true, public: false });
