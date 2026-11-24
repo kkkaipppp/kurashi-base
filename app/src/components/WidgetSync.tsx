@@ -6,6 +6,7 @@ import { useData } from "@/lib/store";
 import { todayStr } from "@/lib/date";
 import { buildBackup } from "@/lib/backup";
 import { buildWidgetSummary } from "@/lib/widgetSummary";
+import { buildCalendarItems, calendarWindow } from "@/lib/calendarExport";
 import { autoBackupDay, backupRecordCount, NativeBridge } from "@/lib/nativeBridge";
 
 /**
@@ -28,6 +29,27 @@ export function WidgetSync() {
     NativeBridge.setSummary({ json }).catch(() => {
       // ウィジェットに渡せなくても、記録の保存には影響しない
     });
+  }, [data]);
+
+  // iPhone のカレンダーへの反映（記録が変わって3秒たったら。中身が前と同じなら書かない）
+  const lastCalendar = useRef("");
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const t = setTimeout(() => {
+      const today = todayStr();
+      const json = JSON.stringify(buildCalendarItems(data, today));
+      const { from, to } = calendarWindow(today);
+      const key = `${from}|${to}|${json}`;
+      if (key === lastCalendar.current) return;
+      NativeBridge.syncCalendar({ from, to, json })
+        .then(() => {
+          lastCalendar.current = key;
+        })
+        .catch(() => {
+          // カレンダーへのアクセスを許可していないときなど。記録には影響しない
+        });
+    }, 3000);
+    return () => clearTimeout(t);
   }, [data]);
 
   // 自動バックアップと、日付が変わったときの要約の更新

@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import Capacitor
 import WidgetKit
+import EventKit
 
 /// Web の画面（components/WidgetSync.tsx）から受け取った要約を、ウィジェットと一緒に使う置き場（App Group）に書く。
 /// あわせて、その日の自動バックアップを書類フォルダに書く。
@@ -12,7 +13,8 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "WidgetBridge"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "setSummary", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "writeBackup", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "writeBackup", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "syncCalendar", returnType: CAPPluginReturnPromise)
     ]
 
     static let appGroup = "group.jp.kurashibase.personal"
@@ -95,6 +97,104 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             call.resolve(["name": name, "kept": min(files.count, Self.keepDays)])
         } catch {
             call.reject("バックアップを書けませんでした")
+        }
+    }
+
+    // MARK: - iPhone のカレンダーへの反映
+
+    private struct CalItem: Decodable {
+        let title: String
+        let startDate: String
+        let endDate: String
+        let allDay: Bool
+        let startTime: String
+        let endTime: String
+        let location: String
+        let notes: String
+    }
+
+    private static let eventStore = EKEventStore()
+    private static let calendarIdKey = "kbCalendarIdentifier"
+    private static let calendarTitle = "くらしベース"
+
+    private static func date(_ day: String, _ time: String = "00:00") -> Date? {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = .current
+        f.dateFormat = "yyyy-MM-dd HH:mm"
+        return f.date(from: "\(day) \(time.isEmpty ? "00:00" : time)")
+    }
+
+    /// 「くらしベース」カレンダー（なければ作る）。ほかのカレンダーには書かない
+    private static func kurashiCalendar() throws -> EKCalendar {
+        let store = eventStore
+        if let id = UserDefaults.standard.string(forKey: calendarIdKey), let c = store.calendar(withIdentifier: id) {
+            return c
+        }
+        let c = EKCalendar(for: .event, eventStore: store)
+        c.title = calendarTitle
+        c.cgColor = UIColor(red: 0.184, green: 0.435, blue: 0.369, alpha: 1).cgColor
+        guard let source = store.defaultCalendarForNewEvents?.source
+                ?? store.sources.first(where: { $0.sourceType == .local }) else {
+            throw NSError(domain: "kurashi", code: 1)
+        }
+        c.source = source
+        try store.saveCalendar(c, commit: true)
+        UserDefaults.standard.set(c.calendarIdentifier, forKey: calendarIdKey)
+        return c
+    }
+
+    /// from〜to の「くらしベース」カレンダーの予定を消して、受け取った一覧で書き直す
+    @objc func syncCalendar(_ call: CAPPluginCall) {
+        guard let from = call.getString("from"), let to = call.getString("to"),
+              let start = Self.date(from), let endDay = Self.date(to),
+              let json = call.getString("json"), json.utf8.count < 5_000_000,
+              let items = try? JSONDecoder().decode([CalItem].self, from: Data(json.utf8)) else {
+            call.reject("カレンダーに書く中身が正しくありません")
+            return
+        }
+        let store = Self.eventStore
+        let done: (Bool) -> Void = { granted in
+            guard granted else {
+                call.reject("カレンダーへのアクセスが許可されていません")
+                return
+            }
+            do {
+                let cal = try Self.kurashiCalendar()
+                let end = Calendar.current.date(byAdding: .day, value: 1, to: endDay) ?? endDay
+                let old = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: [cal]))
+                for e in old { try store.remove(e, span: .thisEvent, commit: false) }
+                var written = 0
+                for it in items {
+                    guard let s = Self.date(it.startDate, it.allDay ? "00:00" : it.startTime) else { continue }
+                    let e = EKEvent(eventStore: store)
+                    e.calendar = cal
+                    e.title = it.title
+                    e.isAllDay = it.allDay
+                    e.startDate = s
+                    if it.allDay {
+                        e.endDate = Self.date(it.endDate) ?? s
+                    } else {
+                        let en = Self.date(it.endDate, it.endTime) ?? s
+                        e.endDate = en > s ? en : s.addingTimeInterval(3600)
+                    }
+                    if !it.location.isEmpty { e.location = it.location }
+                    if !it.notes.isEmpty { e.notes = it.notes }
+                    try store.save(e, span: .thisEvent, commit: false)
+                    written += 1
+                }
+                try store.commit()
+                call.resolve(["written": written])
+            } catch {
+                store.reset()
+                call.reject("カレンダーに書けませんでした")
+            }
+        }
+        if #available(iOS 17.0, *) {
+            store.requestFullAccessToEvents { granted, _ in done(granted) }
+        } else {
+            store.requestAccess(to: .event) { granted, _ in done(granted) }
         }
     }
 }
