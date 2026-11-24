@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card, IconChevronR, PageHeader } from "@/components/ui";
 import { useData } from "@/lib/store";
 import { todayStr } from "@/lib/date";
+import { IS_PERSONAL } from "@/lib/edition";
 import type { AppData } from "@/lib/types";
 
 type Item = { href: string; label: string; desc: string; count?: (d: AppData) => number; soon?: boolean };
@@ -66,9 +67,9 @@ export default function MenuPage() {
   return (
     <main className="space-y-4">
       <PageHeader title="すべての機能" />
-      {GROUPS.map((g) => (
-        <section key={g.title}>
-          <h2 className="mb-1.5 px-1 text-[13px] font-semibold text-ink-3">{g.title}</h2>
+      {GROUPS.map((g) => {
+        const soon = g.items.every((i) => i.soon);
+        const list = (
           <Card className="p-0">
             <ul className="divide-y divide-line">
               {g.items.map((i) => {
@@ -91,8 +92,22 @@ export default function MenuPage() {
               })}
             </ul>
           </Card>
-        </section>
-      ))}
+        );
+        // 自分用は、まだ使えないもの（準備中）をふだんのメニューに出さない（100点化の指示 F。開けば見られる）
+        if (IS_PERSONAL && soon)
+          return (
+            <details key={g.title} className="rounded-xl">
+              <summary className="flex min-h-11 cursor-pointer items-center px-1 text-[13px] font-semibold text-ink-3">準備中のもの（{g.items.length}件）を見る</summary>
+              {list}
+            </details>
+          );
+        return (
+          <section key={g.title}>
+            <h2 className="mb-1.5 px-1 text-[13px] font-semibold text-ink-3">{g.title}</h2>
+            {list}
+          </section>
+        );
+      })}
     </main>
   );
 }

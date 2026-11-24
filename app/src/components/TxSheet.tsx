@@ -11,6 +11,7 @@ import { addDays, formatDateJa, todayStr } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from "@/lib/sheetDraft";
 import { OrphanDraft } from "./OrphanDraft";
+import { categoryIsInvest, fixedCandidates } from "@/lib/classify";
 import { PAYMENT_METHODS, type TxSource, type TxType } from "@/lib/types";
 
 export type TxSheetRequest =
@@ -30,6 +31,8 @@ export type TxSheetRequest =
 
 // よく使うカテゴリ・前回の支払方法の候補（100点化の指示 A）。まず自分用だけ。候補は押したときだけ入る（勝手に変えない）
 const SUGGEST = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+// この記録の数え方・旅行・固定費の支払いとしてつなぐ（100点化の指示 D・F）。自分用だけ
+const EXTRA = SUGGEST;
 
 export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => void }) {
   const data = useData();
@@ -50,6 +53,9 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         merchant: editing.merchant,
         paymentMethod: editing.paymentMethod,
         note: editing.note,
+        countAs: editing.countAs ?? "",
+        tripId: editing.tripId ?? "",
+        linkRecurringId: "",
       };
     const r = req.mode === "new" ? req : null;
     const type = r?.type ?? "expense";
@@ -62,6 +68,9 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
       merchant: r?.initial?.merchant ?? "",
       paymentMethod: r?.initial?.paymentMethod ?? "",
       note: r?.initial?.note ?? "",
+      countAs: r?.initial?.countAs ?? "",
+      tripId: r?.initial?.tripId ?? "",
+      linkRecurringId: "",
     };
     // 開いた時点の値で固定する
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,10 +207,16 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         ...(editing?.sourceFingerprint || (req.mode === "new" && req.sourceFingerprint)
           ? { sourceFingerprint: editing?.sourceFingerprint ?? (req.mode === "new" ? req.sourceFingerprint : undefined) }
           : {}),
-        ...(editing?.recurringId || (req.mode === "new" && req.recurringId)
-          ? { recurringId: editing?.recurringId ?? (req.mode === "new" ? req.recurringId : undefined) }
+        ...(editing?.recurringId || (req.mode === "new" && req.recurringId) || draft.linkRecurringId
+          ? { recurringId: editing?.recurringId ?? (req.mode === "new" && req.recurringId ? req.recurringId : draft.linkRecurringId) }
           : {}),
+        // 数え方・旅行は、空なら持たない（編集で外したときは store が消す）
+        countAs: draft.type === "expense" && draft.countAs ? draft.countAs : undefined,
+        tripId: draft.tripId && (data.trips ?? []).some((t) => t.id === draft.tripId) ? draft.tripId : undefined,
       };
+      if (input.countAs === undefined && !editing?.countAs) delete input.countAs;
+      if (input.tripId === undefined && !editing?.tripId) delete input.tripId;
+      if (input.recurringId === undefined) delete input.recurringId;
       if (!force) {
         const found = findDuplicates({ ...input, excludeId: asNew ? undefined : editing?.id }, data.transactions);
         if (found.length) {
@@ -425,6 +440,10 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           )}
         </Field>
 
+        {EXTRA && draft.type === "expense" && (
+          <TxExtras draft={draft} set={set} editingRecurringId={editing?.recurringId ?? (req.mode === "new" ? req.recurringId : undefined)} />
+        )}
+
         <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
           <textarea id="tx-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
         </Field>
@@ -475,5 +494,72 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
       </form>
     </Sheet>
+  );
+}
+
+
+/** 自分用だけ：固定費の支払いとしてつなぐ・この記録の数え方・旅行（100点化の指示 D・F。どれも押したときだけ変わる） */
+function TxExtras({
+  draft,
+  set,
+  editingRecurringId,
+}: {
+  draft: TxDraft;
+  set: <K extends keyof TxDraft>(k: K, v: TxDraft[K]) => void;
+  editingRecurringId?: string;
+}) {
+  const data = useData();
+  const trips = [...(data.trips ?? [])].sort((a, b) => b.startDate.localeCompare(a.startDate));
+  const cat = data.categories.find((c) => c.id === draft.categoryId);
+  const catInvest = categoryIsInvest(cat);
+  const linked = editingRecurringId ? data.recurring.find((r) => r.id === editingRecurringId) : undefined;
+  const amount = /^\d+$/.test(draft.amount.replaceAll(",", "")) ? Number(draft.amount.replaceAll(",", "")) : null;
+  const cands = editingRecurringId ? [] : fixedCandidates({ type: draft.type, categoryId: draft.categoryId, amount, merchant: draft.merchant, date: draft.date }, data.recurring);
+  return (
+    <div className="space-y-3 rounded-xl bg-surface-2 p-3">
+      {linked ? (
+        <p className="text-[13px] text-ink-2">固定費「{linked.name}」の支払いとして記録しています</p>
+      ) : (
+        cands.length > 0 && (
+          <div role="group" aria-label="固定費の支払いとしてつなぐ">
+            <p className="text-[13px] font-semibold text-ink-2">固定費の支払いですか？</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {cands.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  aria-pressed={draft.linkRecurringId === r.id}
+                  onClick={() => set("linkRecurringId", draft.linkRecurringId === r.id ? "" : r.id)}
+                  className={`min-h-11 rounded-full border px-3 text-[13px] font-semibold ${draft.linkRecurringId === r.id ? "border-brand bg-brand-soft text-brand" : "border-line bg-surface text-ink-2"}`}
+                >
+                  {draft.linkRecurringId === r.id ? "✓ " : ""}
+                  {r.name}（{formatDateJa(r.nextDueDate)}・{formatYen(r.amount)}）
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-[12px] text-ink-3">つなぐと、その固定費の次の支払日が進み、「まだ記録していない固定費」から外れます（二重に数えません）。</p>
+          </div>
+        )
+      )}
+      <Field label="この記録の数え方" optional htmlFor="tx-count">
+        <select id="tx-count" value={draft.countAs ?? ""} onChange={(e) => set("countAs", e.target.value as TxDraft["countAs"])} className={inputCls}>
+          <option value="">カテゴリどおり（{catInvest ? "投資" : "生活費"}）</option>
+          <option value="life">生活費として数える</option>
+          <option value="invest">投資として数える（予算と比べない）</option>
+        </select>
+      </Field>
+      {trips.length > 0 && (
+        <Field label="旅行" optional htmlFor="tx-trip">
+          <select id="tx-trip" value={draft.tripId ?? ""} onChange={(e) => set("tripId", e.target.value)} className={inputCls}>
+            <option value="">旅行に入れない</option>
+            {trips.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.title}（{formatDateJa(t.startDate)}〜）
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
+    </div>
   );
 }

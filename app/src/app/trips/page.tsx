@@ -7,10 +7,11 @@ import { formatYen } from "@/lib/money";
 import { eventsOnDay } from "@/lib/aggregate";
 import { mapsDirections, webSearch } from "@/lib/externalLinks";
 import { useUI } from "@/components/UIContext";
-import { EventRow } from "@/components/Rows";
+import { EventRow, TxRow } from "@/components/Rows";
 import { OpenFromQuery } from "@/components/OpenFromQuery";
 import { Sheet } from "@/components/Sheet";
 import { Button, Card, Empty, Field, IconChevronL, IconChevronR, PageHeader, inputCls } from "@/components/ui";
+import { IS_PERSONAL } from "@/lib/edition";
 import type { Trip } from "@/lib/types";
 
 const MAX_TRIP_DAYS = 60;
@@ -125,6 +126,11 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
   const costTotal = evs.reduce((s, e) => s + (e.cost ?? 0), 0);
   const directions = mapsDirections(trip.destination);
   const search = webSearch(q);
+  // 自分用：旅行につないだ支出（100点化の指示 F。メモの文字ではなく旅行の ID でつなぐ）
+  const linkedTx = IS_PERSONAL ? data.transactions.filter((t) => t.tripId === trip.id).sort((a, b) => b.date.localeCompare(a.date)) : [];
+  const spentTotal = linkedTx.reduce((s, t) => s + (t.type === "expense" ? t.amount : 0), 0);
+  // 前の作り（メモに「旅行：名前」）で入れた支出は、候補として出して、本人が「つなぐ」を押したときだけつなぐ
+  const memoCands = IS_PERSONAL ? data.transactions.filter((t) => !t.tripId && t.note.includes(`旅行：${trip.title}`)) : [];
 
   return (
     <>
@@ -153,7 +159,13 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
             {costTotal > 0 && <>行程の費用の目安 {formatYen(costTotal)}</>}
           </p>
         )}
-        {/* 旅行の支出をすぐ記録（レビュー o1 の P17。記録は旅行と結びつけず、メモに旅行の名前を入れるだけ＝保存の形式は変えない） */}
+        {IS_PERSONAL && (linkedTx.length > 0 || trip.budget != null) && (
+          <p className="num mt-1 text-[13px] font-semibold text-ink-2">
+            記録した支出 {formatYen(spentTotal)}
+            {trip.budget != null && <span className={spentTotal > trip.budget ? "text-danger" : ""}>（予算の残り {formatYen(trip.budget - spentTotal)}）</span>}
+          </p>
+        )}
+        {/* 旅行の支出をすぐ記録（レビュー o1 の P17）。公開版はメモに旅行の名前を入れるだけ、自分用は旅行の ID でつなぐ */}
         <button
           type="button"
           onClick={() =>
@@ -161,7 +173,7 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
               mode: "new",
               type: "expense",
               date: today >= trip.startDate && today <= trip.endDate ? today : trip.startDate,
-              initial: { note: `旅行：${trip.title}` },
+              initial: IS_PERSONAL ? { tripId: trip.id } : { note: `旅行：${trip.title}` },
             })
           }
           className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-soft text-[14px] font-semibold text-brand"
@@ -190,6 +202,8 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
           <p className="text-[12px] text-ink-3">Google の検索結果が開きます。</p>
         </div>
       </Card>
+
+      {IS_PERSONAL && (linkedTx.length > 0 || memoCands.length > 0) && <TripSpending trip={trip} linked={linkedTx} cands={memoCands} />}
 
       <h2 className="px-1 pt-1 text-[15px] font-bold">日ごとの行程</h2>
       {days.map((d, i) => {
@@ -370,5 +384,45 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
       </form>
     </Sheet>
+  );
+}
+
+/* ---------------- 旅行の支出（自分用。100点化の指示 F） ---------------- */
+
+function TripSpending({ trip, linked, cands }: { trip: Trip; linked: import("@/lib/types").Transaction[]; cands: import("@/lib/types").Transaction[] }) {
+  const store = useStore();
+  const ui = useUI();
+  const link = async () => {
+    const ok = await ui.confirm({
+      title: `${cands.length}件をこの旅行につなぎますか？`,
+      body: `メモに「旅行：${trip.title}」がある支出です。つなぐと、この旅行の支出として数えます（メモはそのまま残します）。`,
+      ok: "つなぐ",
+    });
+    if (!ok) return;
+    const r = store.setTxTrip(cands.map((t) => t.id), trip.id);
+    ui.toast(r.ok ? `${cands.length}件をつなぎました` : r.error, r.ok ? "ok" : "error");
+  };
+  return (
+    <Card>
+      <h2 className="text-[15px] font-bold">
+        この旅行の支出<span className="ml-1 text-[13px] font-medium text-ink-3">{linked.length}件</span>
+      </h2>
+      {cands.length > 0 && (
+        <div className="mt-2 rounded-xl bg-warn-soft p-3">
+          <p className="text-[13px] text-warn">メモに「旅行：{trip.title}」がある支出が{cands.length}件あります（まだつないでいません）。</p>
+          <Button variant="secondary" className="mt-2 w-full" onClick={link}>
+            {cands.length}件をこの旅行につなぐ
+          </Button>
+        </div>
+      )}
+      {linked.length > 0 && (
+        <ul className="-mx-2 mt-1">
+          {linked.slice(0, 20).map((t) => (
+            <TxRow key={t.id} tx={t} showDate />
+          ))}
+        </ul>
+      )}
+      {linked.length > 20 && <p className="mt-1 text-[12px] text-ink-3">ほか{linked.length - 20}件（取引履歴で見られます）</p>}
+    </Card>
   );
 }

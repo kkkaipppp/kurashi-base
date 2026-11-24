@@ -87,7 +87,7 @@ export function validateAppData(input: unknown): R {
   const cats = raw.categories as unknown[];
   const catIds = new Set<string>();
   for (const c of cats) {
-    if (!isObj(c) || !isStr(c.id) || !isStr(c.name) || (c.kind !== "expense" && c.kind !== "income"))
+    if (!isObj(c) || !isStr(c.id) || !isStr(c.name) || (c.kind !== "expense" && c.kind !== "income") || !optional(oneOf("life", "invest"))(c.role))
       return { ok: false, error: "カテゴリのデータが壊れています" };
     if (catIds.has(c.id)) return { ok: false, error: "カテゴリIDが重複しています" };
     catIds.add(c.id);
@@ -97,7 +97,9 @@ export function validateAppData(input: unknown): R {
     if (
       !isObj(t) || !isStr(t.id) || (t.type !== "expense" && t.type !== "income") ||
       !isStr(t.date) || !isValidDateStr(t.date) || !isAmt(t.amount) || !isStr(t.categoryId) ||
-      !isStr(t.merchant) || !isStr(t.paymentMethod) || !isStr(t.note) || !isStr(t.createdAt)
+      !isStr(t.merchant) || !isStr(t.paymentMethod) || !isStr(t.note) || !isStr(t.createdAt) ||
+      // 100点化で足した任意の項目（無くてもよい。あれば形を確かめる）
+      !optional(oneOf("life", "invest"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.recurringId)
     )
       return { ok: false, error: "取引のデータが壊れています" };
     if (ids.has(t.id)) return { ok: false, error: "取引IDが重複しています" };
@@ -139,7 +141,9 @@ export function validateAppData(input: unknown): R {
   }
   if (!isObj(raw.budget) || !(raw.budget.monthly === null || isAmt(raw.budget.monthly)))
     return { ok: false, error: "予算のデータが壊れています" };
-  if (!isObj(raw.prefs) || !isObj(raw.prefs.home)) return { ok: false, error: "表示設定のデータが壊れています" };
+  const isStrList = (v: unknown) => Array.isArray(v) && v.every(isStr);
+  if (!isObj(raw.prefs) || !isObj(raw.prefs.home) || !optional(isStrList)(raw.prefs.home.order) || !optional(isStrList)(raw.prefs.home.hidden))
+    return { ok: false, error: "表示設定のデータが壊れています" };
   if (!isObj(raw.meta)) return { ok: false, error: "管理情報が壊れています" };
 
   const subjectIds = new Set<string>();

@@ -1,5 +1,6 @@
 import { dailyAllowance } from "./allowance";
 import { summarizeMonth } from "./aggregate";
+import { categoryIsInvest } from "./classify";
 import { IS_PERSONAL } from "./edition";
 import { monthBreakdown } from "./monthBreakdown";
 import type { AppData } from "./types";
@@ -52,5 +53,5 @@ export function budgetSpent(data: AppData, month: string, today: string, persona
 
 /** 投資として数えているカテゴリの名前（画面に出して、分け方を本人が確かめられるように） */
 export function investCategoryNames(data: AppData): string[] {
-  return data.categories.filter((c) => c.kind === "expense" && c.name.includes("投資")).map((c) => c.name);
+  return data.categories.filter((c) => !c.archived && categoryIsInvest(c)).map((c) => c.name);
 }

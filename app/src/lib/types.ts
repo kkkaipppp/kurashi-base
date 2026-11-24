@@ -17,7 +17,10 @@ export interface Transaction {
   note: string;
   source: TxSource;
   sourceFingerprint?: string; // 画像取込時の画像指紋
-  recurringId?: string; // 固定費から記録した場合
+  recurringId?: string; // 固定費から記録した場合（手で入れた支出を固定費の支払いとしてつないだ場合も）
+  /** 100点化で追加（どれも任意。古い記録には無い。形式の番号は 2 のまま） */
+  countAs?: "life" | "invest"; // この記録だけの数え方（カテゴリの分類より優先。lib/classify.ts）
+  tripId?: string; // 旅行の支出（Trip.id）
   createdAt: string; // ISO
   updatedAt: string; // ISO
 }
@@ -88,6 +91,8 @@ export interface Category {
   kind: TxType;
   order: number;
   archived: boolean;
+  /** 100点化で追加（任意）。支出のカテゴリを生活費・投資のどちらで数えるか。無ければ名前から判断 */
+  role?: "life" | "invest";
 }
 
 export type RecurringCycle = "weekly" | "monthly" | "yearly";
@@ -106,10 +111,16 @@ export interface RecurringExpense {
   updatedAt: string;
 }
 
+/** 設定画面のオン・オフ（ホームの補足の3つ） */
+export type HomeToggle = "todaySpent" | "nextRecurring" | "needsReview";
+
 export interface HomePrefs {
   todaySpent: boolean;
   nextRecurring: boolean;
   needsReview: boolean;
+  /** 100点化で追加（任意。自分用のホームのカードの並びと、隠したカード。知らないカードは無視する） */
+  order?: string[];
+  hidden?: string[];
 }
 
 // --- v2 で追加 ---
