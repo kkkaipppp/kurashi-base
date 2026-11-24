@@ -32,13 +32,28 @@ const isDate = (s: string) => {
 
 /** CSV を行と列に分ける（"…" の中のカンマ・改行・"" に対応） */
 export function parseCsv(text: string): string[][] {
+  return parseCsvChecked(text).rows;
+}
+
+/**
+ * parseCsv に加えて、引用符（"）が閉じないまま終わったときの、その引用符が始まった行（1始まり）を返す。
+ * 閉じていないと、後ろの行が全部1つのセルに吸い込まれて、記録が黙って欠けるため（NEXT v21 CSV:C04）
+ */
+export function parseCsvChecked(text: string): { rows: string[][]; unclosedLine: number | null; rowLines: number[] } {
   const t = text.replace(/^﻿/, "");
+  let line = 1;
+  let qLine = 0;
+  // 各行が始まった、ファイルの実際の行番号（引用符の中の改行・空行があっても、エディタの行番号と同じ）
+  let rs = 0;
+  const rowLines: number[] = [];
   const rows: string[][] = [];
   let row: string[] = [];
   let cur = "";
   let q = false;
   for (let i = 0; i < t.length; i++) {
     const c = t[i];
+    if (c === "\n" || (c === "\r" && t[i + 1] !== "\n")) line++;
+    if (rs === 0 && c !== "\n" && c !== "\r") rs = line;
     if (q) {
       if (c === '"') {
         if (t[i + 1] === '"') {
@@ -46,33 +61,56 @@ export function parseCsv(text: string): string[][] {
           i++;
         } else q = false;
       } else cur += c;
-    } else if (c === '"') q = true;
-    else if (c === ",") {
+    } else if (c === '"') {
+      q = true;
+      qLine = line;
+    } else if (c === ",") {
       row.push(cur);
       cur = "";
     } else if (c === "\n" || c === "\r") {
-      if (c === "\r" && t[i + 1] === "\n") i++;
+      if (c === "\r" && t[i + 1] === "\n") {
+        i++; // CRLF は「\n」を飛ばすので、行の数えはここで1回
+        line++;
+      }
       row.push(cur);
       cur = "";
-      if (row.some((x) => x !== "")) rows.push(row);
+      if (row.some((x) => x !== "")) {
+        rows.push(row);
+        rowLines.push(rs);
+      }
       row = [];
+      rs = 0;
     } else cur += c;
   }
   if (cur !== "" || row.length) {
     row.push(cur);
-    if (row.some((x) => x !== "")) rows.push(row);
+    if (row.some((x) => x !== "")) {
+      rows.push(row);
+      rowLines.push(rs);
+    }
   }
-  return rows;
+  return { rows, unclosedLine: q ? qLine : null, rowLines };
 }
 
 export type CsvKind = "transactions" | "recurring";
 export type CsvResult =
-  | { ok: true; kind: CsvKind; incoming: AppData; rows: number; from: string | null; to: string | null; newCategories: string[] }
+  | {
+      ok: true;
+      kind: CsvKind;
+      incoming: AppData;
+      rows: number;
+      from: string | null;
+      to: string | null;
+      newCategories: string[];
+      /** 足さなかった固定費と、その理由（確認画面に見せる。NEXT v21 CSV:C05） */
+      skipped: { name: string; reason: string }[];
+    }
   | { ok: false; error: string };
 
 /** CSV から、追加の取り込みに渡す記録（AppData）を作る。今のカテゴリは名前と種類で使い回し、ないものだけ作る */
 export function csvToIncoming(text: string, current: AppData, nowIso: string): CsvResult {
-  const rows = parseCsv(text);
+  const { rows, unclosedLine, rowLines } = parseCsvChecked(text);
+  if (unclosedLine !== null) return { ok: false, error: `${unclosedLine}行目の引用符（"）が閉じていません。閉じるか、引用符を消してから、もう一度選んでください` };
   if (rows.length < 2) return { ok: false, error: "CSV に記録がありません" };
   const header = rows[0].map((h) => h.trim());
   const kind: CsvKind | null =
@@ -96,6 +134,13 @@ export function csvToIncoming(text: string, current: AppData, nowIso: string): C
   };
 
   const body = rows.slice(1);
+  // エラーは最初の1行で止めず、最大10件を行番号つきでまとめて返す（NEXT v21 CSV:C04）。確定は、エラーが0件のときだけ
+  const errs: string[] = [];
+  const fail = () => {
+    const shown = errs.slice(0, 10).join("\n");
+    const more = errs.length > 10 ? `\nほか${errs.length - 10}件` : "";
+    return { ok: false as const, error: `直してほしい行があります（${errs.length}件）。\n${shown}${more}` };
+  };
   if (body.length > 20000) return { ok: false, error: "一度に取り込めるのは20,000行までです" };
   if (kind === "transactions") {
     const txs: Transaction[] = [];
@@ -105,12 +150,27 @@ export function csvToIncoming(text: string, current: AppData, nowIso: string): C
       const [date = "", kindJa = "", amt = "", cat = "", content = "", pay = "", memo = "", srcId = ""] = body[i].map((x) => x.trim());
       const type = KIND[kindJa];
       const amount = Number(amt);
-      const line = i + 2;
-      if (!isDate(date)) return { ok: false, error: `${line}行目の日付が正しくありません（YYYY-MM-DD）` };
-      if (!type) return { ok: false, error: `${line}行目の種類は「支出」か「収入」にしてください` };
-      if (!/^\d+$/.test(amt) || amount <= 0 || amount > 1_000_000_000) return { ok: false, error: `${line}行目の金額は、正の整数（円）にしてください` };
-      if (!cat) return { ok: false, error: `${line}行目のカテゴリが空です` };
-      if (!(pay in PAY)) return { ok: false, error: `${line}行目の支払い方法「${pay}」は使えません` };
+      const line = rowLines[i + 1] ?? i + 2;
+      if (!isDate(date)) {
+        errs.push(`${line}行目の日付が正しくありません（YYYY-MM-DD）`);
+        continue;
+      }
+      if (!type) {
+        errs.push(`${line}行目の種類は「支出」か「収入」にしてください`);
+        continue;
+      }
+      if (!/^\d+$/.test(amt) || amount <= 0 || amount > 1_000_000_000) {
+        errs.push(`${line}行目の金額は、正の整数（円）にしてください`);
+        continue;
+      }
+      if (!cat) {
+        errs.push(`${line}行目のカテゴリが空です`);
+        continue;
+      }
+      if (!(pay in PAY)) {
+        errs.push(`${line}行目の支払い方法「${pay}」は使えません`);
+        continue;
+      }
       const noIdKey = (k: string) => {
         const n = (sameCount.get(k) ?? 0) + 1;
         sameCount.set(k, n);
@@ -122,34 +182,59 @@ export function csvToIncoming(text: string, current: AppData, nowIso: string): C
         paymentMethod: PAY[pay], note: memo.slice(0, 1000), source: "manual", createdAt: nowIso, updatedAt: nowIso,
       });
     }
+    if (errs.length) return fail();
     const ids = new Set(txs.map((t) => t.id));
     if (ids.size !== txs.length) return { ok: false, error: "同じ元IDの行が2つ以上あります" };
     incoming.transactions = txs;
     const dates = txs.map((t) => t.date).sort();
     incoming.categories = categories;
-    return { ok: true, kind, incoming, rows: txs.length, from: dates[0] ?? null, to: dates.at(-1) ?? null, newCategories };
+    return { ok: true, kind, incoming, rows: txs.length, from: dates[0] ?? null, to: dates.at(-1) ?? null, newCategories, skipped: [] };
   }
 
   const recs: RecurringExpense[] = [];
+  const skipped: { name: string; reason: string }[] = [];
   for (let i = 0; i < body.length; i++) {
     const [name = "", amt = "", cyc = "", day = "", next = "", cat = "", pay = ""] = body[i].map((x) => x.trim());
     const amount = Number(amt);
-    const line = i + 2;
-    if (!name) return { ok: false, error: `${line}行目の名前が空です` };
-    if (!/^\d+$/.test(amt) || amount <= 0) return { ok: false, error: `${line}行目の金額は、正の整数（円）にしてください` };
-    if (!CYCLE[cyc]) return { ok: false, error: `${line}行目の周期は「毎月・毎年・毎週」にしてください` };
+    const line = rowLines[i + 1] ?? i + 2;
+    if (!name) {
+        errs.push(`${line}行目の名前が空です`);
+        continue;
+      }
+    if (!/^\d+$/.test(amt) || amount <= 0) {
+        errs.push(`${line}行目の金額は、正の整数（円）にしてください`);
+        continue;
+      }
+    if (!CYCLE[cyc]) {
+        errs.push(`${line}行目の周期は「毎月・毎年・毎週」にしてください`);
+        continue;
+      }
     const anchor = cyc === "毎週" ? 1 : Number(day);
-    if (!Number.isInteger(anchor) || anchor < 1 || anchor > 31) return { ok: false, error: `${line}行目の支払日は1〜31にしてください` };
-    if (!isDate(next)) return { ok: false, error: `${line}行目の次の支払日が正しくありません（YYYY-MM-DD）` };
-    if (!(pay in PAY)) return { ok: false, error: `${line}行目の支払い方法「${pay}」は使えません` };
+    if (!Number.isInteger(anchor) || anchor < 1 || anchor > 31) {
+        errs.push(`${line}行目の支払日は1〜31にしてください`);
+        continue;
+      }
+    if (!isDate(next)) {
+        errs.push(`${line}行目の次の支払日が正しくありません（YYYY-MM-DD）`);
+        continue;
+      }
+    if (!(pay in PAY)) {
+        errs.push(`${line}行目の支払い方法「${pay}」は使えません`);
+        continue;
+      }
     // すでに同じ名前・金額の固定費があれば足さない（例：「家賃」と「家賃（全保連）」）
-    if (current.recurring.some((r) => r.amount === amount && (r.name === name || name.startsWith(r.name)))) continue;
+    const same = current.recurring.find((r) => r.amount === amount && (r.name === name || name.startsWith(r.name)));
+    if (same) {
+      skipped.push({ name, reason: same.name === name ? "同じ名前・金額の固定費がすでにあります" : `名前が「${same.name}」で始まり、金額が同じ固定費がすでにあります` });
+      continue;
+    }
     recs.push({
       id: `mfrec_${fnv(`${name}|${amount}|${cyc}`)}`, name: name.slice(0, 100), amount, cycle: CYCLE[cyc], anchorDay: anchor, nextDueDate: next,
       categoryId: catId("expense", cat || "その他"), paymentMethod: PAY[pay], active: true, createdAt: nowIso, updatedAt: nowIso,
     });
   }
+  if (errs.length) return fail();
   incoming.recurring = recs;
   incoming.categories = categories;
-  return { ok: true, kind, incoming, rows: recs.length, from: null, to: null, newCategories };
+  return { ok: true, kind, incoming, rows: recs.length, from: null, to: null, newCategories, skipped };
 }

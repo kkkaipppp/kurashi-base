@@ -5,11 +5,11 @@ import { useMemo } from "react";
 import { Sheet } from "./Sheet";
 import { Button, Card, IconChevronR, SectionTitle } from "./ui";
 import { useUI } from "./UIContext";
-import { eventTimeLabel } from "./Rows";
 import { useData } from "@/lib/store";
 import { eventsOnDay } from "@/lib/aggregate";
 import { addDays, daysBetween, formatDateJa } from "@/lib/date";
-import { formatYen } from "@/lib/money";
+import { buildTodayItems, TODAY_SHOWN } from "@/lib/todayItems";
+import { eventTimeLabel } from "./Rows";
 import { HOME_CARDS, defaultLayout, moveCard, toggleCard, type LayoutDraft } from "@/lib/homeLayout";
 
 /* ---------------- ホームの編集（自分用。100点化の指示 E） ---------------- */
@@ -88,43 +88,10 @@ export function HomeEditor({
 
 /* ---------------- 今日のまとめ（自分用。100点化の指示 F） ---------------- */
 
-type Item = { key: string; sort: string; time: string; title: string; sub?: string; warn?: boolean; href?: string; onOpen?: () => void };
-
 export function TodayAll({ today }: { today: string }) {
   const data = useData();
   const ui = useUI();
-  const items = useMemo(() => {
-    const out: Item[] = [];
-    // 0：過ぎたもの、1：終日、2：時刻つき、3：今日が期限
-    for (const r of data.recurring) {
-      if (!r.active || r.nextDueDate > today) continue;
-      const late = r.nextDueDate < today;
-      out.push({
-        key: `rc-${r.id}`,
-        sort: late ? `0${r.nextDueDate}` : "1",
-        time: late ? "未記録" : "今日",
-        title: `固定費 ${r.name} ${formatYen(r.amount)}`,
-        sub: late ? `${formatDateJa(r.nextDueDate)}の支払いがまだ記録されていません` : "今日が支払日",
-        warn: late,
-        href: `/recurring?open=${r.id}`,
-      });
-    }
-    for (const e of eventsOnDay(data.events, today)) {
-      const allDay = e.allDay || (e.startDate < today && e.startDate !== e.endDate);
-      out.push({ key: `ev-${e.id}`, sort: allDay ? "1" : `2${e.startTime}`, time: allDay ? "終日" : e.startTime, title: e.title.trim() || "（名前なし）", sub: eventTimeLabel(e, today), onOpen: () => ui.openEvent({ mode: "view", id: e.id }) });
-    }
-    for (const t of data.tasks) {
-      if (t.done || !t.due || t.due > today) continue;
-      const late = t.due < today;
-      out.push({ key: `task-${t.id}`, sort: late ? `0${t.due}` : "3", time: late ? "期限切れ" : "期限", title: t.title, sub: late ? `期限を${daysBetween(t.due, today)}日過ぎています` : "今日が期限のタスク", warn: late, href: `/tasks?open=${t.id}` });
-    }
-    for (const c of data.contracts)
-      if (c.status === "active" && c.renewalDate === today) out.push({ key: `ct-${c.id}`, sort: "3", time: "期限", title: `${c.name}の更新日`, sub: "契約", href: `/contracts?open=${c.id}` });
-    for (const d of data.documents) if (d.expiry === today) out.push({ key: `doc-${d.id}`, sort: "3", time: "期限", title: `${d.title}の期限`, sub: "書類", href: `/documents?open=${d.id}` });
-    for (const g of data.goals) if (!g.done && g.deadline === today) out.push({ key: `goal-${g.id}`, sort: "3", time: "期限", title: g.title, sub: "目標の期限", href: `/goals?open=${g.id}` });
-    for (const s of data.studySubjects) if (!s.archived && s.examDate === today) out.push({ key: `st-${s.id}`, sort: "1", time: "試験", title: `${s.name}の試験日`, sub: "資格", href: `/study?open=${s.id}` });
-    return out.sort((a, b) => a.sort.localeCompare(b.sort));
-  }, [data, today, ui]);
+  const items = useMemo(() => buildTodayItems(data, today), [data, today]);
 
   // 何もないときは、次の予定を1件
   let next: { day: string; title: string; id: string } | null = null;
@@ -150,13 +117,16 @@ export function TodayAll({ today }: { today: string }) {
       </SectionTitle>
       {items.length > 0 ? (
         <ul className="-mx-2">
-          {items.slice(0, 8).map((it) => {
+          {items.slice(0, TODAY_SHOWN).map((it) => {
+            // 予定は、時間帯などの補足を出す（以前と同じ）
+            const ev = it.eventId ? data.events.find((e) => e.id === it.eventId) : undefined;
+            const sub = ev ? eventTimeLabel(ev, today) : it.sub;
             const body = (
               <>
                 <span className={`num w-14 shrink-0 text-[12px] font-semibold ${it.warn ? "text-warn" : "text-ink-3"}`}>{it.time}</span>
                 <span className="min-w-0 flex-1">
                   <span className={`block truncate text-[14px] font-semibold ${it.warn ? "text-warn" : ""}`}>{it.title}</span>
-                  {it.sub && <span className="block truncate text-[12px] text-ink-3">{it.sub}</span>}
+                  {sub && <span className="block truncate text-[12px] text-ink-3">{sub}</span>}
                 </span>
                 <IconChevronR className="size-4 shrink-0 text-ink-3" />
               </>
@@ -169,7 +139,7 @@ export function TodayAll({ today }: { today: string }) {
                     {body}
                   </Link>
                 ) : (
-                  <button type="button" onClick={it.onOpen} className={cls}>
+                  <button type="button" onClick={() => it.eventId && ui.openEvent({ mode: "view", id: it.eventId })} className={cls}>
                     {body}
                   </button>
                 )}
@@ -190,7 +160,7 @@ export function TodayAll({ today }: { today: string }) {
           )}
         </div>
       )}
-      {items.length > 8 && <p className="mt-1 text-center text-[12px] text-ink-3">ほか{items.length - 8}件</p>}
+      {items.length > TODAY_SHOWN && <p className="mt-1 text-center text-[12px] text-ink-3">ほか{items.length - TODAY_SHOWN}件（「確認したいこと」にも出ます）</p>}
       <button type="button" onClick={() => ui.openEvent({ mode: "new", date: today })} className="mt-1 min-h-11 w-full rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft">
         ＋ 今日の予定を追加
       </button>

@@ -60,6 +60,8 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
   const base = yb(0);
   const line = lineCum.map((v, i) => `${i === 0 ? "M" : "L"}${cx(i).toFixed(1)},${yl(v).toFixed(1)}`).join(" ");
   const empty = rows.every((r) => r.expense === 0 && r.income === 0);
+  const totalExpense = rows.reduce((a, r) => a + r.expense, 0);
+  const totalIncome = rows.reduce((a, r) => a + r.income, 0);
   // 目盛りの文字が重ならないよう、いちばん長い文字の幅に合わせて間引く（最後と、今日・今月は必ず出す）。
   // 2026-11-24 実機で「12週の推移」の日付が重なった
   const labelW = Math.max(...rows.map((r) => r.label.length)) * 5.6 + 4;
@@ -149,7 +151,18 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
               </tr>
             ))}
           </tbody>
+          {/* 期間の合計（グラフの数字と合っているかを確かめられる。NEXT v21 CH:G08） */}
+          <tfoot>
+            <tr className="border-t border-line font-bold">
+              <td className="py-1">合計</td>
+              <td className="py-1 text-right text-expense">{formatYen(totalExpense)}</td>
+              <td className="py-1 text-right text-income">{formatYen(totalIncome)}</td>
+              <td className={`py-1 text-right ${(lineCum.at(-1) ?? 0) < 0 ? "text-expense" : ""}`}>{lineCum.length ? formatSignedYen(lineCum.at(-1) ?? 0) : "—"}</td>
+            </tr>
+          </tfoot>
         </table>
+        {/* 数字の根拠（何を数えているか。NEXT v21 CH:G01） */}
+        <p className="mb-2 text-[12px] text-ink-3">支出・収入はこの期間に記録したものの合計です（投資として数えた支出も含みます。予算と比べる「生活費」とは別の数字です）。まだ来ていない日・月は数えません。</p>
       </details>
     </figure>
   );

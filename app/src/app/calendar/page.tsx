@@ -18,6 +18,8 @@ const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 /** マスに名前を出す予定の数（それより多い日は「+n」） */
 const EVENT_TITLES_IN_CELL = 2;
 
+const SHOW_KEY = "kurashi-base:ui:calendar-show:v1";
+
 function shortYen(n: number): string {
   if (n >= 100_000) return `${Math.round(n / 10_000)}万`;
   if (n >= 10_000) return `${(n / 10_000).toFixed(1)}万`;
@@ -32,6 +34,24 @@ export default function CalendarPage() {
   const [selected, setSelected] = useState(today);
   // マスに出すもの（レビュー o1 の P10：狭いマスに予定と金額が混ざるので、見たいほうだけにもできる）
   const [show, setShow] = useState<"all" | "event" | "money">("all");
+  // 見たいほうを覚える（表示だけの設定。記録とは別のキー。読めない・書けない端末でも動く。NEXT v21 CAL:C12）
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(SHOW_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 開いたあとに、前回の選択を読む（最初の描画はサーバーと同じにそろえる）
+      if (v === "event" || v === "money") setShow(v);
+    } catch {
+      /* 覚えられなくても使える */
+    }
+  }, []);
+  const pickShow = (k: "all" | "event" | "money") => {
+    setShow(k);
+    try {
+      localStorage.setItem(SHOW_KEY, k);
+    } catch {
+      /* 覚えられなくても使える */
+    }
+  };
   const showEv = show !== "money";
   const showMoney = show !== "event";
   // 選んだ日を＋ボタンに引き継ぐ
@@ -107,7 +127,7 @@ export default function CalendarPage() {
               ["money", "お金"],
             ] as const
           ).map(([k, label]) => (
-            <button key={k} type="button" role="radio" aria-checked={show === k} onClick={() => setShow(k)} className={`min-h-11 rounded-lg text-[13px] font-semibold ${show === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
+            <button key={k} type="button" role="radio" aria-checked={show === k} onClick={() => pickShow(k)} className={`min-h-11 rounded-lg text-[13px] font-semibold ${show === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
               {label}
             </button>
           ))}
@@ -132,7 +152,7 @@ export default function CalendarPage() {
                   const isToday = d === today;
                   const hol = holidayName(d);
                   const red = i === 0 || !!hol; // 日曜と祝日は赤
-                  const label = `${formatDateJa(d)}${hol ? ` ${hol}` : ""}${info.ev ? ` 予定${info.ev}件（${info.titles.join("、")}${info.ev > info.titles.length ? "ほか" : ""}）` : ""}${info.exp ? ` 支出${formatYen(info.exp)}` : ""}${info.inc ? ` 収入${formatYen(info.inc)}` : ""}${dlDays.has(d) ? " 期限あり" : ""}`;
+                  const label = `${formatDateJa(d)}${hol ? ` ${hol}` : ""}${showEv && info.ev ? ` 予定${info.ev}件（${info.titles.join("、")}${info.ev > info.titles.length ? "ほか" : ""}）` : ""}${showMoney && info.exp ? ` 支出${formatYen(info.exp)}` : ""}${showMoney && info.inc ? ` 収入${formatYen(info.inc)}` : ""}${dlDays.has(d) ? " 期限あり" : ""}`;
                   return (
                     <td key={d} className="h-px p-0 align-top">
                       <button
