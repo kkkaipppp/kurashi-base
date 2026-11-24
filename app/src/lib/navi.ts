@@ -6,6 +6,9 @@ import { COLLECTION_KEYS, type AppData } from "./types";
 
 // 「今日のナビ」：今日やること・気にしておくことを、記録されたデータからだけ集める（推測で作らない）
 
+/** バックアップを案内するまでの日数 */
+export const BACKUP_REMIND_DAYS = 7;
+
 export interface NaviItem {
   key: string;
   tone: "warn" | "today" | "info";
@@ -78,8 +81,9 @@ export function buildNavi(data: AppData, today: string): NaviItem[] {
   const hasData =
     data.transactions.length + data.events.length + data.recurring.length + COLLECTION_KEYS.reduce((s, k) => s + data[k].length, 0) > 0;
   const base = data.meta.lastBackupAt ?? data.meta.createdAt;
-  if (hasData && daysBetween(base.slice(0, 10), today) >= 30)
-    items.push({ key: "backup", tone: "info", title: "30日以上バックアップしていません", sub: "設定から書き出せます", href: "/settings#backup" });
+  // Web 版はファイルへ自動で書き出せないので、週に1回を目安に案内する（2026-11-24 平尾さん：Web 版でできる限界まで）
+  if (hasData && daysBetween(base.slice(0, 10), today) >= BACKUP_REMIND_DAYS)
+    items.push({ key: "backup", tone: "info", title: `${BACKUP_REMIND_DAYS}日以上バックアップしていません`, sub: "設定から書き出せます", href: "/settings#backup" });
 
   const order = { warn: 0, today: 1, info: 2 } as const;
   return items.sort((a, b) => order[a.tone] - order[b.tone]);

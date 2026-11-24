@@ -5,7 +5,10 @@ import { useData, useStore } from "@/lib/store";
 import { parseAmount, formatYen } from "@/lib/money";
 import { applyRestore, backupFileName, buildBackup, countData, COUNT_LABELS, parseBackup, type RestorePreview } from "@/lib/backup";
 import { emptyData } from "@/lib/defaults";
-import { formatDateJa } from "@/lib/date";
+import { formatDateJa, todayStr } from "@/lib/date";
+import { buildCalendarItems, CAL_FUTURE_DAYS, CAL_PAST_DAYS } from "@/lib/calendarExport";
+import { buildIcs } from "@/lib/ics";
+import { csvToIncoming, type CsvResult } from "@/lib/csvImport";
 import type { HomePrefs, TxType } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, Field, PageHeader, SectionTitle, inputCls } from "@/components/ui";
@@ -75,6 +78,51 @@ export default function SettingsPage() {
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
     const r = store.commit((d) => ({ ...d, meta: { ...d.meta, lastBackupAt: now } }));
     ui.toast(r.ok ? "バックアップの保存を始めました。ファイルが保存されたか確認してください" : `ファイルは書き出しましたが、書き出した日を記録できませんでした。${r.error}`, r.ok ? "ok" : "error");
+  };
+
+  // --- カレンダー用ファイル（.ics） ---
+  const exportCalendar = () => {
+    const today = todayStr();
+    const items = buildCalendarItems(data, today);
+    if (items.length === 0) return ui.toast("書き出す予定・固定費がありません", "error");
+    const ics = buildIcs(buildCalendarItems(data, today), new Date().toISOString());
+    const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `kurashi-base_calendar_${today.replaceAll("-", "")}.ics`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    ui.toast(`${items.length}件をカレンダー用ファイルにしました。ファイルを開いて「すべてを追加」を押してください`);
+  };
+
+  // --- 家計簿の CSV の取り込み（追加だけ。同じ記録は二重に入れない） ---
+  const csvRef = useRef<HTMLInputElement>(null);
+  const [csv, setCsv] = useState<{ name: string; result: CsvResult } | null>(null);
+  const csvPlan = useMemo(() => (csv?.result.ok ? applyRestore(data, csv.result.incoming, "merge") : null), [csv, data]);
+  const onCsv = async (f: File | undefined) => {
+    if (!f) return;
+    if (f.size > 20 * 1024 * 1024) return ui.toast("ファイルが大きすぎます（20MB まで）", "error");
+    const text = await f.text();
+    setCsv({ name: f.name, result: csvToIncoming(text, data, new Date().toISOString()) });
+  };
+  const closeCsv = () => {
+    setCsv(null);
+    if (csvRef.current) csvRef.current.value = "";
+  };
+  const doCsv = async () => {
+    if (!csv?.result.ok || !csvPlan?.ok) return;
+    const ok = await ui.confirm({
+      title: "CSV の記録を追加しますか？",
+      body: `${csvPlan.added}件を追加します。すでにある記録はそのまま残ります。追加する前の状態は、設定の「直前の操作を取り消す」で戻せます。`,
+      ok: "追加する",
+    });
+    if (!ok) return;
+    const res = applyRestore(store.data ?? data, csv.result.incoming, "merge");
+    if (!res.ok) return ui.toast(res.error, "error");
+    const r = store.replaceAll(res.data, "家計簿の CSV から追加");
+    if (!r.ok) return ui.toast(`${r.error}（今のデータは変更していません）`, "error");
+    ui.toast(`${res.added}件を追加しました`);
+    closeCsv();
   };
 
   // --- 復元（S09 プレビュー） ---
@@ -278,6 +326,74 @@ export default function SettingsPage() {
             追加
           </Button>
         </div>
+      </Card>
+
+      <Card>
+        <div id="calendar-file" className="scroll-mt-20" />
+        <SectionTitle>iPhone のカレンダーに入れる</SectionTitle>
+        <p className="text-[13px] text-ink-2">
+          予定と固定費の支払日（{CAL_PAST_DAYS}日前〜{Math.round(CAL_FUTURE_DAYS / 30)}か月先）を、カレンダー用のファイルにします。iPhone でファイルを開いて「すべてを追加」を押すと、カレンダーに入ります。
+        </p>
+        <ul className="mt-1 mb-3 list-disc space-y-0.5 pl-5 text-[12px] text-ink-3">
+          <li>予定のメモは入れません。固定費は名前と金額が入ります</li>
+          <li>自動では直りません。予定を変えたら、もう一度書き出して入れてください（同じ予定が2つになったら、古いほうを消してください）</li>
+          <li>入れる先のカレンダーは「くらしベース」など、新しく作ると、まとめて消せて便利です</li>
+        </ul>
+        <Button variant="secondary" onClick={exportCalendar}>
+          カレンダー用ファイルを書き出す
+        </Button>
+      </Card>
+
+      <Card>
+        <div id="csv-import" className="scroll-mt-20" />
+        <SectionTitle>家計簿の CSV を取り込む</SectionTitle>
+        <p className="text-[13px] text-ink-2">
+          ほかの家計簿アプリの記録を、表計算などで決まった形の CSV にして、今の記録に追加します。同じ記録は二重に入りません。
+        </p>
+        <p className="mt-1 mb-3 text-[12px] text-ink-3">
+          決まった形：1行目が「日付,種類,金額,カテゴリ,内容,支払い方法,メモ,元ID」（支出・収入）か「名前,金額,周期,支払日,次の支払日,カテゴリ,支払い方法」（固定費）。保存するときの文字の形式は「UTF-8」にしてください。
+        </p>
+        <Button variant="secondary" onClick={() => csvRef.current?.click()}>
+          CSV ファイルを選ぶ…
+        </Button>
+        <input ref={csvRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => onCsv(e.target.files?.[0])} aria-label="家計簿の CSV ファイルを選ぶ" />
+        {csv && (
+          <div className="mt-3 space-y-2 rounded-2xl border border-line p-3" aria-label="CSV の取り込みの確認">
+            <p className="text-[13px] font-semibold break-all">{csv.name}</p>
+            {!csv.result.ok ? (
+              <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[13px] font-medium text-danger">
+                {csv.result.error}
+              </p>
+            ) : (
+              <ul className="space-y-0.5 text-[13px]">
+                <li>{csv.result.kind === "transactions" ? "支出・収入" : "固定費"}：{csv.result.rows}件{csv.result.from && `（${formatDateJa(csv.result.from, true)}〜${formatDateJa(csv.result.to ?? csv.result.from, true)}）`}</li>
+                {csvPlan?.ok && (
+                  <>
+                    <li>
+                      追加する記録：<strong className="num">{csvPlan.added}件</strong>
+                    </li>
+                    {csvPlan.duplicates > 0 && <li className="text-ink-2">すでにある記録：{csvPlan.duplicates}件（取り込みません）</li>}
+                    {csvPlan.conflicts > 0 && <li className="text-warn">同じ記録なのに内容が違うもの：{csvPlan.conflicts}件（今の内容を残します）</li>}
+                  </>
+                )}
+                {csvPlan?.ok && csvPlan.dependentSkipped > 0 && (
+                  <li className="text-warn">カテゴリの内容が今と違うため取り込まない記録：{csvPlan.dependentSkipped}件</li>
+                )}
+                {csvPlan?.ok && csvPlan.added === 0 && <li className="text-ink-2">新しく追加する記録はありません（すでに入っています）</li>}
+                {csvPlan && !csvPlan.ok && <li className="text-danger">{csvPlan.error}</li>}
+                {csv.result.newCategories.length > 0 && <li className="text-ink-2">新しく作るカテゴリ：{csv.result.newCategories.join("・")}</li>}
+              </ul>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="secondary" onClick={closeCsv}>
+                やめる
+              </Button>
+              <Button onClick={doCsv} disabled={!csv.result.ok || !csvPlan?.ok || csvPlan.added === 0}>
+                追加する
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card>

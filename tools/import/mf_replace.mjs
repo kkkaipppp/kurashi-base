@@ -59,6 +59,7 @@ data.transactions = data.transactions.filter((t) => {
 // 2. 足す（明細）
 const txRows = readCsv(txPath, "日付,種類,金額,カテゴリ,内容,支払い方法,メモ,元ID");
 const ids = new Set(data.transactions.map((t) => t.id));
+const sameCount = new Map();
 let added = 0;
 txRows.forEach((r, i) => {
   const [date, kindJa, amt, cat, content, pay, memo, srcId] = r;
@@ -66,7 +67,15 @@ txRows.forEach((r, i) => {
   const amount = Number(amt);
   if (!isDate(date) || !kind || !Number.isInteger(amount) || amount <= 0 || !cat) throw new Error(`${i + 2}行目が正しくない: ${r.join(",")}`);
   if (!(pay in PAY)) throw new Error(`${i + 2}行目の支払い方法: ${pay}`);
-  const id = `mf_${fnv(srcId || `${date}|${kindJa}|${amt}|${content}|${i}`)}_${fnv(date + srcId)}`;
+  // app/src/lib/csvImport.ts と同じ作り方（元ID がない行は、中身が同じ行の中で何番目か）
+  let id;
+  if (srcId) id = `mf_${fnv(srcId)}_${fnv(date + srcId)}`;
+  else {
+    const k = `${date}|${kindJa}|${amt}|${content}|${cat}`;
+    const n = (sameCount.get(k) ?? 0) + 1;
+    sameCount.set(k, n);
+    id = `mfn_${fnv(k)}_${fnv(`${k}#${n}`)}`;
+  }
   if (ids.has(id)) throw new Error(`ID が重なった: ${i + 2}行目`);
   ids.add(id);
   data.transactions.push({
@@ -85,7 +94,7 @@ for (const [name, amt, cyc, day, next, cat, pay] of recRows) {
   if (!CYCLE[cyc] || !isDate(next) || !Number.isInteger(amount) || amount <= 0) throw new Error(`固定費が正しくない: ${name}`);
   if (data.recurring.some((x) => x.amount === amount && (x.name === name || name.startsWith(x.name)))) { recSkipped.push(name); continue; }
   data.recurring.push({
-    id: `mfrec_${fnv(name)}`, name, amount, cycle: CYCLE[cyc], anchorDay: cyc === "毎週" ? 1 : Number(day),
+    id: `mfrec_${fnv(`${name}|${amount}|${cyc}`)}`, name, amount, cycle: CYCLE[cyc], anchorDay: cyc === "毎週" ? 1 : Number(day),
     nextDueDate: next, categoryId: catId("expense", cat), paymentMethod: PAY[pay] ?? "", active: true, createdAt: now, updatedAt: now,
   });
   recAdded++;
