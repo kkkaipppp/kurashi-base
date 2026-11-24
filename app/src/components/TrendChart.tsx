@@ -60,7 +60,11 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
   const base = yb(0);
   const line = lineCum.map((v, i) => `${i === 0 ? "M" : "L"}${cx(i).toFixed(1)},${yl(v).toFixed(1)}`).join(" ");
   const empty = rows.every((r) => r.expense === 0 && r.income === 0);
-  const showLabel = (i: number) => rows.length <= 12 || i % Math.ceil(rows.length / 12) === 0;
+  // 目盛りの文字が重ならないよう、いちばん長い文字の幅に合わせて間引く（最後と、今日・今月は必ず出す）。
+  // 2026-11-24 実機で「12週の推移」の日付が重なった
+  const labelW = Math.max(...rows.map((r) => r.label.length)) * 5.6 + 4;
+  const step = Math.max(1, Math.ceil(labelW / slot));
+  const showLabel = (i: number) => rows[i].strong || ((rows.length - 1 - i) % step === 0 && !rows.slice(i + 1, i + step).some((r) => r.strong));
 
   if (empty) {
     return (
