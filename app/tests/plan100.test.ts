@@ -142,3 +142,20 @@ describe("C グラフの単位と設定のまとまり", () => {
     for (const g of ["ふだんの設定", "ほかとつなぐ・取り込む", "記録を守る"]) expect(s).toContain(g);
   });
 });
+
+describe("再点検の直し：書きかけ", () => {
+  it("前の書きかけに答えていないときは、閉じても別の1件を保存しても、その書きかけは消さない", () => {
+    for (const f of ["components/TxSheet.tsx", "components/EventSheet.tsx"]) {
+      const s = src(f);
+      expect(s).toContain("&& !(pending && !resumeAsked)) clearSheetDraft(");
+      expect(s).toContain("if (!(pending && !resumeAsked) || asNew) clearSheetDraft(");
+    }
+  });
+  it("編集の途中で記録が消されたら、その場で新しい記録として保存できる", () => {
+    expect(src("components/TxSheet.tsx")).toContain("新しい記録として保存する");
+    expect(src("components/TxSheet.tsx")).toContain("editing && !asNew ? store.updateTx");
+    expect(src("components/EventSheet.tsx")).toContain("新しい予定として保存する");
+    expect(src("components/EventSheet.tsx")).toContain("editing && !asNew ? store.updateEvent");
+    expect(src("components/EventSheet.tsx")).not.toContain("onClick={save}");
+  });
+});

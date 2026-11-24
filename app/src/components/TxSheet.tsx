@@ -163,11 +163,19 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true })))
       return;
     // 続きからにしたあと元に戻して閉じたときも、書きかけは片付ける（次に開いたときにまた出さない）
-    if (dirty || resumed.current) clearSheetDraft("tx", draftTarget);
+    // 前の書きかけに答えていないときは、その書きかけは消さない（点検役の指摘）
+    if ((dirty || resumed.current) && !(pending && !resumeAsked)) clearSheetDraft("tx", draftTarget);
     onClose();
   };
 
-  const save = async (force = false, keepOpen = false) => {
+  // 編集の途中で、記録が別の画面で消されたとき（入力は残っている）
+  const gone = req.mode === "edit" && !liveEditing && !!originalEditing;
+  const saveAsNew = async () => {
+    const ok = await ui.confirm({ title: "新しい記録として保存しますか？", body: "消された記録は戻りません。今の入力の中身で、新しい記録を1件追加します。", ok: "新しく保存する" });
+    if (ok) save(false, false, true);
+  };
+
+  const save = async (force = false, keepOpen = false, asNew = false) => {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
@@ -195,19 +203,20 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           : {}),
       };
       if (!force) {
-        const found = findDuplicates({ ...input, excludeId: editing?.id }, data.transactions);
+        const found = findDuplicates({ ...input, excludeId: asNew ? undefined : editing?.id }, data.transactions);
         if (found.length) {
           setDups(found);
           return;
         }
       }
-      const r = editing ? store.updateTx(editing.id, input, editSnapshot.current) : store.addTx(input);
+      const r = editing && !asNew ? store.updateTx(editing.id, input, editSnapshot.current) : store.addTx(input);
       if (!r.ok) {
         setSaveError(r.error); // 入力は保持したまま
         return;
       }
-      clearSheetDraft("tx", draftTarget); // 保存がうまくいったときだけ下書きを消す
-      ui.toast(editing ? "保存しました" : `${draft.type === "expense" ? "支出" : "収入"}を追加しました`);
+      // 保存がうまくいったときだけ下書きを消す（前の書きかけに答えていないときは、それは残す）
+      if (!(pending && !resumeAsked) || asNew) clearSheetDraft("tx", draftTarget);
+      ui.toast(asNew ? "新しい記録として保存しました" : editing ? "保存しました" : `${draft.type === "expense" ? "支出" : "収入"}を追加しました`);
       if (keepOpen && canContinue) {
         // 日付・種別・カテゴリ・支払方法はそのまま、金額・店名・メモだけ空にして次の1件へ
         const next: TxDraft = { ...draft, amount: "", merchant: "", note: "" };
@@ -420,6 +429,15 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           <textarea id="tx-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
         </Field>
 
+        {gone && (
+          <div className="rounded-xl border border-warn/40 bg-warn-soft p-3" role="alert">
+            <p className="text-[13px] font-semibold text-warn">この記録は、別の画面で消されました。</p>
+            <p className="mt-0.5 text-[12px] text-ink-2">今の入力は残っています。新しい記録として保存できます。</p>
+            <Button variant="secondary" className="mt-2 w-full" onClick={saveAsNew} disabled={busy}>
+              新しい記録として保存する
+            </Button>
+          </div>
+        )}
         {saveError && (
           <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[14px] font-medium text-danger">
             {saveError}（入力した内容は残っています）
