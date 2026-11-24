@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { formatSignedYen, formatYen } from "@/lib/money";
 
 /**
@@ -16,7 +17,7 @@ export interface TrendRow {
 const W = 340;
 const H = 190;
 const PAD_L = 34;
-const PAD_R = 6;
+const PAD_R = 36;
 const PAD_T = 10;
 const PAD_B = 22;
 
@@ -41,36 +42,61 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
   // 折れ線は、まだ来ていない日・月の手前まで
   const lineLen = rows.findIndex((r) => r.future) === -1 ? rows.length : rows.findIndex((r) => r.future);
   const lineCum = cum.slice(0, lineLen);
-  const top = Math.max(1, ...rows.flatMap((r) => [r.expense, r.income]), ...lineCum);
-  const bottom = Math.min(0, ...lineCum);
-  const span = top - bottom || 1;
+  // 棒（支出・収入）と累計の折れ線は、目盛りを分ける（レビュー o1 の P07：累計が大きいと棒が小さく見えるため）。
+  // 棒の目盛りは左、累計の目盛りは右（紫）
+  const barMax = Math.max(1, ...rows.flatMap((r) => [r.expense, r.income]));
+  const lMax = Math.max(0, ...lineCum);
+  const lMin = Math.min(0, ...lineCum);
+  const lSpan = lMax - lMin || 1;
   const plotW = W - PAD_L - PAD_R;
   const plotH = H - PAD_T - PAD_B;
-  const y = (v: number) => PAD_T + ((top - v) / span) * plotH;
+  const yb = (v: number) => PAD_T + (1 - v / barMax) * plotH;
+  const yl = (v: number) => PAD_T + ((lMax - v) / lSpan) * plotH;
   const slot = plotW / Math.max(1, rows.length);
   const barW = Math.max(2, Math.min(12, slot * 0.32));
   const cx = (i: number) => PAD_L + slot * i + slot / 2;
-  const zero = y(0);
-  const line = lineCum.map((v, i) => `${i === 0 ? "M" : "L"}${cx(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const base = yb(0);
+  const line = lineCum.map((v, i) => `${i === 0 ? "M" : "L"}${cx(i).toFixed(1)},${yl(v).toFixed(1)}`).join(" ");
+  const empty = rows.every((r) => r.expense === 0 && r.income === 0);
   const showLabel = (i: number) => rows.length <= 12 || i % Math.ceil(rows.length / 12) === 0;
 
+  if (empty) {
+    return (
+      <div className="rounded-xl bg-surface-2 px-3 py-6 text-center">
+        <p className="text-[14px] text-ink-2">この期間は、まだ記録がありません</p>
+        <Link href="/?add=expense" className="mt-2 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink">
+          支出を追加
+        </Link>
+      </div>
+    );
+  }
   return (
     <figure className="space-y-2">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${title}の縦の棒グラフと、${lineLabel}の推移`}>
-        {/* 目盛りの線：上・0・下 */}
-        {[...(top > 1 ? [top] : []), 0, ...(bottom < 0 ? [bottom] : [])].map((v, k) => (
-          <g key={k}>
-            <line x1={PAD_L} x2={W - PAD_R} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeWidth={v === 0 ? 1 : 0.6} strokeDasharray={v === 0 ? undefined : "3 3"} />
-            <text x={PAD_L - 4} y={y(v) + 3} textAnchor="end" fontSize="9" fill="var(--ink-3)">
+        {/* 棒の目盛り（左）：上と0 */}
+        {[barMax, 0].map((v, k) => (
+          <g key={`b${k}`}>
+            <line x1={PAD_L} x2={W - PAD_R} y1={yb(v)} y2={yb(v)} stroke="var(--line)" strokeWidth={v === 0 ? 1 : 0.6} strokeDasharray={v === 0 ? undefined : "3 3"} />
+            <text x={PAD_L - 4} y={yb(v) + 3} textAnchor="end" fontSize="9" fill="var(--ink-3)">
               {shortAmount(v)}
             </text>
           </g>
         ))}
+        {/* 累計の目盛り（右、紫）：いちばん上・いちばん下（0 をまたぐときは 0 の点線も） */}
+        {lineCum.length > 0 &&
+          [...new Set([lMax, lMin])].map((v, k) => (
+            <text key={`l${k}`} x={W - PAD_R + 4} y={yl(v) + 3} textAnchor="start" fontSize="9" fill="var(--event)">
+              {shortAmount(v)}
+            </text>
+          ))}
+        {lineCum.length > 0 && lMin < 0 && lMax > 0 && (
+          <line x1={PAD_L} x2={W - PAD_R} y1={yl(0)} y2={yl(0)} stroke="var(--event)" strokeOpacity={0.35} strokeWidth={0.8} strokeDasharray="2 3" />
+        )}
         {rows.map((r, i) => (
           <g key={r.label + i}>
             {r.strong && <rect x={cx(i) - slot / 2 + 1} y={PAD_T} width={slot - 2} height={plotH} rx={4} fill="var(--brand-soft)" />}
-            {r.expense > 0 && <rect x={cx(i) - barW - 0.5} y={y(r.expense)} width={barW} height={Math.max(1, zero - y(r.expense))} rx={1.5} fill="var(--expense)" />}
-            {r.income > 0 && <rect x={cx(i) + 0.5} y={y(r.income)} width={barW} height={Math.max(1, zero - y(r.income))} rx={1.5} fill="var(--income)" />}
+            {r.expense > 0 && <rect x={cx(i) - barW - 0.5} y={yb(r.expense)} width={barW} height={Math.max(1, base - yb(r.expense))} rx={1.5} fill="var(--expense)" />}
+            {r.income > 0 && <rect x={cx(i) + 0.5} y={yb(r.income)} width={barW} height={Math.max(1, base - yb(r.income))} rx={1.5} fill="var(--income)" />}
             {showLabel(i) && (
               <text x={cx(i)} y={H - 6} textAnchor="middle" fontSize="9" fill={r.strong ? "var(--ink)" : "var(--ink-3)"} fontWeight={r.strong ? 700 : 400}>
                 {r.label}
@@ -80,7 +106,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
         ))}
         <path d={line} fill="none" stroke="var(--event)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
         {lineCum.map((v, i) => (
-          <circle key={i} cx={cx(i)} cy={y(v)} r={2.2} fill="var(--event)" />
+          <circle key={i} cx={cx(i)} cy={yl(v)} r={2.2} fill="var(--event)" />
         ))}
       </svg>
       <figcaption className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-ink-3">
@@ -92,7 +118,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-0.5 w-3 rounded bg-event" />
-          {lineLabel}
+          {lineLabel}（右の目盛り）
         </span>
       </figcaption>
       <details className="rounded-xl bg-surface-2 px-3 py-1 text-[12px]">

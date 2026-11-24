@@ -2,13 +2,21 @@
 
 import { useState } from "react";
 import { Card, IconChevronL, IconChevronR, SectionTitle } from "./ui";
-import { addDays, formatDateJa, todayStr } from "@/lib/date";
+import { addDays, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { dailyInWeek, monthlyInYear, summarizePeriod, weekRange, weeklyTrend, yearRange } from "@/lib/periods";
 import { TrendChart } from "./TrendChart";
 import { useData } from "@/lib/store";
 
 const WD = ["月", "火", "水", "木", "金", "土", "日"];
+const WD_SUN = ["日", "月", "火", "水", "木", "金", "土"];
+
+/** 週の見出しの日付「11/23(月)」。今年でなければ「2025/12/29(月)」 */
+export function weekLabel(date: string, today: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const wd = WD_SUN[new Date(y, m - 1, d).getDay()];
+  return `${date.slice(0, 4) === today.slice(0, 4) ? "" : `${y}/`}${m}/${d}(${wd})`;
+}
 
 function Totals({ expense, income, balance }: { expense: number; income: number; balance: number }) {
   return (
@@ -64,10 +72,13 @@ export function WeekReport() {
           <button type="button" onClick={() => setAnchor(addDays(from, -7))} aria-label="前の週" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
             <IconChevronL />
           </button>
-          <h2 className="text-center text-[15px] font-bold">
-            {formatDateJa(from)}〜{formatDateJa(to)}
-            {isThisWeek && <span className="ml-1 text-[12px] font-semibold text-brand">今週</span>}
-          </h2>
+          <div className="text-center">
+            {/* 1行に収まる短い書き方（レビュー o1 の P06）。年をまたぐ週・今年でない週は年も出す */}
+            <h2 className="num text-[16px] font-bold">
+              {weekLabel(from, today)}〜{weekLabel(to, today)}
+            </h2>
+            {isThisWeek && <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand">今週</span>}
+          </div>
           <button type="button" onClick={() => setAnchor(addDays(from, 7))} aria-label="次の週" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
             <IconChevronR />
           </button>

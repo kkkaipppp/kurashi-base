@@ -51,3 +51,18 @@ describe("P03 保存場所の説明をアプリと Web 版で分ける", () => {
     for (const p of ["app/page.tsx", "app/settings/page.tsx", "app/guide/page.tsx"]) expect(src(p)).toContain("useIsNativeApp()");
   });
 });
+
+describe("P06・P07 週の見出しとグラフ", () => {
+  it("週の見出しは短く、今年でなければ年を出す", async () => {
+    const { weekLabel } = await import("@/components/PeriodReport");
+    expect(weekLabel("2026-11-23", "2026-11-24")).toBe("11/23(月)");
+    expect(weekLabel("2025-12-29", "2026-01-02")).toBe("2025/12/29(月)");
+  });
+  it("棒と累計の目盛りを分け、記録がない期間は「支出を追加」", () => {
+    const s = src("components/TrendChart.tsx");
+    expect(s).toContain("const yb = (v: number)");
+    expect(s).toContain("const yl = (v: number)");
+    expect(s).toContain("この期間は、まだ記録がありません");
+    expect(s).toContain('href="/?add=expense"');
+  });
+});
