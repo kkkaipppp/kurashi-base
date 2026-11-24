@@ -26,6 +26,8 @@ interface CalendarStatus {
   access?: "full" | "denied" | "notDetermined" | "writeOnly" | "restricted";
   lastSyncAt?: string;
   calendarExists?: boolean;
+  /** 反映のオン・オフ（古いアプリでは来ないので、来なければオン） */
+  enabled?: boolean;
 }
 
 const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "まだありません");
@@ -66,6 +68,54 @@ export function NativeStatusCard() {
     }
   };
 
+  // 反映のオン・オフ（100点化の指示 B）。オフにするときは、もう入れた予定を残すか消すかを別に聞く
+  const calOn = cal?.enabled !== false;
+  const toggleCalendar = async () => {
+    if (calOn) {
+      const ok = await ui.confirm({
+        title: "iPhone のカレンダーへの反映を止めますか？",
+        body: "止めると、これからは「くらしベース」カレンダーに書きません。くらしベースの記録はそのままです。",
+        ok: "止める",
+      });
+      if (!ok) return;
+      setBusy(true);
+      try {
+        await call("setCalendarSync", { enabled: false });
+        const remove = await ui.confirm({
+          title: "もう入れた予定はどうしますか？",
+          body: "「くらしベース」カレンダーにある、くらしベースが入れた予定を消せます。自分で入れた予定とカレンダーそのものは消しません。",
+          ok: "予定を消す",
+          cancel: "残しておく",
+          danger: true,
+        });
+        if (remove) {
+          const r = await call("removeCalendarEvents");
+          ui.toast(`反映を止めて、${Number(r.removed ?? 0)}件の予定を消しました`);
+        } else {
+          ui.toast("反映を止めました（入れた予定は残しています）");
+        }
+      } catch {
+        ui.toast("うまくいきませんでした。もう一度試してください", "error");
+      } finally {
+        setBusy(false);
+        load();
+      }
+      return;
+    }
+    setBusy(true);
+    try {
+      await call("setCalendarSync", { enabled: true });
+      window.dispatchEvent(new Event("kb-calendar-resync"));
+      setTimeout(load, 4000);
+      ui.toast("カレンダーへの反映を始めます");
+    } catch {
+      ui.toast("うまくいきませんでした。もう一度試してください", "error");
+    } finally {
+      setBusy(false);
+      load();
+    }
+  };
+
   const accessText =
     cal?.access === "full"
       ? "許可されています"
@@ -80,6 +130,8 @@ export function NativeStatusCard() {
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[13px]">
         <dt className="text-ink-2">最後の自動バックアップ</dt>
         <dd className="num">{backup ? `${fmt(backup.latestAt)}（${backup.kept ?? 0}日分）` : "読めませんでした"}</dd>
+        <dt className="text-ink-2">カレンダーへの反映</dt>
+        <dd className={calOn ? "" : "font-semibold text-warn"}>{cal ? (calOn ? "オン" : "オフ（書いていません）") : "読めませんでした"}</dd>
         <dt className="text-ink-2">カレンダーへのアクセス</dt>
         <dd className={cal?.access === "full" ? "" : "font-semibold text-warn"}>{cal ? accessText : "読めませんでした"}</dd>
         <dt className="text-ink-2">カレンダーへの最後の反映</dt>
@@ -94,14 +146,19 @@ export function NativeStatusCard() {
         </p>
       )}
       <div className="mt-3 grid grid-cols-2 gap-2">
-        {cal && cal.access !== "full" && (
+        <Button variant="secondary" onClick={toggleCalendar} disabled={busy || !cal} className="col-span-2">
+          {calOn ? "カレンダーへの反映を止める" : "カレンダーへの反映を始める"}
+        </Button>
+        {calOn && cal && cal.access !== "full" && (
           <Button variant="secondary" onClick={() => call("openAppSettings").catch(() => {})}>
             設定を開く
           </Button>
         )}
-        <Button variant="secondary" onClick={resync} disabled={busy} className={cal && cal.access !== "full" ? "" : "col-span-2"}>
-          カレンダーに反映し直す
-        </Button>
+        {calOn && (
+          <Button variant="secondary" onClick={resync} disabled={busy} className={cal && cal.access !== "full" ? "" : "col-span-2"}>
+            カレンダーに反映し直す
+          </Button>
+        )}
       </div>
     </Card>
   );

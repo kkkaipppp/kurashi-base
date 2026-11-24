@@ -18,6 +18,8 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "backupStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "calendarStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "requestCalendarResync", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setCalendarSync", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "removeCalendarEvents", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openAppSettings", returnType: CAPPluginReturnPromise)
     ]
 
@@ -126,6 +128,9 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     /// 印を付ける前の版で書いた予定を、1回だけまとめて消したか
     private static let ownedMigratedKey = "kbCalendarOwnedV2"
     private static let calendarTitle = "くらしベース"
+    /// iPhone のカレンダーへの反映のオン・オフ（100点化の指示 B。初めはオン。オフのあいだは何も書かない）
+    private static let calendarEnabledKey = "kbCalendarSyncEnabled"
+    private static var calendarEnabled: Bool { UserDefaults.standard.object(forKey: calendarEnabledKey) as? Bool ?? true }
     /// 書き込みは1つずつ（同時に2回動かさない）
     private static let calendarQueue = DispatchQueue(label: "jp.kurashibase.calendar")
 
@@ -195,12 +200,22 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("カレンダーに書く中身が正しくありません")
             return
         }
+        // オフのときは、アクセスも聞かず、何も書かない
+        guard Self.calendarEnabled else {
+            call.resolve(["written": 0, "disabled": true])
+            return
+        }
         let store = Self.eventStore
         let stamp = Self.fingerprint("\(from)|\(to)|\(json)")
         let work: (Bool) -> Void = { granted in
             Self.calendarQueue.async {
                 guard granted else {
                     call.reject("カレンダーへのアクセスが許可されていません")
+                    return
+                }
+                // 待っているあいだにオフにされたら書かない
+                guard Self.calendarEnabled else {
+                    call.resolve(["written": 0, "disabled": true])
                     return
                 }
                 if UserDefaults.standard.string(forKey: Self.lastSyncKey) == stamp,
@@ -308,7 +323,7 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             default: access = "notDetermined"
             }
         }
-        var out: [String: Any] = ["access": access]
+        var out: [String: Any] = ["access": access, "enabled": Self.calendarEnabled]
         if let at = UserDefaults.standard.string(forKey: Self.lastSyncAtKey) { out["lastSyncAt"] = at }
         if let id = UserDefaults.standard.string(forKey: Self.calendarIdKey) {
             out["calendarExists"] = Self.eventStore.calendar(withIdentifier: id) != nil
@@ -320,6 +335,47 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func requestCalendarResync(_ call: CAPPluginCall) {
         UserDefaults.standard.removeObject(forKey: Self.lastSyncKey)
         call.resolve()
+    }
+
+    /// 反映のオン・オフ。オンに戻したら、次の反映で書き直す
+    @objc func setCalendarSync(_ call: CAPPluginCall) {
+        let on = call.getBool("enabled") ?? true
+        Self.calendarQueue.async {
+            UserDefaults.standard.set(on, forKey: Self.calendarEnabledKey)
+            UserDefaults.standard.removeObject(forKey: Self.lastSyncKey)
+            call.resolve(["enabled": on])
+        }
+    }
+
+    /// くらしベースが入れた予定（印つき）だけを、「くらしベース」カレンダーから消す。
+    /// 手で入れた予定とカレンダーそのものは消さない。オフにしたときに、本人が「消す」を選んだときだけ呼ぶ
+    @objc func removeCalendarEvents(_ call: CAPPluginCall) {
+        Self.calendarQueue.async {
+            let store = Self.eventStore
+            guard let id = UserDefaults.standard.string(forKey: Self.calendarIdKey), let cal = store.calendar(withIdentifier: id) else {
+                call.resolve(["removed": 0])
+                return
+            }
+            do {
+                var removed = 0
+                // EventKit は一度に4年までしか探せないので、1年ずつ（3年前〜3年先）
+                let now = Date()
+                for y in -3..<3 {
+                    guard let s = Calendar.current.date(byAdding: .year, value: y, to: now),
+                          let e = Calendar.current.date(byAdding: .year, value: y + 1, to: now) else { continue }
+                    for ev in store.events(matching: store.predicateForEvents(withStart: s, end: e, calendars: [cal])) where ev.url == Self.ownedMark {
+                        try store.remove(ev, span: .thisEvent, commit: false)
+                        removed += 1
+                    }
+                }
+                try store.commit()
+                UserDefaults.standard.removeObject(forKey: Self.lastSyncKey)
+                call.resolve(["removed": removed])
+            } catch {
+                store.reset()
+                call.reject("カレンダーの予定を消せませんでした：\(error.localizedDescription)")
+            }
+        }
     }
 
     /// iPhone の「設定」のこのアプリの画面を開く（カレンダーへのアクセスを変えるため）

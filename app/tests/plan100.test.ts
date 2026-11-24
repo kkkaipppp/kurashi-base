@@ -93,3 +93,25 @@ describe("C グラフの単位と設定のまとまり", () => {
     for (const g of ["ふだんの設定", "ほかとつなぐ・取り込む", "記録を守る"]) expect(s).toContain(g);
   });
 });
+
+describe("B iPhone のカレンダーへの反映のオン・オフ（アプリだけ）", () => {
+  const swift = () => readFileSync(join(__dirname, "..", "ios", "App", "App", "WidgetBridgePlugin.swift"), "utf8");
+  it("オフのあいだは書かない（アクセスを待つあいだにオフにされても書かない）", () => {
+    const s = swift();
+    expect(s).toContain('CAPPluginMethod(name: "setCalendarSync"');
+    expect(s.match(/guard Self\.calendarEnabled else/g)?.length).toBe(2);
+    expect(s).toContain('"enabled": Self.calendarEnabled');
+  });
+  it("消すのは、くらしベースが入れた印つきの予定だけ。カレンダーそのものは消さない", () => {
+    const s = swift();
+    const body = s.slice(s.indexOf("func removeCalendarEvents"), s.indexOf("func openAppSettings"));
+    expect(body).toContain("where ev.url == Self.ownedMark");
+    expect(body).not.toContain("removeCalendar(");
+  });
+  it("オフにするときは、入れた予定を残すか消すかを別に聞く（閉じたら残す）", () => {
+    const s = src("components/NativeStatusCard.tsx");
+    expect(s).toContain('call("setCalendarSync", { enabled: false })');
+    expect(s).toContain('cancel: "残しておく"');
+    expect(s.indexOf('call("setCalendarSync", { enabled: false })')).toBeLessThan(s.indexOf('call("removeCalendarEvents")'));
+  });
+});

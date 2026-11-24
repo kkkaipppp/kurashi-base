@@ -10,7 +10,7 @@ export interface NativeBridge {
   /** その日のバックアップを、アプリの書類フォルダ（「ファイル」アプリ → このiPhone内 → くらしベース）に書く */
   writeBackup(options: { day: string; json: string; records: number }): Promise<{ name: string; kept: number }>;
   /** iPhone のカレンダーの「くらしベース」カレンダーに、from〜to の予定を書き直す（初回はカレンダーへのアクセスを聞く） */
-  syncCalendar(options: { from: string; to: string; json: string }): Promise<{ written: number }>;
+  syncCalendar(options: { from: string; to: string; json: string }): Promise<{ written: number; disabled?: boolean }>;
 }
 
 export const NativeBridge = registerPlugin<NativeBridge>("WidgetBridge");
