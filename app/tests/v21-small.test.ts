@@ -110,3 +110,26 @@ describe("X16 非表示と削除を区別（非表示でも集計と参照を保
     expect(toHidden.ok).toBe(false);
   });
 });
+
+describe("グラフの「数字で見る」：合計行と根拠の一文（CH:G01・G08）", () => {
+  it("表に合計行があり、投資を含むことを書く", () => {
+    const s = src("components/TrendChart.tsx");
+    expect(s).toContain("<tfoot>");
+    expect(s).toContain("投資として数えた支出も含みます");
+    expect(s).toContain("const totalExpense = rows.reduce(");
+  });
+});
+
+describe("カレンダー：表示の切り替えを覚える・読み上げを見た目に合わせる（CAL:C12）", () => {
+  it("見たいほう（予定とお金／予定／お金）を表示用のキーに覚える。覚えられなくても動く", () => {
+    const s = src("app/calendar/page.tsx");
+    expect(s).toContain('const SHOW_KEY = "kurashi-base:ui:calendar-show:v1";');
+    expect(s).toContain("localStorage.setItem(SHOW_KEY, k);");
+    expect(s).toContain("/* 覚えられなくても使える */");
+    expect(s).toContain("${showEv && info.ev ?");
+    expect(s).toContain("${showMoney && info.exp ?");
+  });
+  it("カレンダー用ファイルの説明に、時刻は書き出した端末の時刻のままと書く（CAL:C11）", () => {
+    expect(src("app/settings/page.tsx")).toContain("書き出した端末の時刻のままで入ります");
+  });
+});
