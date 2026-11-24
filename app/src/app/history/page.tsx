@@ -133,13 +133,14 @@ export default function HistoryPage() {
           <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="店名・メモで検索" aria-label="店名・メモで検索" className={`${inputCls} pl-10`} />
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <select value={type} onChange={(e) => setType(e.target.value as typeof type)} aria-label="種別で絞り込み" className={`${inputCls} px-2 text-[14px]`}>
-            <option value="all">すべて</option>
+          <label className="sr-only" htmlFor="f-type">種類</label>
+          <select id="f-type" value={type} onChange={(e) => setType(e.target.value as typeof type)} aria-label="種別で絞り込み" className={`${inputCls} px-2 text-[14px]`}>
+            <option value="all">種類：すべて</option>
             <option value="expense">支出</option>
             <option value="income">収入</option>
           </select>
           <select value={cat} onChange={(e) => setCat(e.target.value)} aria-label="カテゴリで絞り込み" className={`${inputCls} px-2 text-[14px]`}>
-            <option value="">すべてのカテゴリ</option>
+            <option value="">カテゴリ：すべて</option>
             {data.categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -147,7 +148,7 @@ export default function HistoryPage() {
             ))}
           </select>
           <select value={pay} onChange={(e) => setPay(e.target.value)} aria-label="支払方法で絞り込み" className={`${inputCls} px-2 text-[14px]`}>
-            <option value="all">すべての支払方法</option>
+            <option value="all">支払方法：すべて</option>
             {PAYMENT_METHODS.map((p) => (
               <option key={p.id || "none"} value={p.id}>
                 {p.label}
@@ -155,6 +156,26 @@ export default function HistoryPage() {
             ))}
           </select>
         </div>
+        {filtered && (
+          <div className="num mt-2 flex items-center justify-between gap-2 rounded-xl bg-surface-2 px-3 py-1.5 text-[13px]">
+            <span>
+              {list.length}件・<span className="text-expense">支出 {formatYen(list.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0))}</span>・
+              <span className="text-income">収入 {formatYen(list.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0))}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setQ("");
+                setType("all");
+                setCat("");
+                setPay("all");
+              }}
+              className="min-h-9 shrink-0 rounded-lg px-2 font-semibold text-brand hover:bg-brand-soft"
+            >
+              絞り込みを解除
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="mt-3 space-y-3">

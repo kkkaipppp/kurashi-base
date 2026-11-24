@@ -248,6 +248,11 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       const n = { ...d, [k]: v };
       // 開始日を終了日より後にしたら終了日を合わせる
       if (k === "startDate" && typeof v === "string" && n.endDate < v) n.endDate = v;
+      // 開始時刻を終わりと同じか後にしたら、終わりを開始の1時間後にする（レビュー o1 の P13）
+      if (k === "startTime" && typeof v === "string" && /^\d{2}:\d{2}$/.test(v) && n.startDate === n.endDate && n.endTime <= v) {
+        const [h, mi] = v.split(":").map(Number);
+        n.endTime = h >= 23 ? "23:59" : `${String(h + 1).padStart(2, "0")}:${String(mi).padStart(2, "0")}`;
+      }
       return n;
     });
     if (errors[k as string]) setErrors((e) => ({ ...e, [k]: "" }));

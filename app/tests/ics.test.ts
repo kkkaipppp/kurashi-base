@@ -39,7 +39,7 @@ describe("カレンダー用ファイル（.ics、Web 版。2026-11-24 平尾さ
   });
   it("設定の画面に「カレンダー用ファイルを書き出す」がある", () => {
     const s = readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8");
-    expect(s).toContain("カレンダー用ファイルを書き出す");
+    expect(s).toContain("予定をカレンダー用ファイルに保存（.ics）");
     expect(s).toContain("buildIcs(buildCalendarItems(data, today)");
   });
 });

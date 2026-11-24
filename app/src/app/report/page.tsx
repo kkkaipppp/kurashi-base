@@ -125,8 +125,9 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
       {r.count === 0 ? (
         <Empty
           action={
-            <Link href="/history" className="inline-flex min-h-11 items-center rounded-xl border border-line bg-surface px-4 text-[14px] font-semibold">
-              取引履歴を見る
+            // 空の月は、まず記録できるように（レビュー o1 の P16）
+            <Link href="/?add=expense" className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink">
+              支出を追加
             </Link>
           }
         >
@@ -188,7 +189,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
           )}
 
           <Card>
-            <SectionTitle>何に使った？</SectionTitle>
+            <SectionTitle>支出の内訳</SectionTitle>
             {r.expense === 0 ? (
               <p className="text-[14px] text-ink-3">この月の支出はありません。</p>
             ) : (

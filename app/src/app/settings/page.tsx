@@ -221,6 +221,21 @@ export default function SettingsPage() {
   return (
     <main className="space-y-4">
       <PageHeader title="設定" />
+      {/* 設定の目次（レビュー o1 の P15：長いので、日常の設定とデータの管理を分けて飛べるように） */}
+      <nav aria-label="設定の目次" className="-mt-1 flex flex-wrap gap-1.5 text-[13px]">
+        {(
+          [
+            ["#budget", "予算・ホーム"],
+            ["#categories", "カテゴリ"],
+            ...(FEATURES.calendarFile || FEATURES.csvImport ? ([["#calendar-file", "カレンダー・取り込み"]] as const) : []),
+            ["#backup", "バックアップ・データ"],
+          ] as const
+        ).map(([href, label]) => (
+          <a key={href} href={href} className="inline-flex min-h-9 items-center rounded-full border border-line bg-surface px-3 font-semibold text-ink-2 hover:bg-surface-2">
+            {label}
+          </a>
+        ))}
+      </nav>
 
       <Card>
         <div id="budget" className="scroll-mt-20" />
@@ -263,6 +278,7 @@ export default function SettingsPage() {
 
 
       <Card>
+        <div id="categories" className="scroll-mt-20" />
         <SectionTitle>カテゴリ</SectionTitle>
         <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="カテゴリの種別">
           {(["expense", "income"] as const).map((k) => (
@@ -354,7 +370,7 @@ export default function SettingsPage() {
             <li>入れる先のカレンダーは「くらしベース」など、新しく作ると、まとめて消せて便利です</li>
           </ul>
           <Button variant="secondary" onClick={exportCalendar}>
-            カレンダー用ファイルを書き出す
+            予定をカレンダー用ファイルに保存（.ics）
           </Button>
         </Card>
       )}

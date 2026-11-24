@@ -108,3 +108,27 @@ describe("家計の機能 1〜3・P08・P09・P11・P16", () => {
     expect(s.indexOf("支出か予定を1件追加する")).toBeLessThan(s.indexOf("1か月の予算を決める"));
   });
 });
+
+describe("P10・P13〜P17・P19 画面と言葉", () => {
+  it("カレンダー：予定とお金・予定・お金の切り替え、支出に −、選んだ日の要約、固定費の支払日の説明", () => {
+    const s = src("app/calendar/page.tsx");
+    expect(s).toContain('aria-label="マスに出すもの"');
+    expect(s).toContain("−{shortYen(info.exp)}");
+    expect(s).toContain("予定 {dayEvents.length}件・");
+    expect(s).toContain("期限・固定費の支払日");
+  });
+  it("取引履歴：種類・カテゴリ・支払方法の名前、絞り込み後の件数と合計、解除", () => {
+    const s = src("app/history/page.tsx");
+    for (const t of ["種類：すべて", "カテゴリ：すべて", "支払方法：すべて", "絞り込みを解除"]) expect(s).toContain(t);
+  });
+  it("予定：開始時刻を終わりと同じか後にしたら、終わりを1時間後に", () => {
+    expect(src("components/EventSheet.tsx")).toContain('if (k === "startTime"');
+  });
+  it("設定の目次、空の月の振り返りは「支出を追加」、旅行の支出を追加、言葉の直し", () => {
+    expect(src("app/settings/page.tsx")).toContain('aria-label="設定の目次"');
+    expect(src("app/report/page.tsx")).toContain("<SectionTitle>支出の内訳</SectionTitle>");
+    expect(src("app/report/page.tsx")).toContain('href="/?add=expense"');
+    expect(src("app/trips/page.tsx")).toContain("＋ この旅行の支出を追加");
+    expect(src("components/AddChooser.tsx")).toContain("何を記録しますか？");
+  });
+});
