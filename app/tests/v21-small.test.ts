@@ -133,3 +133,21 @@ describe("カレンダー：表示の切り替えを覚える・読み上げを�
     expect(src("app/settings/page.tsx")).toContain("書き出した端末の時刻のままで入ります");
   });
 });
+
+describe("ホームの二重表示：まとめに出ない分は確認したいことに残す／試験日もそろえる／予定の時間帯を出す", () => {
+  it("今日のまとめの件数を超えた分は、確認したいことから除かない", () => {
+    const s = src("app/page.tsx");
+    expect(s).toContain("buildTodayItems(data, today).slice(0, TODAY_SHOWN)");
+    expect(src("lib/todayItems.ts")).toContain("export const TODAY_SHOWN = 8;");
+  });
+  it("試験日の key は確認したいこと（navi.ts）と同じ study-", () => {
+    const d = emptyData(now);
+    d.studySubjects = [{ id: "s1", name: "簿記", examDate: "2026-11-25", targetHours: null, archived: false, createdAt: now, updatedAt: now }];
+    const keys = buildTodayItems(d, "2026-11-25").map((i) => i.key);
+    expect(keys).toEqual(["study-s1"]);
+    expect(buildNavi(d, "2026-11-25").map((n) => n.key)).toContain("study-s1");
+  });
+  it("今日のまとめの予定に、時間帯などの補足を出す", () => {
+    expect(src("components/HomeLayout.tsx")).toContain("eventTimeLabel(ev, today)");
+  });
+});

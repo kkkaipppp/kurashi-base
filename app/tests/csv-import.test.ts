@@ -124,3 +124,18 @@ describe("NEXT v21 CSV：弱点の修正（V06）", () => {
     expect(s).toContain("whitespace-pre-line");
   });
 });
+
+describe("NEXT v21 CSV：エラーの行番号は、エディタで見る実際の行", () => {
+  const TXH = "日付,種類,金額,カテゴリ,内容,支払い方法,メモ,元ID\n";
+  it("引用符の中の改行や空行があっても、行番号がずれない", () => {
+    // 1行目：見出し／2〜4行目：正しい記録（メモが3行にまたがる）／5行目：空行／6行目：日付が誤り
+    const text = TXH + '2026-11-01,支出,100,食費,,,"メモ\n続き\nさらに",\n\n2026-13-01,支出,100,食費,,,,\n';
+    const r = csvToIncoming(text, emptyData(now), now);
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.error).toContain("6行目の日付");
+    expect(parseCsvChecked(text).rowLines).toEqual([1, 2, 6]);
+    expect(parseCsvChecked("a,b\r\nc,d\r\n").rowLines).toEqual([1, 2]);
+    expect(parseCsvChecked("a\rb\r").rowLines).toEqual([1, 2]);
+  });
+});

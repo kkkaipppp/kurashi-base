@@ -6,7 +6,7 @@ import type { AppData } from "./types";
 /**
  * 「今日のまとめ」に出すものを集める（自分用のホーム）。「確認したいこと」と同じものを二重に出さないため、
  * ここで集めたものの key を、確認したいことから除く（NEXT v21 SCREENS S-01・ホームの二重表示）。
- * key は navi.ts と同じ作り（rc-・task-・ct-・doc-）。予定は ev-、目標は goal-、試験は st-。
+ * key は navi.ts と同じ作り（rc-・task-・ct-・doc-・study-）。予定は ev-、目標は goal-。
  */
 export interface TodayItem {
   key: string;
@@ -20,6 +20,9 @@ export interface TodayItem {
   /** 予定のとき：詳細を開く ID */
   eventId?: string;
 }
+
+/** 「今日のまとめ」に出す件数。これを超えた分は、まとめには出さないので、確認したいことからも除かない */
+export const TODAY_SHOWN = 8;
 
 export function buildTodayItems(data: AppData, today: string): TodayItem[] {
   const out: TodayItem[] = [];
@@ -49,6 +52,6 @@ export function buildTodayItems(data: AppData, today: string): TodayItem[] {
     if (c.status === "active" && c.renewalDate === today) out.push({ key: `ct-${c.id}`, sort: "3", time: "期限", title: `${c.name}の更新日`, sub: "契約", href: `/contracts?open=${c.id}` });
   for (const d of data.documents) if (d.expiry === today) out.push({ key: `doc-${d.id}`, sort: "3", time: "期限", title: `${d.title}の期限`, sub: "書類", href: `/documents?open=${d.id}` });
   for (const g of data.goals) if (!g.done && g.deadline === today) out.push({ key: `goal-${g.id}`, sort: "3", time: "期限", title: g.title, sub: "目標の期限", href: `/goals?open=${g.id}` });
-  for (const s of data.studySubjects) if (!s.archived && s.examDate === today) out.push({ key: `st-${s.id}`, sort: "1", time: "試験", title: `${s.name}の試験日`, sub: "資格", href: `/study?open=${s.id}` });
+  for (const s of data.studySubjects) if (!s.archived && s.examDate === today) out.push({ key: `study-${s.id}`, sort: "1", time: "試験", title: `${s.name}の試験日`, sub: "資格", href: `/study?open=${s.id}` });
   return out.sort((a, b) => a.sort.localeCompare(b.sort));
 }

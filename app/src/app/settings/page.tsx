@@ -466,11 +466,12 @@ export default function SettingsPage() {
                     <li className="text-ink-2">
                       足さない固定費：{csv.result.skipped.length}件
                       <ul className="mt-0.5 space-y-0.5 pl-3 text-[12px]">
-                        {csv.result.skipped.slice(0, 5).map((x) => (
-                          <li key={x.name}>
+                        {csv.result.skipped.slice(0, 5).map((x, i) => (
+                          <li key={`${x.name}-${i}`}>
                             {x.name}（{x.reason}）
                           </li>
                         ))}
+                        {csv.result.skipped.length > 5 && <li>ほか{csv.result.skipped.length - 5}件</li>}
                       </ul>
                     </li>
                   )}

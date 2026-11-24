@@ -39,10 +39,13 @@ export function parseCsv(text: string): string[][] {
  * parseCsv に加えて、引用符（"）が閉じないまま終わったときの、その引用符が始まった行（1始まり）を返す。
  * 閉じていないと、後ろの行が全部1つのセルに吸い込まれて、記録が黙って欠けるため（NEXT v21 CSV:C04）
  */
-export function parseCsvChecked(text: string): { rows: string[][]; unclosedLine: number | null } {
+export function parseCsvChecked(text: string): { rows: string[][]; unclosedLine: number | null; rowLines: number[] } {
   const t = text.replace(/^﻿/, "");
   let line = 1;
   let qLine = 0;
+  // 各行が始まった、ファイルの実際の行番号（引用符の中の改行・空行があっても、エディタの行番号と同じ）
+  let rs = 0;
+  const rowLines: number[] = [];
   const rows: string[][] = [];
   let row: string[] = [];
   let cur = "";
@@ -50,6 +53,7 @@ export function parseCsvChecked(text: string): { rows: string[][]; unclosedLine:
   for (let i = 0; i < t.length; i++) {
     const c = t[i];
     if (c === "\n" || (c === "\r" && t[i + 1] !== "\n")) line++;
+    if (rs === 0 && c !== "\n" && c !== "\r") rs = line;
     if (q) {
       if (c === '"') {
         if (t[i + 1] === '"') {
@@ -60,23 +64,32 @@ export function parseCsvChecked(text: string): { rows: string[][]; unclosedLine:
     } else if (c === '"') {
       q = true;
       qLine = line;
-    }
-    else if (c === ",") {
+    } else if (c === ",") {
       row.push(cur);
       cur = "";
     } else if (c === "\n" || c === "\r") {
-      if (c === "\r" && t[i + 1] === "\n") i++;
+      if (c === "\r" && t[i + 1] === "\n") {
+        i++; // CRLF は「\n」を飛ばすので、行の数えはここで1回
+        line++;
+      }
       row.push(cur);
       cur = "";
-      if (row.some((x) => x !== "")) rows.push(row);
+      if (row.some((x) => x !== "")) {
+        rows.push(row);
+        rowLines.push(rs);
+      }
       row = [];
+      rs = 0;
     } else cur += c;
   }
   if (cur !== "" || row.length) {
     row.push(cur);
-    if (row.some((x) => x !== "")) rows.push(row);
+    if (row.some((x) => x !== "")) {
+      rows.push(row);
+      rowLines.push(rs);
+    }
   }
-  return { rows, unclosedLine: q ? qLine : null };
+  return { rows, unclosedLine: q ? qLine : null, rowLines };
 }
 
 export type CsvKind = "transactions" | "recurring";
@@ -96,7 +109,7 @@ export type CsvResult =
 
 /** CSV から、追加の取り込みに渡す記録（AppData）を作る。今のカテゴリは名前と種類で使い回し、ないものだけ作る */
 export function csvToIncoming(text: string, current: AppData, nowIso: string): CsvResult {
-  const { rows, unclosedLine } = parseCsvChecked(text);
+  const { rows, unclosedLine, rowLines } = parseCsvChecked(text);
   if (unclosedLine !== null) return { ok: false, error: `${unclosedLine}行目の引用符（"）が閉じていません。閉じるか、引用符を消してから、もう一度選んでください` };
   if (rows.length < 2) return { ok: false, error: "CSV に記録がありません" };
   const header = rows[0].map((h) => h.trim());
@@ -137,7 +150,7 @@ export function csvToIncoming(text: string, current: AppData, nowIso: string): C
       const [date = "", kindJa = "", amt = "", cat = "", content = "", pay = "", memo = "", srcId = ""] = body[i].map((x) => x.trim());
       const type = KIND[kindJa];
       const amount = Number(amt);
-      const line = i + 2;
+      const line = rowLines[i + 1] ?? i + 2;
       if (!isDate(date)) {
         errs.push(`${line}行目の日付が正しくありません（YYYY-MM-DD）`);
         continue;
@@ -183,7 +196,7 @@ export function csvToIncoming(text: string, current: AppData, nowIso: string): C
   for (let i = 0; i < body.length; i++) {
     const [name = "", amt = "", cyc = "", day = "", next = "", cat = "", pay = ""] = body[i].map((x) => x.trim());
     const amount = Number(amt);
-    const line = i + 2;
+    const line = rowLines[i + 1] ?? i + 2;
     if (!name) {
         errs.push(`${line}行目の名前が空です`);
         continue;

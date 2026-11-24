@@ -8,7 +8,7 @@ import { addDays, daysBetween, formatDateJa, monthKey, todayStr } from "@/lib/da
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { nextRecurring } from "@/lib/recurring";
 import { buildNavi } from "@/lib/navi";
-import { buildTodayItems } from "@/lib/todayItems";
+import { buildTodayItems, TODAY_SHOWN } from "@/lib/todayItems";
 import { buildInsights } from "@/lib/report";
 import { useUI } from "@/components/UIContext";
 import { AddFromQuery } from "@/components/AddFromQuery";
@@ -85,7 +85,8 @@ export default function HomePage() {
   // 確認したいこと：タスクは「今日やること」に出すので除く
   // 「今日のまとめ」を出しているとき（自分用）は、同じものを「確認したいこと」に二重に出さない
   const todayShown = PERSONAL && layoutFor(prefs, editLayout).includes("todayAll");
-  const dup = todayShown ? new Set(buildTodayItems(data, today).map((i) => i.key)) : null;
+  // 除くのは、まとめに実際に出る分だけ（8件を超えた分は、確認したいことに残す）
+  const dup = todayShown ? new Set(buildTodayItems(data, today).slice(0, TODAY_SHOWN).map((i) => i.key)) : null;
   const navi = buildNavi(data, today).filter((n) => !n.key.startsWith("task-") && !dup?.has(n.key));
   const [naviOpen, setNaviOpen] = useState(false);
   const insight = buildInsights(data, month, today)[0];

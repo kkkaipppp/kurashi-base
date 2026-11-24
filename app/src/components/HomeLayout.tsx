@@ -8,7 +8,8 @@ import { useUI } from "./UIContext";
 import { useData } from "@/lib/store";
 import { eventsOnDay } from "@/lib/aggregate";
 import { addDays, daysBetween, formatDateJa } from "@/lib/date";
-import { buildTodayItems } from "@/lib/todayItems";
+import { buildTodayItems, TODAY_SHOWN } from "@/lib/todayItems";
+import { eventTimeLabel } from "./Rows";
 import { HOME_CARDS, defaultLayout, moveCard, toggleCard, type LayoutDraft } from "@/lib/homeLayout";
 
 /* ---------------- ホームの編集（自分用。100点化の指示 E） ---------------- */
@@ -116,13 +117,16 @@ export function TodayAll({ today }: { today: string }) {
       </SectionTitle>
       {items.length > 0 ? (
         <ul className="-mx-2">
-          {items.slice(0, 8).map((it) => {
+          {items.slice(0, TODAY_SHOWN).map((it) => {
+            // 予定は、時間帯などの補足を出す（以前と同じ）
+            const ev = it.eventId ? data.events.find((e) => e.id === it.eventId) : undefined;
+            const sub = ev ? eventTimeLabel(ev, today) : it.sub;
             const body = (
               <>
                 <span className={`num w-14 shrink-0 text-[12px] font-semibold ${it.warn ? "text-warn" : "text-ink-3"}`}>{it.time}</span>
                 <span className="min-w-0 flex-1">
                   <span className={`block truncate text-[14px] font-semibold ${it.warn ? "text-warn" : ""}`}>{it.title}</span>
-                  {(it.sub) && <span className="block truncate text-[12px] text-ink-3">{it.sub}</span>}
+                  {sub && <span className="block truncate text-[12px] text-ink-3">{sub}</span>}
                 </span>
                 <IconChevronR className="size-4 shrink-0 text-ink-3" />
               </>
@@ -156,7 +160,7 @@ export function TodayAll({ today }: { today: string }) {
           )}
         </div>
       )}
-      {items.length > 8 && <p className="mt-1 text-center text-[12px] text-ink-3">ほか{items.length - 8}件</p>}
+      {items.length > TODAY_SHOWN && <p className="mt-1 text-center text-[12px] text-ink-3">ほか{items.length - TODAY_SHOWN}件（「確認したいこと」にも出ます）</p>}
       <button type="button" onClick={() => ui.openEvent({ mode: "new", date: today })} className="mt-1 min-h-11 w-full rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft">
         ＋ 今日の予定を追加
       </button>
