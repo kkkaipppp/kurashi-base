@@ -159,8 +159,8 @@ export default function HistoryPage() {
         {filtered && (
           <div className="num mt-2 flex items-center justify-between gap-2 rounded-xl bg-surface-2 px-3 py-1.5 text-[13px]">
             <span>
-              {list.length}件・<span className="text-expense">支出 {formatYen(list.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0))}</span>・
-              <span className="text-income">収入 {formatYen(list.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0))}</span>
+              {list.length}件・<span className="text-expense">支出 {formatYen(list.filter((t) => t.type === "expense" && t.countAs !== "transfer").reduce((a, t) => a + t.amount, 0))}</span>・
+              <span className="text-income">収入 {formatYen(list.filter((t) => t.type === "income" && t.countAs !== "transfer").reduce((a, t) => a + t.amount, 0))}</span>
             </span>
             <button
               type="button"

@@ -151,3 +151,60 @@ describe("ホームの二重表示：まとめに出ない分は確認したい�
     expect(src("components/HomeLayout.tsx")).toContain("eventTimeLabel(ev, today)");
   });
 });
+
+// --- X03 カード/現金（購入は一度だけ。引落は収支に数えない） ---
+import { daySummary } from "@/lib/aggregate";
+import { monthlyInYear, summarizePeriod, weeklyTrend } from "@/lib/periods";
+import { expenseUntilDay } from "@/lib/report";
+import { forecastMonthEnd } from "@/lib/forecast";
+import { validateAppData } from "@/lib/schema";
+
+describe("X03 カードで買った支出は一度だけ。翌月の引落は収支に数えない（NEXT v21 D01）", () => {
+  const card = (): AppData => {
+    const d = withInvest();
+    d.transactions = [
+      tx({ id: "buy", date: "2026-10-20", amount: 50000, paymentMethod: "card", merchant: "家電" }), // 買った日に一度だけ数える
+      tx({ id: "pay", date: "2026-11-10", amount: 50000, paymentMethod: "bank", merchant: "カード引落", countAs: "transfer" }),
+      tx({ id: "food", date: "2026-11-11", amount: 1200 }),
+    ];
+    return d;
+  };
+  it("10月の支出は50000円、11月の支出は1200円（引落の50000円は11月の支出に入らない）。記録は消えない", () => {
+    const d = card();
+    expect(summarizeMonth(d.transactions, "2026-10").expense).toBe(50000);
+    expect(summarizeMonth(d.transactions, "2026-11").expense).toBe(1200);
+    expect(d.transactions).toHaveLength(3);
+    expect(daySummary(d.transactions, "2026-11-10").expense).toBe(0);
+    expect(daySummary(d.transactions, "2026-11-10").list).toHaveLength(1); // 一覧には残る
+  });
+  it("どの集計でも同じ：期間・週・年・月の内訳・振り返り・見込み・予算との比較", () => {
+    const d = card();
+    d.budget.monthly = 100000;
+    expect(summarizePeriod(d.transactions, "2026-11-01", "2026-11-30").expense).toBe(1200);
+    expect(monthlyInYear(d.transactions, 2026)[10].expense).toBe(1200);
+    expect(weeklyTrend(d.transactions, "2026-11-09", 1)[0].expense).toBe(1200);
+    expect(expenseUntilDay(d.transactions, "2026-11", 30)).toBe(1200);
+    expect(monthBreakdown(d, "2026-11", "2026-11-25").lifeExpense).toBe(1200);
+    expect(budgetSpent(d, "2026-11", "2026-11-25", true)).toBe(1200);
+    expect(budgetSpent(d, "2026-11", "2026-11-25", false)).toBe(1200); // 公開版の比べ方でも
+    expect(monthLedger(d, "2026-11", "2026-11-25").lifeBudgetLeft).toBe(98800);
+    // 見込みの変動費にも入らない
+    d.transactions = [...d.transactions, ...Array.from({ length: 4 }, (_, i) => tx({ id: `f${i}`, date: `2026-11-0${i + 1}`, amount: 1000 }))];
+    const f = forecastMonthEnd(d, "2026-11-25");
+    expect(f.ok && f.basisDays).toBe(28); // 10/28〜11/24
+    expect(f.ok && f.dailyVariable).toBe(Math.floor((4000 + 1200) / 28)); // 引落の50000円は入らない
+  });
+  it("新しい項目（transfer）は、書き出し→読み込みで残り、バックアップから戻せる", () => {
+    const d = card();
+    const r = validateAppData(JSON.parse(JSON.stringify(d)));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.data.transactions.find((t) => t.id === "pay")?.countAs).toBe("transfer");
+    const bad = JSON.parse(JSON.stringify(d));
+    bad.transactions[1].countAs = "refund";
+    expect(validateAppData(bad).ok).toBe(false);
+  });
+  it("入力で「収支に数えない」を選べる。一覧に印が出る", () => {
+    expect(src("components/TxSheet.tsx")).toContain("収支に数えない（カード引落・口座間の移動など）");
+    expect(src("components/Rows.tsx")).toContain("収支に数えない");
+  });
+});

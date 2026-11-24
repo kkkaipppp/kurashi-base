@@ -129,7 +129,7 @@ function TripDetail({ trip, onBack, onEdit }: { trip: Trip; onBack: () => void; 
   const search = webSearch(q);
   // 自分用：旅行につないだ支出（100点化の指示 F。メモの文字ではなく旅行の ID でつなぐ）
   const linkedTx = IS_PERSONAL ? data.transactions.filter((t) => t.tripId === trip.id).sort((a, b) => b.date.localeCompare(a.date)) : [];
-  const spentTotal = linkedTx.reduce((s, t) => s + (t.type === "expense" ? t.amount : 0), 0);
+  const spentTotal = linkedTx.reduce((s, t) => s + (t.type === "expense" && t.countAs !== "transfer" ? t.amount : 0), 0);
   // 前の作り（メモに「旅行：名前」）で入れた支出は、候補として出して、本人が「つなぐ」を押したときだけつなぐ
   const memoCands = IS_PERSONAL ? tripMemoCandidates(data.transactions, trip) : [];
 

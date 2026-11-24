@@ -1,4 +1,5 @@
 import { daysBetween, daysInMonth, monthKey, parseDateStr } from "./date";
+import { isMoveOnly } from "./classify";
 import type { CalendarEvent, Transaction } from "./types";
 
 // 集計対象は「確定した取引」だけ。固定費の予定・取込候補は Transaction ではないので混入しない。
@@ -21,6 +22,7 @@ export function summarizeMonth(txs: Transaction[], key: string): MonthSummary {
   let income = 0;
   const cat = new Map<string, number>();
   for (const t of list) {
+    if (isMoveOnly(t)) continue;
     if (t.type === "expense") {
       expense += t.amount;
       cat.set(t.categoryId, (cat.get(t.categoryId) ?? 0) + t.amount);
@@ -40,10 +42,11 @@ export function remainingBudget(budget: number | null, monthExpense: number): nu
 
 export function daySummary(txs: Transaction[], date: string) {
   const list = txs.filter((t) => t.date === date);
+  const counted = list.filter((t) => !isMoveOnly(t));
   return {
     list,
-    expense: list.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0),
-    income: list.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
+    expense: counted.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0),
+    income: counted.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
   };
 }
 

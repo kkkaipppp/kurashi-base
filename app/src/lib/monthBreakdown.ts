@@ -1,4 +1,4 @@
-import { categoryMap, txIsFixed, txIsInvest } from "./classify";
+import { categoryMap, isMoveOnly, txIsFixed, txIsInvest } from "./classify";
 import type { AppData } from "./types";
 
 /**
@@ -32,7 +32,7 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
   let invest = 0;
   let income = 0;
   for (const t of data.transactions) {
-    if (t.date.slice(0, 7) !== key) continue;
+    if (t.date.slice(0, 7) !== key || isMoveOnly(t)) continue;
     if (t.type === "income") {
       income += t.amount;
       continue;
@@ -57,7 +57,7 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
     const mp = new Map<string, number>();
     for (const t of data.transactions) {
       // 投資は「使った」ではないので、増えたものには入れない
-      if (t.type !== "expense" || txIsInvest(t, cats) || t.date.slice(0, 7) !== k || Number(t.date.slice(8, 10)) > day) continue;
+      if (t.type !== "expense" || isMoveOnly(t) || txIsInvest(t, cats) || t.date.slice(0, 7) !== k || Number(t.date.slice(8, 10)) > day) continue;
       mp.set(t.categoryId, (mp.get(t.categoryId) ?? 0) + t.amount);
     }
     return mp;
@@ -65,7 +65,7 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
   const now = byCat(key);
   const prev = byCat(prevKey);
   // 先月に記録が1件でもあれば比べる（同じ日までに無くても「増えた」は出せる）
-  const hasPrev = data.transactions.some((t) => t.type === "expense" && t.date.slice(0, 7) === prevKey);
+  const hasPrev = data.transactions.some((t) => t.type === "expense" && !isMoveOnly(t) && t.date.slice(0, 7) === prevKey);
   const ids = new Set([...now.keys(), ...prev.keys()]);
   const diffs = [...ids].map((categoryId) => ({ categoryId, now: now.get(categoryId) ?? 0, prev: prev.get(categoryId) ?? 0, diff: (now.get(categoryId) ?? 0) - (prev.get(categoryId) ?? 0) }));
   const increases = hasPrev ? diffs.filter((x) => x.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, 3) : [];

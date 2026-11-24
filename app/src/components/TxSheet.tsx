@@ -553,6 +553,7 @@ function TxExtras({
           <option value="">カテゴリどおり（{catInvest ? "投資" : "生活費"}）</option>
           <option value="life">生活費として数える</option>
           <option value="invest">投資として数える（予算と比べない）</option>
+          <option value="transfer">収支に数えない（カード引落・口座間の移動など）</option>
         </select>
       </Field>
       {trips.length > 0 && (

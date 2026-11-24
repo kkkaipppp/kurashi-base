@@ -1,4 +1,4 @@
-import { categoryMap, txIsFixed, txIsInvest } from "./classify";
+import { categoryMap, isMoveOnly, txIsFixed, txIsInvest } from "./classify";
 import { unpaidRecurringThisMonth } from "./allowance";
 import { addDays, daysBetween, daysInMonth, parseDateStr } from "./date";
 import type { AppData } from "./types";
@@ -39,7 +39,7 @@ export function forecastMonthEnd(data: AppData, today: string): Forecast {
   const { y, m, d } = parseDateStr(today);
   const month = today.slice(0, 7);
   const cats = categoryMap(data);
-  const expenses = data.transactions.filter((t) => t.type === "expense" && !txIsInvest(t, cats));
+  const expenses = data.transactions.filter((t) => t.type === "expense" && !isMoveOnly(t) && !txIsInvest(t, cats));
   if (expenses.length === 0) return { ok: false, reason: "noData" };
 
   const spent = expenses.filter((t) => t.date.slice(0, 7) === month && t.date <= today).reduce((a, t) => a + t.amount, 0);
