@@ -54,7 +54,7 @@ describe("UI・UX の直し（友人β）", () => {
   });
 
   it("ホーム画面のアイコンと Safari で記録が別々になることを、ホームと使い方に書く（2026-11-23 iPhone で判明）", () => {
-    expect(src("app/page.tsx")).toContain("ホーム画面のアイコンと Safari でも、記録は別々です");
+    expect(src("lib/platform.ts")).toContain("ホーム画面のアイコンと Safari でも、記録は別々です");
     const g = src("app/guide/page.tsx");
     expect(g).toContain("記録が別々になります");
     expect(g).toContain("アイコンから開いて、同じ画面で復元");

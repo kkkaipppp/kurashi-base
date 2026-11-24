@@ -40,3 +40,14 @@ describe("P04 消す操作を慎重に", () => {
     expect(s).toContain("CSV の合計：支出");
   });
 });
+
+describe("P03 保存場所の説明をアプリと Web 版で分ける", () => {
+  it("Web 版はブラウザの中・アプリはアプリの中と自動バックアップ・削除で消えること", async () => {
+    const { STORAGE_TEXT, isNativeApp } = await import("@/lib/platform");
+    expect(STORAGE_TEXT.web.short).toContain("このブラウザの中だけ");
+    expect(STORAGE_TEXT.app.backup).toContain("自動でバックアップ");
+    expect(STORAGE_TEXT.app.backup).toContain("アプリを削除すると、自動バックアップも一緒に消える");
+    expect(isNativeApp()).toBe(false); // テスト（ブラウザなし）では Web 版扱い
+    for (const p of ["app/page.tsx", "app/settings/page.tsx", "app/guide/page.tsx"]) expect(src(p)).toContain("useIsNativeApp()");
+  });
+});

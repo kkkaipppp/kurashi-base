@@ -14,10 +14,12 @@ import { figures, sampleRows, similarButDifferentId, type DataFigures } from "@/
 import type { HomePrefs, TxType } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, Field, PageHeader, SectionTitle, inputCls } from "@/components/ui";
+import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
 
 const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
 
 export default function SettingsPage() {
+  const nativeApp = useIsNativeApp();
   const data = useData();
   const store = useStore();
   const ui = useUI();
@@ -433,7 +435,7 @@ export default function SettingsPage() {
         <div id="backup" className="scroll-mt-20" />
         <SectionTitle>バックアップと復元</SectionTitle>
         <p className="text-[13px] text-ink-2">
-          記録は、この端末のブラウザの中だけに保存されています。ブラウザのデータを消すと記録も消えるので、週に1回ほどファイルに書き出してください。
+          {STORAGE_TEXT[nativeApp ? "app" : "web"].backup}
         </p>
         <p className="mt-1 mb-3 text-[13px] font-semibold text-ink-2">
           {data.meta.lastBackupAt ? `前回の書き出し：${formatDateJa(data.meta.lastBackupAt.slice(0, 10), true)}` : "まだ書き出していません"}
@@ -582,9 +584,9 @@ export default function SettingsPage() {
       <Card>
         <SectionTitle>データとプライバシー</SectionTitle>
         <ul className="mb-3 list-disc space-y-1 pl-5 text-[13px] text-ink-2">
-          <li>記録は、この端末のブラウザの中にだけ保存します。外部のサーバーへは送りません。</li>
+          <li>{STORAGE_TEXT[nativeApp ? "app" : "web"].privacy}</li>
           <li>端末どうしの同期、アカウント、共有には対応していません。URLを友達に送っても記録は共有されません。</li>
-          <li>ブラウザの履歴・Webサイトデータを消したときや、機種変更したときに、記録が消えることがあります。定期的にバックアップしてください。</li>
+          <li>{STORAGE_TEXT[nativeApp ? "app" : "web"].lost}</li>
           <li>レシートの画像は保存しません。</li>
         </ul>
         <details className="rounded-xl border border-danger/30 p-3">

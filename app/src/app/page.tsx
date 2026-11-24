@@ -14,6 +14,7 @@ import { AddFromQuery } from "@/components/AddFromQuery";
 import { EventRow, TxRow } from "@/components/Rows";
 import { LogoLockup } from "@/components/Logo";
 import { Card, DevBadge, IconChevronR, SectionTitle } from "@/components/ui";
+import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
 
 /** 日付の変わり目（0時）でホームの「今日」を更新する */
 function useToday(): string {
@@ -36,6 +37,7 @@ const NAVI_SHOWN = 3;
 const NEXT_EVENT_DAYS = 60; // 今日の予定がないとき、この日数先までの次の予定を出す
 
 export default function HomePage() {
+  const nativeApp = useIsNativeApp();
   const data = useData();
   const ui = useUI();
   const today = useToday();
@@ -227,7 +229,7 @@ export default function HomePage() {
               </Link>
             </li>
           </ol>
-          <p className="mt-2 text-[13px] text-ink-2">記録は、この端末のこのブラウザの中だけに保存されます。ホーム画面のアイコンと Safari でも、記録は別々です。</p>
+          <p className="mt-2 text-[13px] text-ink-2">{STORAGE_TEXT[nativeApp ? "app" : "web"].short}</p>
           <Link href="/guide" className="mt-1 inline-flex min-h-11 items-center text-[14px] font-semibold text-brand">
             使い方とデータの守り方
             <IconChevronR className="ml-1 size-4" />
