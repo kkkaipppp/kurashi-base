@@ -6,6 +6,7 @@ import { addDays, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { dailyInWeek, monthlyInYear, summarizePeriod, weekRange, weeklyTrend, yearRange } from "@/lib/periods";
 import { TrendChart } from "./TrendChart";
+import { WeeklyReviewCard } from "./WeeklyReviewCard";
 import { monthBreakdown } from "@/lib/monthBreakdown";
 import { useData } from "@/lib/store";
 
@@ -89,6 +90,7 @@ export function WeekReport() {
         <p className="text-[13px] font-semibold text-ink-2">この週の収支</p>
         <Totals expense={s.expense} income={s.income} balance={s.balance} />
       </Card>
+      <WeeklyReviewCard from={from} today={today} isThisWeek={isThisWeek} />
       <Card>
         <SectionTitle>曜日ごと</SectionTitle>
         <TrendChart title="この週の曜日ごと" rows={days.map((d, i) => ({ label: `${WD[i]}${Number(d.date.slice(8))}`, expense: d.expense, income: d.income, strong: d.date === today, future: d.date > today }))} lineLabel="この週の収支の累計" />
