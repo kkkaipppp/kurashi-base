@@ -147,3 +147,10 @@ describe("P02・P03・P05 アプリの中だけ（Web 版では動かない・�
     expect(src("app/settings/page.tsx")).toContain("<NativeStatusCard />");
   });
 });
+
+describe("実機で見つけた直し（2026-11-24）", () => {
+  it("グラフの目盛りの文字は、長さに合わせて間引く（12週の日付が重なった）", () => {
+    const s = src("components/TrendChart.tsx");
+    expect(s).toContain("const step = Math.max(1, Math.ceil(labelW / slot));");
+  });
+});
