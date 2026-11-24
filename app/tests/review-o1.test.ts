@@ -66,3 +66,45 @@ describe("P06・P07 週の見出しとグラフ", () => {
     expect(s).toContain('href="/?add=expense"');
   });
 });
+
+describe("家計の機能 1〜3・P08・P09・P11・P16", () => {
+  const now = "2026-11-24T00:00:00.000Z";
+  it("今月あと使える生活費：予算 − 支出 − まだ来る固定費 を月末までの日数で割る。予算なしは出さない", async () => {
+    const { dailyAllowance, unpaidRecurringThisMonth } = await import("@/lib/allowance");
+    const rec = (p: object) => ({ id: "r", name: "家賃", amount: 80000, cycle: "monthly" as const, anchorDay: 27, nextDueDate: "2026-11-27", categoryId: "exp-4", paymentMethod: "", active: true, createdAt: now, updatedAt: now, ...p });
+    const list = [rec({}), rec({ id: "x", amount: 1000, nextDueDate: "2026-11-20" }), rec({ id: "y", amount: 500, active: false })];
+    expect(unpaidRecurringThisMonth(list, "2026-11-24")).toBe(80000);
+    const a = dailyAllowance(200000, 50000, list, "2026-11-24");
+    // 11/24〜11/30 は7日。(200000 − 50000 − 80000) / 7 = 10000
+    expect(a).toMatchObject({ daysLeft: 7, unpaidFixed: 80000, left: 70000, perDay: 10000 });
+    expect(dailyAllowance(null, 0, list, "2026-11-24")).toBeNull();
+    expect(dailyAllowance(1000, 5000, [], "2026-11-24")?.perDay).toBe(0);
+  });
+  it("固定費と変動費・生活と投資・先月の同じ日より増えたもの", async () => {
+    const { monthBreakdown } = await import("@/lib/monthBreakdown");
+    const d = emptyData(now);
+    d.categories.push({ id: "inv", name: "投資", kind: "expense", order: 99, archived: false });
+    d.recurring = [{ id: "r", name: "家賃", amount: 80000, cycle: "monthly", anchorDay: 27, nextDueDate: "2026-11-27", categoryId: "exp-4", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
+    d.transactions = [
+      tx({ id: "1", date: "2026-11-05", amount: 80000, categoryId: "exp-4" }),
+      tx({ id: "2", date: "2026-11-10", amount: 3000, categoryId: "exp-1" }),
+      tx({ id: "3", date: "2026-11-11", amount: 100000, categoryId: "inv" }),
+      tx({ id: "4", date: "2026-11-25", type: "income", amount: 250000, categoryId: "inc-1" }),
+      tx({ id: "5", date: "2026-10-09", amount: 1000, categoryId: "exp-1" }),
+      tx({ id: "6", date: "2026-10-28", amount: 9999, categoryId: "exp-1" }),
+    ];
+    d.nisa = [{ id: "n", date: "2026-11-12", kind: "buy", frame: "tsumitate", amount: 100000, name: "", note: "", createdAt: now, updatedAt: now }];
+    const b = monthBreakdown(d, "2026-11", "2026-11-24");
+    expect([b.fixed, b.variable, b.invest, b.lifeExpense, b.income, b.lifeBalance, b.nisaBuy]).toEqual([80000, 3000, 100000, 83000, 250000, 167000, 100000]);
+    // 先月は24日まで（10/28 の 9999 は入れない）と比べる
+    expect(b.increases[0]).toMatchObject({ categoryId: "exp-4", diff: 80000 });
+    expect(b.increases.find((x) => x.categoryId === "exp-1")).toMatchObject({ prev: 1000, now: 3000, diff: 2000 });
+  });
+  it("ホーム：予算の案内は記録が10件たってから、超過の言い方、1日あたりは自分用だけ、はじめにやることは記録が先", () => {
+    const s = src("app/page.tsx");
+    expect(s).toContain("const BUDGET_HINT_AFTER = 10;");
+    expect(s).toContain("`予算を${formatYen(-remaining)}超過`");
+    expect(s).toContain('const PERSONAL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";');
+    expect(s.indexOf("支出か予定を1件追加する")).toBeLessThan(s.indexOf("1か月の予算を決める"));
+  });
+});

@@ -6,6 +6,7 @@ import { addDays, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { dailyInWeek, monthlyInYear, summarizePeriod, weekRange, weeklyTrend, yearRange } from "@/lib/periods";
 import { TrendChart } from "./TrendChart";
+import { monthBreakdown } from "@/lib/monthBreakdown";
 import { useData } from "@/lib/store";
 
 const WD = ["月", "火", "水", "木", "金", "土", "日"];
@@ -116,6 +117,14 @@ export function YearReport() {
   const thisMonth = Number(today.slice(5, 7));
   const thisYear = Number(today.slice(0, 4));
   const monthsWithData = months.filter((m) => m.expense > 0 || m.income > 0).length;
+  // 生活と投資（年）：月ごとの計算を足す（レビュー o1 の家計の機能 3）
+  const yb = months.reduce(
+    (acc, m) => {
+      const b = monthBreakdown(data, `${year}-${String(m.month).padStart(2, "0")}`, today);
+      return { life: acc.life + b.lifeBalance, invest: acc.invest + b.invest, nisa: acc.nisa + b.nisaBuy, fixed: acc.fixed + b.fixed, variable: acc.variable + b.variable };
+    },
+    { life: 0, invest: 0, nisa: 0, fixed: 0, variable: 0 },
+  );
   return (
     <>
       <Card className="py-2">
@@ -141,6 +150,23 @@ export function YearReport() {
       <Card>
         <SectionTitle>月ごとの推移</SectionTitle>
         <TrendChart title={`${year}年の月ごと`} rows={months.map((m) => ({ label: `${m.month}月`, expense: m.expense, income: m.income, strong: year === thisYear && m.month === thisMonth, future: year > thisYear || (year === thisYear && m.month > thisMonth) }))} lineLabel="この年の収支の累計" />
+      </Card>
+      <Card>
+        <SectionTitle>生活と投資（この年）</SectionTitle>
+        <dl className="num grid grid-cols-2 gap-2 text-center">
+          <div className="rounded-xl bg-surface-2 py-2">
+            <dt className="text-[11px] font-semibold text-ink-2">生活の収支</dt>
+            <dd className={`text-[15px] font-bold ${yb.life < 0 ? "text-expense" : ""}`}>{formatSignedYen(yb.life)}</dd>
+          </div>
+          <div className="rounded-xl bg-event/10 py-2">
+            <dt className="text-[11px] font-semibold text-event">投資に回した額</dt>
+            <dd className="text-[15px] font-bold">{formatYen(yb.invest)}</dd>
+          </div>
+        </dl>
+        <p className="num mt-2 text-[12px] text-ink-3">
+          固定費 {formatYen(yb.fixed)}・変動費 {formatYen(yb.variable)}
+          {yb.nisa > 0 && `・NISA の買付 ${formatYen(yb.nisa)}（投資への入金と重なることがあるので、足していません）`}
+        </p>
       </Card>
       <TopCategories list={s.byCategory} catName={catName} />
     </>
