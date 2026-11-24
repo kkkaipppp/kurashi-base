@@ -32,3 +32,4 @@
 - 11-23：カレンダーに祝日（赤い日付・選んだ日に名前、2022〜2099年をネットなしで計算）と、収入の金額（青い +数字）を出した（平尾さんの要望、点検役で合格、テスト209件）。iPhone 実機は未確認。ほかに：NISA（1293件）・カード明細（44件）の取り込み用ファイルを作って渡した（_private、Git に入れない）。iPhone アプリの準備は feat/ios-widget（Capacitor 8.6.0、静的書き出し）。Mac に Xcode 27.2 が入り、iOS の部品をダウンロード中
 - 11-23：自分用の iPhone アプリとウィジェットを feat/ios-widget で作った（Capacitor 8.6.0・WidgetKit、無料の Apple ID で App Group が通った）。平尾さんの iPhone でウィジェットの表示と、Mac からの自動の入れ直し（7日の期限の前、Wi-Fi 経由）・入れ直し後も記録が残ることを確認。ウィジェットのボタンの動きは未確認。詳しくは feat/ios-widget の docs/widget/WIDGET_PLAN.md
 - 11-24：Web 版でできる限界まで（平尾さん）：バックアップの案内を7日に・ブラウザに記録を消さないよう頼む、設定に「カレンダー用ファイルを書き出す」（.ics。予定と固定費の支払日）と「家計簿の CSV を取り込む」（docs/import/KURASHI_IMPORT_SPEC.md の形、追加だけ・二重にしない）。点検役で合格、テスト229件。iPhone 実機（.ics の読み込み）は未確認。push はまだ
+- 11-24：ChatGPT のレビュー o1（P01〜P20・家計の機能3つ）を全部直した（平尾さん「全部直しといて」）。安全の直しと言葉は両方の版、新しい機能は自分用だけ。点検役の再点検で合格（master fb2220b、feat 468cc4b、テスト259件）。一覧は docs/review/REVIEW_O1_RESPONSE.md。push はまだ、iPhone 実機は未確認（iPhone 用の組み立ては済み、家の Wi-Fi に戻ったら入れ直す）
