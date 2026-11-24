@@ -2,7 +2,7 @@
 
 **このファイルが現在地の正本。** セッションの終わりに必ず更新する。（`docs/NEXT_SESSION_HANDOFF.md` は作りの要点、`docs/progress/STATUS.md` は WBS の集計用）
 
-- 更新：2026-11-23
+- 更新：2026-11-24
 - ブランチ：`beta/friend-go`。**GitHub `kkkaipppp/kurashi-base`（Private）の master に push 済み（aa49fde、11-23。記録の分は平尾さんが push）**
 - **公開 URL：https://kurashi-base-tau.vercel.app/**（Vercel、master を自動でデプロイ）
 - 段階：M5 公開準備（ロードマップ `docs/progress/ROADMAP.md` の「友人β版」）
@@ -33,3 +33,4 @@
 - 11-23：自分用の iPhone アプリとウィジェットを feat/ios-widget で作った（Capacitor 8.6.0・WidgetKit、無料の Apple ID で App Group が通った）。平尾さんの iPhone でウィジェットの表示と、Mac からの自動の入れ直し（7日の期限の前、Wi-Fi 経由）・入れ直し後も記録が残ることを確認。ウィジェットのボタンの動きは未確認。詳しくは feat/ios-widget の docs/widget/WIDGET_PLAN.md
 - 11-24：Web 版でできる限界まで（平尾さん）：バックアップの案内を7日に・ブラウザに記録を消さないよう頼む、設定に「カレンダー用ファイルを書き出す」（.ics。予定と固定費の支払日）と「家計簿の CSV を取り込む」（docs/import/KURASHI_IMPORT_SPEC.md の形、追加だけ・二重にしない）。点検役で合格、テスト229件。iPhone 実機（.ics の読み込み）は未確認。push はまだ
 - 11-24：ChatGPT のレビュー o1（P01〜P20・家計の機能3つ）を全部直した（平尾さん「全部直しといて」）。安全の直しと言葉は両方の版、新しい機能は自分用だけ。点検役の再点検で合格（master fb2220b、feat 468cc4b、テスト259件）。一覧は docs/review/REVIEW_O1_RESPONSE.md。push はまだ、iPhone 実機は未確認（iPhone 用の組み立ては済み、家の Wi-Fi に戻ったら入れ直す）
+- 11-24 夜：ChatGPT「100点化 開発指示 v1」のうち、保存の形を変えない分（B 書きかけ・D 計算をひとつに・A 入力の候補・C グラフと設定の見出し・アプリのカレンダー反映の止める/始める）をした（平尾さん「1」）。点検役の2回目で合格（すぐ直す 0件）。feat 0718fca、テスト master 269件・feat 281件。一覧は docs/review/PLAN100_RESPONSE.md。push はまだ。iPhone 用の組み立ては済み（22:22）、iPhone が Mac から見えず（unavailable）入れ直しはまだ・実機は未確認。形を変える分（分類ID・固定費のつなぎ・ホームのカード・旅行のひも付け）は、進め方を平尾さんに聞いている
