@@ -14,6 +14,7 @@ export function tripMemoCandidates(txs: Transaction[], trip: Pick<Trip, "title" 
     const i = t.note.indexOf(tag);
     if (i < 0) return false;
     const after = t.note.charAt(i + tag.length);
-    return after === "" || /\s/.test(after);
+    // 名前の後ろが空白・行の終わり・区切りの記号なら一致（「旅行：沖縄・ランチ」も拾う。「沖縄2025」は拾わない）
+    return after === "" || /[\s・、。,.()（）「」/／:：-]/.test(after);
   });
 }
