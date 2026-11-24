@@ -96,7 +96,7 @@ export default function GuidePage() {
             <>
               <li>記録はこのアプリの中（Safari の Web 版とは別）</li>
               <li>
-                毎日、自動でバックアップ（「ファイル」アプリ → このiPhone内 →
+                開いたとき・閉じたときに自動でバックアップ（「ファイル」アプリ → このiPhone内 →
                 くらしベース）
               </li>
               <li>

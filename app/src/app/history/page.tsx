@@ -170,7 +170,7 @@ export default function HistoryPage() {
                 setCat("");
                 setPay("all");
               }}
-              className="min-h-9 shrink-0 rounded-lg px-2 font-semibold text-brand hover:bg-brand-soft"
+              className="min-h-11 shrink-0 rounded-lg px-2 font-semibold text-brand hover:bg-brand-soft"
             >
               絞り込みを解除
             </button>

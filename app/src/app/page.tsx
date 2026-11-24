@@ -16,6 +16,7 @@ import { LogoLockup } from "@/components/Logo";
 import { Card, DevBadge, IconChevronR, SectionTitle } from "@/components/ui";
 import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
 import { dailyAllowance } from "@/lib/allowance";
+import { monthBreakdown } from "@/lib/monthBreakdown";
 import { addMonthsToKey } from "@/lib/date";
 
 // 自分用（personal）だけの新しい機能（レビュー o1 の家計の機能。公開するかは平尾さんが決める）
@@ -76,7 +77,7 @@ export default function HomePage() {
   const next = nextRecurring(data.recurring);
   const recent = sortTxDesc(data.transactions).slice(0, 3);
   const firstUse = data.transactions.length === 0 && data.events.length === 0;
-  const allowance = PERSONAL ? dailyAllowance(data.budget.monthly, sum.expense, data.recurring, today) : null;
+  const allowance = PERSONAL ? dailyAllowance(data.budget.monthly, monthBreakdown(data, month, today).lifeExpense, data.recurring, today) : null;
   const lastMonthExpense = summarizeMonth(data.transactions, addMonthsToKey(month, -1)).expense;
 
   return (
@@ -139,7 +140,9 @@ export default function HomePage() {
             {allowance && (
               <p className="num mt-2 rounded-xl bg-white/15 px-3 py-2 text-[13px]">
                 月末まで（{allowance.daysLeft}日）<strong className="text-[16px]">1日あたり {formatYen(allowance.perDay)}</strong> 使えます
-                {allowance.unpaidFixed > 0 && <span className="block text-[11px] opacity-90">まだ来る今月の固定費 {formatYen(allowance.unpaidFixed)} を引いた額です</span>}
+                <span className="block text-[11px] opacity-90">
+                  投資を除いた支出で計算{allowance.unpaidFixed > 0 && `。まだ記録していない今月の固定費 ${formatYen(allowance.unpaidFixed)} も引いています`}
+                </span>
               </p>
             )}
           </>
