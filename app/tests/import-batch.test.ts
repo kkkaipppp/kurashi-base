@@ -32,6 +32,11 @@ describe("取り込みの履歴と取り消し", () => {
     expect(b.data.transactions).toHaveLength(3); // 増えない
     expect(b.data.meta.imports?.at(-1)?.added).toBe(0);
     expect(b.data.transactions.every((t) => t.importBatchId === a.id)).toBe(true); // 最初の取り込みの記録のまま
+    // 取り込み直しでは、全件が「同じ記録」（重複）で、「同じ記録なのに内容が違う」にはならない（取り込みの印は中身ではない）
+    const again = csvToIncoming(csv, a.data, now);
+    if (!again.ok) throw new Error("csv");
+    const plan = applyRestore(a.data, { ...again.incoming, transactions: stampBatch(again.incoming.transactions, "imp_other") }, "merge");
+    expect(plan.ok && [plan.added, plan.duplicates, plan.conflicts]).toEqual([0, 3, 0]);
   });
   it("取り消し：あとから変えた記録・旅行や固定費につないだ記録は残す。履歴は消さず、取り消した日時を付ける", () => {
     const a = importInto(emptyData(now), csv, "a.csv", "2026-11-25T01:00:00.000Z");

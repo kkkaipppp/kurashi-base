@@ -18,9 +18,10 @@ export function applyTxUpdate(d: AppData, id: string, t: TxPatch, ts: string): A
     recurring: link ? applyRecurringPayment(d.recurring, link, t.amount, !!t.recurringPartial, ts) : d.recurring,
     transactions: d.transactions.map((x) => {
       if (x.id !== id) return x;
-      const merged: Transaction = { ...x, ...t, id, updatedAt: ts };
+      const merged: Transaction = { ...x, ...t, id, updatedAt: ts, ...(link ? partialMark(d.recurring, link, t.amount, !!t.recurringPartial) : {}) };
+      if (link && !merged.recurringPartial) delete merged.recurringDue;
       // 空にした任意の項目は残さない
-      for (const k of ["countAs", "tripId", "recurringId", "recurringPartial"] as const) if (merged[k] === undefined || merged[k] === false) delete merged[k];
+      for (const k of ["countAs", "tripId", "recurringId", "recurringPartial", "recurringDue"] as const) if (merged[k] === undefined || merged[k] === false) delete merged[k];
       return merged;
     }),
   };
@@ -88,11 +89,22 @@ export function applyRecurringPayment(list: RecurringExpense[], rcId: string, am
   });
 }
 
-/** 一部の支払いの記録を消したとき、その分を戻す（0 になったら一部払いの記録を消す） */
-export function revertPartialPayment(list: RecurringExpense[], tx: Pick<Transaction, "recurringId" | "recurringPartial" | "amount">, ts: string): RecurringExpense[] {
-  if (!tx.recurringId || !tx.recurringPartial) return list;
+/**
+ * 一部の支払いとして記録するか（全部払い終わるときは、一部ではなく「支払い完了」の記録にする）。
+ * 一部のときは、どの支払日の分か（recurringDue）も返す
+ */
+export function partialMark(list: RecurringExpense[], rcId: string, amount: number, wantPartial: boolean): { recurringPartial?: true; recurringDue?: string } {
+  const rc = list.find((r) => r.id === rcId);
+  if (!rc || !wantPartial) return {};
+  const prev = rc.partialPaid && rc.partialPaid.due === rc.nextDueDate ? rc.partialPaid.paid : 0;
+  return prev + amount < rc.amount ? { recurringPartial: true, recurringDue: rc.nextDueDate } : {};
+}
+
+/** 一部の支払いの記録を消したとき、その分を戻す（同じ支払日の分だけ。0 になったら一部払いの記録を消す） */
+export function revertPartialPayment(list: RecurringExpense[], tx: Pick<Transaction, "recurringId" | "recurringPartial" | "recurringDue" | "amount">, ts: string): RecurringExpense[] {
+  if (!tx.recurringId || !tx.recurringPartial || !tx.recurringDue) return list;
   return list.map((rc) => {
-    if (rc.id !== tx.recurringId || !rc.partialPaid) return rc;
+    if (rc.id !== tx.recurringId || !rc.partialPaid || rc.partialPaid.due !== tx.recurringDue) return rc;
     const paid = Math.max(0, rc.partialPaid.paid - tx.amount);
     if (paid === 0) {
       const { partialPaid: _drop, ...rest } = rc; // eslint-disable-line @typescript-eslint/no-unused-vars
