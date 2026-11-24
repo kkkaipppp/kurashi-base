@@ -32,3 +32,81 @@ describe("ホーム：「今日のまとめ」と「確認したいこと」で�
     expect(s).toContain("!dup?.has(n.key)");
   });
 });
+
+// --- FINAL_INTEGRATION の X 項目（合成データ。実データは使わない） ---
+import { summarizeMonth } from "@/lib/aggregate";
+import { budgetSpent, monthLedger } from "@/lib/ledger";
+import { monthBreakdown } from "@/lib/monthBreakdown";
+import { monthReport } from "@/lib/report";
+import { setTxTripData, unlinkTripFromTx, mergeCategoryData } from "@/lib/dataOps";
+import type { AppData, Transaction } from "@/lib/types";
+
+const tx = (o: Partial<Transaction> & { id: string }): Transaction => ({
+  type: "expense", date: "2026-11-10", amount: 1000, currency: "JPY", categoryId: "exp-1", merchant: "", paymentMethod: "", note: "", source: "manual", createdAt: now, updatedAt: now, ...o,
+});
+const withInvest = (): AppData => {
+  const d = emptyData(now);
+  d.categories.push({ id: "inv", name: "証券口座へ", kind: "expense", order: 99, archived: false, role: "invest" });
+  d.trips = [{ id: "trip1", title: "京都", startDate: "2026-11-01", endDate: "2026-11-03", destination: "", budget: null, note: "", createdAt: now, updatedAt: now }];
+  return d;
+};
+
+describe("X01 旅行・家計の二重計上なし（取引ID一件を参照）", () => {
+  it("15000円の支出を旅行につないでも、家計の総額は15000円のまま。旅行を消しても支出は残る", () => {
+    const d = withInvest();
+    d.transactions = [tx({ id: "a", amount: 15000 })];
+    const before = summarizeMonth(d.transactions, "2026-11").expense;
+    const linked = setTxTripData(d, ["a"], "trip1", now);
+    expect(summarizeMonth(linked.transactions, "2026-11").expense).toBe(before);
+    expect(monthReport(linked, "2026-11").expense).toBe(15000);
+    expect(budgetSpent(linked, "2026-11", "2026-11-25", true)).toBe(15000);
+    const after = unlinkTripFromTx(linked, "trip1", now);
+    expect(after).toHaveLength(1);
+    expect(after[0].amount).toBe(15000);
+    expect(after[0].tripId).toBeUndefined();
+  });
+});
+
+describe("X04 投資／生活費（投資100000円は資産の移動。生活費は増えない）", () => {
+  it("投資のカテゴリの支出は、生活費・予算との比較に入らない", () => {
+    const d = withInvest();
+    d.budget.monthly = 120000;
+    d.transactions = [tx({ id: "a", amount: 3000 }), tx({ id: "b", categoryId: "inv", amount: 100000 })];
+    const b = monthBreakdown(d, "2026-11", "2026-11-25");
+    expect([b.lifeExpense, b.invest]).toEqual([3000, 100000]);
+    expect(budgetSpent(d, "2026-11", "2026-11-25", true)).toBe(3000);
+    expect(monthLedger(d, "2026-11", "2026-11-25").lifeBudgetLeft).toBe(117000);
+  });
+});
+
+describe("X05 ホーム・振り返りで計算結果が一致する", () => {
+  it("同じ月の生活費は、monthBreakdown・budgetSpent・monthLedger で同じ", () => {
+    const d = withInvest();
+    d.budget.monthly = 50000;
+    d.transactions = [tx({ id: "a", amount: 1200 }), tx({ id: "b", amount: 800, date: "2026-11-20" }), tx({ id: "c", categoryId: "inv", amount: 5000 })];
+    const life = monthBreakdown(d, "2026-11", "2026-11-25").lifeExpense;
+    expect(budgetSpent(d, "2026-11", "2026-11-25", true)).toBe(life);
+    expect(monthLedger(d, "2026-11", "2026-11-25").lifeExpense).toBe(life);
+    expect(life).toBe(2000);
+  });
+});
+
+describe("X16 非表示と削除を区別（非表示でも集計と参照を保持）", () => {
+  it("カテゴリを非表示にしても、その記録は集計に残る。まとめるときも ID は変わらない", () => {
+    const d = withInvest();
+    d.categories = d.categories.map((c) => (c.id === "exp-1" ? { ...c, archived: true } : c));
+    d.transactions = [tx({ id: "a", amount: 700 })];
+    expect(summarizeMonth(d.transactions, "2026-11").expense).toBe(700);
+    expect(monthBreakdown(d, "2026-11", "2026-11-25").lifeExpense).toBe(700);
+    // 非表示のカテゴリを、表示中のカテゴリにまとめられる。記録の ID と金額は変わらない
+    const m = mergeCategoryData(d, "exp-1", "exp-2", now);
+    expect(m.ok).toBe(true);
+    if (m.ok) {
+      expect(m.next.transactions.map((t) => [t.id, t.amount, t.categoryId])).toEqual([["a", 700, "exp-2"]]);
+      expect(summarizeMonth(m.next.transactions, "2026-11").expense).toBe(700);
+    }
+    // 非表示の先へはまとめられない（見えないカテゴリに記録が移らないように）
+    const toHidden = mergeCategoryData(d, "exp-2", "exp-1", now);
+    expect(toHidden.ok).toBe(false);
+  });
+});
