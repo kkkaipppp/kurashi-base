@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet } from "./Sheet";
 import { Button, Field, inputCls } from "./ui";
 import { useUI } from "./UIContext";
@@ -10,6 +10,7 @@ import { useData, useStore } from "@/lib/store";
 import { validateEvent, type EventDraft, type FieldErrors } from "@/lib/validate";
 import { formatDateJa, todayStr } from "@/lib/date";
 import { formatYen } from "@/lib/money";
+import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from "@/lib/sheetDraft";
 import { newId } from "@/lib/defaults";
 import { calendarTemplate, isSavableUrl, mapsDirections, safeExternalLink } from "@/lib/externalLinks";
 import { EVENT_KINDS, type CalendarEvent, type CheckItem, type EventKind } from "@/lib/types";
@@ -243,6 +244,19 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
   const saved = useRef(false);
   const dirty = JSON.stringify([draft, extra]) !== JSON.stringify([initial, initialExtra]) || newItem.trim() !== "";
 
+  // 書きかけの控え（100点化の指示 B）。新しい予定は targetId=null、編集は予定の ID
+  type Saved = { draft: EventDraft; extra: Extra };
+  const draftTarget = editing?.id ?? null;
+  const [pending] = useState(() => loadSheetDraft<Saved>("event", draftTarget));
+  const [resumeAsked, setResumeAsked] = useState(false);
+  const [draftSaveFailed, setDraftSaveFailed] = useState(false);
+  useEffect(() => {
+    if (saved.current) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 端末に控えられたかを画面に出すため
+    if (dirty) setDraftSaveFailed(!saveSheetDraft<Saved>("event", draftTarget, { draft, extra }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, extra, dirty]);
+
   const set = <K extends keyof EventDraft>(k: K, v: EventDraft[K]) => {
     setDraft((d) => {
       const n = { ...d, [k]: v };
@@ -273,6 +287,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     if (busy) return;
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true })))
       return;
+    if (dirty) clearSheetDraft("event", draftTarget);
     onClose();
   };
 
@@ -318,6 +333,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
         return;
       }
       saved.current = true;
+      clearSheetDraft("event", draftTarget); // 保存がうまくいったときだけ下書きを消す
       ui.toast(editing ? "保存しました" : "予定を追加しました");
       onClose();
     } finally {
@@ -361,6 +377,35 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
         </div>
       }
     >
+      {pending && !resumeAsked && (
+        <div className="mb-3 rounded-xl border border-brand/30 bg-brand-soft p-3" role="status">
+          <p className="text-[14px] font-semibold">{draftTimeLabel(pending.savedAt)} の書きかけがあります</p>
+          <p className="mt-0.5 text-[12px] text-ink-2">
+            {pending.draft.draft.title || "（名前なし）"} {pending.draft.draft.startDate}
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                clearSheetDraft("event", draftTarget);
+                setResumeAsked(true);
+              }}
+            >
+              捨てる
+            </Button>
+            <Button
+              onClick={() => {
+                setDraft({ ...pending.draft.draft });
+                setExtra({ ...pending.draft.extra });
+                setResumeAsked(true);
+              }}
+            >
+              続きから
+            </Button>
+          </div>
+        </div>
+      )}
+      {draftSaveFailed && <p className="mb-2 text-[12px] text-warn">書きかけを端末に控えられませんでした（保存すれば記録は残ります）。</p>}
       <form
         className="space-y-4"
         noValidate

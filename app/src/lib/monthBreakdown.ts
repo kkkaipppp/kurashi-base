@@ -17,6 +17,10 @@ export interface MonthBreakdown {
   nisaSell: number;
   /** 先月の同じ日までと比べて増えたカテゴリ（上位3件） */
   increases: { categoryId: string; now: number; prev: number; diff: number }[];
+  /** 先月の同じ日までと比べて減ったカテゴリ（上位3件。diff はマイナス） */
+  decreases: { categoryId: string; now: number; prev: number; diff: number }[];
+  /** 生活費の、先月の同じ日までとの差の合計（今 − 先月） */
+  diffTotal: number;
   hasPrev: boolean;
 }
 
@@ -64,14 +68,12 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
   const prev = byCat(prevKey);
   // 先月に記録が1件でもあれば比べる（同じ日までに無くても「増えた」は出せる）
   const hasPrev = data.transactions.some((t) => t.type === "expense" && t.date.slice(0, 7) === prevKey);
-  const increases = hasPrev
-    ? [...now]
-        .map(([categoryId, v]) => ({ categoryId, now: v, prev: prev.get(categoryId) ?? 0, diff: v - (prev.get(categoryId) ?? 0) }))
-        .filter((x) => x.diff > 0)
-        .sort((a, b) => b.diff - a.diff)
-        .slice(0, 3)
-    : [];
+  const ids = new Set([...now.keys(), ...prev.keys()]);
+  const diffs = [...ids].map((categoryId) => ({ categoryId, now: now.get(categoryId) ?? 0, prev: prev.get(categoryId) ?? 0, diff: (now.get(categoryId) ?? 0) - (prev.get(categoryId) ?? 0) }));
+  const increases = hasPrev ? diffs.filter((x) => x.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, 3) : [];
+  const decreases = hasPrev ? diffs.filter((x) => x.diff < 0).sort((a, b) => a.diff - b.diff).slice(0, 3) : [];
+  const diffTotal = diffs.reduce((s, x) => s + x.diff, 0);
 
   const lifeExpense = fixed + variable;
-  return { fixed, variable, invest, lifeExpense, income, lifeBalance: income - lifeExpense, nisaBuy, nisaSell, increases, hasPrev };
+  return { fixed, variable, invest, lifeExpense, income, lifeBalance: income - lifeExpense, nisaBuy, nisaSell, increases, decreases, diffTotal, hasPrev };
 }

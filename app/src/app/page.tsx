@@ -15,8 +15,7 @@ import { EventRow, TxRow } from "@/components/Rows";
 import { LogoLockup } from "@/components/Logo";
 import { Card, DevBadge, IconChevronR, SectionTitle } from "@/components/ui";
 import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
-import { dailyAllowance } from "@/lib/allowance";
-import { monthBreakdown } from "@/lib/monthBreakdown";
+import { monthLedger } from "@/lib/ledger";
 import { addMonthsToKey } from "@/lib/date";
 
 // 自分用（personal）だけの新しい機能（レビュー o1 の家計の機能。公開するかは平尾さんが決める）
@@ -51,11 +50,15 @@ export default function HomePage() {
   const today = useToday();
   const month = monthKey(today);
   const sum = summarizeMonth(data.transactions, month);
-  const remaining = remainingBudget(data.budget.monthly, sum.expense);
+  // 自分用は、予算と比べるのを「投資を除いた生活費」に。ホーム・振り返り・1日あたりで同じ計算（lib/ledger.ts。100点化の指示 D）。
+  // 公開版は今までどおり、すべての支出と比べる
+  const ledger = PERSONAL ? monthLedger(data, month, today) : null;
+  const spentForBudget = ledger ? ledger.lifeExpense : sum.expense;
+  const remaining = remainingBudget(data.budget.monthly, spentForBudget);
   const todayEvents = eventsOnDay(data.events, today);
   const todaySpent = daySummary(data.transactions, today).expense;
   const prefs = data.prefs.home;
-  const pct = data.budget.monthly ? Math.min(100, Math.round((sum.expense / data.budget.monthly) * 100)) : 0;
+  const pct = data.budget.monthly ? Math.min(100, Math.round((spentForBudget / data.budget.monthly) * 100)) : 0;
 
   // 今日の予定がなければ、次の予定を1件
   let nextEvent: { day: string; ev: (typeof data.events)[number] } | null = null;
@@ -77,7 +80,7 @@ export default function HomePage() {
   const next = nextRecurring(data.recurring);
   const recent = sortTxDesc(data.transactions).slice(0, 3);
   const firstUse = data.transactions.length === 0 && data.events.length === 0;
-  const allowance = PERSONAL ? dailyAllowance(data.budget.monthly, monthBreakdown(data, month, today).lifeExpense, data.recurring, today) : null;
+  const allowance = ledger && ledger.perDay !== null ? { perDay: ledger.perDay, daysLeft: ledger.daysLeft, unpaidFixed: ledger.unpaidFixed } : null;
   const lastMonthExpense = summarizeMonth(data.transactions, addMonthsToKey(month, -1)).expense;
 
   return (
@@ -131,7 +134,7 @@ export default function HomePage() {
             </div>
             <div className="mt-2 flex items-center justify-between gap-2">
               <p className="num text-[12px] opacity-90">
-                予算 {formatYen(data.budget.monthly ?? 0)}・使った額 {formatYen(sum.expense)}
+                予算 {formatYen(data.budget.monthly ?? 0)}・使った額{ledger ? "（投資を除く）" : ""} {formatYen(spentForBudget)}
               </p>
               <Link href="/report" className="inline-flex min-h-9 shrink-0 items-center rounded-lg bg-white/15 px-3 text-[12px] font-semibold hover:bg-white/25">
                 振り返り
@@ -141,7 +144,7 @@ export default function HomePage() {
               <p className="num mt-2 rounded-xl bg-white/15 px-3 py-2 text-[13px]">
                 月末まで（{allowance.daysLeft}日）<strong className="text-[16px]">1日あたり {formatYen(allowance.perDay)}</strong> 使えます
                 <span className="block text-[11px] opacity-90">
-                  投資を除いた支出で計算{allowance.unpaidFixed > 0 && `。まだ記録していない今月の固定費 ${formatYen(allowance.unpaidFixed)} も引いています`}
+                  {allowance.unpaidFixed > 0 ? `まだ記録していない今月の固定費 ${formatYen(allowance.unpaidFixed)} を引いた額です` : "今月の固定費は記録済みです"}
                 </span>
               </p>
             )}

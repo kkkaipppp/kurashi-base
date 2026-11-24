@@ -117,15 +117,16 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
       </svg>
       <figcaption className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-ink-3">
         <span className="flex items-center gap-1">
-          <span className="inline-block size-2.5 rounded-sm bg-expense" />支出
+          <span className="inline-block size-2.5 rounded-sm bg-expense" />支出（棒）
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block size-2.5 rounded-sm bg-income" />収入
+          <span className="inline-block size-2.5 rounded-sm bg-income" />収入（棒）
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block h-0.5 w-3 rounded bg-event" />
-          {lineLabel}（右の目盛り）
+          {lineLabel}（線）
         </span>
+        <span className="w-full text-center">単位は円。棒は左の目盛り、線は右の紫の目盛り</span>
       </figcaption>
       <details className="rounded-xl bg-surface-2 px-3 py-1 text-[12px]">
         <summary className="min-h-9 cursor-pointer py-2 font-semibold text-ink-2">数字で見る</summary>

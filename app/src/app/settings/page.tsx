@@ -9,13 +9,24 @@ import { formatDateJa, todayStr } from "@/lib/date";
 import { buildCalendarItems, CAL_FUTURE_DAYS, CAL_PAST_DAYS } from "@/lib/calendarExport";
 import { buildIcs } from "@/lib/ics";
 import { csvToIncoming, type CsvResult } from "@/lib/csvImport";
-import { FEATURES } from "@/lib/edition";
+import { FEATURES, IS_PERSONAL } from "@/lib/edition";
 import { figures, sampleRows, similarButDifferentId, type DataFigures } from "@/lib/restoreView";
 import type { HomePrefs, TxType } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, Field, PageHeader, SectionTitle, inputCls } from "@/components/ui";
 import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
 import { NativeStatusCard } from "@/components/NativeStatusCard";
+
+// 設定を目的ごとのまとまりに分ける見出し（100点化の指示 C。自分用だけ。公開版は友人β中なので今のまま）
+const GROUPS = IS_PERSONAL;
+function GroupLabel({ id, children }: { id: string; children: string }) {
+  if (!GROUPS) return null;
+  return (
+    <p id={id} className="scroll-mt-20 px-1 pt-2 text-[12px] font-bold tracking-wide text-ink-3">
+      {children}
+    </p>
+  );
+}
 
 const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
 
@@ -231,6 +242,7 @@ export default function SettingsPage() {
             ...(FEATURES.calendarFile || FEATURES.csvImport ? ([["#calendar-file", "カレンダー・取り込み"]] as const) : []),
             ...(nativeApp ? ([["#iphone", "iPhone の連携"]] as const) : []),
             ["#backup", "バックアップ・データ"],
+            ...(GROUPS ? ([["#danger", "すべて削除"]] as const) : []),
           ] as const
         ).map(([href, label]) => (
           <a key={href} href={href} className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface px-3 font-semibold text-ink-2 hover:bg-surface-2">
@@ -239,6 +251,7 @@ export default function SettingsPage() {
         ))}
       </nav>
 
+      <GroupLabel id="group-daily">ふだんの設定</GroupLabel>
       <Card>
         <div id="budget" className="scroll-mt-20" />
         <SectionTitle>毎月の予算</SectionTitle>
@@ -359,6 +372,8 @@ export default function SettingsPage() {
         </div>
       </Card>
 
+      {(FEATURES.calendarFile || FEATURES.csvImport) && <GroupLabel id="group-connect">ほかとつなぐ・取り込む</GroupLabel>}
+
       {FEATURES.calendarFile && (
         <Card>
           <div id="calendar-file" className="scroll-mt-20" />
@@ -451,6 +466,7 @@ export default function SettingsPage() {
 
       <NativeStatusCard />
 
+      <GroupLabel id="group-data">記録を守る</GroupLabel>
       <Card>
         <div id="backup" className="scroll-mt-20" />
         <SectionTitle>バックアップと復元</SectionTitle>
@@ -609,7 +625,7 @@ export default function SettingsPage() {
           <li>{STORAGE_TEXT[nativeApp ? "app" : "web"].lost}</li>
           <li>レシートの画像は保存しません。</li>
         </ul>
-        <details className="rounded-xl border border-danger/30 p-3">
+        <details id="danger" className="scroll-mt-20 rounded-xl border border-danger/30 p-3">
           <summary className="flex min-h-11 cursor-pointer items-center text-[14px] font-semibold text-danger">記録をすべて削除する（危険な操作）</summary>
           <div className="mt-2 space-y-2">
             <p className="text-[13px] text-ink-2">

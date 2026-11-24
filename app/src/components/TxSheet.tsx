@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet } from "./Sheet";
 import { Button, Field, IconAlert, inputCls } from "./ui";
 import { useUI } from "./UIContext";
 import { useData, useStore, type TxInput } from "@/lib/store";
 import { validateTx, type FieldErrors, type TxDraft } from "@/lib/validate";
 import { findDuplicates, type DupCandidate } from "@/lib/duplicates";
-import { formatDateJa, todayStr } from "@/lib/date";
+import { addDays, formatDateJa, todayStr } from "@/lib/date";
 import { formatYen } from "@/lib/money";
+import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from "@/lib/sheetDraft";
 import { PAYMENT_METHODS, type TxSource, type TxType } from "@/lib/types";
 
 export type TxSheetRequest =
@@ -25,6 +26,9 @@ export type TxSheetRequest =
       previewUrl?: string; // 画像取込時：見ながら入力するためのプレビュー
       onSaved?: () => void;
     };
+
+// よく使うカテゴリ・前回の支払方法の候補（100点化の指示 A）。まず自分用だけ。候補は押したときだけ入る（勝手に変えない）
+const SUGGEST = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 
 export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => void }) {
   const data = useData();
@@ -77,8 +81,51 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   const saved = useRef(false);
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(base);
+
+  // 書きかけの控え（100点化の指示 B）。新しい入力は targetId=null、編集は記録の ID。
+  // 画像・固定費からの記録は1回きりなので控えない
+  const draftTarget = editing?.id ?? null;
+  const keepDraft = req.mode === "edit" || (!req.previewUrl && !req.recurringId);
+  const [pending] = useState(() => (keepDraft ? loadSheetDraft<TxDraft>("tx", draftTarget) : null));
+  const [resumeAsked, setResumeAsked] = useState(false);
+  const [draftSaveFailed, setDraftSaveFailed] = useState(false);
+  useEffect(() => {
+    if (!keepDraft || saved.current) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 端末に控えられたかを画面に出すため
+    if (dirty) setDraftSaveFailed(!saveSheetDraft("tx", draftTarget, draft));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, dirty]);
+  const resume = () => {
+    if (pending) setDraft({ ...pending.draft });
+    setResumeAsked(true);
+  };
+  const discardPending = () => {
+    clearSheetDraft("tx", draftTarget);
+    setResumeAsked(true);
+  };
   const cats = data.categories.filter((c) => c.kind === draft.type && (!c.archived || c.id === draft.categoryId));
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "（削除済みカテゴリ）";
+  // 直近90日でよく使ったカテゴリ（上位4つ）と、同じ種類の前回の支払方法
+  const suggest = useMemo(() => {
+    if (!SUGGEST) return { cats: [] as string[], pay: "" };
+    const since = addDays(todayStr(), -90);
+    const count = new Map<string, number>();
+    let lastPay = "";
+    let lastAt = "";
+    for (const t of data.transactions) {
+      if (t.type !== draft.type) continue;
+      if (t.date >= since) count.set(t.categoryId, (count.get(t.categoryId) ?? 0) + 1);
+      if (t.createdAt > lastAt) {
+        lastAt = t.createdAt;
+        lastPay = t.paymentMethod;
+      }
+    }
+    const usable = new Set(data.categories.filter((c) => c.kind === draft.type && !c.archived).map((c) => c.id));
+    return {
+      cats: [...count].filter(([id]) => usable.has(id)).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id]) => id),
+      pay: lastPay,
+    };
+  }, [data.transactions, data.categories, draft.type]);
 
   const set = <K extends keyof TxDraft>(k: K, v: TxDraft[K]) => {
     setDraft((d) => ({ ...d, [k]: v }));
@@ -97,6 +144,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (busy) return;
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true })))
       return;
+    if (dirty) clearSheetDraft("tx", draftTarget);
     onClose();
   };
 
@@ -139,6 +187,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         setSaveError(r.error); // 入力は保持したまま
         return;
       }
+      clearSheetDraft("tx", draftTarget); // 保存がうまくいったときだけ下書きを消す
       ui.toast(editing ? "保存しました" : `${draft.type === "expense" ? "支出" : "収入"}を追加しました`);
       if (keepOpen && canContinue) {
         // 日付・種別・カテゴリ・支払方法はそのまま、金額・店名・メモだけ空にして次の1件へ
@@ -211,6 +260,22 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         )
       }
     >
+      {pending && !resumeAsked && (
+        <div className="mb-3 rounded-xl border border-brand/30 bg-brand-soft p-3" role="status">
+          <p className="text-[14px] font-semibold">{draftTimeLabel(pending.savedAt)} の書きかけがあります</p>
+          <p className="num mt-0.5 text-[12px] text-ink-2">
+            {pending.draft.amount ? `${pending.draft.amount}円 ` : ""}
+            {pending.draft.merchant}
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <Button variant="secondary" onClick={discardPending}>
+              捨てる
+            </Button>
+            <Button onClick={resume}>続きから</Button>
+          </div>
+        </div>
+      )}
+      {draftSaveFailed && <p className="mb-2 text-[12px] text-warn">書きかけを端末に控えられませんでした（保存すれば記録は残ります）。</p>}
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -295,6 +360,22 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
             </select>
           </Field>
         </div>
+        {suggest.cats.length > 0 && (
+          <div className="-mt-2 flex flex-wrap items-center gap-1.5" aria-label="よく使うカテゴリ">
+            <span className="text-[12px] text-ink-3">よく使う：</span>
+            {suggest.cats.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => set("categoryId", id)}
+                aria-pressed={draft.categoryId === id}
+                className={`min-h-11 rounded-full border px-3 text-[13px] font-semibold ${draft.categoryId === id ? "border-brand bg-brand-soft text-brand" : "border-line bg-surface text-ink-2"}`}
+              >
+                {catName(id)}
+              </button>
+            ))}
+          </div>
+        )}
 
         <Field label={draft.type === "expense" ? "店名" : "相手先"} optional htmlFor="tx-merchant" error={errors.merchant}>
           <input id="tx-merchant" value={draft.merchant} onChange={(e) => set("merchant", e.target.value)} className={inputCls} maxLength={100} />
@@ -308,6 +389,11 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
               </option>
             ))}
           </select>
+          {suggest.pay && suggest.pay !== draft.paymentMethod && (
+            <button type="button" onClick={() => set("paymentMethod", suggest.pay)} className="mt-1 min-h-11 rounded-full border border-line bg-surface px-3 text-[13px] font-semibold text-ink-2">
+              前回と同じ：{PAYMENT_METHODS.find((p) => p.id === suggest.pay)?.label ?? "その他"}
+            </button>
+          )}
         </Field>
 
         <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
