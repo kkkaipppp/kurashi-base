@@ -36,7 +36,13 @@ def now() -> str:
 def read() -> tuple[list[str], list[dict]]:
     with WBS.open(encoding="utf-8-sig", newline="") as f:
         r = csv.DictReader(f)
-        return list(r.fieldnames or []), list(r)
+        fields, rows = list(r.fieldnames or []), list(r)
+    # 同じ ID の行があると、set が古い行を書き換えてしまう（2026-11-25 に起きた。LESSONS L-14）。重複は止める
+    seen: set[str] = set()
+    dup = sorted({x["ID"] for x in rows if x["ID"] in seen or seen.add(x["ID"])})
+    if dup:
+        raise SystemExit(f"WBS.csv に同じ ID の行があります：{', '.join(dup)}。ID を付け替えてから実行してください")
+    return fields, rows
 
 
 def write(fields: list[str], rows: list[dict]) -> None:
