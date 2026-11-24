@@ -318,11 +318,18 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     if (busy) return;
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true })))
       return;
-    if (dirty || resumed.current) clearSheetDraft("event", draftTarget);
+    if ((dirty || resumed.current) && !(pending && !resumeAsked)) clearSheetDraft("event", draftTarget);
     onClose();
   };
 
-  const save = () => {
+  // 編集の途中で、予定が別の画面で消されたとき（入力は残っている）
+  const gone = !!editing && !data.events.some((e) => e.id === editing.id);
+  const saveAsNew = async () => {
+    const ok = await ui.confirm({ title: "新しい予定として保存しますか？", body: "消された予定は戻りません。今の入力の中身で、新しい予定を1件追加します。", ok: "新しく保存する" });
+    if (ok) save(true);
+  };
+
+  const save = (asNew = false) => {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
@@ -358,14 +365,15 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       };
       // undefined の項目は保存しない（JSON に残さない）
       for (const k of Object.keys(input) as (keyof typeof input)[]) if (input[k] === undefined) delete input[k];
-      const r = editing ? store.updateEvent(editing.id, input, initialEventSnapshot.current) : store.addEvent(input);
+      const r = editing && !asNew ? store.updateEvent(editing.id, input, initialEventSnapshot.current) : store.addEvent(input);
       if (!r.ok) {
         setSaveError(r.error);
         return;
       }
       saved.current = true;
-      clearSheetDraft("event", draftTarget); // 保存がうまくいったときだけ下書きを消す
-      ui.toast(editing ? "保存しました" : "予定を追加しました");
+      // 保存がうまくいったときだけ下書きを消す（前の書きかけに答えていないときは、それは残す）
+      if (!(pending && !resumeAsked) || asNew) clearSheetDraft("event", draftTarget);
+      ui.toast(asNew ? "新しい予定として保存しました" : editing ? "保存しました" : "予定を追加しました");
       onClose();
     } finally {
       if (!saved.current) {
@@ -402,7 +410,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
               削除
             </Button>
           )}
-          <Button className="flex-1" onClick={save} disabled={busy} aria-busy={busy}>
+          <Button className="flex-1" onClick={() => save()} disabled={busy} aria-busy={busy}>
             {busy ? "保存中…" : "保存する"}
           </Button>
         </div>
@@ -604,6 +612,15 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
           </div>
         )}
 
+        {gone && (
+          <div className="rounded-xl border border-warn/40 bg-warn-soft p-3" role="alert">
+            <p className="text-[13px] font-semibold text-warn">この予定は、別の画面で消されました。</p>
+            <p className="mt-0.5 text-[12px] text-ink-2">今の入力は残っています。新しい予定として保存できます。</p>
+            <Button variant="secondary" className="mt-2 w-full" onClick={saveAsNew} disabled={busy}>
+              新しい予定として保存する
+            </Button>
+          </div>
+        )}
         {saveError && (
           <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[14px] font-medium text-danger">
             {saveError}（入力した内容は残っています）
