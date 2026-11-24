@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { IS_PERSONAL } from "@/lib/edition";
 import { useEffect, useMemo, useState } from "react";
 import { deadlineDays, deadlinesOn } from "@/lib/deadlines";
 import { formatMinutes } from "@/lib/life";
@@ -56,7 +57,8 @@ export default function CalendarPage() {
   const dayEvents = eventsOnDay(data.events, selected);
   const day = daySummary(data.transactions, selected);
   const dayDeadlines = deadlinesOn(data, selected);
-  const dayFixed = data.recurring.filter((r) => r.active && r.nextDueDate === selected).reduce((a, r) => a + r.amount, 0);
+  // 選んだ日の固定費の支払い予定（実績の支出とは分ける。自分用だけ：公開版は友人β中なので今のまま）
+  const dayFixed = IS_PERSONAL ? data.recurring.filter((r) => r.active && r.nextDueDate === selected).reduce((a, r) => a + r.amount, 0) : 0;
   const dlDays = useMemo(() => deadlineDays(data, month), [data, month]);
   const dayNotes = data.notes.filter((n) => n.date === selected);
   const dayStudy = data.studyLogs.filter((l) => l.date === selected).reduce((s, l) => s + l.minutes, 0);

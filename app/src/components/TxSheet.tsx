@@ -10,6 +10,7 @@ import { findDuplicates, type DupCandidate } from "@/lib/duplicates";
 import { addDays, formatDateJa, todayStr } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from "@/lib/sheetDraft";
+import { OrphanDraft } from "./OrphanDraft";
 import { PAYMENT_METHODS, type TxSource, type TxType } from "@/lib/types";
 
 export type TxSheetRequest =
@@ -88,15 +89,32 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   const keepDraft = req.mode === "edit" || (!req.previewUrl && !req.recurringId);
   const [pending] = useState(() => (keepDraft ? loadSheetDraft<TxDraft>("tx", draftTarget) : null));
   const [resumeAsked, setResumeAsked] = useState(false);
+  const resumed = useRef(false);
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   useEffect(() => {
     if (!keepDraft || saved.current) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 端末に控えられたかを画面に出すため
-    if (dirty) setDraftSaveFailed(!saveSheetDraft("tx", draftTarget, draft));
+    // 前の書きかけに「続きから／捨てる」を答えるまでは控えない（答える前に打った分で、前の書きかけを消さない）
+    if (pending && !resumeAsked) return;
+     
+    if (dirty) setDraftSaveFailed(!saveSheetDraft("tx", draftTarget, draft, undefined, undefined, editSnapshot.current));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, dirty]);
-  const resume = () => {
-    if (pending) setDraft({ ...pending.draft });
+  }, [draft, dirty, resumeAsked]);
+  const resume = async () => {
+    if (!pending) return setResumeAsked(true);
+    // 書きかけを始めたあとに、元の記録が変わっていたら（復元・別の画面での変更など）、知らせてから選んでもらう
+    if (pending.base && editSnapshot.current && pending.base !== editSnapshot.current) {
+      const ok = await ui.confirm({
+        title: "元の記録が、書きかけのあとに変わっています",
+        body: "続きからにすると、今の記録の中身が書きかけの中身に置き換わります（保存するまでは変わりません）。今の記録のまま直す場合は「今の記録を使う」を選んでください（書きかけは捨てます）。",
+        ok: "書きかけを使う",
+        cancel: "今の記録を使う",
+      });
+      if (!ok) return discardPending();
+    }
+    // 答える前に打った分があれば、それに置き換わることを確かめる
+    if (dirty && !(await ui.confirm({ title: "書きかけに置き換えますか？", body: "今この画面で打った分は消えて、書きかけの中身になります。", ok: "置き換える" }))) return;
+    setDraft({ ...pending.draft });
+    resumed.current = true;
     setResumeAsked(true);
   };
   const discardPending = () => {
@@ -144,7 +162,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (busy) return;
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true })))
       return;
-    if (dirty) clearSheetDraft("tx", draftTarget);
+    // 続きからにしたあと元に戻して閉じたときも、書きかけは片付ける（次に開いたときにまた出さない）
+    if (dirty || resumed.current) clearSheetDraft("tx", draftTarget);
     onClose();
   };
 
@@ -229,6 +248,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     return (
       <Sheet title="取引" open onRequestClose={onClose}>
         <p className="text-ink-2">この記録は見つかりません（削除された可能性があります）。</p>
+        <OrphanDraft kind="tx" id={req.id} onNew={() => ui.openTx({ mode: "new", type: "expense" })} onDone={onClose} />
       </Sheet>
     );
   }
@@ -361,7 +381,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           </Field>
         </div>
         {suggest.cats.length > 0 && (
-          <div className="-mt-2 flex flex-wrap items-center gap-1.5" aria-label="よく使うカテゴリ">
+          <div className="-mt-2 flex flex-wrap items-center gap-1.5" role="group" aria-label="よく使うカテゴリ">
             <span className="text-[12px] text-ink-3">よく使う：</span>
             {suggest.cats.map((id) => (
               <button
