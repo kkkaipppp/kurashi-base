@@ -223,7 +223,7 @@ describe("F 旅行と支出を ID でつなぐ（メモは候補として確か�
     expect(s).toContain("をこの旅行につなぐ");
   });
   it("メニューの「準備中」は、自分用では開いたときだけ出す", () => {
-    expect(src("app/menu/page.tsx")).toContain("準備中のもの（{g.items.length}件）を見る");
+    expect(src("app/menu/page.tsx")).toContain("準備中のもの（{items.length}件）を見る");
   });
 });
 

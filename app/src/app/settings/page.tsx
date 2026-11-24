@@ -25,6 +25,7 @@ const GROUPS = IS_PERSONAL;
 // カテゴリの数え方・まとめる（自分用だけ。公開版では読み込まない）
 // 決まった形ではない CSV の列の対応づけ（自分用だけ。NEXT v21 CSV:C03）
 const CsvGenericPanel = IS_PERSONAL ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
+const MenuVisibilityCard = IS_PERSONAL ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
 const ImportHistoryCard = IS_PERSONAL ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
 const DataHealthCard = IS_PERSONAL ? dynamic(() => import("@/components/DataHealthCard").then((m) => m.DataHealthCard)) : null;
 const DiagnosticsCard = IS_PERSONAL ? dynamic(() => import("@/components/DiagnosticsCard").then((m) => m.DiagnosticsCard)) : null;
@@ -335,6 +336,8 @@ export default function SettingsPage() {
         </ul>
       </Card>
 
+
+      {MenuVisibilityCard && <MenuVisibilityCard />}
 
       <Card>
         <div id="categories" className="scroll-mt-20" />

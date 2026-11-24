@@ -75,11 +75,15 @@ export default function MenuPage() {
     <main className="space-y-4">
       <PageHeader title="すべての機能" />
       {GROUPS.map((g) => {
-        const soon = g.items.every((i) => i.soon);
+        // 自分用：本人が隠した機能は出さない（記録は消えていない。設定の「メニューに出す機能」でいつでも戻せる）
+        const hidden = IS_PERSONAL ? new Set(data.prefs.menuHidden ?? []) : null;
+        const items = hidden ? g.items.filter((i) => !hidden.has(i.href)) : g.items;
+        if (items.length === 0) return null;
+        const soon = items.every((i) => i.soon);
         const list = (
           <Card className="p-0">
             <ul className="divide-y divide-line">
-              {g.items.map((i) => {
+              {items.map((i) => {
                 const n = i.count?.(data);
                 return (
                   <li key={i.href}>
@@ -104,7 +108,7 @@ export default function MenuPage() {
         if (IS_PERSONAL && soon)
           return (
             <details key={g.title} className="rounded-xl">
-              <summary className="flex min-h-11 cursor-pointer items-center px-1 text-[13px] font-semibold text-ink-3">準備中のもの（{g.items.length}件）を見る</summary>
+              <summary className="flex min-h-11 cursor-pointer items-center px-1 text-[13px] font-semibold text-ink-3">準備中のもの（{items.length}件）を見る</summary>
               {list}
             </details>
           );
