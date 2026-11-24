@@ -132,3 +132,17 @@ describe("P10・P13〜P17・P19 画面と言葉", () => {
     expect(src("components/AddChooser.tsx")).toContain("何を記録しますか？");
   });
 });
+
+describe("P02・P03・P05 アプリの中だけ（Web 版では動かない・出ない）", () => {
+  it("ウィジェットの合図で、入力の途中なら先に聞く（入力を続ける／新しく入力する）", () => {
+    const s = src("components/UIContext.tsx");
+    expect(s).toContain('window.addEventListener("kb-open-add", onAdd)');
+    expect(s).toContain('cancel: "入力を続ける"');
+  });
+  it("設定に iPhone の連携（自動バックアップの日時・カレンダーへのアクセスと最後の反映・反映し直す）。Web 版では出さない", () => {
+    const s = src("components/NativeStatusCard.tsx");
+    expect(s).toContain("if (!native) return null;");
+    for (const t of ["最後の自動バックアップ", "カレンダーへのアクセス", "カレンダーへの最後の反映", "カレンダーに反映し直す"]) expect(s).toContain(t);
+    expect(src("app/settings/page.tsx")).toContain("<NativeStatusCard />");
+  });
+});

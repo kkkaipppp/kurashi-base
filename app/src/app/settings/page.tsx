@@ -15,6 +15,7 @@ import type { HomePrefs, TxType } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, Field, PageHeader, SectionTitle, inputCls } from "@/components/ui";
 import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
+import { NativeStatusCard } from "@/components/NativeStatusCard";
 
 const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
 
@@ -228,6 +229,7 @@ export default function SettingsPage() {
             ["#budget", "予算・ホーム"],
             ["#categories", "カテゴリ"],
             ...(FEATURES.calendarFile || FEATURES.csvImport ? ([["#calendar-file", "カレンダー・取り込み"]] as const) : []),
+            ...(nativeApp ? ([["#iphone", "iPhone の連携"]] as const) : []),
             ["#backup", "バックアップ・データ"],
           ] as const
         ).map(([href, label]) => (
@@ -446,6 +448,8 @@ export default function SettingsPage() {
           )}
         </Card>
       )}
+
+      <NativeStatusCard />
 
       <Card>
         <div id="backup" className="scroll-mt-20" />

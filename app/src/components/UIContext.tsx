@@ -11,6 +11,7 @@ interface ConfirmOpts {
   title: string;
   body?: string;
   ok?: string;
+  cancel?: string;
   danger?: boolean;
 }
 
@@ -53,6 +54,39 @@ export function UIProvider({ children }: { children: ReactNode }) {
     const id = ++seq.current;
     setToasts((t) => [...t, { id, msg, kind }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), kind === "error" ? 6000 : 2600);
+  }, []);
+
+  // iPhone アプリのウィジェットのボタン（アプリが開いているとき）。ページを読み込み直さずに、ここで入力の窓を開く。
+  // 入力の途中なら、消してよいかを先に聞く（レビュー o1 の P02：書きかけを守る）。Web 版ではこの合図は来ない
+  const openSheets = useRef({ tx: false, ev: false });
+  useEffect(() => {
+    openSheets.current = { tx: !!tx, ev: !!ev };
+  }, [tx, ev]);
+  useEffect(() => {
+    const onAdd = async (e: Event) => {
+      const kind = (e as CustomEvent<string>).detail;
+      if (!["expense", "income", "event", "choose"].includes(kind)) return;
+      if (openSheets.current.tx || openSheets.current.ev) {
+        const ok = await new Promise<boolean>((resolve) =>
+          setCf({
+            title: "入力の途中です",
+            body: "今の入力はまだ保存していません。新しく入力すると、今の入力は消えます。",
+            ok: "新しく入力する",
+            cancel: "入力を続ける",
+            danger: true,
+            resolve,
+          }),
+        );
+        if (!ok) return;
+      }
+      setTx(null);
+      setEv(null);
+      if (kind === "expense" || kind === "income") setTx({ mode: "new", type: kind, key: ++seq.current });
+      else if (kind === "event") setEv({ mode: "new", key: ++seq.current });
+      else setAdd({ key: ++seq.current });
+    };
+    window.addEventListener("kb-open-add", onAdd);
+    return () => window.removeEventListener("kb-open-add", onAdd);
   }, []);
 
   const confirm = useCallback(
@@ -110,7 +144,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
             {cf.body && <p className="mt-2 text-[14px] whitespace-pre-line text-ink-2">{cf.body}</p>}
             <div className="mt-5 grid grid-cols-2 gap-2">
               <Button variant="secondary" onClick={() => closeCf(false)} autoFocus>
-                キャンセル
+                {cf.cancel ?? "キャンセル"}
               </Button>
               <Button variant={cf.danger ? "danger" : "primary"} onClick={() => closeCf(true)}>
                 {cf.ok ?? "OK"}
