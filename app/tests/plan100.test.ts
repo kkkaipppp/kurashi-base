@@ -42,3 +42,29 @@ describe("B 入力の下書き（端末の中の別のキー。記録の保存�
     }
   });
 });
+
+describe("D 家計の計算をひとつに（指示書の検証データ）", () => {
+  it("予算 120,000・生活費 96,420・投資 100,000・未記録の固定費 8,000・残り7日 → 生活予算の残り 23,580・自由に使える残り 15,580・1日あたり 2,225", async () => {
+    const { monthLedger } = await import("@/lib/ledger");
+    const { emptyData } = await import("@/lib/defaults");
+    const now = "2026-11-24T00:00:00.000Z";
+    const d = emptyData(now);
+    d.budget.monthly = 120000;
+    d.categories.push({ id: "inv", name: "投資", kind: "expense", order: 99, archived: false });
+    const tx = (id: string, amount: number, categoryId: string) => ({ id, type: "expense" as const, date: "2026-11-10", amount, currency: "JPY" as const, categoryId, merchant: "", paymentMethod: "", note: "", source: "manual" as const, createdAt: now, updatedAt: now });
+    d.transactions = [tx("a", 96420, "exp-1"), tx("b", 100000, "inv")];
+    d.recurring = [{ id: "r", name: "スマホ", amount: 8000, cycle: "monthly", anchorDay: 28, nextDueDate: "2026-11-28", categoryId: "exp-5", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
+    const l = monthLedger(d, "2026-11", "2026-11-24");
+    expect([l.lifeExpense, l.investMove, l.lifeBudgetLeft, l.unpaidFixed, l.freeLeft, l.perDay, l.daysLeft]).toEqual([96420, 100000, 23580, 8000, 15580, 2225, 7]);
+    // 支払いを記録すると、未記録の固定費が減り、生活費が増え、自由に使える残りは変わらない
+    d.transactions.push(tx("c", 8000, "exp-5"));
+    d.recurring[0].nextDueDate = "2026-12-28";
+    const after = monthLedger(d, "2026-11", "2026-11-24");
+    expect([after.unpaidFixed, after.lifeExpense, after.freeLeft]).toEqual([0, 104420, 15580]);
+  });
+  it("ホームは自分用で ledger を使い、月の比べ方は増えた・減った・差の合計", () => {
+    expect(src("app/page.tsx")).toContain("const ledger = PERSONAL ? monthLedger(data, month, today) : null;");
+    expect(src("components/MonthBreakdownCard.tsx")).toContain("生活費の差");
+    expect(src("components/MonthBreakdownCard.tsx")).toContain("投資として数えているカテゴリ");
+  });
+});
