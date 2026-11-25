@@ -170,3 +170,52 @@ describe("一部の支払いの記録を編集したとき（点検役の指摘�
     expect(src("components/TxSheet.tsx")).toContain("v.amount < remainingOf(");
   });
 });
+
+describe("一部の支払いの編集の境界（独立点検の指摘）", () => {
+  const mk = (list: RecurringExpense[], txs: Transaction[]): AppData => {
+    const d: AppData = emptyData(now);
+    d.recurring = list;
+    d.transactions = txs;
+    return d;
+  };
+  const patchOf = (x: Transaction) => {
+    const { id: _i, createdAt: _c, updatedAt: _u, currency: _cur, ...p } = x; // eslint-disable-line @typescript-eslint/no-unused-vars
+    return p;
+  };
+  it("別の固定費につけ替えると、元の固定費は戻り、新しい固定費に払った分が入る", () => {
+    let list = [rc(), rc({ id: "s", name: "水道", amount: 4000, nextDueDate: "2026-11-30" })];
+    const t = tx({ id: "t", recurringId: "r", amount: 3000, ...partialMark(list, "r", 3000, true) });
+    list = applyRecurringPayment(list, "r", 3000, true, now);
+    const out = applyTxUpdate(mk(list, [t]), "t", { ...patchOf(t), recurringId: "s", recurringPartial: true, recurringDue: undefined }, now);
+    expect(out.recurring.find((r) => r.id === "r")?.partialPaid).toBeUndefined();
+    expect(out.recurring.find((r) => r.id === "s")?.partialPaid).toEqual({ due: "2026-11-30", paid: 3000 });
+    expect(out.transactions[0].recurringId).toBe("s");
+    expect(out.transactions[0].recurringDue).toBe("2026-11-30");
+  });
+  it("払った額が0以下になる編集では、固定費の一部払いと、記録の一部の印が、ともに消える（ずれない）", () => {
+    let list = [rc()];
+    const t = tx({ id: "t", recurringId: "r", amount: 3000, ...partialMark(list, "r", 3000, true) });
+    list = applyRecurringPayment(list, "r", 3000, true, now);
+    // 払った額の合計が食い違うデータ（記録の合計より、固定費の払った額が少ない）
+    list = list.map((r) => ({ ...r, partialPaid: { due: "2026-11-28", paid: 1000 } }));
+    const out = applyTxUpdate(mk(list, [t]), "t", { ...patchOf(t), amount: 500 }, now); // 1000 + (500−3000) ≦ 0
+    expect(out.recurring[0].partialPaid).toBeUndefined();
+    expect(out.transactions[0].recurringPartial).toBeUndefined();
+    expect(out.transactions[0].recurringDue).toBeUndefined();
+  });
+  it("支払日が違う記録を編集しても、いまの支払日の払った額は動かない", () => {
+    const list = [rc({ partialPaid: { due: "2026-11-28", paid: 3000 } })];
+    const old = tx({ id: "o", recurringId: "r", recurringPartial: true, recurringDue: "2026-10-28", amount: 2000 });
+    const out = applyTxUpdate(mk(list, [old]), "o", { ...patchOf(old), amount: 1000 }, now);
+    expect(out.recurring[0].partialPaid).toEqual({ due: "2026-11-28", paid: 3000 });
+  });
+  it("予定額を超える額に直すと、一度だけ次の支払日に進む（6000でも 5000 でも同じ）", () => {
+    let list = [rc()];
+    const t = tx({ id: "t", recurringId: "r", amount: 3000, ...partialMark(list, "r", 3000, true) });
+    list = applyRecurringPayment(list, "r", 3000, true, now);
+    const out = applyTxUpdate(mk(list, [t]), "t", { ...patchOf(t), amount: 6000 }, now);
+    expect(out.recurring[0].nextDueDate).toBe("2026-12-28");
+    expect(out.recurring[0].partialPaid).toBeUndefined();
+    expect(out.transactions[0].recurringPartial).toBeUndefined();
+  });
+});

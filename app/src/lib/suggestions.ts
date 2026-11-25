@@ -29,13 +29,15 @@ export interface Suggestion {
 export interface SuggestionOptions {
   /** 未整理の記録の提案を出す（自分用） */
   inbox?: boolean;
+  /** すでにホームの別の場所に出ている固定費の ID（二重に出さない。例：「確認したいこと」の期限切れ・今日の分） */
+  skipRecurringIds?: Set<string>;
 }
 
 export function suggestions(d: AppData, today: string, opt: SuggestionOptions): Suggestion[] {
   const all: Suggestion[] = [];
 
   for (const r of d.recurring) {
-    if (!r.active) continue;
+    if (!r.active || opt.skipRecurringIds?.has(r.id)) continue;
     const days = daysBetween(today, r.nextDueDate);
     if (days > RECURRING_AHEAD_DAYS) continue;
     const left = r.partialPaid && r.partialPaid.due === r.nextDueDate ? Math.max(0, r.amount - r.partialPaid.paid) : r.amount;

@@ -12,7 +12,9 @@ type TxPatch = Omit<Transaction, "id" | "createdAt" | "updatedAt" | "currency">;
 /** 取引を編集する。固定費の支払いとして新しくつないだときだけ、その固定費の次の支払日を進める */
 export function applyTxUpdate(d: AppData, id: string, t: TxPatch, ts: string): AppData {
   const before = d.transactions.find((x) => x.id === id);
-  const link = t.recurringId && before && !before.recurringId ? t.recurringId : null;
+  // 新しくつなぐ：まだ固定費につながっていない記録、または、一部の支払いの記録を別の固定費につけ替えたとき（元の固定費は下で戻す）
+  const relink = !!(t.recurringId && before?.recurringPartial && before.recurringId && t.recurringId !== before.recurringId);
+  const link = t.recurringId && before && (!before.recurringId || relink) ? t.recurringId : null;
   let recurring = link ? applyRecurringPayment(d.recurring, link, t.amount, !!t.recurringPartial, ts) : d.recurring;
   // 一部の支払いの記録を編集したとき：金額を直したら、払った額も同じだけ直す／固定費へのつなぎを外したら、払った分を戻す
   // （点検役の指摘：金額を直したあとに消すと、払った額が合わなくなった）
@@ -23,7 +25,7 @@ export function applyTxUpdate(d: AppData, id: string, t: TxPatch, ts: string): A
     else if (t.amount !== before.amount) {
       const r = adjustPartialPayment(recurring, before, t.amount - before.amount, ts);
       recurring = r.list;
-      partialDone = r.completed;
+      partialDone = r.completed || r.cleared; // 全部払い終わった／払った額が0以下になった：一部の印を外す
     }
   }
   return {
@@ -132,8 +134,9 @@ export function partialMark(list: RecurringExpense[], rcId: string, amount: numb
  * 一部の支払いの記録の金額を直したとき、払った額を同じだけ直す（同じ支払日の分だけ）。
  * 直した結果、予定額に届いたら、全部払い終わったことにして次の支払日を進める（completed）。0 以下になったら、一部払いの記録を消す
  */
-export function adjustPartialPayment(list: RecurringExpense[], tx: Pick<Transaction, "recurringId" | "recurringDue">, delta: number, ts: string): { list: RecurringExpense[]; completed: boolean } {
+export function adjustPartialPayment(list: RecurringExpense[], tx: Pick<Transaction, "recurringId" | "recurringDue">, delta: number, ts: string): { list: RecurringExpense[]; completed: boolean; cleared: boolean } {
   let completed = false;
+  let cleared = false;
   const out = list.map((rc) => {
     if (rc.id !== tx.recurringId || !rc.partialPaid || rc.partialPaid.due !== tx.recurringDue) return rc;
     const paid = rc.partialPaid.paid + delta;
@@ -143,12 +146,13 @@ export function adjustPartialPayment(list: RecurringExpense[], tx: Pick<Transact
       return { ...rest, nextDueDate: advanceDueDate(rc.nextDueDate, rc.cycle, rc.anchorDay), updatedAt: ts };
     }
     if (paid <= 0) {
+      cleared = true;
       const { partialPaid: _drop, ...rest } = rc; // eslint-disable-line @typescript-eslint/no-unused-vars
       return { ...rest, updatedAt: ts };
     }
     return { ...rc, partialPaid: { ...rc.partialPaid, paid }, updatedAt: ts };
   });
-  return { list: out, completed };
+  return { list: out, completed, cleared };
 }
 
 /** 一部の支払いの記録を消したとき、その分を戻す（同じ支払日の分だけ。0 になったら一部払いの記録を消す） */

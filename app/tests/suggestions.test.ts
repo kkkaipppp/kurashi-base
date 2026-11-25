@@ -60,3 +60,38 @@ describe("提案の集約", () => {
     expect(k.indexOf("rec:soon")).toBeLessThan(k.indexOf("rec:late"));
   });
 });
+
+describe("提案の境界（独立点検の指摘）", () => {
+  it("固定費は今日とちょうど3日後を出し、4日後は出さない", () => {
+    const d = base();
+    d.recurring = [rec({ id: "t0", nextDueDate: "2026-11-25" }), rec({ id: "t3", nextDueDate: "2026-11-28" }), rec({ id: "t4", nextDueDate: "2026-11-29" })];
+    expect(suggestions(d, "2026-11-25", {}).map((x) => x.key).sort()).toEqual(["rec:t0", "rec:t3"]);
+  });
+  it("種類が混ざっても3件まで。期限が過ぎたものが先頭", () => {
+    const d = base();
+    d.recurring = [rec({ id: "a", nextDueDate: "2026-11-24" }), rec({ id: "b", nextDueDate: "2026-11-26" })];
+    d.goals = [goal({ id: "g1", deadline: "2026-11-27" }), goal({ id: "g2", deadline: "2026-11-28" })];
+    const s = suggestions(d, "2026-11-25", { inbox: true });
+    expect(s).toHaveLength(3);
+    expect(s[0].key).toBe("rec:a");
+  });
+  it("同じ対象が2つあれば、点の高い（期限の近い）ほうが残る", () => {
+    const d = base();
+    d.recurring = [rec({ id: "a", nextDueDate: "2026-11-27" }), rec({ id: "a", nextDueDate: "2026-11-26" })];
+    expect(suggestions(d, "2026-11-25", {})[0].title).toContain("1日後");
+  });
+  it("目標の期限の境目：期限まで30日の目標は出し、31日の目標は出さない", () => {
+    const d = base();
+    // goalPace の days は期限の日を含む（今日 11/25 → 12/24 は30日、12/25 は31日）
+    d.goals = [goal({ id: "in", deadline: "2026-12-24" }), goal({ id: "out", deadline: "2026-12-25" })];
+    expect(suggestions(d, "2026-11-25", {}).map((x) => x.key)).toEqual(["goal:in"]);
+  });
+});
+
+describe("別の場所に出ているものは出さない", () => {
+  it("skipRecurringIds に入れた固定費は、提案に出ない", () => {
+    const d = base();
+    d.recurring = [rec({ id: "a", nextDueDate: "2026-11-25" }), rec({ id: "b", nextDueDate: "2026-11-27" })];
+    expect(suggestions(d, "2026-11-25", { skipRecurringIds: new Set(["a"]) }).map((x) => x.key)).toEqual(["rec:b"]);
+  });
+});
