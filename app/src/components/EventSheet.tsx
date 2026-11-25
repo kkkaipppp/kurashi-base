@@ -331,7 +331,8 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     setDraft({ ...pending.draft.draft });
     // 旅行は、今ある旅行だけつなぐ（消えた旅行にはつながない）
     const tripOk = !pending.draft.extra.tripId || trips.some((t) => t.id === pending.draft.extra.tripId);
-    setExtra({ ...pending.draft.extra, tripId: tripOk ? pending.draft.extra.tripId : "" });
+    // 古い書きかけには、あとから足した項目（移動時間・目標）がないので、既定値で埋める（保存で例外にならないように）
+    setExtra({ ...extraOf(undefined), ...pending.draft.extra, tripId: tripOk ? pending.draft.extra.tripId : "" });
     setNewItem(pending.draft.newItem ?? "");
     if (hasExtra(pending.draft.extra, pending.draft.draft)) setShowMore(true);
     resumed.current = true;
@@ -391,7 +392,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       const costTxt = extra.cost.replace(/[,，円\s]/g, "").normalize("NFKC");
       const cost = costTxt === "" ? null : Number(costTxt);
       if (cost !== null && (!Number.isInteger(cost) || cost < 0 || cost > 100_000_000)) errs.cost = "費用は0以上の整数（円）で入力してください";
-      const travelTxt = extra.travel.replace(/[分\s]/g, "").normalize("NFKC");
+      const travelTxt = (extra.travel ?? "").replace(/[分\s]/g, "").normalize("NFKC");
       const travel = travelTxt === "" ? null : Number(travelTxt);
       if (travel !== null && (!Number.isInteger(travel) || travel < 0 || travel > 1440)) errs.travel = "移動時間は0〜1440の整数（分）で入力してください";
       if (Object.keys(errs).length) {

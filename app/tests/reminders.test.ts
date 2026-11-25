@@ -97,3 +97,27 @@ describe("通知の予定", () => {
     expect(cleanReminderSettings({ on: "yes" }).on).toBe(false);
   });
 });
+
+import { shiftQuiet } from "@/lib/reminders";
+describe("静穏時間のずらし（点検役の指摘：日付ごとに正しく。開始より後に鳴らさない）", () => {
+  it("夜側（22:00 以降）は翌日の 07:00、朝側（07:00 より前）はその日の 07:00。分が負なら前の日にさかのぼってから判断", () => {
+    expect(shiftQuiet("2026-11-26", 23 * 60 + 30, "22:00", "07:00")).toEqual({ date: "2026-11-27", min: 420 });
+    expect(shiftQuiet("2026-11-26", 3 * 60, "22:00", "07:00")).toEqual({ date: "2026-11-26", min: 420 });
+    expect(shiftQuiet("2026-11-26", 12 * 60, "22:00", "07:00")).toEqual({ date: "2026-11-26", min: 720 });
+    expect(shiftQuiet("2026-11-26", -20, "22:00", "07:00")).toEqual({ date: "2026-11-26", min: 420 }); // 前日 23:40 → 夜側 → 当日 07:00
+    expect(shiftQuiet("2026-11-26", 8 * 60, "09:00", "07:00")).toEqual({ date: "2026-11-26", min: 480 }); // 夜側の始まりが 09:00 の設定でも日付を壊さない（朝側ではない）
+    expect(shiftQuiet("2026-11-26", 13 * 60, "12:00", "14:00")).toEqual({ date: "2026-11-26", min: 840 }); // 日をまたがない静穏時間
+  });
+  it("ずらした結果が予定の開始以降になるときは登録しない（23:30 開始・6:30 開始・0:10 開始）。7:20 開始は6:50 → 7:00 で登録", () => {
+    const at = (start: string) => buildReminders(mk((x) => (x.events = [ev({ id: "q", startTime: start, endTime: "23:59" })])), now, S).map((r) => r.at);
+    expect(at("23:30")).toEqual([]); // 23:00 は静穏時間 → 翌日の朝になり、予定の後
+    expect(at("06:30")).toEqual([]); // 6:00 → 7:00 は予定の後
+    expect(at("00:10")).toEqual([]); // 前日 23:40 → 当日 7:00 は予定の後
+    expect(at("07:20")).toEqual(["2026-11-26T07:00"]);
+    expect(at("21:00")).toEqual(["2026-11-26T20:30"]); // 静穏時間の外は、そのまま
+  });
+  it("朝の通知は、朝の時刻が静穏時間に入る設定でも、静穏時間の終わりにずらす（なくさない）", () => {
+    const d = mk((x) => (x.tasks = [{ id: "t", title: "提出", due: "2026-11-27", done: false, note: "", createdAt: now, updatedAt: now }]));
+    expect(buildReminders(d, now, { ...S, morning: "06:30" })[0].at).toBe("2026-11-27T07:00");
+  });
+});

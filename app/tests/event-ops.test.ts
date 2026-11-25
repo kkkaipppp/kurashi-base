@@ -81,6 +81,37 @@ describe("保存の形（任意の項目を足すだけ）", () => {
     const s = src("components/EventSheet.tsx");
     expect(s).toContain("{IS_PERSONAL && <EventActions");
     expect(s).toContain("travelMinutes: undefined");
-    expect(src("components/Rows.tsx")).toContain("isDoneOn(ev, day ?? ev.startDate)");
+    expect(src("components/Rows.tsx")).toContain("isDoneOn(ev, occurrenceKey(ev, day))");
+  });
+});
+
+import { occurrenceKey } from "@/lib/eventOps";
+import { goalActions } from "@/lib/goalLinks";
+describe("第4回の点検の直し（完了の日付・編集・書きかけの復元）", () => {
+  it("1回きりの予定の完了は、いつも開始日。何日かにまたがる予定を2日目に完了にしても、1日目の行も完了になる", () => {
+    const e = ev({ startDate: "2026-11-26", endDate: "2026-11-28" });
+    expect(occurrenceKey(e, "2026-11-27")).toBe("2026-11-26");
+    expect(occurrenceKey(ev({ repeat: "weekly" }), "2026-12-03")).toBe("2026-12-03");
+    const done = toggleDoneOn(e, occurrenceKey(e, "2026-11-27"), now);
+    expect(isDoneOn(done, occurrenceKey(e, "2026-11-26"))).toBe(true);
+    expect(isDoneOn(done, occurrenceKey(e, "2026-11-28"))).toBe(true);
+    const d = emptyData(now);
+    d.goals = [{ id: "g", title: "x", deadline: "", kind: "check", target: null, current: 0, unit: "", done: false, note: "", createdAt: now, updatedAt: now }];
+    d.events = [{ ...done, goalId: "g" }];
+    expect(goalActions(d, "g", "2026-11-25")).toMatchObject({ doneCount: 1, next: null }); // 完了した回は1回
+  });
+  it("編集で1回きりの予定の開始日を変えると、完了の日付も同じだけずれる。繰り返しは動かさない", () => {
+    const e = ev({ doneDates: ["2026-11-26"] });
+    const { id: _i, createdAt: _c, updatedAt: _u, doneDates: _d, ...editable } = e; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const r = replaceEventEditableFields(e, { ...editable, startDate: "2026-11-29", endDate: "2026-11-29" }, now);
+    expect(r.doneDates).toEqual(["2026-11-29"]);
+    const rep = ev({ repeat: "weekly", doneDates: ["2026-12-03"] });
+    const { id: _i2, createdAt: _c2, updatedAt: _u2, doneDates: _d2, ...ed2 } = rep; // eslint-disable-line @typescript-eslint/no-unused-vars
+    expect(replaceEventEditableFields(rep, { ...ed2, startDate: "2026-11-27", endDate: "2026-11-27" }, now).doneDates).toEqual(["2026-12-03"]);
+  });
+  it("古い書きかけ（移動時間・目標の項目がない）を復元しても、保存で例外にならない（公開版でも）", () => {
+    const s = src("components/EventSheet.tsx");
+    expect(s).toContain("setExtra({ ...extraOf(undefined), ...pending.draft.extra,");
+    expect(s).toContain('(extra.travel ?? "").replace(');
   });
 });

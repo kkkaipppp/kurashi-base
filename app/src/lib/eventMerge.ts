@@ -1,3 +1,4 @@
+import { addDays, daysBetween } from "./date";
 import type { CalendarEvent } from "./types";
 
 /**
@@ -7,11 +8,19 @@ import type { CalendarEvent } from "./types";
  */
 export type EventEditable = Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">;
 
+const movedDone = (existing: CalendarEvent, next: EventEditable): string[] => {
+  const once = !existing.repeat || existing.repeat === "none";
+  if (!once || !existing.doneDates || existing.startDate === next.startDate) return existing.doneDates ?? [];
+  const delta = daysBetween(existing.startDate, next.startDate);
+  return existing.doneDates.map((d) => addDays(d, delta));
+};
+
 export function replaceEventEditableFields(existing: CalendarEvent, next: EventEditable, updatedAt: string): CalendarEvent {
   return {
     ...next,
     // 完了の記録は、編集の入力にないので、そのまま引き継ぐ（編集で消さない）
-    ...(existing.doneDates ? { doneDates: existing.doneDates } : {}),
+    // 1回きりの予定で開始日を変えたときは、完了の日付も同じだけずらす（古い日付が残って、未完了なのに数えられるのを防ぐ）
+    ...(existing.doneDates ? { doneDates: movedDone(existing, next) } : {}),
     id: existing.id,
     createdAt: existing.createdAt,
     updatedAt,

@@ -7,6 +7,14 @@ import type { CalendarEvent } from "./types";
  * - 延期は、繰り返さない予定だけ（日付をずらす。ほかの項目・ID はそのまま。期限などは暗黙に変えない）
  * - 出発の目安は、開始時刻 − 移動時間（登録した値からの計算で、地図の推計ではない）
  */
+/**
+ * 完了を付ける日付。1回きりの予定は、いつも開始日（何日かにまたがる予定で、日によって完了がずれない）。
+ * 繰り返しの予定は、その回の日付
+ */
+export function occurrenceKey(e: Pick<CalendarEvent, "repeat" | "startDate">, day?: string): string {
+  return !e.repeat || e.repeat === "none" ? e.startDate : (day ?? e.startDate);
+}
+
 export const isDoneOn = (e: Pick<CalendarEvent, "doneDates">, date: string) => !!e.doneDates?.includes(date);
 
 export function toggleDoneOn(e: CalendarEvent, date: string, ts: string): CalendarEvent {

@@ -5,7 +5,7 @@ import { useUI } from "./UIContext";
 import { useStore } from "@/lib/store";
 import { occursOn } from "@/lib/aggregate";
 import { formatDateJa, todayStr } from "@/lib/date";
-import { canShift, isDoneOn, shiftEvent, toggleDoneOn } from "@/lib/eventOps";
+import { canShift, isDoneOn, occurrenceKey, shiftEvent, toggleDoneOn } from "@/lib/eventOps";
 import type { CalendarEvent } from "@/lib/types";
 
 /**
@@ -18,7 +18,7 @@ export function EventActions({ ev, day, onClose }: { ev: CalendarEvent; day?: st
   const ui = useUI();
   const today = todayStr();
   // どの回か：開いた日 → 今日にある回 → 開始日
-  const date = day ?? (occursOn(ev, today) ? today : ev.startDate);
+  const date = occurrenceKey(ev, day ?? (occursOn(ev, today) ? today : ev.startDate));
   const done = isDoneOn(ev, date);
   const repeating = !canShift(ev);
   const apply = (fn: (e: CalendarEvent, ts: string) => CalendarEvent | null, msg: string) => {
