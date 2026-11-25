@@ -90,11 +90,13 @@ export class StoreCore {
     await this.applyLoad(await this.repo.load());
   }
 
-  private async finish(next: AppData, r: RepoSaveResult): Promise<SaveResult> {
+  /** undoMayChange：この保存で、取り消し用の控えが変わりうるか（控えを書く保存・取り消し・すべて削除） */
+  private async finish(next: AppData, r: RepoSaveResult, undoMayChange = true): Promise<SaveResult> {
     if (r.ok) {
       this.token = r.token;
-      // 控えは保存のたびに読み直す（取り消しのボタンの表示を、実際の控えと合わせる。点検 低-3）
-      this.set({ data: next, undo: await this.readUndo() });
+      // 控えが変わりうる保存のあとは、控えを読み直す（取り消しのボタンの表示を、実際の控えと合わせる。点検 低-3）。
+      // ふつうの保存は控えに触れないので、読み直さない（30年分では、控えを読んで検査し直すだけで約0.2秒かかる。o11 A08 点検 高-2）
+      this.set(undoMayChange ? { data: next, undo: await this.readUndo() } : { data: next });
       return { ok: true };
     }
     // 競合なら最新を読み込み直す。そうでない失敗でも、控えの表示は読み直す
@@ -116,7 +118,7 @@ export class StoreCore {
         if (err) return { ok: false, error: err };
         const next = fn(cur);
         const reason = typeof opts.undoReason === "function" ? opts.undoReason(cur) : opts.undoReason;
-        return await this.finish(next, await this.repo.save(next, this.token, reason));
+        return await this.finish(next, await this.repo.save(next, this.token, reason), !!reason);
       } catch (e) {
         return { ok: false, error: `保存できませんでした（${(e as Error)?.message ?? "不明"}）。今までの記録は消えていません` };
       }

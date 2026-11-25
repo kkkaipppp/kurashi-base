@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, Empty, PageHeader, SectionTitle } from "@/components/ui";
 import { FEATURES } from "@/lib/edition";
 import { todayStr } from "@/lib/date";
 import { perfData, PERF_YEARS } from "@/lib/perfData";
 import { benchText, runBench } from "@/lib/perfBench";
-import { measureIdb } from "@/lib/perfIdb";
+import { deletePerfDb, measureIdb } from "@/lib/perfIdb";
 import { isNativeApp } from "@/lib/platform";
 
 /**
@@ -22,6 +22,10 @@ export default function PerfPage() {
   const ui = useUI();
   const [busy, setBusy] = useState<string | null>(null);
   const [out, setOut] = useState<string[]>([]);
+  // 前に測っている途中で閉じたときに残った、測るための IndexedDB を消す（本物の記録の場所とは別。点検 低）
+  useEffect(() => {
+    if (FEATURES.perfLab && typeof indexedDB !== "undefined") void deletePerfDb(indexedDB);
+  }, []);
 
   if (!FEATURES.perfLab) {
     return (
@@ -35,6 +39,15 @@ export default function PerfPage() {
   const env = () => `${isNativeApp() ? "iPhone アプリ" : "ブラウザ"}・${new Date().toLocaleString("ja-JP")}・${navigator.userAgent.slice(0, 80)}`;
 
   const run = async (years: readonly number[]) => {
+    // 30年分は、作り物のデータだけで約17MB になり、測るあいだ画面が数十秒止まる。先に確かめる（点検 中-5）
+    if (years.some((y) => y >= 30)) {
+      const ok = await ui.confirm({
+        title: "30年分も測りますか？",
+        body: "作り物のデータが約17MB になり、測るあいだ画面が数十秒止まります。今の記録には触れません。途中でアプリが落ちたら、何年分のところだったかを教えてください。",
+        ok: "測る",
+      });
+      if (!ok) return;
+    }
     setBusy("準備しています");
     setOut([]);
     const lines: string[] = [];
@@ -49,7 +62,8 @@ export default function PerfPage() {
         const gen = performance.now() - t0;
         setBusy(`${y}年分を測っています（画面が少し止まります）`);
         await wait();
-        const r = runBench(d, todayStr());
+        // 30年分は1回ずつ（固まる時間を短くする）。それ以外は3回の真ん中
+        const r = runBench(d, todayStr(), { runs: y >= 30 ? 1 : 3 });
         let idb = "IndexedDB：測れませんでした";
         try {
           const json = JSON.stringify(d);

@@ -1,5 +1,7 @@
-import { buildBackup, parseBackup } from "./backup";
-import { daySummary, eventsOnDay, summarizeMonth } from "./aggregate";
+import { applyRestore, buildBackup, parseBackup } from "./backup";
+import { emptyData } from "./defaults";
+import { buildInsights } from "./report";
+import { daySummary, eventsOnDay, sortTxDesc, summarizeMonth } from "./aggregate";
 import { buildCalendarItems } from "./calendarExport";
 import { addDays, monthKey } from "./date";
 import { dataHealth } from "./dataHealth";
@@ -9,7 +11,7 @@ import { monthLedger } from "./ledger";
 import { monthBreakdown } from "./monthBreakdown";
 import { monthlyInYear, summarizePeriod } from "./periods";
 import { buildReminders, DEFAULT_REMINDERS } from "./reminders";
-import { validateAppData } from "./schema";
+import { validateAppData, validateRelationships } from "./schema";
 import { searchAll } from "./search";
 import { suggestions } from "./suggestions";
 import { weeklyReview } from "./weeklyReview";
@@ -39,10 +41,18 @@ const bytes = (s: string) => new TextEncoder().encode(s).length;
 export function benchCases(d: AppData, today: string): [string, () => unknown][] {
   const mk = monthKey(today);
   const year = Number(today.slice(0, 4));
+  // 測る前に1回だけ作るもの（測る時間に入れない）
+  const json = JSON.stringify(d);
+  const backupText = JSON.stringify(buildBackup(d));
+  const parsed = parseBackup(backupText);
+  const incoming = parsed.ok ? parsed.preview.data : d;
   return [
-    ["読み込みの検査（起動のたび）", () => validateAppData(JSON.parse(JSON.stringify(d)))],
+    ["起動：保存の形から戻す（JSON）", () => JSON.parse(json)],
+    ["起動：読み込みの検査", () => validateAppData(d)],
     ["保存の形にする（保存のたび）", () => JSON.stringify(d)],
     ["ホームの今月", () => monthLedger(d, mk, today)],
+    ["ホーム・履歴の並べ替え（全件）", () => sortTxDesc(d.transactions)],
+    ["振り返りの気づき", () => buildInsights(d, mk, today)],
     ["カレンダーの1か月（31日）", () => {
       for (let i = 0; i < 31; i++) {
         const day = addDays(`${mk}-01`, i);
@@ -63,23 +73,31 @@ export function benchCases(d: AppData, today: string): [string, () => unknown][]
     ["提案", () => suggestions(d, today, { inbox: true })],
     ["未整理の記録", () => inboxGroups(d)],
     ["バックアップを作る", () => JSON.stringify(buildBackup(d))],
+    ["復元：ファイルを読む（プレビュー）", () => parseBackup(backupText)],
+    ["復元：関係の検査", () => validateRelationships(incoming)],
+    ["復元：置き換え", () => applyRestore(d, incoming, "replace")],
+    ["復元：空の端末へ追加", () => applyRestore(emptyData(), incoming, "merge")],
     ["カレンダーへの反映の一覧", () => buildCalendarItems(d, today)],
     ["通知の一覧", () => buildReminders(d, `${today}T09:00:00`, { ...DEFAULT_REMINDERS, on: true })],
   ];
 }
 
-/** 1つずつ3回測って、真ん中をとる（一時的な負荷の影響を減らす） */
-export function runBench(d: AppData, today: string, now: () => number = () => performance.now()): BenchResult {
+/**
+ * 1つずつ runs 回測る。pick が "median" なら真ん中、"min" ならいちばん短い時間（一時的な負荷やメモリの掃除の影響を受けにくい。比べる試験で使う）。
+ * 端末で30年分を測るときは、runs を減らして固まる時間を短くする
+ */
+export function runBench(d: AppData, today: string, opts: { runs?: number; pick?: "median" | "min"; now?: () => number } = {}): BenchResult {
+  const { runs = 3, pick = "median", now = () => performance.now() } = opts;
   const rows: BenchRow[] = [];
   for (const [name, f] of benchCases(d, today)) {
     const ts: number[] = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < runs; i++) {
       const t0 = now();
       f();
       ts.push(now() - t0);
     }
     ts.sort((a, b) => a - b);
-    rows.push({ name, ms: ts[1] });
+    rows.push({ name, ms: pick === "min" ? ts[0] : ts[Math.floor(ts.length / 2)] });
   }
   const json = JSON.stringify(d);
   const backup = JSON.stringify(buildBackup(d));
