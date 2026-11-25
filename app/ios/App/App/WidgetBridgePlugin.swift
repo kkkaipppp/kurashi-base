@@ -3,6 +3,7 @@ import UIKit
 import Capacitor
 import WidgetKit
 import EventKit
+import UserNotifications
 
 /// Web の画面（components/WidgetSync.tsx）から受け取った要約を、ウィジェットと一緒に使う置き場（App Group）に書く。
 /// あわせて、その日の自動バックアップを書類フォルダに書く。
@@ -20,7 +21,10 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "requestCalendarResync", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setCalendarSync", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "removeCalendarEvents", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "openAppSettings", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "openAppSettings", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "scheduleReminders", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "reminderStatus", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "requestReminderPermission", returnType: CAPPluginReturnPromise)
     ]
 
     static let appGroup = "group.jp.kurashibase.personal"
@@ -389,6 +393,104 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                 store.reset()
                 call.reject("カレンダーの予定を消せませんでした：\(error.localizedDescription)")
             }
+        }
+    }
+
+    // MARK: - 通知（NEXT v21 X13）
+
+    /// くらしベースが登録した通知の ID の頭（これで始まるものだけを入れ替える。ほかのアプリ・ほかの通知には触れない）
+    private static let reminderPrefix = "kb|"
+
+    private struct ReminderItem: Decodable {
+        let id: String
+        let title: String
+        let body: String
+        /// 端末の現地時刻 "YYYY-MM-DDTHH:mm"
+        let at: String
+    }
+
+    private static func components(_ at: String) -> DateComponents? {
+        let parts = at.split(separator: "T")
+        guard parts.count == 2 else { return nil }
+        let d = parts[0].split(separator: "-").compactMap { Int($0) }
+        let t = parts[1].split(separator: ":").compactMap { Int($0) }
+        guard d.count == 3, t.count == 2 else { return nil }
+        var c = DateComponents()
+        c.calendar = Calendar.current
+        c.timeZone = TimeZone.current
+        c.year = d[0]; c.month = d[1]; c.day = d[2]; c.hour = t[0]; c.minute = t[1]
+        return c
+    }
+
+    /// いま必要な通知を全部入れ替える（くらしベースの通知だけ）。空の一覧なら、くらしベースの通知を全部消す。
+    /// 許可がまだなら、1件以上あるときに聞く。拒否されていたら何も登録せず denied を返す
+    @objc func scheduleReminders(_ call: CAPPluginCall) {
+        guard let json = call.getString("json"), json.utf8.count < 200_000,
+              let items = try? JSONDecoder().decode([ReminderItem].self, from: Data(json.utf8)) else {
+            call.reject("通知の中身が正しくありません")
+            return
+        }
+        let center = UNUserNotificationCenter.current()
+        let apply: () -> Void = {
+            center.getPendingNotificationRequests { pending in
+                let mine = pending.map { $0.identifier }.filter { $0.hasPrefix(Self.reminderPrefix) }
+                center.removePendingNotificationRequests(withIdentifiers: mine)
+                var n = 0
+                for it in items.prefix(60) where it.id.hasPrefix(Self.reminderPrefix) {
+                    guard let c = Self.components(it.at) else { continue }
+                    let content = UNMutableNotificationContent()
+                    content.title = it.title
+                    content.body = it.body
+                    content.sound = .default
+                    let trigger = UNCalendarNotificationTrigger(dateMatching: c, repeats: false)
+                    center.add(UNNotificationRequest(identifier: it.id, content: content, trigger: trigger))
+                    n += 1
+                }
+                call.resolve(["scheduled": n, "removed": mine.count])
+            }
+        }
+        center.getNotificationSettings { s in
+            switch s.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                apply()
+            case .notDetermined:
+                if items.isEmpty {
+                    apply()
+                } else {
+                    center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                        if granted { apply() } else { call.resolve(["scheduled": 0, "denied": true]) }
+                    }
+                }
+            default:
+                // 拒否されている：登録できない。すでにある分は、消しておく
+                center.getPendingNotificationRequests { pending in
+                    center.removePendingNotificationRequests(withIdentifiers: pending.map { $0.identifier }.filter { $0.hasPrefix(Self.reminderPrefix) })
+                    call.resolve(["scheduled": 0, "denied": true])
+                }
+            }
+        }
+    }
+
+    /// 通知の許可と、いま登録している件数（設定の「通知」の表示用）
+    @objc func reminderStatus(_ call: CAPPluginCall) {
+        let center = UNUserNotificationCenter.current()
+        center.getNotificationSettings { s in
+            var access = "notDetermined"
+            switch s.authorizationStatus {
+            case .authorized, .provisional, .ephemeral: access = "granted"
+            case .denied: access = "denied"
+            default: access = "notDetermined"
+            }
+            center.getPendingNotificationRequests { pending in
+                call.resolve(["access": access, "pending": pending.filter { $0.identifier.hasPrefix(Self.reminderPrefix) }.count])
+            }
+        }
+    }
+
+    /// 通知の許可を聞く（オンにしたときだけ）
+    @objc func requestReminderPermission(_ call: CAPPluginCall) {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, _ in
+            call.resolve(["granted": granted])
         }
     }
 

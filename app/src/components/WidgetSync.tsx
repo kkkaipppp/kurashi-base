@@ -8,6 +8,8 @@ import { buildBackup } from "@/lib/backup";
 import { buildWidgetSummary } from "@/lib/widgetSummary";
 import { buildCalendarItems, calendarWindow } from "@/lib/calendarExport";
 import { autoBackupDay, backupRecordCount, NativeBridge } from "@/lib/nativeBridge";
+import { buildReminders } from "@/lib/reminders";
+import { loadReminderSettings } from "@/lib/reminderStore";
 
 /**
  * iPhone アプリの中だけで動く部品（Web 版では何もしない）。
@@ -34,6 +36,7 @@ export function WidgetSync() {
   // iPhone のカレンダーへの反映（記録が変わって3秒たったら。中身が前と同じなら書かない）
   const lastCalendar = useRef("");
   const calendarBusy = useRef(false);
+  const lastReminders = useRef("");
   // 設定の「カレンダーに反映し直す」（components/NativeStatusCard.tsx）
   const [resync, setResync] = useState(0);
   const immediate = useRef(false);
@@ -77,6 +80,36 @@ export function WidgetSync() {
     immediate.current = false;
     return () => clearTimeout(t);
   }, [data, resync]);
+
+  // 通知（記録か設定が変わって3秒たったら、いま必要なものに入れ替える。完了・変更・削除は、この入れ替えで取り消される。NEXT v21 X13）
+  const [remindTick, setRemindTick] = useState(0);
+  useEffect(() => {
+    const on = () => setRemindTick((n) => n + 1);
+    window.addEventListener("kb-reminders-changed", on);
+    return () => window.removeEventListener("kb-reminders-changed", on);
+  }, []);
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const t = setTimeout(() => {
+      const settings = loadReminderSettings();
+      const now = new Date();
+      const p = (n: number) => String(n).padStart(2, "0");
+      const nowIso = `${todayStr(now)}T${p(now.getHours())}:${p(now.getMinutes())}:00`;
+      const list = buildReminders(data, nowIso, settings);
+      const json = JSON.stringify(list);
+      // オフで、前もオフだったときは、何も呼ばない（許可を聞かないため）
+      if (!settings.on && lastReminders.current === "off") return;
+      if (json === lastReminders.current) return;
+      NativeBridge.scheduleReminders({ json })
+        .then(() => {
+          lastReminders.current = settings.on ? json : "off";
+        })
+        .catch(() => {
+          // 通知を登録できなくても、記録には影響しない
+        });
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [data, remindTick]);
 
   // 自動バックアップと、日付が変わったときの要約の更新
   useEffect(() => {

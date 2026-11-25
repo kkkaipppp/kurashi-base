@@ -73,7 +73,7 @@ describe("自動バックアップ（iPhone アプリ）", () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
     const s = readFileSync(join(__dirname, "..", "src", "components", "WidgetSync.tsx"), "utf8");
-    expect(s.match(/if \(!Capacitor\.isNativePlatform\(\)\) return;/g)?.length).toBe(3); // 要約・カレンダー・バックアップ
+    expect(s.match(/if \(!Capacitor\.isNativePlatform\(\)\) return;/g)?.length).toBe(4); // 要約・カレンダー・通知・バックアップ
     expect(s).toContain("buildBackup(latest.current");
     expect(s).toContain("if (records === 0) return;");
     const { backupRecordCount } = await import("@/lib/nativeBridge");
