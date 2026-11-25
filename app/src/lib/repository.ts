@@ -1,4 +1,5 @@
 import { loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, wipeAllAppData, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
+import { validateAppData } from "./schema";
 import type { AppData } from "./types";
 
 /**
@@ -33,6 +34,9 @@ export class LocalStorageRepository implements Repository {
     return r;
   }
   async save(next: AppData, token: Token, undoReason?: string): Promise<RepoSaveResult> {
+    // 保存の検査を通らないデータは、保存しない（次に開いたときに「読み込めない」画面に入らないように。.ics 取り込みの独立点検 高-1）
+    const v = validateAppData(next);
+    if (!v.ok) return { ok: false, error: `保存できませんでした（${v.error}）。今までの記録は消えていません` };
     const base = (token ?? null) as string | null;
     const r = undoReason ? saveWithUndo(next, base, undoReason, new Date().toISOString()) : saveDataIfUnchanged(next, base);
     return r.ok ? { ok: true, token: r.persistedRaw } : r;

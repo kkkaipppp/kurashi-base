@@ -16,18 +16,24 @@ export function IcsImportCard() {
   const store = useStore();
   const ui = useUI();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<{ name: string; parsed: IcsParseResult; add: number; duplicates: number } | null>(null);
+  const [preview, setPreview] = useState<{ name: string; parsed: IcsParseResult; add: number; duplicates: number; inFileDuplicates: number } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const onFile = async (f: File | undefined) => {
     setPreview(null);
     if (!f) return;
     if (f.size > MAX_ICS_BYTES) return ui.toast("ファイルが大きすぎます（5MBまで）", "error");
-    const text = await f.text();
+    let text: string;
+    try {
+      text = await f.text();
+    } catch {
+      // iCloud 上にあって、まだ端末に落ちていないファイルなど（独立点検 低-12）
+      return ui.toast("ファイルを読めませんでした。いったん端末に保存してから、もう一度選んでください", "error");
+    }
     if (!/BEGIN:VCALENDAR/i.test(text)) return ui.toast("カレンダーのファイル（.ics）ではないようです", "error");
     const parsed = parseIcs(text);
     const plan = planIcsImport(store.data ?? data, parsed);
-    setPreview({ name: f.name, parsed, add: plan.add.length, duplicates: plan.duplicates });
+    setPreview({ name: f.name, parsed, add: plan.add.length, duplicates: plan.duplicates, inFileDuplicates: plan.inFileDuplicates });
   };
 
   const run = async () => {
@@ -37,10 +43,18 @@ export function IcsImportCard() {
       // 作るときのデータ（base）を渡す。確認のあいだに変わっていたら、保存しない（o11 A06）
       const base = store.data ?? data;
       const plan = planIcsImport(base, preview.parsed);
+      // 押した時点で足す予定が0件なら、保存しない（取り消しの控えを上書きしない。独立点検 低-12）
+      if (plan.add.length === 0) {
+        setPreview(null);
+        return ui.toast("取り込む予定はありません（すべて、すでにあります）");
+      }
+      // 前に保存したデータがあるか（なければ、取り消しの控えは作られない＝はじめての保存。独立点検 中-5）
+      const hadData = base.events.length + base.transactions.length + base.recurring.length > 0 || base.budget.monthly !== null;
       const next = applyIcsImport(base, plan.add, () => newId("ev"), new Date().toISOString());
       const r = await store.replaceAll(next, `カレンダーのファイル「${preview.name}」から予定を${plan.add.length}件取り込む`, base);
       if (!r.ok) return ui.toast(r.error, "error");
-      ui.toast(`予定を${plan.add.length}件取り込みました（設定の「直前の操作を取り消す」で戻せます）`);
+      // 取り消しの控えは、前に保存したデータがあるときだけ作られる（はじめての保存では戻す先がない。独立点検 中-5）
+      ui.toast(hadData ? `予定を${plan.add.length}件取り込みました（設定の「直前の操作を取り消す」で戻せます）` : `予定を${plan.add.length}件取り込みました（はじめての保存なので、取り消しの控えはありません。いらない予定は1件ずつ消せます）`);
       setPreview(null);
       if (inputRef.current) inputRef.current.value = "";
     } finally {
@@ -69,7 +83,10 @@ export function IcsImportCard() {
           <p className="font-semibold">「{preview.name}」</p>
           <ul className="list-disc pl-5">
             <li>取り込む予定：{preview.add}件</li>
-            {preview.duplicates > 0 && <li>すでにある予定（取り込まない）：{preview.duplicates}件</li>}
+            {preview.duplicates > 0 && <li>すでにアプリにある予定（取り込まない）：{preview.duplicates}件</li>}
+            {preview.inFileDuplicates > 0 && <li>ファイルの中で、同じ名前・日・時刻が重なった予定（1つだけ取り込む）：{preview.inFileDuplicates}件</li>}
+            {preview.parsed.cancelled > 0 && <li>取り消された予定（取り込まない）：{preview.parsed.cancelled}件</li>}
+            {preview.parsed.overLimit > 0 && <li>多すぎて読まなかった予定：{preview.parsed.overLimit}件（1回に5,000件まで。ファイルを分けてください）</li>}
             {preview.parsed.skipped > 0 && <li>日付が読めず、飛ばした予定：{preview.parsed.skipped}件</li>}
             {preview.parsed.repeatDropped > 0 && <li>繰り返しを写せず、最初の回だけにした予定：{preview.parsed.repeatDropped}件（メモに書いています）</li>}
             {preview.parsed.otherTimezone > 0 && <li>日本以外の時間帯の予定：{preview.parsed.otherTimezone}件（時刻はそのまま写します）</li>}
