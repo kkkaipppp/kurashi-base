@@ -1,3 +1,4 @@
+import type { LifeChange } from "./lifeChange";
 // 暮らしベース データモデル（schemaVersion 2。v1 からは schema.ts の migrate で移行）
 // 日付は端末ローカルの "YYYY-MM-DD"、時刻は "HH:mm" の文字列で持つ（UTC変換しない）。
 // 金額は日本円の整数（最小単位=1円）。収支の区別は type で行い、amount は常に正の整数。
@@ -301,7 +302,7 @@ export interface AppData extends Collections {
   trips: Trip[];
   budget: { monthly: number | null }; // 毎月の支出予算（円）。null = 未設定
   prefs: { home: HomePrefs; /** メニューに出さない機能の道筋（任意。非表示でも記録は消えない。NEXT v21 X16・D11） */ menuHidden?: string[] };
-  meta: { createdAt: string; lastBackupAt: string | null; /** 取り込みの履歴（任意。100点化以降に追加） */ imports?: ImportBatch[] };
+  meta: { createdAt: string; lastBackupAt: string | null; /** 取り込みの履歴（任意。100点化以降に追加） */ imports?: ImportBatch[]; /** 生活変化の計画と履歴（任意。NEXT v21 B03。lib/lifeChange.ts） */ lifeChanges?: LifeChange[] };
 }
 
 export const PAYMENT_METHODS: { id: string; label: string }[] = [

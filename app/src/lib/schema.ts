@@ -46,6 +46,15 @@ const isHttpOrBlank = (v: unknown) => {
   }
 };
 const optional = (check: (v: unknown) => boolean) => (v: unknown) => v === undefined || check(v);
+const isLifeItem = (x: unknown): boolean => {
+  if (!isObj(x) || !optional(isBool)(x.applied)) return false;
+  if (x.kind === "budget") return (x.before === null || isAmt(x.before)) && (x.after === null || isAmt(x.after));
+  if (x.kind === "recurringStop") return isStr(x.recurringId) && isStr(x.name);
+  if (x.kind === "recurringAmount") return isStr(x.recurringId) && isStr(x.name) && isAmt(x.before) && isAmt(x.after);
+  return false;
+};
+const isLifeChanges = (v: unknown) =>
+  Array.isArray(v) && v.every((c) => isObj(c) && isStr(c.id) && isStr(c.title) && isValidDateStr(c.date as string) && oneOf("planned", "applied", "undone")(c.status) && isStr(c.createdAt) && Array.isArray(c.items) && c.items.every(isLifeItem));
 const isCheckList2 = (v: unknown) =>
   Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done) && (x.due === undefined || isDate(x.due)));
 const isCheckList = (v: unknown) =>
@@ -150,7 +159,7 @@ export function validateAppData(input: unknown): R {
   const isStrList = (v: unknown) => Array.isArray(v) && v.every(isStr);
   if (!isObj(raw.prefs) || !isObj(raw.prefs.home) || !optional(isStrList)(raw.prefs.home.order) || !optional(isStrList)(raw.prefs.home.hidden) || !optional(isStrList)(raw.prefs.menuHidden))
     return { ok: false, error: "表示設定のデータが壊れています" };
-  if (!isObj(raw.meta) || !optional((v) => Array.isArray(v) && v.every((b) => isObj(b) && isStr(b.id) && isStr(b.at) && isStr(b.source) && isNum(b.added)))(raw.meta.imports))
+  if (!isObj(raw.meta) || !optional((v) => Array.isArray(v) && v.every((b) => isObj(b) && isStr(b.id) && isStr(b.at) && isStr(b.source) && isNum(b.added)))(raw.meta.imports) || !optional(isLifeChanges)(raw.meta.lifeChanges))
     return { ok: false, error: "管理情報が壊れています" };
 
   const subjectIds = new Set<string>();

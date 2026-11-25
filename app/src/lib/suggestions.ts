@@ -2,6 +2,7 @@ import { daysBetween } from "./date";
 import { forecastMonthEnd } from "./forecast";
 import { goalPace } from "./goalPlan";
 import { inboxCount } from "./inbox";
+import { dueChanges } from "./lifeChange";
 import { formatYen } from "./money";
 import type { AppData } from "./types";
 
@@ -67,6 +68,11 @@ export function suggestions(d: AppData, today: string, opt: SuggestionOptions): 
   const f = forecastMonthEnd(d, today);
   if (f.ok && f.vsBudget !== null && f.vsBudget < 0) {
     all.push({ key: "forecast", title: "今月は予算を超える見込みです", why: `約 ${formatYen(-f.vsBudget)} 超える見込み（確定ではありません）`, href: "/#forecast", score: 500 });
+  }
+
+  // 生活変化の適用日が来ている計画（自動では適用しない。本人が押す）
+  if (opt.inbox) {
+    for (const c of dueChanges(d, today)) all.push({ key: `life:${c.id}`, title: `「${c.title}」の適用日です`, why: "固定費・予算の変更を、まだ適用していません", href: "/life", score: 700 });
   }
 
   if (opt.inbox) {
