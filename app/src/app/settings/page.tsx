@@ -26,6 +26,8 @@ const GROUPS = IS_PERSONAL;
 // 組み立てのときに決まる値を、このファイルの中で直接比べる（別ファイルの定数だと、公開版のビルドから自分用の部品の塊が取り除かれない）
 const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // 決まった形ではない CSV の列の対応づけ（自分用だけ。NEXT v21 CSV:C03）
+// カレンダーのファイル（.ics）から予定を取り込む（自分用。Q31＝①）
+const IcsImportCard = PERSONAL_BUILD ? dynamic(() => import("@/components/IcsImportCard").then((m) => m.IcsImportCard)) : null;
 const CsvGenericPanel = PERSONAL_BUILD ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
 const MenuVisibilityCard = PERSONAL_BUILD ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
 const ImportHistoryCard = PERSONAL_BUILD ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
@@ -446,6 +448,11 @@ export default function SettingsPage() {
           <Button variant="secondary" onClick={exportCalendar}>
             予定をカレンダー用ファイルに保存（.ics）
           </Button>
+          {IcsImportCard && (
+            <div className="mt-3">
+              <IcsImportCard />
+            </div>
+          )}
         </Card>
       )}
 
