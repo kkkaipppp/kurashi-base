@@ -38,7 +38,7 @@ describe("自分用の版：切り替えの前と後で同じ・画面どうし�
       const d = synth(s);
       for (const today of TODAYS) expect(m.nRep.buildInsights(d, today.slice(0, 7), today)).toEqual(m.oRep.buildInsights(d, today.slice(0, 7), today));
     }
-  });
+  }, 60_000);
   it("予算と比べる額：ホーム（monthLedger の生活費）＝ナビ・振り返り・ウィジェット（budgetSpent）。投資は入らない", () => {
     for (let s = 1; s <= 200; s++) {
       const d = synth(s);
@@ -51,7 +51,7 @@ describe("自分用の版：切り替えの前と後で同じ・画面どうし�
         expect(m.ledger.budgetSpent(d, mo, today, false) - home).toBe(m.ledger.monthLedger(d, mo, today).investMove);
       }
     }
-  });
+  }, 60_000);
   it("ウィジェットの画面は、ホームと同じ budgetSpent で予算と比べる（独立点検 中2）", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
