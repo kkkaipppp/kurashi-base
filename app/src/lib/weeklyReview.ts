@@ -1,5 +1,5 @@
 import { eventsOnDay } from "./aggregate";
-import { categoryMap, isMoveOnly, txIsInvest } from "./classify";
+import { isLifeExpense, ledgerEntries } from "./ledgerCore";
 import { addDays } from "./date";
 import type { AppData } from "./types";
 
@@ -27,8 +27,8 @@ export interface WeeklyReview {
 export function weeklyReview(data: AppData, from: string, today: string): WeeklyReview {
   const to = addDays(from, 6);
   const upTo = today < to ? today : to; // 今週は、今日まで
-  const cats = categoryMap(data);
-  const life = (a: string, b: string) => data.transactions.filter((t) => t.type === "expense" && !isMoveOnly(t) && !txIsInvest(t, cats) && t.date >= a && t.date <= b);
+  const entries = ledgerEntries(data);
+  const life = (a: string, b: string) => entries.filter((t) => isLifeExpense(t) && t.date >= a && t.date <= b);
   const cur = life(from, upTo);
   const spent = cur.reduce((s, t) => s + t.amount, 0);
   const span = Math.max(0, Math.round((Date.parse(`${upTo}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000));

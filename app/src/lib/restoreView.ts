@@ -1,3 +1,4 @@
+import { sumEntries, txEntries } from "./ledgerCore";
 import type { AppData, Transaction } from "./types";
 
 /**
@@ -12,13 +13,9 @@ export interface DataFigures {
 }
 
 export function figures(d: AppData): DataFigures {
-  let expense = 0;
-  let income = 0;
-  for (const t of d.transactions) {
-    if (t.countAs === "transfer") continue; // 収支に数えない記録は、復元後の画面の合計と同じく入れない
-    if (t.type === "expense") expense += t.amount;
-    else income += t.amount;
-  }
+  // 復元後の画面の合計と同じ数え方（共通台帳。収支に数えない記録・返金は入れない）
+  const s = sumEntries(txEntries(d.transactions), () => true);
+  const { expense, income } = s;
   return { transactions: d.transactions.length, events: d.events.length, nisa: d.nisa.length, expense, income };
 }
 

@@ -1,4 +1,4 @@
-import { isMoveOnly } from "./classify";
+import { sumEntries, txEntries } from "./ledgerCore";
 import { addDays, weekdayOf } from "./date";
 import type { Transaction } from "./types";
 
@@ -24,32 +24,20 @@ export function weekRange(date: string): { from: string; to: string } {
   return { from, to: addDays(from, 6) };
 }
 
+/** 期間の支出・収入（共通台帳から。count は収支に数える記録の件数） */
 export function summarizePeriod(txs: Transaction[], from: string, to: string): PeriodSummary {
-  let expense = 0;
-  let income = 0;
-  let count = 0;
-  const cat = new Map<string, number>();
-  for (const t of txs) {
-    if (t.date < from || t.date > to) continue;
-    if (isMoveOnly(t)) continue;
-    count++;
-    if (t.type === "expense") {
-      expense += t.amount;
-      cat.set(t.categoryId, (cat.get(t.categoryId) ?? 0) + t.amount);
-    } else income += t.amount;
-  }
-  const byCategory = [...cat].map(([categoryId, total]) => ({ categoryId, total })).sort((a, b) => b.total - a.total);
-  return { from, to, expense, income, balance: income - expense, count, byCategory };
+  const s = sumEntries(txEntries(txs.filter((t) => t.date >= from && t.date <= to)), () => true);
+  return { from, to, expense: s.expense, income: s.income, balance: s.income - s.expense, count: s.count, byCategory: s.byCategory };
 }
 
 /** 週の7日それぞれの支出・収入（月曜から） */
 export function dailyInWeek(txs: Transaction[], from: string): { date: string; expense: number; income: number }[] {
   const days = Array.from({ length: 7 }, (_, i) => ({ date: addDays(from, i), expense: 0, income: 0 }));
   const idx = new Map(days.map((d, i) => [d.date, i]));
-  for (const t of txs) {
+  for (const t of txEntries(txs)) {
     const i = idx.get(t.date);
-    if (i === undefined || isMoveOnly(t)) continue;
-    if (t.type === "expense") days[i].expense += t.amount;
+    if (i === undefined) continue;
+    if (t.kind === "expense") days[i].expense += t.amount;
     else days[i].income += t.amount;
   }
   return days;
@@ -59,10 +47,10 @@ export function dailyInWeek(txs: Transaction[], from: string): { date: string; e
 export function monthlyInYear(txs: Transaction[], year: number): { month: number; expense: number; income: number }[] {
   const months = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, expense: 0, income: 0 }));
   const y = String(year);
-  for (const t of txs) {
-    if (t.date.slice(0, 4) !== y || isMoveOnly(t)) continue;
+  for (const t of txEntries(txs)) {
+    if (t.date.slice(0, 4) !== y) continue;
     const m = Number(t.date.slice(5, 7)) - 1;
-    if (t.type === "expense") months[m].expense += t.amount;
+    if (t.kind === "expense") months[m].expense += t.amount;
     else months[m].income += t.amount;
   }
   return months;
@@ -77,11 +65,11 @@ export function weeklyTrend(txs: Transaction[], lastFrom: string, n = 12): { fro
   const weeks = Array.from({ length: n }, (_, i) => ({ from: addDays(lastFrom, -7 * (n - 1 - i)), expense: 0, income: 0 }));
   const start = weeks[0].from;
   const end = addDays(lastFrom, 6);
-  for (const t of txs) {
-    if (t.date < start || t.date > end || isMoveOnly(t)) continue;
+  for (const t of txEntries(txs)) {
+    if (t.date < start || t.date > end) continue;
     const i = weeks.findIndex((w, k) => t.date >= w.from && (k === n - 1 || t.date < weeks[k + 1].from));
     if (i < 0) continue;
-    if (t.type === "expense") weeks[i].expense += t.amount;
+    if (t.kind === "expense") weeks[i].expense += t.amount;
     else weeks[i].income += t.amount;
   }
   return weeks;

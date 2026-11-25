@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useData } from "@/lib/store";
 import { sortTxDesc, summarizeMonth, txInMonth } from "@/lib/aggregate";
+import { sumEntries, txEntries } from "@/lib/ledgerCore";
 import { addMonthsToKey, formatDateJa, formatMonthJa, monthKey, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { PAYMENT_METHODS } from "@/lib/types";
@@ -67,6 +68,9 @@ export default function HistoryPage() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, month, q, type, cat, pay]);
+
+  // 絞り込んだ記録の支出・収入（共通台帳の数え方。o11 A06）
+  const listSum = useMemo(() => sumEntries(txEntries(list), () => true), [list]);
 
   const byDate = useMemo(() => {
     const m = new Map<string, typeof list>();
@@ -159,8 +163,8 @@ export default function HistoryPage() {
         {filtered && (
           <div className="num mt-2 flex items-center justify-between gap-2 rounded-xl bg-surface-2 px-3 py-1.5 text-[13px]">
             <span>
-              {list.length}件・<span className="text-expense">支出 {formatYen(list.filter((t) => t.type === "expense" && t.countAs !== "transfer").reduce((a, t) => a + t.amount, 0))}</span>・
-              <span className="text-income">収入 {formatYen(list.filter((t) => t.type === "income" && t.countAs !== "transfer").reduce((a, t) => a + t.amount, 0))}</span>
+              {list.length}件・<span className="text-expense">支出 {formatYen(listSum.expense)}</span>・
+              <span className="text-income">収入 {formatYen(listSum.income)}</span>
             </span>
             <button
               type="button"

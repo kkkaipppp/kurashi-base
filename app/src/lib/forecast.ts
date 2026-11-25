@@ -1,4 +1,5 @@
-import { categoryIsInvest, categoryMap, isMoveOnly, txIsFixed, txIsInvest } from "./classify";
+import { categoryIsInvest, categoryMap } from "./classify";
+import { isLifeExpense, ledgerEntries } from "./ledgerCore";
 import { unpaidRecurringOccurrences, unpaidRecurringThisMonth } from "./allowance";
 import { addDays, daysBetween, daysInMonth, parseDateStr } from "./date";
 import type { AppData } from "./types";
@@ -39,7 +40,8 @@ export function forecastMonthEnd(data: AppData, today: string): Forecast {
   const { y, m, d } = parseDateStr(today);
   const month = today.slice(0, 7);
   const cats = categoryMap(data);
-  const expenses = data.transactions.filter((t) => t.type === "expense" && !isMoveOnly(t) && !txIsInvest(t, cats));
+  // 生活費（投資を除く支出）は共通台帳から（o11 A06）
+  const expenses = ledgerEntries(data).filter(isLifeExpense);
   if (expenses.length === 0) return { ok: false, reason: "noData" };
 
   const spent = expenses.filter((t) => t.date.slice(0, 7) === month && t.date <= today).reduce((a, t) => a + t.amount, 0);
@@ -53,7 +55,7 @@ export function forecastMonthEnd(data: AppData, today: string): Forecast {
   const from = first > winStart ? first : winStart;
   const basisDays = from > winEnd ? 0 : daysBetween(from, winEnd) + 1;
   if (basisDays < FORECAST_MIN_DAYS) return { ok: false, reason: "tooFewDays" };
-  const variable = expenses.filter((t) => t.date >= from && t.date <= winEnd && !txIsFixed(t, data.recurring));
+  const variable = expenses.filter((t) => t.date >= from && t.date <= winEnd && !t.fixed);
   if (variable.length < FORECAST_MIN_TX) return { ok: false, reason: "tooFewRecords" };
   const dailyVariable = Math.floor(variable.reduce((a, t) => a + t.amount, 0) / basisDays);
 
@@ -88,8 +90,8 @@ export function forecastCurve(data: AppData, today: string): ForecastCurve | nul
   const month = today.slice(0, 7);
   const cats = categoryMap(data);
   const perDay = new Array<number>(dim).fill(0);
-  for (const t of data.transactions) {
-    if (t.type !== "expense" || isMoveOnly(t) || txIsInvest(t, cats)) continue;
+  for (const t of ledgerEntries(data)) {
+    if (!isLifeExpense(t)) continue;
     if (t.date.slice(0, 7) !== month || t.date > today) continue;
     perDay[Number(t.date.slice(8, 10)) - 1] += t.amount;
   }
