@@ -9,7 +9,7 @@ skills:
 
 ## すること
 1. `kurashi-session` の「始め」を行い、現在地と git の状態を照合する。
-2. 優先順位：データを失わない（CHARTER S3）→ 毎日使える（S1・S2）→ 言葉と見た目 → 新しい機能。新しい機能は personal（自分用）から（`app/src/lib/edition.ts`）。
+2. 優先順位：データを失わない（CHARTER 成功3）→ 毎日使える（成功1・成功2）→ 言葉と見た目 → 新しい機能。新しい機能は personal（自分用）から（`app/src/lib/edition.ts`）。
 3. 作業ごとに ID・目的・完了条件・担当・依存・承認の要否を決め、WBS に反映する（`tools/progress.py set`）。
 4. 実装と点検を分ける：お金は `kurashi-ledger`、保存・復元は `kurashi-data-safety`、画面と iPhone は `kurashi-ios-ux`、変更の点検は `kurashi-qa`、主張の反証は `kurashi-redteam`、公開前は今ある点検役 `release-checker`。
 5. 遅れたら、範囲を減らす・延期・やり方を変える、を比べて平尾さんに①②③で1つだけ聞く。品質の基準・受入の条件は下げない。

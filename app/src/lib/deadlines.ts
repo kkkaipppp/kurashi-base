@@ -1,3 +1,4 @@
+import { taskIsEvent } from "./taskEvent";
 import { formatYen } from "./money";
 import type { AppData } from "./types";
 
@@ -14,13 +15,16 @@ export interface DeadlineItem {
 
 export function deadlinesOn(data: AppData, date: string): DeadlineItem[] {
   const out: DeadlineItem[] = [];
-  for (const t of data.tasks) if (t.due === date) out.push({ key: `t-${t.id}`, kind: "タスク", title: t.title, done: t.done, href: `/tasks?open=${t.id}` });
+  // 予定にしたタスクは、予定として出る（ここでは二重に出さない）
+  for (const t of data.tasks) if (t.due === date && !taskIsEvent(data, t)) out.push({ key: `t-${t.id}`, kind: "タスク", title: t.title, done: t.done, href: `/tasks?open=${t.id}` });
   for (const r of data.recurring)
     if (r.active && r.nextDueDate === date) out.push({ key: `r-${r.id}`, kind: "固定費", title: `${r.name}の支払い`, sub: formatYen(r.amount), href: `/recurring?open=${r.id}` });
   for (const c of data.contracts)
     if (c.status === "active" && c.renewalDate === date) out.push({ key: `c-${c.id}`, kind: "契約", title: `${c.name}の更新日`, href: `/contracts?open=${c.id}` });
   for (const d of data.documents) if (d.expiry === date) out.push({ key: `d-${d.id}`, kind: "書類", title: `${d.title}の期限`, href: `/documents?open=${d.id}` });
   for (const g of data.goals) if (g.deadline === date) out.push({ key: `g-${g.id}`, kind: "目標", title: `${g.title}の期限`, done: g.done, href: `/goals?open=${g.id}` });
+  // 目標の節目（やることの日付）。終わっていないものだけ
+  for (const g of data.goals) if (!g.done) for (const st of g.steps ?? []) if (!st.done && st.due === date) out.push({ key: `gs-${g.id}-${st.id}`, kind: "目標", title: `${g.title}：${st.text}`, href: `/goals?open=${g.id}` });
   for (const s of data.studySubjects)
     if (!s.archived && s.examDate === date) out.push({ key: `s-${s.id}`, kind: "試験", title: `${s.name}の試験日`, href: `/study?open=${s.id}` });
   return out;

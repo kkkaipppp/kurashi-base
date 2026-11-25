@@ -27,6 +27,7 @@ const PERSONAL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const BUDGET_HINT_AFTER = 10;
 // ホームの編集と「今日のまとめ」は自分用だけ（公開版では読み込まない）
 const HomeEditor = PERSONAL ? dynamic(() => import("@/components/HomeLayout").then((m) => m.HomeEditor)) : null;
+const SuggestionsCard = PERSONAL ? dynamic(() => import("@/components/SuggestionsCard").then((m) => m.SuggestionsCard)) : null;
 const TodayAll = PERSONAL ? dynamic(() => import("@/components/HomeLayout").then((m) => m.TodayAll)) : null;
 
 /** 日付の変わり目（0時）でホームの「今日」を更新する */
@@ -383,7 +384,12 @@ export default function HomePage() {
         )}
     </>
   ),
-    todayAll: TodayAll ? <TodayAll today={today} /> : null,
+    todayAll: TodayAll ? (
+      <>
+        <TodayAll today={today} />
+        {SuggestionsCard && <SuggestionsCard today={today} />}
+      </>
+    ) : null,
   };
   const shown = layoutFor(prefs, editLayout);
 

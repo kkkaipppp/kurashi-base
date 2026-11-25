@@ -2,11 +2,11 @@
 
 **このファイルが現在地の正本。** セッションの終わりに必ず更新する。（`docs/NEXT_SESSION_HANDOFF.md` は作りの要点、`docs/progress/STATUS.md` は WBS の集計用）
 
-- 更新：2026-11-24
-- ブランチ：`beta/friend-go`。**GitHub `kkkaipppp/kurashi-base`（Private）の master に push 済み（aa49fde、11-23。記録の分は平尾さんが push）**
+- 更新：2026-11-25
+- ブランチ：公開版は `master`、自分用（iPhone アプリ）は `feat/ios-widget`。マージは master→feat の向きだけ（LESSONS L-15）。**GitHub `kkkaipppp/kurashi-base`（Private）への push は git の記録（reflog）で：11-23 22:40、11-24 は 12:17・12:37・14:00・21:13・22:35・23:03 の6回、11-25 09:09（origin/master は c5f6ef9）。それ以降の master のコミットは未 push（push は平尾さんの OK 後）。feat/ios-widget は 53578c9 まで push 済み、それ以降は未 push**
 - **公開 URL：https://kurashi-base-tau.vercel.app/**（Vercel、master を自動でデプロイ）
-- 段階：M5 公開準備（ロードマップ `docs/progress/ROADMAP.md` の「友人β版」）
-- **判定：GO（B01〜B15 全件 PASS、11-23。iPhone の Safari で公開 URL の R1〜R8 全部 OK＝平尾さん）**。友人に渡すことを平尾さんが承認（11-23）。iPhone 実機の B02・B03・B04・B13 は PASS（B02・B13 は UI・UX パッチの後の 97a9bd6 で再確認、平尾さん）。証拠：`docs/release/GO_EVIDENCE_20261122.md`
+- 段階：NEXT v21 の開発（ロードマップ `docs/progress/ROADMAP.md` の M9〜M15 ＝ Phase 0〜6。自分用を先に）。公開版（友人β）は M5〜M8 の状態のまま
+- **判定：GO（11-23 の版に対して。今の公開版の版には付け直していない＝古い合格。付け直すかは平尾さんと決める）（B01〜B15 全件 PASS、11-23。iPhone の Safari で公開 URL の R1〜R8 全部 OK＝平尾さん）**。友人に渡すことを平尾さんが承認（11-23）。iPhone 実機の B02・B03・B04・B13 は PASS（B02・B13 は UI・UX パッチの後の 97a9bd6 で再確認、平尾さん）。証拠：`docs/release/GO_EVIDENCE_20261122.md`
 - 11-22 夜にやったこと
   - 全画面の言葉を短くした（cdc19d7。`docs/JAPANESE_COPY_AUDIT.md`）
   - チャッピーの UI・UX レビュー（v7）のパッチを取り込み（97a9bd6）。これで B09 のレビューの反映は完了

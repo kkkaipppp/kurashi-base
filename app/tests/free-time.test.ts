@@ -43,7 +43,7 @@ describe("予定のない時間帯", () => {
   });
   it("カレンダーの選んだ日に出す（自分用だけ）。無断で予定を作らない", () => {
     const s = readFileSync(join(__dirname, "..", "src", "app", "calendar", "page.tsx"), "utf8");
-    expect(s).toContain("const FreeTimeCard = IS_PERSONAL ? dynamic(");
+    expect(s).toContain("const FreeTimeCard = PERSONAL_BUILD ? dynamic(");
     const lib = readFileSync(join(__dirname, "..", "src", "lib", "freeTime.ts"), "utf8") + readFileSync(join(__dirname, "..", "src", "components", "FreeTimeCard.tsx"), "utf8");
     expect(lib).not.toMatch(/addEvent|commit\(|useStore/);
     expect(lib).toContain("自由な時間とは限りません");

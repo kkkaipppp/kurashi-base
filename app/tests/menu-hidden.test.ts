@@ -39,6 +39,6 @@ describe("メニューに出す機能", () => {
   });
   it("メニューは自分用だけ隠す（公開版は今のまま）。設定に選ぶカードがある", () => {
     expect(src("app/menu/page.tsx")).toContain("const hidden = IS_PERSONAL ? new Set(data.prefs.menuHidden ?? []) : null;");
-    expect(src("app/settings/page.tsx")).toContain("const MenuVisibilityCard = IS_PERSONAL ? dynamic(");
+    expect(src("app/settings/page.tsx")).toContain("const MenuVisibilityCard = PERSONAL_BUILD ? dynamic(");
   });
 });

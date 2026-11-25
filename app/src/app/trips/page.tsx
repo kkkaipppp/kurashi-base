@@ -17,8 +17,10 @@ import { tripMemoCandidates } from "@/lib/tripMemo";
 import type { Trip } from "@/lib/types";
 
 const MAX_TRIP_DAYS = 60;
+// 組み立てのときに決まる値を、このファイルの中で直接比べる（別ファイルの定数だと、公開版のビルドから自分用の部品の塊が取り除かれない）
+const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // 旅行のコピー（自分用だけ。NEXT v21 X17）
-const TripCopy = IS_PERSONAL ? dynamic(() => import("@/components/TripCopy").then((m) => m.TripCopy)) : null;
+const TripCopy = PERSONAL_BUILD ? dynamic(() => import("@/components/TripCopy").then((m) => m.TripCopy)) : null;
 
 function tripStatus(t: Trip, today: string): string {
   if (today < t.startDate) {

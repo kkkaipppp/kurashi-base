@@ -138,7 +138,7 @@ import { join } from "node:path";
 describe("設定の画面（自分用だけ）", () => {
   const page = readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8");
   it("決まった形ではない CSV は列の対応づけへ。公開版は読み込まない。文字コードは UTF-8 のあと Shift_JIS", () => {
-    expect(page).toContain('const CsvGenericPanel = IS_PERSONAL ? dynamic(');
+    expect(page).toContain('const CsvGenericPanel = PERSONAL_BUILD ? dynamic(');
     expect(page).toContain('new TextDecoder("shift_jis")');
     expect(page).toContain('std.error.startsWith("1行目の見出しが違います")');
   });

@@ -178,6 +178,8 @@ export interface Task {
   due: string; // 期限（"" = なし）
   done: boolean;
   note: string;
+  /** 予定にしたとき、その予定の ID（任意。NEXT v21 T06。自分用） */
+  eventId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -263,6 +265,8 @@ export interface Goal {
   unit: string;
   done: boolean;
   note: string;
+  /** やること（任意。NEXT v21 T06。自分用の入力。数字の進み具合は変えない） */
+  steps?: { id: string; text: string; done: boolean; due?: string }[];
   createdAt: string;
   updatedAt: string;
 }

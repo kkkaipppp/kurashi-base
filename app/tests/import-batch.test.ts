@@ -78,7 +78,7 @@ describe("取り込みの履歴と取り消し", () => {
   });
   it("設定の画面は、自分用だけ（履歴と取り消し）。取り消しの控えも残す", () => {
     const page = readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8");
-    expect(page).toContain("const ImportHistoryCard = IS_PERSONAL ? dynamic(");
+    expect(page).toContain("const ImportHistoryCard = PERSONAL_BUILD ? dynamic(");
     expect(page).toContain("IS_PERSONAL && csv.result.kind === \"transactions\"");
     expect(readFileSync(join(__dirname, "..", "src", "components", "ImportHistoryCard.tsx"), "utf8")).toContain("store.replaceAll(r.result.next,");
   });

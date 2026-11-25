@@ -1,3 +1,5 @@
+import { IS_PERSONAL } from "./edition";
+import { forecastMonthEnd } from "./forecast";
 import { summarizeMonth, txInMonth } from "./aggregate";
 import { isMoveOnly } from "./classify";
 import { addMonthsToKey, daysInMonth, monthKey } from "./date";
@@ -103,11 +105,19 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
   if (isCurrent && data.budget.monthly !== null && day >= 7 && cur > 0) {
     const [y, m] = key.split("-").map(Number);
     // 細かい金額は見込みとして不自然なので、100円単位に丸める
-    const projected = Math.round(((cur / day) * daysInMonth(y, m)) / 100) * 100;
-    out.push({
-      key: "pace",
-      text: `月末の見込み：約${formatYen(projected)}（予算 ${formatYen(data.budget.monthly)}）`,
-    });
+    let projected = Math.round(((cur / day) * daysInMonth(y, m)) / 100) * 100;
+    // 自分用：振り返りの「月末の見込み」と同じ数字を使う（同じ名前で、画面ごとに数字が違わないように）。出せないときは、この一文を出さない
+    let show = true;
+    if (IS_PERSONAL) {
+      const f = forecastMonthEnd(data, today);
+      if (f.ok) projected = Math.round(f.projected / 100) * 100;
+      else show = false;
+    }
+    if (show)
+      out.push({
+        key: "pace",
+        text: `月末の見込み：約${formatYen(projected)}（予算 ${formatYen(data.budget.monthly)}）`,
+      });
   }
   return out;
 }

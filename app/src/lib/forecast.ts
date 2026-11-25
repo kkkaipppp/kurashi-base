@@ -70,3 +70,52 @@ export function forecastReasonText(r: "tooFewDays" | "tooFewRecords" | "noData")
       ? `記録が始まって${FORECAST_MIN_DAYS}日たつと、月末の見込みを出します`
       : `変動費の記録が${FORECAST_MIN_TX}件以上になると、月末の見込みを出します`;
 }
+
+/** グラフ用：実績（実線）と見込み（破線）。見込みの終わりは、月末の見込みと同じ額になる（X23） */
+export interface ForecastCurve {
+  daysInMonth: number;
+  /** 今日までの、日ごとの生活費の累計（1日目〜今日） */
+  actual: number[];
+  /** 今日から月末までの累計の見込み（今日の分から始まり、月末で終わる。長さ＝月末 − 今日 + 1） */
+  projected: number[];
+}
+
+export function forecastCurve(data: AppData, today: string): ForecastCurve | null {
+  const f = forecastMonthEnd(data, today);
+  if (!f.ok) return null;
+  const { y, m, d } = parseDateStr(today);
+  const dim = daysInMonth(y, m);
+  const month = today.slice(0, 7);
+  const cats = categoryMap(data);
+  const perDay = new Array<number>(dim).fill(0);
+  for (const t of data.transactions) {
+    if (t.type !== "expense" || isMoveOnly(t) || txIsInvest(t, cats)) continue;
+    if (t.date.slice(0, 7) !== month || t.date > today) continue;
+    perDay[Number(t.date.slice(8, 10)) - 1] += t.amount;
+  }
+  const actual: number[] = [];
+  let acc = 0;
+  for (let i = 0; i < d; i++) actual.push((acc += perDay[i]));
+
+  // 固定費：まだ来る日に載せる。すでに過ぎた分・今日の分は、明日にまとめる（合計は月末の見込みと同じ）
+  const fixedOn = new Array<number>(dim + 1).fill(0);
+  let placed = 0;
+  for (const r of data.recurring) {
+    if (!r.active || categoryIsInvest(cats.get(r.categoryId))) continue;
+    if (r.nextDueDate.slice(0, 7) === month && r.nextDueDate > today) {
+      const amt = r.partialPaid && r.partialPaid.due === r.nextDueDate ? Math.max(0, r.amount - r.partialPaid.paid) : r.amount;
+      fixedOn[Number(r.nextDueDate.slice(8, 10))] += amt;
+      placed += amt;
+    }
+  }
+  const rest = f.unpaidFixed - placed;
+  const projected: number[] = [actual[d - 1]];
+  let cur = actual[d - 1];
+  for (let day = d + 1; day <= dim; day++) {
+    cur += f.dailyVariable + fixedOn[day] + (day === d + 1 ? rest : 0);
+    projected.push(cur);
+  }
+  // 月末の日が今日なら、固定費の残りを今日に足す
+  if (d === dim) projected[0] += f.unpaidFixed;
+  return { daysInMonth: dim, actual, projected };
+}
