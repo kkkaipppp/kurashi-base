@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { IS_PERSONAL } from "@/lib/edition";
 import { useEffect, useMemo, useState } from "react";
@@ -17,6 +18,9 @@ import { Card, IconChevronL, IconChevronR, PageHeader, SectionTitle } from "@/co
 const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 /** マスに名前を出す予定の数（それより多い日は「+n」） */
 const EVENT_TITLES_IN_CELL = 2;
+
+// 予定のない時間帯（自分用。NEXT v21 X10）
+const FreeTimeCard = IS_PERSONAL ? dynamic(() => import("@/components/FreeTimeCard").then((m) => m.FreeTimeCard)) : null;
 
 const SHOW_KEY = "kurashi-base:ui:calendar-show:v1";
 
@@ -235,6 +239,8 @@ export default function CalendarPage() {
             ＋ この日に予定・支出・収入を追加
           </button>
         </div>
+
+        {FreeTimeCard && showEv && <FreeTimeCard date={selected} />}
 
         <Card>
           <SectionTitle>予定</SectionTitle>
