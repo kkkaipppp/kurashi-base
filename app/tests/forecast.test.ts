@@ -68,3 +68,37 @@ describe("月末の見込み", () => {
     expect(s).toContain("<ForecastCard month={month} />");
   });
 });
+
+describe("見込みのグラフ（実線と破線）", () => {
+  it("実績は今日までの累計、見込みは今日から月末まで。終わりは月末の見込みと同じ", async () => {
+    const { forecastCurve } = await import("@/lib/forecast");
+    const d = base();
+    d.recurring = [{ id: "r", name: "スマホ", amount: 8000, cycle: "monthly", anchorDay: 28, nextDueDate: "2026-11-28", categoryId: "exp-5", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
+    d.transactions = Array.from({ length: 10 }, (_, i) => tx({ id: `a${i}`, date: `2026-11-${String(i + 5).padStart(2, "0")}`, amount: 2800 }));
+    const c = forecastCurve(d, "2026-11-20")!;
+    const f = forecastMonthEnd(d, "2026-11-20");
+    expect(c.daysInMonth).toBe(30);
+    expect(c.actual).toHaveLength(20);
+    expect(c.actual[19]).toBe(28000);
+    expect(c.actual[3]).toBe(0); // 4日はまだ記録がない
+    expect(c.projected).toHaveLength(11); // 20日〜30日
+    expect(c.projected[0]).toBe(c.actual[19]);
+    if (!f.ok) throw new Error("見込みが出ない");
+    expect(c.projected[10]).toBe(f.projected);
+  });
+  it("固定費は払う日に載る（28日に8,000円の段差）。過ぎた分は明日にまとめる", async () => {
+    const { forecastCurve } = await import("@/lib/forecast");
+    const d = base();
+    d.recurring = [{ id: "r", name: "スマホ", amount: 8000, cycle: "monthly", anchorDay: 28, nextDueDate: "2026-11-28", categoryId: "exp-5", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
+    d.transactions = Array.from({ length: 10 }, (_, i) => tx({ id: `a${i}`, date: `2026-11-${String(i + 5).padStart(2, "0")}`, amount: 2800 }));
+    const c = forecastCurve(d, "2026-11-20")!;
+    const step = (i: number) => c.projected[i] - c.projected[i - 1];
+    // 変動費：記録のある 5日〜19日の15日間に 28,000円 → 1日 1,866円（切り捨て）
+    expect(step(8)).toBe(1866 + 8000); // 28日（20日が index 0）
+    expect(step(7)).toBe(1866);
+  });
+  it("見込みが出せないとき（記録が足りない）は null", async () => {
+    const { forecastCurve } = await import("@/lib/forecast");
+    expect(forecastCurve(base(), "2026-11-20")).toBeNull();
+  });
+});
