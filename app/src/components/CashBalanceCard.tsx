@@ -21,7 +21,15 @@ export function CashBalanceCard({ month }: { month: string }) {
       <SectionTitle>現金・預金の残高の目安</SectionTitle>
       {!r.ok ? (
         <p className="text-[13px] text-ink-3">
-          計算のもとになる残高が入っていません。<Link href="/assets" className="font-semibold text-brand underline">資産</Link>に、種類「現金・預金」で、残高と日付を入れてください。口座が複数なら、合計を1件で。
+          {r.reason === "futureBase" ? (
+            <>
+              <Link href="/assets" className="font-semibold text-brand underline">資産</Link>の「現金・預金」の日付が、今日より後になっています。今日以前の日付で入れると、残高の目安を出します。
+            </>
+          ) : (
+            <>
+              計算のもとになる残高が入っていません。<Link href="/assets" className="font-semibold text-brand underline">資産</Link>に、種類「現金・預金」で、残高と日付を入れてください。口座が複数なら、合計を1件で。
+            </>
+          )}
         </p>
       ) : (
         <>
@@ -47,6 +55,12 @@ export function CashBalanceCard({ month }: { month: string }) {
               <dt>現金・口座などで払った支出</dt>
               <dd>−{formatYen(r.spend)}</dd>
             </div>
+            {r.refunded > 0 && (
+              <div className="flex justify-between">
+                <dt>返金で戻った額</dt>
+                <dd>＋{formatYen(r.refunded)}</dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt>カードの引き落とし</dt>
               <dd>−{formatYen(r.cardSettled)}</dd>
@@ -54,7 +68,7 @@ export function CashBalanceCard({ month }: { month: string }) {
           </dl>
           <div className="mt-2 space-y-0.5 text-[12px] text-ink-3">
             <p>目安です。もとの残高の日より後の記録から計算しています。</p>
-            {!r.cardPendingKnown && <p>もとの残高の日に、カードの引き落とし待ちがあったかは、入っていません（不明）。分かれば資産に入れてください。</p>}
+            {!r.cardPendingKnown && r.cardActivity && <p>もとの残高の日に、カードの引き落とし待ちがあったかは、入っていません（不明）。分かれば資産に入れてください。</p>}
             <p>口座どうしの移動は数えません。カード払いは、引き落としを記録したときに減ります。</p>
             <p>合わないときは、資産の残高を入れ直してください。</p>
           </div>

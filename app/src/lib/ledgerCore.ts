@@ -28,7 +28,9 @@ export function ledgerEvents(d: Pick<AppData, "transactions" | "categories" | "r
 
 function toEvent(t: Transaction, cats: ReturnType<typeof categoryMap>, recurring: AppData["recurring"]): LedgerEvent {
   if (t.type === "income") {
-    if (t.refundOf) return { kind: "refund", txId: t.id, of: t.refundOf, date: t.date, amount: t.amount };
+    // 返金の記録は「収支に数えない」（countAs=transfer）で作る。付いていないもの（手で直したデータなど）は、今の集計と同じく収入として扱い、
+    // 元の購入の保存則が合わなくなるので、データの点検で「要確認」に出る（勝手に直さない。独立点検 中1）
+    if (t.refundOf && t.countAs === "transfer") return { kind: "refund", txId: t.id, of: t.refundOf, date: t.date, amount: t.amount };
     if (t.countAs === "transfer") return { kind: "transfer", txId: t.id, date: t.date, amount: t.amount, direction: "in" };
     return { kind: "income", txId: t.id, date: t.date, amount: t.amount, categoryId: t.categoryId };
   }

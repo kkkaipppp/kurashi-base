@@ -207,9 +207,15 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         return;
       }
       // 返金のある支出の金額は直せない（返金の記録から計算し直す仕組みのため）。直すときは、返金の記録を消して（元に戻る）から
-      if (editing?.refundGross !== undefined && !asNew && v.amount !== editing.amount) {
-        setSaveError("返金のある支出の金額は、直せません。返金の記録を消す（元に戻ります）と、直せるようになります");
-        return;
+      if (editing?.refundGross !== undefined && !asNew) {
+        const wasCount = editing.countAs === "transfer" && editing.transferKind === "card" ? "transfer-card" : editing.countAs === "transfer" ? "" : (editing.countAs ?? "");
+        const nowCount = draft.countAs === "transfer" && editing.countAs === "transfer" ? "" : (draft.countAs ?? "");
+        // 全額返金した支出は、数え方が「収支に数えない」になっている（返金がそうした）。その表示のままなら、変えていない扱い
+        const countChanged = editing.countAs === "transfer" ? !(draft.countAs === "transfer" || draft.countAs === "") : nowCount !== wasCount;
+        if (v.amount !== editing.amount || draft.type !== editing.type || countChanged || draft.paymentMethod !== editing.paymentMethod) {
+          setSaveError("返金のある支出の、金額・種類・数え方・支払い方法は、直せません。返金の記録を消す（元に戻ります）と、直せるようになります");
+          return;
+        }
       }
       // 手でつないだ固定費は、保存の直前にも「今も候補か」を確かめる（下書きの再開・金額の変更で古い指定が残らないように）
       const linkOk =

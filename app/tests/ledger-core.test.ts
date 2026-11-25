@@ -22,11 +22,12 @@ function synth(seed: number): AppData {
   let d = emptyData(now);
   d.categories.push({ id: "inv", name: "証券口座へ", kind: "expense", order: 99, archived: false, role: "invest" });
   d.recurring = [{ id: "rc", name: "家賃", amount: 80000, cycle: "monthly", anchorDay: 27, nextDueDate: "2026-12-27", categoryId: "exp-4", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
-  const months = ["2026-09", "2026-10", "2026-11", "2026-12"];
+  const months = ["2026-02", "2026-09", "2026-10", "2026-11", "2026-12", "2027-01"]; // うるう年でない2月・年またぎも入れる
   const txs: Transaction[] = [];
   for (let i = 0; i < 60; i++) {
     const mo = months[Math.floor(r() * months.length)];
-    const date = `${mo}-${String(1 + Math.floor(r() * 28)).padStart(2, "0")}`;
+    const last = new Date(Date.UTC(Number(mo.slice(0, 4)), Number(mo.slice(5, 7)), 0)).getUTCDate();
+    const date = `${mo}-${String(1 + Math.floor(r() * last)).padStart(2, "0")}`; // 29〜31日も入れる
     const kind = r();
     const amount = 100 + Math.floor(r() * 50000);
     if (kind < 0.12) txs.push(tx({ id: `i${i}`, type: "income", date, amount, categoryId: "inc-1" }));
@@ -50,7 +51,7 @@ function synth(seed: number): AppData {
       if (left <= 0) break;
       const amt = r() < 0.3 ? left : 1 + Math.floor(r() * left);
       const id = `r${n++}`;
-      const res = applyRefund(d, p.id, amt, months[Math.floor(r() * months.length)] + "-15", id, now);
+      const res = applyRefund(d, p.id, amt, months[Math.floor(r() * months.length)] + "-28", id, now);
       if (res.ok) {
         d = res.next;
         made.push(id);
@@ -68,7 +69,7 @@ describe("共通台帳：今の集計との並行比較（200通りの合成デ�
       expect(validateAppData(d).ok).toBe(true);
       const ev = ledgerEvents(d);
       expect(refundConservationErrors(ev)).toEqual([]);
-      for (const mo of ["2026-09", "2026-10", "2026-11", "2026-12"]) {
+      for (const mo of ["2026-02", "2026-09", "2026-10", "2026-11", "2026-12", "2027-01"]) {
         const a = summarizeMonth(d.transactions, mo);
         const b = monthBreakdown(d, mo, "2026-11-25");
         const t = monthTotals(ev, mo);
