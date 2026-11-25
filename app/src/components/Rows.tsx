@@ -1,6 +1,6 @@
 "use client";
 
-import { isDoneOn } from "@/lib/eventOps";
+import { isDoneOn, occurrenceKey } from "@/lib/eventOps";
 import { formatDateJa } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 import { useData } from "@/lib/store";
@@ -63,7 +63,7 @@ export function eventTimeLabel(e: CalendarEvent, day?: string): string {
 export function EventRow({ ev, day }: { ev: CalendarEvent; day?: string }) {
   const ui = useUI();
   // 完了した回は、取り消し線と ✓（色だけに頼らない）
-  const done = isDoneOn(ev, day ?? ev.startDate);
+  const done = isDoneOn(ev, occurrenceKey(ev, day));
   return (
     <li>
       <button

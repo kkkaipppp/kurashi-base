@@ -1,5 +1,6 @@
 import { eventsOnDay } from "./aggregate";
 import { addDays, formatDateJa } from "./date";
+import { occurrenceKey } from "./eventOps";
 import { formatYen } from "./money";
 import type { AppData } from "./types";
 
@@ -49,7 +50,7 @@ const toMin = (t: string) => {
 };
 const hhmm = (n: number) => `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
 
-/** 静穏時間（quietFrom〜quietTo。日をまたぐ）に入る時刻は、静穏時間の終わりにずらす */
+/** 静穏時間（quietFrom〜quietTo。日をまたぐ）に入る時刻は、静穏時間の終わりにずらす（時刻だけ。日付は、下の shiftQuiet が扱う） */
 export function applyQuiet(min: number, quietFrom: string, quietTo: string): number {
   const from = toMin(quietFrom);
   const to = toMin(quietTo);
@@ -58,26 +59,48 @@ export function applyQuiet(min: number, quietFrom: string, quietTo: string): num
   return inQuiet ? to : min;
 }
 
+/**
+ * 日付つきで、静穏時間のずらしを行う。日をまたぐ静穏時間（例 22:00〜07:00）の夜側（22:00 以降）は、翌日の 07:00 にずらす。
+ * 分が負（前の日にさかのぼる）や 24 時以降のときは、日付を繰り上げ・繰り下げてから判断する
+ */
+export function shiftQuiet(date: string, min: number, quietFrom: string, quietTo: string): { date: string; min: number } {
+  let d = date;
+  let m = min;
+  if (m < 0) {
+    d = addDays(d, -1);
+    m += 1440;
+  }
+  const from = toMin(quietFrom);
+  const to = toMin(quietTo);
+  if (from === to) return { date: d, min: m };
+  if (from < to) return m >= from && m < to ? { date: d, min: to } : { date: d, min: m };
+  if (m >= from) return { date: addDays(d, 1), min: to }; // 夜側：翌日の静穏時間の終わり
+  if (m < to) return { date: d, min: to }; // 朝側：その日の静穏時間の終わり
+  return { date: d, min: m };
+}
+
 export function buildReminders(d: AppData, now: string, s: ReminderSettings): Reminder[] {
   if (!s.on) return [];
   const nowDate = now.slice(0, 10);
   const nowMin = toMin(now.slice(11, 16));
   const out: Reminder[] = [];
-  const add = (id: string, title: string, body: string, date: string, min: number) => {
-    const m = applyQuiet(Math.max(0, Math.min(1439, min)), s.quietFrom, s.quietTo);
+  /** notBefore：この日時（予定の開始）以降になるときは登録しない（「30分前」が開始後に鳴らないように） */
+  const add = (id: string, title: string, body: string, day: string, rawMin: number, notBefore?: { date: string; min: number }) => {
+    const sh = shiftQuiet(day, Math.min(1439, rawMin), s.quietFrom, s.quietTo);
     // すでに過ぎた時刻は登録しない
-    if (date < nowDate || (date === nowDate && m <= nowMin)) return;
-    out.push({ id, title: s.hideDetail ? "くらしベース" : title, body: s.hideDetail ? "お知らせがあります" : body, at: `${date}T${hhmm(m)}` });
+    if (sh.date < nowDate || (sh.date === nowDate && sh.min <= nowMin)) return;
+    if (notBefore && (sh.date > notBefore.date || (sh.date === notBefore.date && sh.min >= notBefore.min))) return;
+    out.push({ id, title: s.hideDetail ? "くらしベース" : title, body: s.hideDetail ? "お知らせがあります" : body, at: `${sh.date}T${hhmm(sh.min)}` });
   };
   const morning = toMin(s.morning);
   for (let i = 0; i < HORIZON_DAYS; i++) {
     const date = addDays(nowDate, i);
     if (s.eventLead > 0)
       for (const e of eventsOnDay(d.events, date)) {
-        if (e.allDay || !/^\d{2}:\d{2}$/.test(e.startTime) || e.doneDates?.includes(date)) continue;
+        if (e.allDay || !/^\d{2}:\d{2}$/.test(e.startTime) || e.doneDates?.includes(occurrenceKey(e, date))) continue;
         // 何日かにまたがる予定は、開始の日だけ
         if (e.startDate !== e.endDate && e.startDate !== date) continue;
-        add(`kb|ev|${e.id}|${date}|lead`, e.title || "（名前なし）", `${e.startTime}から${e.location ? `（${e.location}）` : ""}・${s.eventLead}分前です`, date, toMin(e.startTime) - s.eventLead);
+        add(`kb|ev|${e.id}|${date}|lead`, e.title || "（名前なし）", `${e.startTime}から${e.location ? `（${e.location}）` : ""}・${s.eventLead}分前です`, date, toMin(e.startTime) - s.eventLead, { date, min: toMin(e.startTime) });
       }
     if (s.fixedMorning)
       for (const r of d.recurring) {

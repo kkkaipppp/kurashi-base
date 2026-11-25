@@ -1,3 +1,4 @@
+import { occurrenceKey } from "./eventOps";
 import { occurrencesIn } from "./goalOcc";
 import type { AppData } from "./types";
 
@@ -21,7 +22,7 @@ export function goalActions(d: AppData, goalId: string, today: string): GoalActi
   for (const e of evs) {
     doneCount += e.doneDates?.length ?? 0;
     for (const date of occurrencesIn(e, today, 120)) {
-      if (e.doneDates?.includes(date)) continue;
+      if (e.doneDates?.includes(occurrenceKey(e, date))) continue;
       if (!next || date < next.date) next = { eventId: e.id, title: e.title || "（名前なし）", date };
       break;
     }
