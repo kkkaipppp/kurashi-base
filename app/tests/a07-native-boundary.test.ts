@@ -257,3 +257,11 @@ describe("A07：保存の正本は1つ（画面の中の記録だけ）", () => 
     expect(PLUGIN).toContain("options: [.atomic]");
   });
 });
+
+describe("o11 A09 一次点検 中-3：同じ日の自動バックアップを、件数の少ない中身で上書きする前に残す", () => {
+  it("その日の最多の件数より少ないときは、上書きの前に、その日の前の中身を _before-decrease として1つだけ残す", () => {
+    expect(PLUGIN).toMatch(/if records < dayMax && fm\.fileExists\(atPath: todayURL\.path\) && !fm\.fileExists\(atPath: keptURL\.path\) \{\s*try fm\.copyItem\(at: todayURL, to: keptURL\)\s*\}\s*try bytes\.write\(to: todayURL, options: \[\.atomic\]\)/);
+    expect(PLUGIN).toContain('"\\(Self.prefix)\\(day)_before-decrease.json"');
+    expect(PLUGIN).toContain('if records > dayMax { UserDefaults.standard.set("\\(day):\\(records)", forKey: Self.dayRecordsKey) }');
+  });
+});
