@@ -187,9 +187,11 @@ export function validateRelationships(data: AppData): { ok: true } | { ok: false
   const categories = new Map(data.categories.map((c) => [c.id, c]));
   for (const t of data.transactions) {
     const cat = categories.get(t.categoryId);
+    if (cat && cat.kind === t.type) continue;
+    // 説明の文は、問題があったときだけ作る（30年分の復元で、全件に作ると遅い。o11 A08 点検 高-2）
     const label = `${t.date}の${t.type === "expense" ? "支出" : "収入"}${t.amount.toLocaleString("ja-JP")}円${t.merchant ? `（${t.merchant}）` : ""}`;
     if (!cat) return { ok: false, error: `${label}のカテゴリが、バックアップの中に見つかりません` };
-    if (cat.kind !== t.type) return { ok: false, error: `${label}のカテゴリが、支出用・収入用で食い違っています` };
+    return { ok: false, error: `${label}のカテゴリが、支出用・収入用で食い違っています` };
   }
   for (const r of data.recurring) {
     const cat = categories.get(r.categoryId);
