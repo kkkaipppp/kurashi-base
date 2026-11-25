@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useData } from "@/lib/store";
 import { useUI } from "@/components/UIContext";
 import { Card, Empty, IconChevronR, IconSearch, PageHeader, inputCls } from "@/components/ui";
@@ -11,15 +12,22 @@ import { queryFromSearch, searchWithQuery } from "@/lib/searchState";
 
 /** 横断検索（自分用。NEXT v21 Phase 2）：記録・予定・固定費・旅行・タスク・メモ・契約・書類などを、1つの言葉で探す */
 export default function SearchPage() {
+  // useSearchParams は、書き出し（静的）のとき Suspense の中で使う必要がある
+  return (
+    <Suspense fallback={null}>
+      <SearchInner />
+    </Suspense>
+  );
+}
+
+function SearchInner() {
   const data = useData();
+  const params = useSearchParams();
   const ui = useUI();
-  const [q, setQ] = useState("");
+  // 検索語は、アドレスの ?q= から始める（検索 → 別の画面 → 戻る、で、検索語が戻る）
+  const [q, setQ] = useState(() => queryFromSearch(params.toString()));
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  // 検索語は、アドレスの ?q= に残す（検索 → 別の画面 → 戻る、で、検索語が戻る。履歴は増やさない）
-  useEffect(() => {
-    const first = queryFromSearch(window.location.search);
-    if (first) setQ(first);
-  }, []);
+  // 入力のたびに、アドレスの ?q= を書き換える（履歴は増やさない）
   useEffect(() => {
     const next = searchWithQuery(window.location.search, q);
     if (next !== window.location.search) window.history.replaceState(window.history.state, "", `${window.location.pathname}${next}`);

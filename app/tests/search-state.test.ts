@@ -23,9 +23,10 @@ describe("検索語の復元", () => {
     expect(queryFromSearch("?q=" + "あ".repeat(500)).length).toBe(MAX_QUERY_LEN);
     expect(queryFromSearch(searchWithQuery("", "あ".repeat(500))).length).toBe(MAX_QUERY_LEN);
   });
-  it("さがす画面は、起動時に ?q= を読み、入力のたびに URL を書き換える（履歴は増やさない）", () => {
+  it("さがす画面は、起動時に ?q= を読み（Suspense の中で useSearchParams）、入力のたびに URL を書き換える（履歴は増やさない）", () => {
     const s = readFileSync(join(__dirname, "..", "src", "app", "search", "page.tsx"), "utf8");
-    expect(s).toContain("queryFromSearch(window.location.search)");
+    expect(s).toContain("queryFromSearch(params.toString())");
+    expect(s).toContain("<Suspense");
     expect(s).toContain("history.replaceState");
     expect(s).toContain("searchWithQuery");
   });
