@@ -214,34 +214,45 @@ describe("A06：手で決めた期待値", () => {
       }
     };
     walk(root);
-    // 金額を足す書き方：「+= x.amount」「+ x.amount, 0)」「a + x.amount」
-    const SUM = /\+=\s*\w+\.amount|\+\s*\w+\.amount\s*,\s*0\)|\w+\s*\+\s*\w+\.amount\b/;
-    const ALLOWED: Record<string, string> = {
-      "lib/ledgerCore.ts": "台帳そのもの",
-      "lib/aggregate.ts": "台帳の出来事（CountedEntry）を足す",
-      "lib/periods.ts": "台帳の出来事を足す",
-      "lib/monthBreakdown.ts": "台帳の出来事と NISA の記録を足す",
-      "lib/weeklyReview.ts": "台帳の出来事を足す",
-      "lib/report.ts": "台帳の出来事を足す",
-      "lib/forecast.ts": "台帳の出来事と、固定費の予定を足す",
-      "lib/refund.ts": "返金の記録の合計（台帳の保存則と同じ）",
-      "lib/allowance.ts": "固定費の予定（記録ではない）",
-      "lib/nisa.ts": "NISA の記録（収支ではない）",
-      "lib/balance.ts": "台帳の出来事（ledgerEvents）を足す",
-      "lib/inbox.ts": "未整理の記録の店ごとの合計（整理の目安。収支ではない）",
-      "lib/idbRepository.ts": "移行の点検用の合計（記録の全件。収支ではない）",
-      "lib/dataOps.ts": "固定費の一部払いの残り",
-      "lib/scenarios.ts": "ケース別の比較（固定費の予定）",
-      "lib/decision.ts": "買い物の判断（予定の額）",
-      "lib/lifeChange.ts": "生活の変化（予定の額）",
-      "app/settings/page.tsx": "CSV の取り込み前の合計（まだ記録ではない）",
-      "app/calendar/page.tsx": "その日の固定費の予定",
-      "app/contracts/page.tsx": "契約の月額",
-      "app/recurring/page.tsx": "固定費の月額",
-      "app/report/page.tsx": "固定費の月額",
+    // 金額を足す書き方（行ごと）：「amount」と「reduce( / += / ␣+␣ / .map(」が同じ行にある（独立点検の再点検 中1：
+    //   s + (… ? t.amount : 0)・t.amount + s・(s, { amount }) => s + amount・s + t["amount"]・a + t?.amount・sum(txs.map((t) => t.amount)) も拾う）
+    const LINE = /(reduce\(|\+=|\s\+\s|\.map\().*\bamount\b|\bamount\b.*(\s\+\s|\+=)/;
+    // 決めたファイルと、その中の行数。増えたら落ちる（決めたファイルの中に、台帳を通さない足し算を新しく書いても見つかる）。
+    // 減ったときも落ちるので、そのときはここの数を直す（直したことが見える）
+    const ALLOWED: Record<string, [number, string]> = {
+      "lib/ledgerCore.ts": [7, "台帳そのもの"],
+      "lib/aggregate.ts": [0, "台帳の出来事を sumEntries で足す"],
+      "lib/periods.ts": [6, "台帳の出来事（CountedEntry）を足す"],
+      "lib/monthBreakdown.ts": [7, "台帳の出来事と NISA の記録を足す"],
+      "lib/weeklyReview.ts": [4, "台帳の出来事を足す・固定費の予定"],
+      "lib/report.ts": [3, "台帳の出来事を足す"],
+      "lib/forecast.ts": [4, "台帳の出来事と、固定費の予定を足す"],
+      "lib/balance.ts": [4, "台帳の出来事（ledgerEvents）を足す"],
+      "lib/refund.ts": [2, "返金の記録の合計（台帳の保存則と同じ）"],
+      "lib/allowance.ts": [1, "固定費の予定（記録ではない）"],
+      "lib/nisa.ts": [1, "NISA の記録（収支ではない）"],
+      "lib/inbox.ts": [1, "未整理の記録の店ごとの合計（整理の目安。収支ではない）"],
+      "lib/idbRepository.ts": [1, "移行の点検用の合計（記録の全件。収支ではない）"],
+      "lib/dataOps.ts": [2, "固定費の一部払いの残り"],
+      "lib/decision.ts": [1, "買い物の判断（予定の額）"],
+      "lib/lifeChange.ts": [2, "生活の変化（予定の額）"],
+      "app/settings/page.tsx": [2, "CSV の取り込み前の合計（まだ記録ではない）"],
+      "app/calendar/page.tsx": [1, "その日の固定費の予定"],
+      "app/contracts/page.tsx": [1, "契約の月額"],
+      "app/recurring/page.tsx": [1, "固定費の月額"],
+      "app/report/page.tsx": [1, "固定費の月額"],
+      "app/trips/page.tsx": [1, "行程の費用（予定の cost）。旅行につないだ支出は sumEntries"],
     };
-    const found = files.filter((f) => SUM.test(fs.readFileSync(path.join(root, f), "utf8")));
-    expect(found.filter((f) => !(f in ALLOWED))).toEqual([]);
+    const counts: Record<string, number> = {};
+    for (const f of files) {
+      const n = fs.readFileSync(path.join(root, f), "utf8").split("\n").filter((l) => LINE.test(l)).length;
+      if (n || f in ALLOWED) counts[f] = n;
+    }
+    const expected: Record<string, number> = {};
+    for (const [f, [n]] of Object.entries(ALLOWED)) if (n > 0 || f in counts) expected[f] = n;
+    expect(counts).toEqual(expected);
+    // 見張りそのものの確かめ：見逃したと指摘された書き方を、どれも拾う
+    for (const c of ['s + (t.type === "expense" && t.countAs !== "transfer" ? t.amount : 0)', "t.amount + s", "(s, { amount }) => s + amount", 's + t["amount"]', "a + t?.amount", "sum(txs.map((t) => t.amount))", "total += t.amount"]) expect(LINE.test(c), c).toBe(true);
   });
   it("日付の境界：うるう年でない2月の28日・年またぎの週", () => {
     const d = base();

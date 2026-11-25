@@ -21,6 +21,8 @@ export function synth(seed: number): AppData {
   d.recurring = [
     { id: "rc", name: "家賃", amount: 80000, cycle: "monthly", anchorDay: 27, nextDueDate: "2026-11-27", categoryId: "exp-4", paymentMethod: "", active: true, createdAt: now, updatedAt: now },
     { id: "rc2", name: "スマホ", amount: 3000, cycle: "monthly", anchorDay: 28, nextDueDate: "2026-11-28", categoryId: "exp-5", paymentMethod: "card", active: true, createdAt: now, updatedAt: now },
+    { id: "rc4", name: "駐車場", amount: 12000, cycle: "monthly", anchorDay: 27, nextDueDate: "2026-11-27", categoryId: "exp-4", paymentMethod: "", active: true, createdAt: now, updatedAt: now }, // 家賃と同じカテゴリで額が違う
+    { id: "rc5", name: "前のスマホ", amount: 3000, cycle: "monthly", anchorDay: 5, nextDueDate: "2026-11-05", categoryId: "exp-5", paymentMethod: "", active: false, createdAt: now, updatedAt: now }, // 動いている rc2 と同じカテゴリ・同じ額で止めたもの
     { id: "rc3", name: "やめたジム", amount: 5000, cycle: "monthly", anchorDay: 10, nextDueDate: "2026-11-10", categoryId: "exp-2", paymentMethod: "", active: false, createdAt: now, updatedAt: now }, // 止めた固定費（同じ額でも固定費にしない）
   ];
   const txs: Transaction[] = [];
@@ -37,6 +39,10 @@ export function synth(seed: number): AppData {
     }
     if (x < 0.07) {
       txs.push(tx({ id: `gy${i}`, date, amount: 5000, categoryId: "exp-2" })); // 止めた固定費と同じ額
+      continue;
+    }
+    if (x < 0.11 && x >= 0.09) {
+      txs.push(tx({ id: `pk${i}`, date, amount: 12000, categoryId: "exp-4" })); // 駐車場と同じ額（固定費）
       continue;
     }
     if (x < 0.09) {

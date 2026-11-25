@@ -17,7 +17,7 @@ const now = "2026-11-25T00:00:00.000Z";
 function big(): AppData {
   const d = emptyData(now);
   d.categories.push({ id: "inv", name: "投資", kind: "expense", order: 99, archived: false });
-  d.recurring = Array.from({ length: 30 }, (_, i) => ({ id: `rc${i}`, name: `固定${i}`, amount: 1000 + i * 100, cycle: "monthly" as const, anchorDay: 1 + (i % 28), nextDueDate: `2026-12-${String(1 + (i % 28)).padStart(2, "0")}`, categoryId: `exp-${1 + (i % 5)}`, paymentMethod: "", active: true, createdAt: now, updatedAt: now }));
+  d.recurring = Array.from({ length: 30 }, (_, i) => ({ id: `rc${i}`, name: `固定${i}`, amount: 1000 + i * 100, cycle: "monthly" as const, anchorDay: 1 + (i % 28), nextDueDate: `2026-12-${String(1 + (i % 28)).padStart(2, "0")}`, categoryId: i < 20 ? "exp-1" : `exp-${1 + (i % 5)}`, paymentMethod: "", active: i % 3 !== 0, createdAt: now, updatedAt: now }));
   const txs: Transaction[] = [];
   let seed = 7;
   const r = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
@@ -32,14 +32,19 @@ function big(): AppData {
   d.transactions = txs;
   return d;
 }
-const median = (f: () => unknown, n = 15) => {
-  const ts: number[] = [];
+/** 新と旧を交互に測って、それぞれの中央値（一時的な負荷が片方だけに重ならないように） */
+const medians = (fa: () => unknown, fb: () => unknown, n = 21): [number, number] => {
+  const a: number[] = [];
+  const b: number[] = [];
   for (let i = 0; i < n; i++) {
-    const t0 = performance.now();
-    f();
-    ts.push(performance.now() - t0);
+    for (const [f, ts] of i % 2 ? ([[fb, b], [fa, a]] as const) : ([[fa, a], [fb, b]] as const)) {
+      const t0 = performance.now();
+      f();
+      ts.push(performance.now() - t0);
+    }
   }
-  return ts.sort((a, b) => a - b)[Math.floor(n / 2)];
+  const mid = (ts: number[]) => ts.sort((x, y) => x - y)[Math.floor(ts.length / 2)];
+  return [mid(a), mid(b)];
 };
 
 describe("A06：1.5万件での速さ（前の実装と並べて）", () => {
@@ -53,14 +58,12 @@ describe("A06：1.5万件での速さ（前の実装と並べて）", () => {
     ["カレンダー30日分", () => { for (let i = 1; i <= 30; i++) nAgg.daySummary(d.transactions, `2026-11-${String(i).padStart(2, "0")}`); }, () => { for (let i = 1; i <= 30; i++) oAgg.daySummary(d.transactions, `2026-11-${String(i).padStart(2, "0")}`); }],
   ];
   for (const [name, fNew, fOld] of cases) {
-    it(`${name}：答えが同じで、前の実装の2倍＋5ms以内`, () => {
+    it(`${name}：答えが同じで、前の実装の1.5倍＋2ms以内`, () => {
       expect(fNew()).toEqual(fOld());
-      median(fNew, 3); // 温める
-      median(fOld, 3);
-      const tn = median(fNew);
-      const to = median(fOld);
+      medians(fNew, fOld, 5); // 温める
+      const [tn, to] = medians(fNew, fOld);
       console.log(`[A06 速さ] ${name}：新 ${tn.toFixed(2)}ms・旧 ${to.toFixed(2)}ms`);
-      expect(tn).toBeLessThanOrEqual(to * 2 + 5);
+      expect(tn).toBeLessThanOrEqual(to * 1.5 + 2);
     });
   }
 });

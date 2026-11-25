@@ -135,15 +135,29 @@ describe("バックアップの往復（v22 G0）", () => {
     });
   }
 
-  it("IndexedDB：復元の保存に失敗したら「失敗」と返し、開き直すと復元の前のデータのまま", async () => {
-    const factory = new IDBFactory();
-    const legacy = memKV();
+  for (const kind of ["localStorage（容量不足）", "indexedDB"] as const)
+  it(`${kind}：復元の保存に失敗したら「失敗」と返し、開いている画面も・取り消しの控えも・開き直したデータも、復元の前のまま`, async () => {
     let fail = false;
-    const repoOf = () => new IdbRepositoryAdapter({ factory, legacy, fault: (k) => fail && k === "data" });
+    let repoOf: () => LocalStorageRepository | IdbRepositoryAdapter;
+    if (kind === "indexedDB") {
+      const factory = new IDBFactory();
+      const legacy = memKV();
+      repoOf = () => new IdbRepositoryAdapter({ factory, legacy, fault: (k) => fail && k === "data" });
+    } else {
+      const inner = memKV();
+      // 本物の localStorage の容量不足と同じく、書き込みで例外を投げる
+      const kv = { ...inner, setItem: (k: string, v: string) => { if (fail) throw new DOMException("QuotaExceededError", "QuotaExceededError"); inner.setItem(k, v); }, getItem: inner.getItem, removeItem: inner.removeItem, key: inner.key, get length() { return inner.length; } } as KV;
+      repoOf = () => new LocalStorageRepository(kv);
+    }
     const before = rich(4);
     const core = new StoreCore(repoOf());
     await core.reload();
     expect((await core.commit(() => before)).ok).toBe(true);
+    // 取り消しの控えがある状態にしておく（ひとつ前の置き換え）
+    expect((await core.commit(() => ({ ...before }), { undoReason: "前の置き換え", base: core.snapshot.data! })).ok).toBe(true);
+    const undoBefore = core.snapshot.undo;
+    expect(undoBefore).not.toBeNull();
+    const shown = core.snapshot.data;
     const p = parseBackup(JSON.stringify(buildBackup(rich(9), now)));
     if (!p.ok) throw new Error(p.error);
     const r = applyRestore(core.snapshot.data!, p.preview.data, "replace");
@@ -151,10 +165,13 @@ describe("バックアップの往復（v22 G0）", () => {
     fail = true;
     const saved = await core.commit(() => r.data, { undoReason: "バックアップから復元", base: core.snapshot.data! });
     expect(saved.ok).toBe(false);
+    expect(core.snapshot.data).toBe(shown); // 開いている画面は前のまま
+    expect(core.snapshot.undo).toStrictEqual(undoBefore); // 取り消しの控えも前のまま
     fail = false;
     const again = new StoreCore(repoOf());
     await again.reload();
     expect(again.snapshot.data).toStrictEqual(before);
+    expect(await again.repo.readUndo()).toStrictEqual(undoBefore);
   });
 
   it("別のタブで先に保存されていたら、古い画面からの復元は保存しない（新しい記録を上書きしない）", async () => {
