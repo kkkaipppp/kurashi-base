@@ -398,6 +398,12 @@ export async function migrateFromLocalStorage(kv: KV, repo: IndexedDbRepository,
   if (raw === null) {
     // 旧データがない端末：印だけ書く（あとから旧データが現れても、IndexedDB の記録を上書きしない。点検 高-1）
     await repo.markMigrated({ migratedAt: now, source: "localStorage", integrity: integrity(emptyData(now), "") });
+    // 旧データ側にも印を書く（あとで IndexedDB が開けない起動があっても、空の localStorage で黙って続けない。再点検 中-G）
+    try {
+      kv.setItem(MOVED_MARK_KEY, now);
+    } catch {
+      /* 印は任意。下の adapter は、旧データに本体があるときだけ localStorage で続ける */
+    }
     return { status: "nothing" };
   }
   let parsed: unknown;

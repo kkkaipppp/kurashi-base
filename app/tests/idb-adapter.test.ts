@@ -244,3 +244,24 @@ describe("IndexedDB の切り替えの独立点検（高-1・高-3・中-1・中
     expect(b.snapshot.status).toBe("unavailable");
   });
 });
+
+describe("再点検（7b7f83b）の中-G", () => {
+  it("旧データなしで始めた端末：旧データ側にも印が書かれ、IndexedDB が開けない起動では、空の localStorage で黙って続けない", async () => {
+    const { legacy, make } = await setup();
+    const a = new StoreCore(make());
+    await a.reload();
+    await a.commit(addTx("idb-only"));
+    expect(legacy.store.get(MOVED_MARK_KEY)).toBeDefined();
+    const broken = new IdbRepositoryAdapter({ factory: { open: () => { throw new Error("開けない"); } } as unknown as IDBFactory, legacy });
+    const b = new StoreCore(broken);
+    await b.reload();
+    expect(b.snapshot.status).toBe("unavailable");
+  });
+  it("印がなくても、旧データに本体がなければ、localStorage で続けない", async () => {
+    const legacy = memKV();
+    const broken = new IdbRepositoryAdapter({ factory: { open: () => { throw new Error("開けない"); } } as unknown as IDBFactory, legacy });
+    const b = new StoreCore(broken);
+    await b.reload();
+    expect(b.snapshot.status).toBe("unavailable");
+  });
+});

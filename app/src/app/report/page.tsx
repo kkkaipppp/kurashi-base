@@ -10,11 +10,12 @@ import { budgetSpent } from "@/lib/ledger";
 import { cycleLabel } from "@/lib/recurring";
 import { useData } from "@/lib/store";
 import dynamic from "next/dynamic";
+import { FEATURES } from "@/lib/edition";
 
 // 週・年の振り返りは自分用（personal）だけ（lib/edition.ts の periodReport）。
 // 組み立てるときに決まる値で分けるので、公開版（public）には週・年の画面のコードが入らない
 // 週・年の振り返り：2026-11-25 から、自分用と公開版（友達用）の両方で出す（FEATURE_EDITIONS.periodReport）
-const PERIOD_REPORT = true;
+const PERIOD_REPORT = FEATURES.periodReport;
 // 投資を除いた額で予算と比べるのは、自分用だけ（公開版は今までどおり、すべての支出で比べる。lib/ledger.ts の budgetSpent）
 const LIFE_BUDGET = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const WeekReport = PERIOD_REPORT ? dynamic(() => import("@/components/PeriodReport").then((m) => m.WeekReport)) : () => null;
@@ -23,7 +24,7 @@ const YearReport = PERIOD_REPORT ? dynamic(() => import("@/components/PeriodRepo
 // 週・年とは別に公開を決められるよう、自分の条件にする（今はどちらも自分用だけ）
 const MONTH_BREAKDOWN = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // 月末の見込み：2026-11-25 から公開版でも出す（FEATURE_EDITIONS.forecast）
-const ForecastCard = true ? dynamic(() => import("@/components/ForecastCard").then((m) => m.ForecastCard)) : () => null;
+const ForecastCard = FEATURES.forecast ? dynamic(() => import("@/components/ForecastCard").then((m) => m.ForecastCard)) : () => null;
 const CashBalanceCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/CashBalanceCard").then((m) => m.CashBalanceCard)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
 

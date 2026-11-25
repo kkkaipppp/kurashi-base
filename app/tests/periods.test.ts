@@ -54,7 +54,7 @@ describe("週・年の収支（2026-11-24 平尾さん：年間と週の収支�
     expect(FEATURE_EDITIONS.periodReport).toEqual({ personal: true, public: true }); // 2026-11-25 平尾さん：友達用にも出す
     const page = readFileSync(join(__dirname, "..", "src", "app", "report", "page.tsx"), "utf8");
     // 表（FEATURE_EDITIONS）と、画面の条件がそろっていること（両方で出す）。「投資を除く」は自分用だけ（公開版の予算はすべての支出で比べる）
-    expect(page).toContain("const PERIOD_REPORT = true;");
+    expect(page).toContain("const PERIOD_REPORT = FEATURES.periodReport;"); // 表（FEATURE_EDITIONS）で出し分ける
     expect(page).toContain('const LIFE_BUDGET = process.env.NEXT_PUBLIC_KB_EDITION === "personal";');
     expect(page).toContain('{LIFE_BUDGET ? "（投資を除く）" : ""}');
   });

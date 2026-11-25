@@ -8,7 +8,8 @@ import { newId } from "@/lib/defaults";
 import { MAX_ICS_BYTES, applyIcsImport, parseIcs, planIcsImport, type IcsParseResult } from "@/lib/icsImport";
 
 /**
- * カレンダーのファイル（.ics）から予定を取り込む（自分用。Q31＝①）。
+ * カレンダーのファイル（.ics）から予定を取り込む（Q31＝①。2026-11-25 から自分用と公開版の両方）。
+ * iCloud の公開リンクで作る方法は案内しない（オンのあいだ予定がだれにでも見えるため。平尾さんの決め）。
  * 端末の中だけで読む。1回の写しで、そのあとの変更は同期しない。取り込む前に件数を見せ、取り消しの控えを残して保存する
  */
 export function IcsImportCard() {
@@ -73,7 +74,6 @@ export function IcsImportCard() {
         <ul className="list-disc space-y-1 pl-5 pb-2">
           <li>iPhone のカレンダーには、ファイルに書き出す機能がありません。</li>
           <li>Mac があれば：カレンダーで、写したいカレンダーを選び、「ファイル」→「書き出す」。いちばん安全です。</li>
-          <li>iCloud の「公開カレンダー」のリンクからも作れますが、オンのあいだは、リンクを知っている人ならだれでも見られます。使うなら、終わったらすぐにオフにしてください。</li>
           <li>同じ名前・同じ日・同じ時刻の予定がすでにあれば、取り込みません（2回読み込んでも増えません）。</li>
         </ul>
       </details>

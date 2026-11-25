@@ -80,7 +80,14 @@ export class IdbRepositoryAdapter implements Repository {
   }
 
   private async useFallback(reason: string): Promise<RepoLoadResult> {
-    if (this.everMigrated() || !this.opts.legacy) return { status: "unavailable", error: reason };
+    // localStorage で続けてよいのは、まだ一度も移しておらず、旧データに本体があるときだけ（空の localStorage で黙って続けない。再点検 中-G）
+    let hasLegacyData = false;
+    try {
+      hasLegacyData = !!this.opts.legacy?.getItem(STORAGE_KEY);
+    } catch {
+      hasLegacyData = false;
+    }
+    if (this.everMigrated() || !this.opts.legacy || !hasLegacyData) return { status: "unavailable", error: reason };
     this.fallback = new LocalStorageRepository(this.opts.legacy);
     return this.fallback.load();
   }
