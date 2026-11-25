@@ -5,6 +5,7 @@ import { Button, Card, SectionTitle } from "./ui";
 import { isNativeApp } from "@/lib/platform";
 import { useUI } from "./UIContext";
 import { NotifyCard } from "./NotifyCard";
+import { loadSyncStatus, syncProblems } from "@/lib/nativeSyncStatus";
 
 /**
  * iPhone アプリの中だけに出す「自動バックアップ」と「iPhone のカレンダーへの反映」の状態（レビュー o1 の P03・P05）。
@@ -53,8 +54,10 @@ export function NativeStatusCard() {
   const [backup, setBackup] = useState<BackupStatus | null>(null);
   const [cal, setCal] = useState<CalendarStatus | null>(null);
   const [busy, setBusy] = useState(false);
+  const [problems, setProblems] = useState<ReturnType<typeof syncProblems>>([]);
 
   const load = useCallback(() => {
+    setProblems(syncProblems(loadSyncStatus()));
     call("backupStatus")
       .then((r) => setBackup(r as BackupStatus))
       .catch(() => setBackup(null));
@@ -198,6 +201,19 @@ export function NativeStatusCard() {
           <dt className="text-ink-2">カレンダーへの最後の反映</dt>
           <dd className="num">{fmt(cal?.lastSyncAt)}</dd>
         </dl>
+        {problems.length > 0 && (
+          <div role="status" className="mt-2 rounded-lg border border-warn/40 p-2 text-[13px]">
+            <p className="font-semibold text-warn">iPhone に渡せなかったものがあります</p>
+            <ul className="mt-1 space-y-1">
+              {problems.map((p) => (
+                <li key={p.kind}>
+                  {p.label}（{fmt(p.at)}）：{p.detail}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 text-ink-2">記録はアプリの中に保存されています。iPhone の写し（{problems.map((p) => p.label).join("・")}）が古いままのことがあります。</p>
+          </div>
+        )}
         <p className="mt-2 text-[12px] text-ink-3">
           iPhone
           のカレンダーの「くらしベース」は、このアプリの予定と固定費の支払日を見るためのカレンダーです。くらしベースが入れた予定だけを書き直します。自分の予定は、ほかのカレンダーに入れてください。

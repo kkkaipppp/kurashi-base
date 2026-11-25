@@ -249,8 +249,10 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                         if isOurs || oldVersion { try store.remove(e, span: .thisEvent, commit: false) }
                     }
                     var written = 0
+                    // 日時を読めずに書かなかった予定の数（黙って捨てず、画面に知らせる。o11 A07 点検 中-3）
+                    var skipped = 0
                     for it in items {
-                        guard let s = Self.date(it.startDate, it.allDay ? "00:00" : it.startTime) else { continue }
+                        guard let s = Self.date(it.startDate, it.allDay ? "00:00" : it.startTime) else { skipped += 1; continue }
                         let e = EKEvent(eventStore: store)
                         e.calendar = cal
                         e.url = Self.ownedMark
@@ -271,7 +273,7 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                     UserDefaults.standard.set(stamp, forKey: Self.lastSyncKey)
                     UserDefaults.standard.set(true, forKey: Self.ownedMigratedKey)
                     UserDefaults.standard.set(ISO8601DateFormatter().string(from: Date()), forKey: Self.lastSyncAtKey)
-                    call.resolve(["written": written])
+                    call.resolve(["written": written, "skipped": skipped])
                 } catch {
                     store.reset()
                     call.reject("カレンダーに書けませんでした：\(error.localizedDescription)")
@@ -485,18 +487,29 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             center.getPendingNotificationRequests { pending in
                 let mine = pending.map { $0.identifier }.filter { $0.hasPrefix(Self.reminderPrefix) }
                 center.removePendingNotificationRequests(withIdentifiers: mine)
+                // 登録できた数と、できなかった数（時刻を読めない・登録の失敗）を、本当の結果で数える（o11 A07 点検 中-3）
+                let group = DispatchGroup()
+                let lock = NSLock()
                 var n = 0
+                var failed = 0
                 for it in items.prefix(60) where it.id.hasPrefix(Self.reminderPrefix) {
-                    guard let c = Self.components(it.at) else { continue }
+                    guard let c = Self.components(it.at) else { lock.lock(); failed += 1; lock.unlock(); continue }
                     let content = UNMutableNotificationContent()
                     content.title = it.title
                     content.body = it.body
                     content.sound = .default
                     let trigger = UNCalendarNotificationTrigger(dateMatching: c, repeats: false)
-                    center.add(UNNotificationRequest(identifier: it.id, content: content, trigger: trigger))
-                    n += 1
+                    group.enter()
+                    center.add(UNNotificationRequest(identifier: it.id, content: content, trigger: trigger)) { error in
+                        lock.lock()
+                        if error == nil { n += 1 } else { failed += 1 }
+                        lock.unlock()
+                        group.leave()
+                    }
                 }
-                call.resolve(["scheduled": n, "removed": mine.count])
+                group.notify(queue: .global()) {
+                    call.resolve(["scheduled": n, "removed": mine.count, "failed": failed])
+                }
             }
         }
         center.getNotificationSettings { s in
