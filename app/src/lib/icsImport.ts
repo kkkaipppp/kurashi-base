@@ -268,6 +268,11 @@ function toEvent(props: Prop[], res: IcsParseResult, moved: Set<string>): IcsEve
   const uid = get("UID")?.value;
   const isMovedInstance = !!get("RECURRENCE-ID");
   if (isMovedInstance) note = `${note ? `${note}\n` : ""}（取り込み：繰り返しの中で、その回だけ動かした予定です）`;
+  if (!rule && props.some((p) => p.name === "RDATE")) {
+    // 繰り返しの決まりがなく、足した日（RDATE）だけの予定：足した日は写せないので、最初の回だけ＋メモ（再点検 低-a）
+    res.repeatDropped++;
+    note = `${note ? `${note}\n` : ""}${DROPPED}`;
+  }
   if (rule) {
     // 繰り返しは1日の予定だけ（アプリの決まり）。例外の日（EXDATE）・足した日（RDATE）・その回だけ動かした回がある繰り返しは、表せない
     const hasExceptions = props.some((p) => p.name === "EXDATE" || p.name === "RDATE") || (!!uid && moved.has(uid));

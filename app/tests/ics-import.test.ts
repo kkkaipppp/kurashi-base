@@ -181,3 +181,12 @@ describe("独立点検（f738ca1）の指摘への試験", () => {
     expect(r.skipped).toBe(1);
   });
 });
+
+describe("再点検（28fc339）の低への試験", () => {
+  it("低-a：繰り返しの決まりがなく、足した日（RDATE）だけの予定は、最初の回だけ＋メモ＋件数", () => {
+    const r = parseIcs(wrap(["BEGIN:VEVENT", "SUMMARY:足した日", "DTSTART;VALUE=DATE:20261201", "RDATE;VALUE=DATE:20261215", "END:VEVENT"].join("\r\n")));
+    expect(r.repeatDropped).toBe(1);
+    expect(r.events[0].note).toContain("繰り返しは写していません");
+    expect(r.events[0].note.includes("\n")).toBe(false); // 改行の文字そのもの（バックスラッシュ＋n）を入れない
+  });
+});

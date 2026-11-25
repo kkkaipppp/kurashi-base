@@ -49,7 +49,7 @@ export function IcsImportCard() {
         return ui.toast("取り込む予定はありません（すべて、すでにあります）");
       }
       // 前に保存したデータがあるか（なければ、取り消しの控えは作られない＝はじめての保存。独立点検 中-5）
-      const hadData = base.events.length + base.transactions.length + base.recurring.length > 0 || base.budget.monthly !== null;
+      const hadData = (Object.values(base) as unknown[]).some((v) => Array.isArray(v) && v.length > 0 && v !== base.categories) || base.budget.monthly !== null || base.meta.lastBackupAt !== null; // タスク・目標などだけの端末も「データあり」（再点検 低-b）
       const next = applyIcsImport(base, plan.add, () => newId("ev"), new Date().toISOString());
       const r = await store.replaceAll(next, `カレンダーのファイル「${preview.name}」から予定を${plan.add.length}件取り込む`, base);
       if (!r.ok) return ui.toast(r.error, "error");
