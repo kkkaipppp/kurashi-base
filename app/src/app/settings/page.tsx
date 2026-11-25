@@ -52,15 +52,15 @@ export default function SettingsPage() {
   // --- 予算 ---
   const [budget, setBudget] = useState(data.budget.monthly === null ? "" : String(data.budget.monthly));
   const [budgetErr, setBudgetErr] = useState<string | undefined>();
-  const saveBudget = () => {
+  const saveBudget = async () => {
     if (budget.trim() === "") {
-      const r = store.setBudget(null);
+      const r = await store.setBudget(null);
       return r.ok ? ui.toast("予算を未設定にしました") : ui.toast(r.error, "error");
     }
     const p = parseAmount(budget);
     if (!p.ok) return setBudgetErr(p.error);
     setBudgetErr(undefined);
-    const r = store.setBudget(p.value);
+    const r = await store.setBudget(p.value);
     if (r.ok) ui.toast(`毎月の予算を${formatYen(p.value)}にしました`);
     else ui.toast(r.error, "error");
   };
@@ -77,25 +77,25 @@ export default function SettingsPage() {
   const [catName, setCatName] = useState("");
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editingCatName, setEditingCatName] = useState("");
-  const saveCatName = () => {
+  const saveCatName = async () => {
     if (!editingCatId) return;
-    const r = store.renameCategory(editingCatId, editingCatName);
+    const r = await store.renameCategory(editingCatId, editingCatName);
     if (!r.ok) return ui.toast(r.error, "error");
     setEditingCatId(null);
     ui.toast("カテゴリ名を変更しました");
   };
-  const addCat = () => {
+  const addCat = async () => {
     const name = catName.trim();
     if (!name) return ui.toast("カテゴリ名を入力してください", "error");
     if (data.categories.some((c) => c.kind === catKind && c.name === name && !c.archived)) return ui.toast("同じ名前のカテゴリがあります", "error");
-    const r = store.addCategory({ name, kind: catKind });
+    const r = await store.addCategory({ name, kind: catKind });
     if (!r.ok) return ui.toast(r.error, "error");
     setCatName("");
     ui.toast(`カテゴリ「${name}」を追加しました`);
   };
 
   // --- バックアップ ---
-  const exportBackup = () => {
+  const exportBackup = async () => {
     const now = new Date().toISOString();
     const b = buildBackup({ ...data, meta: { ...data.meta, lastBackupAt: now } }, now);
     const url = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: "application/json" }));
@@ -105,7 +105,7 @@ export default function SettingsPage() {
     a.click();
     // Safari はクリック直後に URL を無効にすると保存が始まらないことがあるため、少し待ってから片付ける
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
-    const r = store.commit((d) => ({ ...d, meta: { ...d.meta, lastBackupAt: now } }));
+    const r = await store.commit((d) => ({ ...d, meta: { ...d.meta, lastBackupAt: now } }));
     ui.toast(r.ok ? "バックアップの保存を始めました。ファイルが保存されたか確認してください" : `ファイルは書き出しましたが、書き出した日を記録できませんでした。${r.error}`, r.ok ? "ok" : "error");
   };
 
@@ -184,7 +184,7 @@ export default function SettingsPage() {
       // 足した記録が0件の取り込みは、履歴に残さない（取り消すものがないため）
       if (rec.added > 0) next = rec.data;
     }
-    const r = store.replaceAll(next, "家計簿の CSV から追加");
+    const r = await store.replaceAll(next, "家計簿の CSV から追加");
     if (!r.ok) return ui.toast(`${r.error}（今のデータは変更していません）`, "error");
     ui.toast(`${res.added}件を追加しました`);
     closeCsv();
@@ -235,7 +235,7 @@ export default function SettingsPage() {
     const res = applyRestore(store.data ?? data, preview.data, mode);
     if (!res.ok) return ui.toast(res.error, "error");
     // 1回の保存で反映（失敗時は元のまま）。前の状態は控えておく
-    const r = store.replaceAll(res.data, mode === "replace" ? "バックアップから置き換え" : "バックアップから追加");
+    const r = await store.replaceAll(res.data, mode === "replace" ? "バックアップから置き換え" : "バックアップから追加");
     if (!r.ok) return ui.toast(`${r.error.replace("保存できませんでした", "復元できませんでした")}（今のデータは変更していません）`, "error");
     ui.toast(mode === "replace" ? "バックアップから復元しました" : `${res.added}件を追加しました`);
     setPreview(null);
@@ -253,7 +253,7 @@ export default function SettingsPage() {
       ok: "取り消す",
     });
     if (!ok) return;
-    const r = store.undoLast();
+    const r = await store.undoLast();
     ui.toast(r.ok ? "直前の操作を取り消しました" : r.error, r.ok ? "ok" : "error");
   };
 
@@ -273,7 +273,7 @@ export default function SettingsPage() {
       danger: true,
     });
     if (!ok) return;
-    const r = store.wipeAll(emptyData());
+    const r = await store.wipeAll(emptyData());
     setWipeWord("");
     if (r.ok) ui.toast("この端末の記録をすべて削除しました");
     else ui.toast(r.error, "error");
@@ -328,8 +328,8 @@ export default function SettingsPage() {
                 <input
                   type="checkbox"
                   checked={data.prefs.home[t.key]}
-                  onChange={(e) => {
-                    const r = store.setHomePref(t.key, e.target.checked);
+                  onChange={async (e) => {
+                    const r = await store.setHomePref(t.key, e.target.checked);
                     if (!r.ok) ui.toast(r.error, "error");
                   }}
                   className="size-5 accent-[var(--brand)]"
@@ -397,11 +397,11 @@ export default function SettingsPage() {
                       )}
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={async () => {
                           const active = data.categories.filter((x) => x.kind === c.kind && !x.archived);
                           if (!c.archived && active.length <= 1) return ui.toast("最後のカテゴリは非表示にできません", "error");
                           if (c.archived && active.some((x) => x.name === c.name)) return ui.toast("同じ名前のカテゴリが表示中です。先にどちらかの名前を変えてください", "error");
-                          const r = store.setCategoryArchived(c.id, !c.archived);
+                          const r = await store.setCategoryArchived(c.id, !c.archived);
                           if (!r.ok) ui.toast(r.error, "error");
                         }}
                         className="min-h-10 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"

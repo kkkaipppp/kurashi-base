@@ -39,7 +39,7 @@ export default function InboxPage() {
     if (!ok) return;
     const r = recategorize(data, ids, toId, new Date().toISOString());
     if (!r.ok) return ui.toast(r.error, "error");
-    const s = store.replaceAll(r.next, `「${merchant}」の${ids.length}件のカテゴリを「${to.name}」に変える`);
+    const s = await store.replaceAll(r.next, `「${merchant}」の${ids.length}件のカテゴリを「${to.name}」に変える`);
     ui.toast(s.ok ? `${r.changed}件を「${to.name}」にしました` : s.error, s.ok ? "ok" : "error");
   };
   const cats = (type: "expense" | "income") => data.categories.filter((c) => c.kind === type && !c.archived);

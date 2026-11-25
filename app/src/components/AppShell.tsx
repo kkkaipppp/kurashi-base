@@ -70,9 +70,9 @@ function CorruptScreen() {
       </Button>
       <Button
         variant="danger"
-        onClick={() => {
+        onClick={async () => {
           if (!confirm("読み込めないデータを退避し、記録がない状態から始めます。実行しますか？")) return;
-          const r = s.resetCorrupt();
+          const r = await s.resetCorrupt();
           if (!r.ok) setMsg(r.error);
         }}
       >

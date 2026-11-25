@@ -21,9 +21,9 @@ export function EventActions({ ev, day, onClose }: { ev: CalendarEvent; day?: st
   const date = occurrenceKey(ev, day ?? (occursOn(ev, today) ? today : ev.startDate));
   const done = isDoneOn(ev, date);
   const repeating = !canShift(ev);
-  const apply = (fn: (e: CalendarEvent, ts: string) => CalendarEvent | null, msg: string) => {
+  const apply = async (fn: (e: CalendarEvent, ts: string) => CalendarEvent | null, msg: string) => {
     const ts = new Date().toISOString();
-    const r = store.commit((d) => ({ ...d, events: d.events.map((e) => (e.id === ev.id ? (fn(e, ts) ?? e) : e)) }));
+    const r = await store.commit((d) => ({ ...d, events: d.events.map((e) => (e.id === ev.id ? (fn(e, ts) ?? e) : e)) }));
     ui.toast(r.ok ? msg : r.error, r.ok ? "ok" : "error");
     return r.ok;
   };
@@ -36,16 +36,16 @@ export function EventActions({ ev, day, onClose }: { ev: CalendarEvent; day?: st
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="secondary"
-            onClick={() => {
-              if (apply((e, ts) => shiftEvent(e, 1, ts), "1日あとにしました")) onClose();
+            onClick={async () => {
+              if (await apply((e, ts) => shiftEvent(e, 1, ts), "1日あとにしました")) onClose();
             }}
           >
             明日へ延期
           </Button>
           <Button
             variant="secondary"
-            onClick={() => {
-              if (apply((e, ts) => shiftEvent(e, 7, ts), "1週間あとにしました")) onClose();
+            onClick={async () => {
+              if (await apply((e, ts) => shiftEvent(e, 7, ts), "1週間あとにしました")) onClose();
             }}
           >
             来週へ延期

@@ -98,7 +98,7 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
       danger: true,
     });
     if (!ok) return;
-    const r = store.deleteEvent(ev.id);
+    const r = await store.deleteEvent(ev.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("削除しました");
     onClose();
@@ -202,8 +202,8 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
                     <input
                       type="checkbox"
                       checked={i.done}
-                      onChange={() => {
-                        const r = store.toggleEventItem(ev.id, i.id);
+                      onChange={async () => {
+                        const r = await store.toggleEventItem(ev.id, i.id);
                         if (!r.ok) ui.toast(r.error, "error");
                       }}
                       className="size-5 accent-[var(--brand)]"
@@ -380,7 +380,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     if (ok) save(true);
   };
 
-  const save = (asNew = false) => {
+  const save = async (asNew = false) => {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
@@ -422,7 +422,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       };
       // undefined の項目は保存しない（JSON に残さない）
       for (const k of Object.keys(input) as (keyof typeof input)[]) if (input[k] === undefined) delete input[k];
-      const r = editing && !asNew ? store.updateEvent(editing.id, input, initialEventSnapshot.current) : store.addEvent(input);
+      const r = await (editing && !asNew ? store.updateEvent(editing.id, input, initialEventSnapshot.current) : store.addEvent(input));
       if (!r.ok) {
         setSaveError(r.error);
         return;
@@ -450,7 +450,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       danger: true,
     });
     if (!ok) return;
-    const r = store.deleteEvent(editing.id);
+    const r = await store.deleteEvent(editing.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("削除しました");
     onClose();

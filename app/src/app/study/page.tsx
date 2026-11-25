@@ -108,8 +108,8 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
   const exam =
     st.daysToExam === null ? "試験日 未定" : st.daysToExam > 0 ? `試験まであと${st.daysToExam}日` : st.daysToExam === 0 ? "今日が試験日" : "試験日を過ぎました";
 
-  const quick = (min: number) => {
-    const r = store.addItem("studyLogs", { subjectId: s.id, date: today, minutes: min, note: "" });
+  const quick = async (min: number) => {
+    const r = await store.addItem("studyLogs", { subjectId: s.id, date: today, minutes: min, note: "" });
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast(`${s.name}：${formatMinutes(min)}を記録しました`);
   };
@@ -282,7 +282,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
     setErrors((e) => ({ ...e, book: "" }));
   };
 
-  const save = () => {
+  const save = async () => {
     if (lock.current) return;
     const e: Record<string, string> = {};
     if (!f.name.trim()) e.name = "資格の名前を入力するか、候補から選んでください";
@@ -300,7 +300,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
       ...(f.catalogId && f.name.trim() === cert?.name ? { catalogId: f.catalogId } : {}),
       ...(f.books.length ? { books: f.books } : {}),
     };
-    const r = editId.current ? store.replaceItem("studySubjects", editId.current, item, editSnapshot.current) : store.addItem("studySubjects", item);
+    const r = await (editId.current ? store.replaceItem("studySubjects", editId.current, item, editSnapshot.current) : store.addItem("studySubjects", item));
     if (!r.ok) {
       lock.current = false;
       return ui.toast(r.error, "error");
@@ -319,7 +319,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
       danger: true,
     });
     if (!ok) return;
-    const r = store.removeStudySubject(editing.id);
+    const r = await store.removeStudySubject(editing.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("削除しました");
     onClose();

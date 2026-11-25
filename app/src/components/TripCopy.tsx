@@ -19,11 +19,11 @@ export function TripCopy({ trip, onClose, onCreated }: { trip: Trip; onClose: ()
   const ui = useUI();
   const [start, setStart] = useState(todayStr());
   const n = data.events.filter((e) => e.tripId === trip.id).length;
-  const go = () => {
+  const go = async () => {
     const c = cloneTrip(store.data ?? data, trip.id, start, new Date().toISOString());
     if (!c.ok) return ui.toast(c.error, "error");
     // 取り消しの控えを残して保存する（設定の「直前の操作を取り消す」で戻せる）
-    const r = store.replaceAll(c.next, `旅行「${trip.title}」を元に新しい旅行を作る`);
+    const r = await store.replaceAll(c.next, `旅行「${trip.title}」を元に新しい旅行を作る`);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast(`「${trip.title}」を元に、行程${c.events}件の新しい旅行を作りました`);
     onCreated(c.tripId);

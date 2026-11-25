@@ -26,7 +26,7 @@ export function ImportHistoryCard() {
       danger: true,
     });
     if (!ok) return;
-    const s = store.replaceAll(r.result.next, `「${label}」の取り込みを取り消す`);
+    const s = await store.replaceAll(r.result.next, `「${label}」の取り込みを取り消す`);
     ui.toast(s.ok ? `${r.result.removed}件を取り消しました${r.result.kept ? `（${r.result.kept}件は残しました）` : ""}` : s.error, s.ok ? "ok" : "error");
   };
   return (

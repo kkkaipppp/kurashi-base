@@ -11,11 +11,11 @@ export function MenuVisibilityCard() {
   const store = useStore();
   const ui = useUI();
   const hidden = new Set(cleanMenuHidden(data.prefs.menuHidden));
-  const toggle = (href: string) => {
+  const toggle = async (href: string) => {
     const next = new Set(hidden);
     if (next.has(href)) next.delete(href);
     else next.add(href);
-    const r = store.setMenuHidden([...next]);
+    const r = await store.setMenuHidden([...next]);
     if (!r.ok) ui.toast(r.error, "error");
   };
   return (

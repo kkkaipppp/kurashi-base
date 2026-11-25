@@ -256,7 +256,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           return;
         }
       }
-      const r = editing && !asNew ? store.updateTx(editing.id, input, editSnapshot.current) : store.addTx(input);
+      const r = await (editing && !asNew ? store.updateTx(editing.id, input, editSnapshot.current) : store.addTx(input));
       if (!r.ok) {
         setSaveError(r.error); // 入力は保持したまま
         return;
@@ -295,7 +295,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
       danger: true,
     });
     if (!ok) return;
-    const r = store.deleteTx(editing.id);
+    const r = await store.deleteTx(editing.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("削除しました");
     onClose();
@@ -641,13 +641,13 @@ function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
       </div>
     );
   const parsed = parseAmount(amt);
-  const submit = () => {
+  const submit = async () => {
     const n = parsed.ok ? parsed.value : NaN;
     const r = applyRefund(data, tx.id, n, date, newId("tx"), new Date().toISOString());
     if (!r.ok) return ui.toast(r.error, "error");
     const ts = new Date().toISOString();
     const rid = newId("tx");
-    const res = store.commit((d) => {
+    const res = await store.commit((d) => {
       const x = applyRefund(d, tx.id, n, date, rid, ts);
       return x.ok ? x.next : d;
     });

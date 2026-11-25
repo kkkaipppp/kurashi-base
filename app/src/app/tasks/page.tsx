@@ -22,10 +22,10 @@ function DoneToggle({ task }: { task: Task }) {
       role="checkbox"
       aria-checked={task.done}
       aria-label={task.done ? `「${task.title}」を未完了に戻す` : `「${task.title}」を完了にする`}
-      onClick={() => {
+      onClick={async () => {
         // 予定にしたタスクは、予定の完了も同じに揃える
         const ts = new Date().toISOString();
-        const r = store.commit((d) => setTaskDone(d, task.id, !task.done, ts));
+        const r = await store.commit((d) => setTaskDone(d, task.id, !task.done, ts));
         if (!r.ok) ui.toast(r.error, "error");
       }}
       className="inline-flex size-11 shrink-0 items-center justify-center"
@@ -51,9 +51,9 @@ function ToEventButton({ task }: { task: Task }) {
     <button
       type="button"
       aria-label={`「${task.title}」をカレンダーに入れる`}
-      onClick={() => {
+      onClick={async () => {
         const ts = new Date().toISOString();
-        const r = store.commit((d) => makeEventFromTask(d, task.id, newId("ev"), todayStr(), ts));
+        const r = await store.commit((d) => makeEventFromTask(d, task.id, newId("ev"), todayStr(), ts));
         ui.toast(r.ok ? "カレンダーに入れました" : r.error, r.ok ? "ok" : "error");
       }}
       className="min-h-11 rounded-lg px-2 text-[12px] font-semibold text-brand hover:bg-brand-soft"

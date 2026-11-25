@@ -429,8 +429,8 @@ export default function HomePage() {
           layout={editLayout}
           onChange={setEditLayout}
           onCancel={() => setEditLayout(null)}
-          onSave={(l) => {
-            const r = saveLayout(store, l);
+          onSave={async (l) => {
+            const r = await saveLayout(store, l);
             if (!r.ok) return ui.toast(r.error, "error");
             setEditLayout(null);
             ui.toast("ホームの並びを保存しました");
