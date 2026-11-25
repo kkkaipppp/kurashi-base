@@ -12,7 +12,8 @@ import type { SaveResult } from "@/lib/storage";
 
 // タスク・資産・契約・健康・書類・生活記録などで共通に使う「一覧＋入力シート」
 
-export type Draft = Record<string, string | boolean>;
+import type { Draft } from "@/lib/draft";
+export type { Draft };
 
 export interface FieldDef {
   name: string;

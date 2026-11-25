@@ -1,4 +1,3 @@
-import type { LifeChange } from "./lifeChange";
 // 暮らしベース データモデル（schemaVersion 2。v1 からは schema.ts の migrate で移行）
 // 日付は端末ローカルの "YYYY-MM-DD"、時刻は "HH:mm" の文字列で持つ（UTC変換しない）。
 // 金額は日本円の整数（最小単位=1円）。収支の区別は type で行い、amount は常に正の整数。
@@ -321,4 +320,22 @@ export const PAYMENT_METHODS: { id: string; label: string }[] = [
 
 export function paymentLabel(id: string): string {
   return PAYMENT_METHODS.find((p) => p.id === id)?.label ?? "その他";
+}
+
+/** 生活変化の計画（NEXT v21 B03。計算は lib/lifeChange.ts） */
+export type LifeItem =
+  | { kind: "recurringAmount"; recurringId: string; name: string; before: number; after: number; applied?: boolean }
+  | { kind: "recurringStop"; recurringId: string; name: string; applied?: boolean }
+  | { kind: "budget"; before: number | null; after: number | null; applied?: boolean };
+
+export interface LifeChange {
+  id: string;
+  title: string;
+  /** 適用日（この日から変える予定の日） */
+  date: string;
+  items: LifeItem[];
+  status: "planned" | "applied" | "undone";
+  createdAt: string;
+  appliedAt?: string;
+  undoneAt?: string;
 }
