@@ -314,7 +314,7 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
     onClose();
   };
 
-  const save = () => {
+  const save = async () => {
     if (lock.current) return;
     const e: Record<string, string> = {};
     if (!f.title.trim()) e.title = "旅行の名前を入力してください";
@@ -328,7 +328,7 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
     if (Object.keys(e).length) return setErrors(e);
     lock.current = true;
     const input: TripInput = { title: f.title.trim(), startDate: f.startDate, endDate: f.endDate, destination: f.destination.trim(), budget, note: f.note.trim() };
-    const r = editId.current ? store.updateTrip(editId.current, input, editSnapshot.current) : store.addTrip(input);
+    const r = await (editId.current ? store.updateTrip(editId.current, input, editSnapshot.current) : store.addTrip(input));
     if (!r.ok) {
       lock.current = false;
       return setSaveError(r.error);
@@ -347,7 +347,7 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
       danger: true,
     });
     if (!ok) return;
-    const r = store.deleteTrip(editing.id);
+    const r = await store.deleteTrip(editing.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("旅行を削除しました");
     onDeleted();
@@ -427,7 +427,7 @@ function TripSpending({ trip, linked, cands }: { trip: Trip; linked: import("@/l
       ok: "つなぐ",
     });
     if (!ok) return;
-    const r = store.setTxTrip(cands.map((t) => t.id), trip.id);
+    const r = await store.setTxTrip(cands.map((t) => t.id), trip.id);
     ui.toast(r.ok ? `${cands.length}件をつなぎました` : r.error, r.ok ? "ok" : "error");
   };
   return (

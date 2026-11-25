@@ -8,13 +8,18 @@ const src = (p: string) => readFileSync(join(__dirname, "..", "src", p), "utf8")
 const store = src("lib/store.tsx");
 // 型の宣言ではなく、useMemo<Store> の中の実装の部分を見る
 const impl = store.slice(store.indexOf("useMemo<Store>"));
-const fnBody = (name: string, next: string) => impl.slice(impl.indexOf(`${name}: (`), impl.indexOf(`${next}: (`, impl.indexOf(`${name}: (`)));
+const fnBody = (name: string, next: string) => impl.slice(impl.indexOf(`${name}: (`), impl.indexOf(`${next}: `, impl.indexOf(`${name}: (`) + 1));
 
 describe("すべて削除は、控え・退避データまで消して確かめる道を通る（B07・B08）", () => {
-  it("store.wipeAll が wipeAllAppData を使い、本体を空で上書きして控えを消すだけの古い道を使わない", () => {
+  // o11 A06：保存は Repository を通る。store.wipeAll → repo.wipe → （localStorage の版）wipeAllAppData
+  it("store.wipeAll が repo.wipe を通り、localStorage の版は wipeAllAppData を使う（控えを消すだけの古い道を使わない）", () => {
     const body = fnBody("wipeAll", "undoInfo");
-    expect(body).toContain("wipeAllAppData");
+    expect(body).toContain("core.wipe(");
+    expect(src("lib/storeCore.ts")).toContain("this.repo.wipe(");
     expect(body).not.toContain("clearUndo()");
+    const repo = src("lib/repository.ts");
+    const wipe = repo.slice(repo.indexOf("async wipe("), repo.indexOf("async quarantine("));
+    expect(wipe).toContain("wipeAllAppData");
   });
 });
 
@@ -28,12 +33,13 @@ describe("同じ記録を2つのタブで編集しても、古い入力で黙っ
     ["replaceItem", "removeItem"],
   ])("store.%s は、編集を始めたときの内容と今の内容を比べてから保存する", (name, next) => {
     const body = fnBody(name, next);
-    expect(body).toMatch(/staleCheck\(dataRef\.current/);
+    // o11 A06：保存が非同期になったので、確かめてから保存する道は guarded(...) に（中身は同じ staleRecordError）
+    expect(body).toMatch(/guarded\(\(d\) =>/); // 列の中で、最新のデータ（d）に対して確かめる（o11 A06 点検 中-2）
   });
 
-  it("その確かめ（staleCheck）は staleRecordError で今の記録と比べる", () => {
-    const body = store.slice(store.indexOf("const staleCheck"), store.indexOf("const staleCheck") + 400);
-    expect(body).toContain("staleRecordError(list, id, snapshot)");
+  it("その確かめ（guarded）は staleRecordError で今の記録と比べる", () => {
+    const body = store.slice(store.indexOf("const guarded"), store.indexOf("const guarded") + 500);
+    expect(body).toContain("staleRecordError(pick(cur), id, snapshot)"); // 列の中の最新のデータ（cur）に対して比べる（o11 A06 点検 中-2）
   });
 
   it("staleRecordError：同じなら保存してよい、変わっていれば・消えていれば保存しない", async () => {

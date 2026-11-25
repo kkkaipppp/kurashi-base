@@ -35,7 +35,7 @@ export function CategoryTools({ kind }: { kind: TxType }) {
       ok: "まとめる",
     });
     if (!ok) return;
-    const r = store.mergeCategory(fromCat.id, toCat.id);
+    const r = await store.mergeCategory(fromCat.id, toCat.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast(`${r.moved ?? 0}件を「${toCat.name}」に移しました`);
     setFrom("");
@@ -58,9 +58,9 @@ export function CategoryTools({ kind }: { kind: TxType }) {
                 <select
                   aria-label={`${c.name}の数え方`}
                   value={c.role ?? ""}
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const v = e.target.value;
-                    const r = store.setCategoryRole(c.id, v === "life" || v === "invest" ? v : null);
+                    const r = await store.setCategoryRole(c.id, v === "life" || v === "invest" ? v : null);
                     if (!r.ok) ui.toast(r.error, "error");
                   }}
                   className={`${inputCls} w-auto shrink-0`}

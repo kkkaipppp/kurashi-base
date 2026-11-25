@@ -117,7 +117,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
   const [wasEditing] = useState(Boolean(cur)); // 見出し用（消されても「編集」のまま）
   const lock = useRef(false);
 
-  const save = () => {
+  const save = async () => {
     if (lock.current) return;
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = "名前を入力してください";
@@ -139,7 +139,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
       paymentMethod: pay,
       active,
     };
-    const r = editId.current ? store.updateRecurring(editId.current, input, editSnapshot.current) : store.addRecurring(input);
+    const r = await (editId.current ? store.updateRecurring(editId.current, input, editSnapshot.current) : store.addRecurring(input));
     if (!r.ok) {
       lock.current = false;
       return ui.toast(r.error, "error");
@@ -151,7 +151,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
   const remove = async () => {
     if (!cur) return;
     if (!(await ui.confirm({ title: `「${cur.name}」を削除しますか？`, body: "これまでに記録した支出は残ります。", ok: "削除する", danger: true }))) return;
-    const r = store.deleteRecurring(cur.id);
+    const r = await store.deleteRecurring(cur.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("削除しました");
     onClose();

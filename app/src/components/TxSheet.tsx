@@ -97,7 +97,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(base);
 
-  // 書きかけの控え（100点化の指示 B）。新しい入力は targetId=null、編集は記録の ID。
+  // 下書きの控え（100点化の指示 B）。新しい入力は targetId=null、編集は記録の ID。
   // 画像・固定費からの記録は1回きりなので控えない
   const draftTarget = editing?.id ?? null;
   const keepDraft = req.mode === "edit" || (!req.previewUrl && !req.recurringId);
@@ -107,7 +107,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   useEffect(() => {
     if (!keepDraft || saved.current) return;
-    // 前の書きかけに「続きから／捨てる」を答えるまでは控えない（答える前に打った分で、前の書きかけを消さない）
+    // 前の下書きに「続きから／捨てる」を答えるまでは控えない（答える前に打った分で、前の下書きを消さない）
     if (pending && !resumeAsked) return;
      
     if (dirty) setDraftSaveFailed(!saveSheetDraft("tx", draftTarget, draft, undefined, undefined, editSnapshot.current));
@@ -115,18 +115,18 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   }, [draft, dirty, resumeAsked]);
   const resume = async () => {
     if (!pending) return setResumeAsked(true);
-    // 書きかけを始めたあとに、元の記録が変わっていたら（復元・別の画面での変更など）、知らせてから選んでもらう
+    // 下書きを始めたあとに、元の記録が変わっていたら（復元・別の画面での変更など）、知らせてから選んでもらう
     if (pending.base && editSnapshot.current && pending.base !== editSnapshot.current) {
       const ok = await ui.confirm({
-        title: "元の記録が、書きかけのあとに変わっています",
-        body: "続きからにすると、今の記録の中身が書きかけの中身に置き換わります（保存するまでは変わりません）。今の記録のまま直す場合は「今の記録を使う」を選んでください（書きかけは捨てます）。",
-        ok: "書きかけを使う",
+        title: "元の記録が、下書きのあとに変わっています",
+        body: "続きからにすると、今の記録の中身が下書きの中身に置き換わります（保存するまでは変わりません）。今の記録のまま直す場合は「今の記録を使う」を選んでください（下書きは捨てます）。",
+        ok: "下書きを使う",
         cancel: "今の記録を使う",
       });
       if (!ok) return discardPending();
     }
     // 答える前に打った分があれば、それに置き換わることを確かめる
-    if (dirty && !(await ui.confirm({ title: "書きかけに置き換えますか？", body: "今この画面で打った分は消えて、書きかけの中身になります。", ok: "置き換える" }))) return;
+    if (dirty && !(await ui.confirm({ title: "下書きに置き換えますか？", body: "今この画面で打った分は消えて、下書きの中身になります。", ok: "置き換える" }))) return;
     setDraft({ ...pending.draft });
     resumed.current = true;
     setResumeAsked(true);
@@ -177,8 +177,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (busy) return;
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true })))
       return;
-    // 続きからにしたあと元に戻して閉じたときも、書きかけは片付ける（次に開いたときにまた出さない）
-    // 前の書きかけに答えていないときは、その書きかけは消さない（点検役の指摘）
+    // 続きからにしたあと元に戻して閉じたときも、下書きは片付ける（次に開いたときにまた出さない）
+    // 前の下書きに答えていないときは、その下書きは消さない（点検役の指摘）
     if ((dirty || resumed.current) && !(pending && !resumeAsked)) clearSheetDraft("tx", draftTarget);
     onClose();
   };
@@ -207,11 +207,17 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         return;
       }
       // 返金のある支出の金額は直せない（返金の記録から計算し直す仕組みのため）。直すときは、返金の記録を消して（元に戻る）から
-      if (editing?.refundGross !== undefined && !asNew && v.amount !== editing.amount) {
-        setSaveError("返金のある支出の金額は、直せません。返金の記録を消す（元に戻ります）と、直せるようになります");
-        return;
+      if (editing?.refundGross !== undefined && !asNew) {
+        const wasCount = editing.countAs === "transfer" && editing.transferKind === "card" ? "transfer-card" : editing.countAs === "transfer" ? "" : (editing.countAs ?? "");
+        const nowCount = draft.countAs === "transfer" && editing.countAs === "transfer" ? "" : (draft.countAs ?? "");
+        // 全額返金した支出は、数え方が「収支に数えない」になっている（返金がそうした）。その表示のままなら、変えていない扱い
+        const countChanged = editing.countAs === "transfer" ? draft.countAs !== "transfer" : nowCount !== wasCount;
+        if (v.amount !== editing.amount || draft.type !== editing.type || countChanged || draft.paymentMethod !== editing.paymentMethod) {
+          setSaveError("返金のある支出の、金額・種類・数え方・支払い方法は、直せません。返金の記録を消す（元に戻ります）と、直せるようになります");
+          return;
+        }
       }
-      // 手でつないだ固定費は、保存の直前にも「今も候補か」を確かめる（書きかけの再開・金額の変更で古い指定が残らないように）
+      // 手でつないだ固定費は、保存の直前にも「今も候補か」を確かめる（下書きの再開・金額の変更で古い指定が残らないように）
       const linkOk =
         draft.type === "expense" && draft.linkRecurringId && fixedCandidates({ type: draft.type, categoryId: draft.categoryId, amount: v.amount, merchant: draft.merchant, date: draft.date }, data.recurring).some((r) => r.id === draft.linkRecurringId)
           ? draft.linkRecurringId
@@ -250,12 +256,12 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           return;
         }
       }
-      const r = editing && !asNew ? store.updateTx(editing.id, input, editSnapshot.current) : store.addTx(input);
+      const r = await (editing && !asNew ? store.updateTx(editing.id, input, editSnapshot.current) : store.addTx(input));
       if (!r.ok) {
         setSaveError(r.error); // 入力は保持したまま
         return;
       }
-      // 保存がうまくいったときだけ下書きを消す（前の書きかけに答えていないときは、それは残す）
+      // 保存がうまくいったときだけ下書きを消す（前の下書きに答えていないときは、それは残す）
       if (!(pending && !resumeAsked) || asNew) clearSheetDraft("tx", draftTarget);
       ui.toast(asNew ? "新しい記録として保存しました" : editing ? "保存しました" : `${draft.type === "expense" ? "支出" : "収入"}を追加しました`);
       if (keepOpen && canContinue) {
@@ -284,12 +290,12 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (!editing) return;
     const ok = await ui.confirm({
       title: `この${editing.type === "expense" ? "支出" : "収入"}を削除しますか？`,
-      body: `${formatDateJa(editing.date)} ${formatYen(editing.amount)}（${catName(editing.categoryId)}）\n削除すると元に戻せません。`,
+      body: `${formatDateJa(editing.date)} ${formatYen(editing.amount)}（${catName(editing.categoryId)}）\n${refundedTotal(data, editing.id) > 0 ? "この支出の返金の記録も、一緒に削除します。\n" : ""}削除すると元に戻せません。`,
       ok: "削除する",
       danger: true,
     });
     if (!ok) return;
-    const r = store.deleteTx(editing.id);
+    const r = await store.deleteTx(editing.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("削除しました");
     onClose();
@@ -333,7 +339,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     >
       {pending && !resumeAsked && (
         <div className="mb-3 rounded-xl border border-brand/30 bg-brand-soft p-3" role="status">
-          <p className="text-[14px] font-semibold">{draftTimeLabel(pending.savedAt)} の書きかけがあります</p>
+          <p className="text-[14px] font-semibold">{draftTimeLabel(pending.savedAt)} の下書きがあります</p>
           <p className="num mt-0.5 text-[12px] text-ink-2">
             {pending.draft.amount ? `${pending.draft.amount}円 ` : ""}
             {pending.draft.merchant}
@@ -346,7 +352,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           </div>
         </div>
       )}
-      {draftSaveFailed && <p className="mb-2 text-[12px] text-warn">書きかけを端末に控えられませんでした（保存すれば記録は残ります）。</p>}
+      {draftSaveFailed && <p className="mb-2 text-[12px] text-warn">下書きを保存できませんでした。入力はこの画面に残っています。記録を保存してください。</p>}
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -585,7 +591,7 @@ function TxExtras({
                 </label>
               ) : null;
             })()}
-            <p className="mt-1 text-[12px] text-ink-3">つなぐと、その固定費の次の支払日が進み、「まだ記録していない固定費」から外れます（二重に数えません）。「一部だけの支払い」にすると、次の支払日は進まず、残りだけが未払いのまま残ります。</p>
+            <p className="mt-1 text-[12px] text-ink-3">全額の支払いとして登録すると、次の支払日が更新されます。一部だけ支払った場合は、残額が未払いとして残ります。</p>
           </div>
         )
       )}
@@ -622,6 +628,8 @@ function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const left = (tx.refundGross ?? tx.amount) - refundedTotal(data, tx.id); // 返金できる残り（元の金額 − これまでの返金）
   const [amt, setAmt] = useState(String(left > 0 ? left : tx.amount));
+  // 二重押しで返金が2件にならないように（保存の完了を待つ間は押せない。o11 A06 点検 低-1）
+  const lockRef = useRef(false);
   const [date, setDate] = useState(todayStr());
   const already = refundedTotal(data, tx.id);
   if (tx.countAs === "transfer") return already > 0 ? <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">全額が返金されています（{formatYen(already)}）。</p> : null;
@@ -635,13 +643,22 @@ function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
       </div>
     );
   const parsed = parseAmount(amt);
-  const submit = () => {
+  const submit = async () => {
+    if (lockRef.current) return;
+    lockRef.current = true;
+    try {
+      await submitOnce();
+    } finally {
+      lockRef.current = false;
+    }
+  };
+  const submitOnce = async () => {
     const n = parsed.ok ? parsed.value : NaN;
     const r = applyRefund(data, tx.id, n, date, newId("tx"), new Date().toISOString());
     if (!r.ok) return ui.toast(r.error, "error");
     const ts = new Date().toISOString();
     const rid = newId("tx");
-    const res = store.commit((d) => {
+    const res = await store.commit((d) => {
       const x = applyRefund(d, tx.id, n, date, rid, ts);
       return x.ok ? x.next : d;
     });

@@ -10,16 +10,21 @@ import { budgetSpent } from "@/lib/ledger";
 import { cycleLabel } from "@/lib/recurring";
 import { useData } from "@/lib/store";
 import dynamic from "next/dynamic";
+import { FEATURES } from "@/lib/edition";
 
 // 週・年の振り返りは自分用（personal）だけ（lib/edition.ts の periodReport）。
 // 組み立てるときに決まる値で分けるので、公開版（public）には週・年の画面のコードが入らない
-const PERIOD_REPORT = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+// 週・年の振り返り：2026-11-25 から、自分用と公開版（友達用）の両方で出す（FEATURE_EDITIONS.periodReport）
+const PERIOD_REPORT = FEATURES.periodReport;
+// 投資を除いた額で予算と比べるのは、自分用だけ（公開版は今までどおり、すべての支出で比べる。lib/ledger.ts の budgetSpent）
+const LIFE_BUDGET = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const WeekReport = PERIOD_REPORT ? dynamic(() => import("@/components/PeriodReport").then((m) => m.WeekReport)) : () => null;
 const YearReport = PERIOD_REPORT ? dynamic(() => import("@/components/PeriodReport").then((m) => m.YearReport)) : () => null;
 // 月の「固定費と変動費・生活と投資・増えたカテゴリ」も自分用だけ（レビュー o1 の P11、家計の機能 2・3）
 // 週・年とは別に公開を決められるよう、自分の条件にする（今はどちらも自分用だけ）
 const MONTH_BREAKDOWN = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
-const ForecastCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/ForecastCard").then((m) => m.ForecastCard)) : () => null;
+// 月末の見込み：2026-11-25 から公開版でも出す（FEATURE_EDITIONS.forecast）
+const ForecastCard = FEATURES.forecast ? dynamic(() => import("@/components/ForecastCard").then((m) => m.ForecastCard)) : () => null;
 const CashBalanceCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/CashBalanceCard").then((m) => m.CashBalanceCard)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
 
@@ -152,7 +157,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
                 <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-label="予算の使用率">
                   <div className={`h-full rounded-full ${pct > 100 ? "bg-expense" : "bg-brand"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                 </div>
-                <p className="num mt-1 text-right text-[12px] text-ink-3">予算の{pct}%{PERIOD_REPORT ? "（投資を除く）" : ""}</p>
+                <p className="num mt-1 text-right text-[12px] text-ink-3">予算の{pct}%{LIFE_BUDGET ? "（投資を除く）" : ""}</p>
               </div>
             )}
             <dl className="num mt-3 grid grid-cols-3 gap-2 text-center">

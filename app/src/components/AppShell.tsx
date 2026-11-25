@@ -68,13 +68,13 @@ function CorruptScreen() {
   return (
     <StorageProblem title="保存データを読み込めません" body={`${s.error ?? ""}。データは削除していません。`}>
       <Button variant="secondary" onClick={download}>
-        壊れたデータをファイルに保存
+        読み込めないデータをファイルに保存
       </Button>
       <Button
         variant="danger"
-        onClick={() => {
-          if (!confirm("壊れたデータを別の場所に移して、空の状態から始めます。よろしいですか？")) return;
-          const r = s.resetCorrupt();
+        onClick={async () => {
+          if (!confirm("読み込めないデータを退避し、記録がない状態から始めます。実行しますか？")) return;
+          const r = await s.resetCorrupt();
           if (!r.ok) setMsg(r.error);
         }}
       >
@@ -108,7 +108,7 @@ function BottomNav() {
         key={n.href}
         href={n.href}
         aria-current={active ? "page" : undefined}
-        className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ${active ? "text-brand" : "text-ink-3"}`}
+        className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-semibold ${active ? "text-brand" : "text-ink-3"}`}
       >
         <n.Icon className="size-6" />
         {n.label}

@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f6f4ef;
+  --logo-ink: #0b2545; /* ブランドのネイビー（ロゴの文字だけに使う） */
+  --surface: #ffffff;
+  --surface-2: #f1eee7;
+  --ink: #1f2421;
+  --ink-2: #5b625d;
+  --ink-3: #626963;
+  --line: #e4e0d6;
+  --brand: #2f6f5e;
+  --brand-ink: #ffffff;
+  --brand-soft: #e3efe9;
+  --expense: #b4503c;
+  --expense-soft: #f8e6e1;
+  --income: #2f6f9e;
+  --income-soft: #e2edf6;
+  --event: #7a5ab3;
+  --event-soft: #eee8f7;
+  --warn: #9a6a00;
+  --warn-soft: #fbf1d6;
+  --danger: #b3261e;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-expense: var(--expense);
+  --color-expense-soft: var(--expense-soft);
+  --color-income: var(--income);
+  --color-income-soft: var(--income-soft);
+  --color-event: var(--event);
+  --color-event-soft: var(--event-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --font-sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand) 60%, transparent);
+  outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px; /* iOS の自動ズーム防止 */
+}
+
+/* iOS Safari の日付・時刻欄は中身の幅より縮まず、2列のときに隣へはみ出す。枠の幅に収める */
+input[type="date"],
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  display: block;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+
+/* o10: motion preference; do not change business logic. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

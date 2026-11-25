@@ -31,7 +31,7 @@ export function monthLedger(data: AppData, month: string, today: string): MonthL
   const budget = data.budget.monthly ?? null;
   // 投資の固定費（積立など）は、自由に使える残りから引かない（生活費の予算と比べる額に入れていないため）
   const cats = categoryMap(data);
-  const a = dailyAllowance(budget, b.lifeExpense, data.recurring.filter((r) => !categoryIsInvest(cats.get(r.categoryId))), today);
+  const a = month === today.slice(0, 7) ? dailyAllowance(budget, b.lifeExpense, data.recurring.filter((r) => !categoryIsInvest(cats.get(r.categoryId))), today) : null;
   return {
     budget,
     lifeExpense: b.lifeExpense,

@@ -57,9 +57,9 @@ export default function LifePage() {
   const impact = totalMonthlyImpact(data, { items });
   const canSave = title.trim() !== "" && items.length > 0 && problems.length === 0;
 
-  const save = () => {
+  const save = async () => {
     const c: LifeChange = { id: newId("life"), title: title.trim().slice(0, 40), date, items, status: "planned", createdAt: new Date().toISOString() };
-    const r = store.commit((d) => addLifeChange(d, c));
+    const r = await store.commit((d) => addLifeChange(d, c));
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("計画として残しました（まだ変えていません）");
     setTitle("");
@@ -74,7 +74,7 @@ export default function LifePage() {
     const ts = new Date().toISOString();
     let applied = 0;
     let skipped = 0;
-    const r = store.commit((d) => {
+    const r = await store.commit((d) => {
       const x = applyLifeChange(d, c.id, ts);
       applied = x.applied;
       skipped = x.skipped;
@@ -86,13 +86,13 @@ export default function LifePage() {
   const undo = async (c: LifeChange) => {
     const ok = await ui.confirm({ title: `「${c.title}」を取り消しますか？`, body: "反映した分を、元に戻します（そのあとに自分で変えた項目は、そのままです）。履歴は残ります。", ok: "取り消す" });
     if (!ok) return;
-    const r = store.commit((d) => undoLifeChange(d, c.id, new Date().toISOString()));
+    const r = await store.commit((d) => undoLifeChange(d, c.id, new Date().toISOString()));
     ui.toast(r.ok ? "取り消しました" : r.error, r.ok ? "ok" : "error");
   };
   const remove = async (c: LifeChange) => {
     const ok = await ui.confirm({ title: `「${c.title}」の計画を消しますか？`, body: "まだ反映していない計画だけが消えます。", ok: "消す", danger: true });
     if (!ok) return;
-    const r = store.commit((d) => removePlanned(d, c.id));
+    const r = await store.commit((d) => removePlanned(d, c.id));
     ui.toast(r.ok ? "消しました" : r.error, r.ok ? "ok" : "error");
   };
 

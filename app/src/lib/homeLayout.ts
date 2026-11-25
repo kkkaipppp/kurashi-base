@@ -70,11 +70,11 @@ export function toggleCard(l: LayoutDraft, id: HomeCardId): LayoutDraft {
 }
 
 type LayoutStore = {
-  setHomeLayout: (order: string[], hidden: string[], flags: { nextRecurring: boolean; needsReview: boolean }) => SaveResult;
+  setHomeLayout: (order: string[], hidden: string[], flags: { nextRecurring: boolean; needsReview: boolean }) => Promise<SaveResult>;
 };
 
 /** 並びを保存する。「次の固定費」「確認したいこと」は今までの設定に書く（設定画面のオン・オフと食い違わない） */
-export function saveLayout(store: LayoutStore, l: LayoutDraft): SaveResult {
+export function saveLayout(store: LayoutStore, l: LayoutDraft): Promise<SaveResult> {
   // 1回の保存で書く（途中で失敗して一部だけ変わることがないように）
   return store.setHomeLayout(
     l.order,

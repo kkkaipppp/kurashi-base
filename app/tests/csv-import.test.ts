@@ -78,7 +78,7 @@ describe("家計簿の CSV の取り込み（Web 版、2026-11-24 平尾さん�
   it("設定の画面に「家計簿の CSV を取り込む」がある", () => {
     const s = readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8");
     expect(s).toContain("家計簿の CSV を取り込む");
-    expect(s).toContain('store.replaceAll(next, "家計簿の CSV から追加")');
+    expect(s).toContain('store.replaceAll(next, "家計簿の CSV から追加", base)'); // 作るときのデータ（base）を渡す（o11 A06 点検 中-1）
   });
 });
 

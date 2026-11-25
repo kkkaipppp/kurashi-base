@@ -69,3 +69,8 @@ describe("Googleカレンダーへ渡す内容（点検役の指摘：メモを�
     expect(u.searchParams.has("details")).toBe(false);
   });
 });
+
+it("認証情報付きの外部URLを拒否する", () => {
+  expect(safeExternalLink("https://trusted.example@other.example/")).toBeNull();
+  expect(safeExternalLink("https://user:pass@example.com/")).toBeNull();
+});

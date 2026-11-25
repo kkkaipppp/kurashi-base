@@ -21,7 +21,7 @@ export function Button({
     <button
       type="button"
       {...p}
-      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-[15px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-base font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
     />
   );
 }
@@ -33,8 +33,8 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-2 flex min-h-8 items-center justify-between">
-      <h2 className="text-[15px] font-bold text-ink">{children}</h2>
+    <div className="mb-2 flex min-h-8 flex-wrap items-center justify-between gap-2">
+      <h2 className="text-[17px] font-bold text-ink">{children}</h2>
       {action}
     </div>
   );
@@ -58,17 +58,17 @@ export function Field({
 }) {
   return (
     <div className="min-w-0 space-y-1">
-      <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[13px] font-semibold text-ink-2">
+      <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[14px] font-semibold text-ink-2">
         {label}
-        {optional && <span className="rounded bg-surface-2 px-1 py-px text-[10px] font-medium text-ink-3">任意</span>}
+        {optional && <span className="rounded bg-surface-2 px-1 py-px text-[12px] font-medium text-ink-3">任意</span>}
       </label>
       {children}
       {error ? (
-        <p id={`${htmlFor}-error`} role="alert" className="text-[13px] font-medium text-danger">
+        <p id={`${htmlFor}-error`} role="alert" className="text-[14px] font-medium text-danger">
           {error}
         </p>
       ) : hint ? (
-        <p className="text-[12px] text-ink-3">{hint}</p>
+        <p className="text-[13px] text-ink-3">{hint}</p>
       ) : null}
     </div>
   );
@@ -100,8 +100,8 @@ export function Empty({ children, action }: { children: ReactNode; action?: Reac
 
 export function DevBadge() {
   // 自分用（personal）の版は、公開版と見分けられるように「自分用」と出す
-  if (IS_PERSONAL) return <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-semibold text-brand">自分用</span>;
-  return <span className="rounded-full bg-warn-soft px-2 py-0.5 text-[11px] font-semibold text-warn">β版</span>;
+  if (IS_PERSONAL) return <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[12px] font-semibold text-brand">自分用</span>;
+  return <span className="rounded-full bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn">β版</span>;
 }
 
 // --- アイコン（インラインSVG） ---

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, IconChevronR, PageHeader } from "@/components/ui";
 import { useData } from "@/lib/store";
 import { todayStr } from "@/lib/date";
-import { IS_PERSONAL } from "@/lib/edition";
+import { FEATURES, IS_PERSONAL } from "@/lib/edition";
 import { inboxCount } from "@/lib/inbox";
 import type { AppData } from "@/lib/types";
 
@@ -15,14 +15,11 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "よく使う",
     items: [
-      ...(IS_PERSONAL
-        ? [
-            { href: "/search", label: "さがす", desc: "記録・予定・メモ・契約などを、1つの言葉で探す" },
-            { href: "/decide", label: "買い物の判断", desc: "買う前に、今月と来月の予算がどうなるか見る" },
-            { href: "/life", label: "生活の変化", desc: "引っ越し・転職で変わる固定費や予算を、いつからかを決めて計画する" },
-            { href: "/inbox", label: "未整理の記録", desc: "「その他」の記録を、店名ごとにまとめて整理", count: (d: AppData) => inboxCount(d) },
-          ]
-        : []),
+      // さがす・買い物の判断・未整理の記録は、2026-11-25 から公開版（友達用）にも出す。生活の変化は自分用だけ
+      ...(FEATURES.search ? [{ href: "/search", label: "さがす", desc: "記録・予定・メモ・契約などを、1つの言葉で探す" }] : []),
+      ...(FEATURES.decide ? [{ href: "/decide", label: "買い物の判断", desc: "買う前に、今月と来月の予算がどうなるか見る" }] : []),
+      ...(IS_PERSONAL ? [{ href: "/life", label: "生活の変化", desc: "引っ越し・転職で変わる固定費や予算を、いつからかを決めて計画する" }] : []),
+      ...(FEATURES.inbox ? [{ href: "/inbox", label: "未整理の記録", desc: "「その他」の記録を、店名ごとにまとめて整理", count: (d: AppData) => inboxCount(d) }] : []),
       { href: "/history", label: "取引履歴", desc: "月ごとの支出・収入と検索", count: (d) => d.transactions.length },
       { href: "/recurring", label: "固定費", desc: "家賃・通信費などの決まった支払い", count: (d) => d.recurring.filter((r) => r.active).length },
       { href: "/tasks", label: "タスク", desc: "やることと期限", count: (d) => d.tasks.filter((t) => !t.done).length },

@@ -52,7 +52,7 @@ export interface CollectionConfig<K extends CollectionKey> {
   /** 削除の確認文（既定：元に戻せません）。消える関連記録の件数などを書く */
   removeBody?: string | ((item: ItemOf<K>, data: AppData) => string);
   /** 削除の処理を差し替える（例：資格を消すと勉強記録も消す） */
-  removeFn?: (store: ReturnType<typeof useStore>, id: string) => SaveResult;
+  removeFn?: (store: ReturnType<typeof useStore>, id: string) => SaveResult | Promise<SaveResult>;
   /** 追加できない理由（例：先に資格を登録してください）。あれば追加ボタンを押せない */
   addBlocked?: (data: AppData) => string | null;
   /** 新規作成時の初期値 */
@@ -228,7 +228,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
     onClose();
   };
 
-  const save = () => {
+  const save = async () => {
     if (lock.current) return;
     const e = { ...validateFields(fields, draft), ...(config.validate?.(draft) ?? {}) };
     const real = Object.fromEntries(Object.entries(e).filter(([, v]) => v));
@@ -236,7 +236,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
     if (Object.keys(real).length) return;
     lock.current = true;
     const item = config.fromDraft(draft);
-    const r = cur ? store.updateItem(config.key, (cur as { id: string }).id, item, editSnapshot.current) : store.addItem(config.key, item);
+    const r = await (cur ? store.updateItem(config.key, (cur as { id: string }).id, item, editSnapshot.current) : store.addItem(config.key, item));
     if (!r.ok) {
       lock.current = false;
       ui.toast(r.error, "error");
@@ -251,7 +251,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
     const ok = await ui.confirm({ title: `この${config.noun}を削除しますか？`, body: typeof config.removeBody === "function" ? config.removeBody(cur, data) : (config.removeBody ?? "削除すると元に戻せません。"), ok: "削除する", danger: true });
     if (!ok) return;
     const cid = (cur as { id: string }).id;
-    const r = config.removeFn ? config.removeFn(store, cid) : store.removeItem(config.key, cid);
+    const r = await (config.removeFn ? config.removeFn(store, cid) : store.removeItem(config.key, cid));
     if (!r.ok) return ui.toast(r.error.replace("保存できませんでした", "削除できませんでした"), "error");
     ui.toast("削除しました");
     onClose();

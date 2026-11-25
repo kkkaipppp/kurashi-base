@@ -52,8 +52,8 @@ describe("未整理の記録", () => {
     const hidden = { ...d, categories: d.categories.map((c) => (c.id === "exp-1" ? { ...c, archived: true } : c)) };
     expect(recategorize(hidden, ["a"], "exp-1", now)).toMatchObject({ ok: false });
   });
-  it("自分用だけ。まとめて変えるときは取り消しの控えを残す（replaceAll）。メニューに件数つきで出る", () => {
-    expect(FEATURE_EDITIONS.inbox).toEqual({ personal: true, public: false });
+  it("自分用と公開版の両方。まとめて変えるときは取り消しの控えを残す（replaceAll）。メニューに件数つきで出る", () => {
+    expect(FEATURE_EDITIONS.inbox).toEqual({ personal: true, public: true }); // 2026-11-25 平尾さんの決定（①）：自分用と友達用（公開版）の両方で出す
     expect(src("app/inbox/page.tsx")).toContain("store.replaceAll(r.next,");
     expect(src("app/menu/page.tsx")).toContain('href: "/inbox"');
   });

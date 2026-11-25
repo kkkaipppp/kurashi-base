@@ -162,7 +162,10 @@ describe("E カテゴリをまとめる（消さない・取り消しの控え�
     expect(m.next.transactions.map((t) => t.id)).toEqual(["a", "b", "c"]); // 記録の ID は変えない
     expect(mergeCategoryData(d, "cafe", "cafe", now).ok).toBe(false);
     expect(mergeCategoryData(d, "cafe", "inc-1", now).ok).toBe(false);
-    expect(src("lib/store.tsx")).toContain("saveWithUndo(m.next, persistedRawRef.current, m.label, ts)");
+    // o11 A06：取り消しの控えを残す保存は、Repository の save に理由（label）を渡す。localStorage の版は saveWithUndo を使う
+    expect(src("lib/store.tsx")).toContain("undoReason: () => label"); // 控えの理由は、列の中で計算したラベル（o11 A06 点検 中-1・中-2）
+    expect(src("lib/storeCore.ts")).toContain("this.repo.save(next, this.token, reason)");
+    expect(src("lib/repository.ts")).toContain("saveWithUndo(next, base, undoReason");
   });
 });
 
@@ -188,12 +191,12 @@ describe("E ホームのカードの並び（自分用）", () => {
     expect(moveCard(l, "budget", -1)).toBe(l); // いちばん上より上へは動かない
     expect(defaultLayout()).toEqual({ order: currentLayout(prefs()).order, hidden: ["today", "todo"] });
   });
-  it("保存は、並び・隠したもの・今までの設定（次の固定費・確認したいこと）に分けて書く", () => {
+  it("保存は、並び・隠したもの・今までの設定（次の固定費・確認したいこと）に分けて書く", async () => {
     const calls: unknown[] = [];
     const store = {
-      setHomeLayout: (o: string[], h: string[], f: { nextRecurring: boolean; needsReview: boolean }) => (calls.push(["layout", o.length, h, f]), { ok: true as const }),
+      setHomeLayout: (o: string[], h: string[], f: { nextRecurring: boolean; needsReview: boolean }) => (calls.push(["layout", o.length, h, f]), Promise.resolve({ ok: true as const })),
     };
-    saveLayout(store, { order: defaultLayout().order, hidden: ["today", "nextFixed"] });
+    expect((await saveLayout(store, { order: defaultLayout().order, hidden: ["today", "nextFixed"] })).ok).toBe(true); // 保存は完了を待つ（o11 A06）
     // 1回の保存で書く（途中で失敗して一部だけ変わらない）
     expect(calls).toEqual([["layout", 8, ["today"], { nextRecurring: false, needsReview: true }]]);
   });

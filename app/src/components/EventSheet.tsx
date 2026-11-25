@@ -98,7 +98,7 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
       danger: true,
     });
     if (!ok) return;
-    const r = store.deleteEvent(ev.id);
+    const r = await store.deleteEvent(ev.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("削除しました");
     onClose();
@@ -202,8 +202,8 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
                     <input
                       type="checkbox"
                       checked={i.done}
-                      onChange={() => {
-                        const r = store.toggleEventItem(ev.id, i.id);
+                      onChange={async () => {
+                        const r = await store.toggleEventItem(ev.id, i.id);
                         if (!r.ok) ui.toast(r.error, "error");
                       }}
                       className="size-5 accent-[var(--brand)]"
@@ -296,17 +296,17 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
   const saved = useRef(false);
   const dirty = JSON.stringify([draft, extra]) !== JSON.stringify([initial, initialExtra]) || newItem.trim() !== "";
 
-  // 書きかけの控え（100点化の指示 B）。新しい予定は targetId=null、編集は予定の ID
+  // 下書きの控え（100点化の指示 B）。新しい予定は targetId=null、編集は予定の ID
   type Saved = { draft: EventDraft; extra: Extra; newItem?: string };
   const draftTarget = editing?.id ?? null;
-  // 複製のときは、書きかけの控えを使わない・上書きしない（空の新しい入力の書きかけを壊さない）
+  // 複製のときは、下書きの控えを使わない・上書きしない（空の新しい入力の下書きを壊さない）
   const [pending] = useState(() => (copySrc ? null : loadSheetDraft<Saved>("event", draftTarget)));
   const [resumeAsked, setResumeAsked] = useState(false);
   const resumed = useRef(false);
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   useEffect(() => {
     if (saved.current || copySrc) return;
-    // 前の書きかけに答えるまでは控えない（答える前に打った分で、前の書きかけを消さない）
+    // 前の下書きに答えるまでは控えない（答える前に打った分で、前の下書きを消さない）
     if (pending && !resumeAsked) return;
      
     if (dirty) setDraftSaveFailed(!saveSheetDraft<Saved>("event", draftTarget, { draft, extra, newItem }, undefined, undefined, initialEventSnapshot.current));
@@ -317,9 +317,9 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     if (!pending) return setResumeAsked(true);
     if (pending.base && initialEventSnapshot.current && pending.base !== initialEventSnapshot.current) {
       const ok = await ui.confirm({
-        title: "元の予定が、書きかけのあとに変わっています",
-        body: "続きからにすると、今の予定の中身が書きかけの中身に置き換わります（保存するまでは変わりません）。今の予定のまま直す場合は「今の予定を使う」を選んでください（書きかけは捨てます）。",
-        ok: "書きかけを使う",
+        title: "元の予定が、下書きのあとに変わっています",
+        body: "続きからにすると、今の予定の中身が下書きの中身に置き換わります（保存するまでは変わりません）。今の予定のまま直す場合は「今の予定を使う」を選んでください（下書きは捨てます）。",
+        ok: "下書きを使う",
         cancel: "今の予定を使う",
       });
       if (!ok) {
@@ -327,11 +327,11 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
         return setResumeAsked(true);
       }
     }
-    if (dirty && !(await ui.confirm({ title: "書きかけに置き換えますか？", body: "今この画面で打った分は消えて、書きかけの中身になります。", ok: "置き換える" }))) return;
+    if (dirty && !(await ui.confirm({ title: "下書きに置き換えますか？", body: "今この画面で打った分は消えて、下書きの中身になります。", ok: "置き換える" }))) return;
     setDraft({ ...pending.draft.draft });
     // 旅行は、今ある旅行だけつなぐ（消えた旅行にはつながない）
     const tripOk = !pending.draft.extra.tripId || trips.some((t) => t.id === pending.draft.extra.tripId);
-    // 古い書きかけには、あとから足した項目（移動時間・目標）がないので、既定値で埋める（保存で例外にならないように）
+    // 古い下書きには、あとから足した項目（移動時間・目標）がないので、既定値で埋める（保存で例外にならないように）
     setExtra({ ...extraOf(undefined), ...pending.draft.extra, tripId: tripOk ? pending.draft.extra.tripId : "" });
     setNewItem(pending.draft.newItem ?? "");
     if (hasExtra(pending.draft.extra, pending.draft.draft)) setShowMore(true);
@@ -380,7 +380,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     if (ok) save(true);
   };
 
-  const save = (asNew = false) => {
+  const save = async (asNew = false) => {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
@@ -422,14 +422,14 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       };
       // undefined の項目は保存しない（JSON に残さない）
       for (const k of Object.keys(input) as (keyof typeof input)[]) if (input[k] === undefined) delete input[k];
-      const r = editing && !asNew ? store.updateEvent(editing.id, input, initialEventSnapshot.current) : store.addEvent(input);
+      const r = await (editing && !asNew ? store.updateEvent(editing.id, input, initialEventSnapshot.current) : store.addEvent(input));
       if (!r.ok) {
         setSaveError(r.error);
         return;
       }
       saved.current = true;
-      // 保存がうまくいったときだけ下書きを消す（前の書きかけに答えていないときは、それは残す）
-      // 複製のときは、通常の「新しい予定」の書きかけを消さない（点検役の指摘）
+      // 保存がうまくいったときだけ下書きを消す（前の下書きに答えていないときは、それは残す）
+      // 複製のときは、通常の「新しい予定」の下書きを消さない（点検役の指摘）
       if (!copySrc && (!(pending && !resumeAsked) || asNew)) clearSheetDraft("event", draftTarget);
       ui.toast(asNew ? "新しい予定として保存しました" : editing ? "保存しました" : "予定を追加しました");
       onClose();
@@ -450,7 +450,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       danger: true,
     });
     if (!ok) return;
-    const r = store.deleteEvent(editing.id);
+    const r = await store.deleteEvent(editing.id);
     if (!r.ok) return ui.toast(r.error, "error");
     ui.toast("削除しました");
     onClose();
@@ -476,7 +476,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     >
       {pending && !resumeAsked && (
         <div className="mb-3 rounded-xl border border-brand/30 bg-brand-soft p-3" role="status">
-          <p className="text-[14px] font-semibold">{draftTimeLabel(pending.savedAt)} の書きかけがあります</p>
+          <p className="text-[14px] font-semibold">{draftTimeLabel(pending.savedAt)} の下書きがあります</p>
           <p className="mt-0.5 text-[12px] text-ink-2">
             {pending.draft.draft.title || "（名前なし）"} {pending.draft.draft.startDate}
             {pendingTrip ? `（旅行：${pendingTrip.title}）` : ""}
@@ -497,7 +497,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
           </div>
         </div>
       )}
-      {draftSaveFailed && <p className="mb-2 text-[12px] text-warn">書きかけを端末に控えられませんでした（保存すれば記録は残ります）。</p>}
+      {draftSaveFailed && <p className="mb-2 text-[12px] text-warn">下書きを端末に控えられませんでした（保存すれば記録は残ります）。</p>}
       <form
         className="space-y-4"
         noValidate

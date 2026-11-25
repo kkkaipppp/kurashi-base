@@ -1,5 +1,5 @@
 import { categoryIsInvest, categoryMap, isMoveOnly, txIsFixed, txIsInvest } from "./classify";
-import { unpaidRecurringThisMonth } from "./allowance";
+import { unpaidRecurringOccurrences, unpaidRecurringThisMonth } from "./allowance";
 import { addDays, daysBetween, daysInMonth, parseDateStr } from "./date";
 import type { AppData } from "./types";
 
@@ -99,20 +99,14 @@ export function forecastCurve(data: AppData, today: string): ForecastCurve | nul
 
   // 固定費：まだ来る日に載せる。すでに過ぎた分・今日の分は、明日にまとめる（合計は月末の見込みと同じ）
   const fixedOn = new Array<number>(dim + 1).fill(0);
-  let placed = 0;
-  for (const r of data.recurring) {
-    if (!r.active || categoryIsInvest(cats.get(r.categoryId))) continue;
-    if (r.nextDueDate.slice(0, 7) === month && r.nextDueDate > today) {
-      const amt = r.partialPaid && r.partialPaid.due === r.nextDueDate ? Math.max(0, r.amount - r.partialPaid.paid) : r.amount;
-      fixedOn[Number(r.nextDueDate.slice(8, 10))] += amt;
-      placed += amt;
-    }
+  for (const occurrence of unpaidRecurringOccurrences(data.recurring, today, (r) => categoryIsInvest(cats.get(r.categoryId)))) {
+    const day = Math.max(d + 1, Number(occurrence.date.slice(8, 10)));
+    if (day <= dim) fixedOn[day] += occurrence.amount;
   }
-  const rest = f.unpaidFixed - placed;
   const projected: number[] = [actual[d - 1]];
   let cur = actual[d - 1];
   for (let day = d + 1; day <= dim; day++) {
-    cur += f.dailyVariable + fixedOn[day] + (day === d + 1 ? rest : 0);
+    cur += f.dailyVariable + fixedOn[day];
     projected.push(cur);
   }
   // 月末の日が今日なら、固定費の残りを今日に足す

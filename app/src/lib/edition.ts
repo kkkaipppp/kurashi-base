@@ -19,13 +19,17 @@ export const FEATURE_EDITIONS = {
   /** 家計簿の CSV の取り込み（2026-11-24 公開済み） */
   csvImport: { personal: true, public: true },
   /** 振り返りの「週」「年」の収支（2026-11-24 平尾さん。まず自分用だけ） */
-  periodReport: { personal: true, public: false },
+  periodReport: { personal: true, public: true }, // 2026-11-25 平尾さん：友達用（公開版）にも出す
   /** 横断検索（2026-11-25 NEXT v21。まず自分用だけ） */
-  search: { personal: true, public: false },
+  search: { personal: true, public: true }, // 2026-11-25 公開
   /** 未整理の記録（「その他」を店名ごとに整理。2026-11-25 NEXT v21。まず自分用だけ） */
-  inbox: { personal: true, public: false },
+  inbox: { personal: true, public: true }, // 2026-11-25 公開
   /** 買い物の判断（2026-11-25 NEXT v21。まず自分用だけ） */
-  decide: { personal: true, public: false },
+  decide: { personal: true, public: true }, // 2026-11-25 公開
+  /** 月末の見込み（振り返り。実線・破線のグラフ）。2026-11-25 公開 */
+  forecast: { personal: true, public: true },
+  /** カレンダーのファイル（.ics）から予定を取り込む（設定。Q31）。2026-11-25 公開 */
+  icsImport: { personal: true, public: true },
   /** 生活の変化（引っ越し・転職の計画。2026-11-25 NEXT v21 B03。まず自分用だけ） */
   lifeChange: { personal: true, public: false },
 } as const satisfies Record<string, Record<Edition, boolean>>;
