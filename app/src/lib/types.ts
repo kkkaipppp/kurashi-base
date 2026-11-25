@@ -50,6 +50,7 @@ export interface CalendarEvent {
   /** NEXT v21 で追加（任意）：完了した日付（1回きりは開始日、繰り返しはその回の日付）／移動にかかる時間（分。出発の目安に使う） */
   doneDates?: string[];
   travelMinutes?: number;
+  goalId?: string; // 関連する目標（Goal.id。予定は目標の行動。時間・費用は予定のまま一度だけ数える。NEXT v21 X07）
   createdAt: string;
   updatedAt: string;
 }

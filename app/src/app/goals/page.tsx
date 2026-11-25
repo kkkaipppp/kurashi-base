@@ -5,6 +5,7 @@ import { formatDateJa } from "@/lib/date";
 import { bool, numStr, str } from "@/lib/draft";
 import { daysLeft, dueLabel, goalProgress } from "@/lib/life";
 import { goalPace, goalPaceText } from "@/lib/goalPlan";
+import { goalActions } from "@/lib/goalLinks";
 import { IS_PERSONAL } from "@/lib/edition";
 import { Card } from "@/components/ui";
 
@@ -64,15 +65,18 @@ const config: CollectionConfig<"goals"> = {
     );
   },
   sort: (a, b) => Number(a.done) - Number(b.done) || (a.deadline || "9999").localeCompare(b.deadline || "9999"),
-  row: (g, { today }) => {
+  row: (g, { today, data }) => {
     const p = goalProgress(g);
+    // 自分用：この目標につないだ予定（行動）の数。完了した回の数も出す（予定の完了と目標の達成は別）
+    const act = IS_PERSONAL ? goalActions(data, g.id, today) : null;
     const d = daysLeft(g.deadline, today);
     const fmt = (n: number) => n.toLocaleString("ja-JP");
     return {
       title: g.title,
       sub:
         (g.kind === "number" && g.target !== null ? `${fmt(g.current)} / ${fmt(g.target)}${g.unit}・` : "") +
-        (g.deadline ? `${formatDateJa(g.deadline, true)}まで` : "期限なし"),
+        (g.deadline ? `${formatDateJa(g.deadline, true)}まで` : "期限なし") +
+        (act && act.events > 0 ? `・予定${act.events}件（完了${act.doneCount}回）` : ""),
       muted: g.done,
       badge: g.done ? { text: "達成", tone: "ok" } : d !== null && d < 0 ? { text: dueLabel(d), tone: "warn" } : undefined,
       right: (

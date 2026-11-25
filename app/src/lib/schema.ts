@@ -62,6 +62,7 @@ const EVENT_V5: Record<string, (v: unknown) => boolean> = {
   cost: optional(isMoneyOrNull),
   doneDates: optional((v) => Array.isArray(v) && v.every((x) => isDate(x))),
   travelMinutes: optional((v) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 1440),
+  goalId: optional(isStr),
 };
 
 // 追加した一覧ごとの項目チェック（順番は COLLECTION_KEYS に合わせる。studySubjects は studyLogs より前）

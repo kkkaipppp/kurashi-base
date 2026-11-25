@@ -34,6 +34,8 @@ interface Extra {
   cost: string;
   /** 移動にかかる時間（分）。出発の目安に使う（自分用） */
   travel: string;
+  /** 関連する目標（自分用。"" = なし） */
+  goalId: string;
 }
 
 const extraOf = (e?: CalendarEvent, tripId = ""): Extra => ({
@@ -44,10 +46,11 @@ const extraOf = (e?: CalendarEvent, tripId = ""): Extra => ({
   kind: e?.kind ?? "",
   cost: e?.cost != null ? String(e.cost) : "",
   travel: e?.travelMinutes ? String(e.travelMinutes) : "",
+  goalId: e?.goalId ?? "",
 });
 
 const hasExtra = (x: Extra, d: EventDraft) =>
-  !!(x.location || x.url || x.items.length || x.tripId || x.kind || x.cost || x.travel || d.note || (d.repeat && d.repeat !== "none"));
+  !!(x.location || x.url || x.items.length || x.tripId || x.kind || x.cost || x.travel || x.goalId || d.note || (d.repeat && d.repeat !== "none"));
 
 export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: () => void }) {
   const data = useData();
@@ -85,6 +88,7 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
   const gcal = calendarTemplate({ ...ev, location: ev.location });
   const link = ev.url ? safeExternalLink(ev.url) : null;
   const kind = EVENT_KINDS.find((k) => k.id === ev.kind)?.label;
+  const goal = ev.goalId ? data.goals.find((g) => g.id === ev.goalId) : undefined;
 
   const remove = async () => {
     const ok = await ui.confirm({
@@ -163,6 +167,14 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
           </div>
         )}
         {IS_PERSONAL && <EventActions ev={ev} day={day} onClose={onClose} />}
+        {goal && (
+          <div>
+            <p className="text-[12px] font-semibold text-ink-3">目標</p>
+            <Link href={`/goals?open=${goal.id}`} className="inline-flex min-h-11 items-center text-[15px] font-semibold text-brand underline">
+              {goal.title}
+            </Link>
+          </div>
+        )}
         {ev.travelMinutes ? (
           <div>
             <p className="text-[12px] font-semibold text-ink-3">移動時間</p>
@@ -403,6 +415,8 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
         ...(extra.tripId ? { tripId: extra.tripId } : { tripId: undefined }),
         ...(extra.kind ? { kind: extra.kind } : { kind: undefined }),
         ...(cost !== null ? { cost } : { cost: undefined }),
+        // 目標：選んだ目標が今もあるときだけ（自分用。公開版は、今ある値をそのまま持つ）
+        ...(IS_PERSONAL ? (extra.goalId && data.goals.some((g) => g.id === extra.goalId) ? { goalId: extra.goalId } : { goalId: undefined }) : editing?.goalId ? { goalId: editing.goalId } : {}),
         ...(IS_PERSONAL && travel ? { travelMinutes: travel } : IS_PERSONAL ? { travelMinutes: undefined } : editing?.travelMinutes ? { travelMinutes: editing.travelMinutes } : {}),
       };
       // undefined の項目は保存しない（JSON に残さない）
@@ -625,6 +639,22 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
               <input id="ev-cost" inputMode="numeric" value={extra.cost} onChange={(e) => setX("cost", e.target.value)} placeholder="例：14000" className={inputCls} maxLength={12} aria-invalid={!!errors.cost} />
             </Field>
             <p className="-mt-2 text-[12px] text-ink-3">支出の記録は「＋」からです。</p>
+
+            {IS_PERSONAL && data.goals.some((g) => !g.done || g.id === extra.goalId) && (
+              <Field label="関連する目標" optional htmlFor="ev-goal">
+                <select id="ev-goal" value={extra.goalId} onChange={(e) => setX("goalId", e.target.value)} className={inputCls}>
+                  <option value="">なし</option>
+                  {data.goals
+                    .filter((g) => !g.done || g.id === extra.goalId)
+                    .map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.title}
+                      </option>
+                    ))}
+                </select>
+                <p className="mt-1 text-[12px] text-ink-3">この予定を、目標のための行動として数えます（時間・費用は、この予定のまま一度だけ）。</p>
+              </Field>
+            )}
 
             {IS_PERSONAL && (
               <Field label="移動にかかる時間（分）" optional htmlFor="ev-travel" error={errors.travel}>
