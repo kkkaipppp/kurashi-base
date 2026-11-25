@@ -6,7 +6,11 @@ import { Card } from "@/components/ui";
 import { formatDateJa } from "@/lib/date";
 import { bool, str } from "@/lib/draft";
 import { dueLabel, daysLeft } from "@/lib/life";
-import { useStore } from "@/lib/store";
+import { newId } from "@/lib/defaults";
+import { PERSONAL_BUILD_TASKS } from "./personal";
+import { makeEventFromTask, setTaskDone, taskIsEvent } from "@/lib/taskEvent";
+import { todayStr } from "@/lib/date";
+import { useData, useStore } from "@/lib/store";
 import type { Task } from "@/lib/types";
 
 function DoneToggle({ task }: { task: Task }) {
@@ -19,7 +23,9 @@ function DoneToggle({ task }: { task: Task }) {
       aria-checked={task.done}
       aria-label={task.done ? `「${task.title}」を未完了に戻す` : `「${task.title}」を完了にする`}
       onClick={() => {
-        const r = store.updateItem("tasks", task.id, { done: !task.done });
+        // 予定にしたタスクは、予定の完了も同じに揃える
+        const ts = new Date().toISOString();
+        const r = store.commit((d) => setTaskDone(d, task.id, !task.done, ts));
         if (!r.ok) ui.toast(r.error, "error");
       }}
       className="inline-flex size-11 shrink-0 items-center justify-center"
@@ -31,6 +37,28 @@ function DoneToggle({ task }: { task: Task }) {
           </svg>
         )}
       </span>
+    </button>
+  );
+}
+
+/** 「予定にする」（自分用）。押したときだけ、終日の予定を1つ作る。作ったあとは「予定あり」と出る */
+function ToEventButton({ task }: { task: Task }) {
+  const store = useStore();
+  const data = useData();
+  const ui = useUI();
+  if (taskIsEvent(data, task)) return <span className="px-1 text-[11px] font-semibold text-brand">予定あり</span>;
+  return (
+    <button
+      type="button"
+      aria-label={`「${task.title}」を予定にする`}
+      onClick={() => {
+        const ts = new Date().toISOString();
+        const r = store.commit((d) => makeEventFromTask(d, task.id, newId("ev"), todayStr(), ts));
+        ui.toast(r.ok ? "予定にしました（カレンダーに出ます）" : r.error, r.ok ? "ok" : "error");
+      }}
+      className="min-h-11 rounded-lg px-2 text-[12px] font-semibold text-brand hover:bg-brand-soft"
+    >
+      予定にする
     </button>
   );
 }
@@ -60,7 +88,12 @@ const config: CollectionConfig<"tasks"> = {
       badge: t.done ? { text: "完了", tone: "ok" } : d !== null && d < 0 ? { text: dueLabel(d), tone: "warn" } : d === 0 ? { text: "今日まで", tone: "warn" } : undefined,
     };
   },
-  rowAction: (t) => <DoneToggle task={t} />,
+  rowAction: (t) => (
+    <span className="flex items-center">
+      {PERSONAL_BUILD_TASKS && <ToEventButton task={t} />}
+      <DoneToggle task={t} />
+    </span>
+  ),
   header: ({ list, today }) => {
     const open = list.filter((t) => !t.done);
     const overdue = open.filter((t) => t.due && t.due < today).length;

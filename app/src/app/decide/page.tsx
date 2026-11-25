@@ -5,6 +5,7 @@ import { useData } from "@/lib/store";
 import { Card, Empty, Field, PageHeader, SectionTitle, inputCls } from "@/components/ui";
 import { FEATURES } from "@/lib/edition";
 import { assessPurchase } from "@/lib/decision";
+import { compareScenarios } from "@/lib/scenarios";
 import { todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
 
@@ -28,6 +29,7 @@ export default function DecidePage() {
   const bad = txt.trim() !== "" && (amount === null || amount <= 0);
   const a = amount && amount > 0 ? assessPurchase(data, amount, todayStr()) : null;
   const y = (n: number | null) => (n === null ? "—" : formatSignedYen(n));
+  const sc = compareScenarios(data, todayStr(), amount && amount > 0 ? amount : null);
   return (
     <main className="space-y-3">
       <PageHeader title="買い物の判断" />
@@ -37,6 +39,32 @@ export default function DecidePage() {
           <input id="decide-amount" inputMode="numeric" value={txt} onChange={(e) => setTxt(e.target.value)} placeholder="例：30000" className={inputCls} maxLength={14} aria-invalid={bad} />
         </Field>
       </Card>
+      {sc.ok && (
+        <Card>
+          <SectionTitle>月末までのシナリオ比べ</SectionTitle>
+          <table className="num w-full text-[13px]">
+            <thead>
+              <tr className="text-ink-3">
+                <th className="py-1 text-left font-semibold">シナリオ</th>
+                <th className="py-1 text-right font-semibold">月末の見込み</th>
+                <th className="py-1 text-right font-semibold">今のペースとの差</th>
+                {data.budget.monthly !== null && <th className="py-1 text-right font-semibold">予算との差</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {sc.items.map((s) => (
+                <tr key={s.key} className="border-t border-line">
+                  <td className="py-1.5 pr-2">{s.label}</td>
+                  <td className="py-1.5 text-right font-semibold">約{formatYen(s.projected)}</td>
+                  <td className="py-1.5 text-right">{s.diff === 0 ? "—" : formatSignedYen(s.diff)}</td>
+                  {s.vsBudget !== null && <td className={`py-1.5 text-right ${s.vsBudget < 0 ? "text-expense" : ""}`}>{formatSignedYen(s.vsBudget)}</td>}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-2 text-[12px] text-ink-3">どれも、今月の月末までの見込みです（確定ではありません）。使った額（{formatYen(sc.basis.spent)}）と、まだ来る固定費（{formatYen(sc.basis.unpaidFixed)}）は、どのシナリオでも同じです。変動費は、残り{sc.basis.daysAhead}日分（約{formatYen(sc.basis.variableAhead)}）だけを変えています。</p>
+        </Card>
+      )}
       {a && (
         <>
           <Card>

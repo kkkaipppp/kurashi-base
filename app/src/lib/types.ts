@@ -178,6 +178,8 @@ export interface Task {
   due: string; // 期限（"" = なし）
   done: boolean;
   note: string;
+  /** 予定にしたとき、その予定の ID（任意。NEXT v21 T06。自分用） */
+  eventId?: string;
   createdAt: string;
   updatedAt: string;
 }

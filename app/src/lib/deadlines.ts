@@ -1,3 +1,4 @@
+import { taskIsEvent } from "./taskEvent";
 import { formatYen } from "./money";
 import type { AppData } from "./types";
 
@@ -14,7 +15,8 @@ export interface DeadlineItem {
 
 export function deadlinesOn(data: AppData, date: string): DeadlineItem[] {
   const out: DeadlineItem[] = [];
-  for (const t of data.tasks) if (t.due === date) out.push({ key: `t-${t.id}`, kind: "タスク", title: t.title, done: t.done, href: `/tasks?open=${t.id}` });
+  // 予定にしたタスクは、予定として出る（ここでは二重に出さない）
+  for (const t of data.tasks) if (t.due === date && !taskIsEvent(data, t)) out.push({ key: `t-${t.id}`, kind: "タスク", title: t.title, done: t.done, href: `/tasks?open=${t.id}` });
   for (const r of data.recurring)
     if (r.active && r.nextDueDate === date) out.push({ key: `r-${r.id}`, kind: "固定費", title: `${r.name}の支払い`, sub: formatYen(r.amount), href: `/recurring?open=${r.id}` });
   for (const c of data.contracts)

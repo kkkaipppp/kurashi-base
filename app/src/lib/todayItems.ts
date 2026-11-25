@@ -1,3 +1,4 @@
+import { taskIsEvent } from "./taskEvent";
 import { eventsOnDay } from "./aggregate";
 import { daysBetween, formatDateJa } from "./date";
 import { formatYen } from "./money";
@@ -51,6 +52,8 @@ export function buildTodayItems(data: AppData, today: string): TodayItem[] {
   }
   for (const t of data.tasks) {
     if (t.done || !t.due || t.due > today) continue;
+    // 今日が期限で、予定にしたタスクは、予定として出ている（二重に出さない）。期限が過ぎたものは、予定の日が過去なので、ここに出す
+    if (t.due === today && taskIsEvent(data, t)) continue;
     const late = t.due < today;
     out.push({ key: `task-${t.id}`, sort: late ? `0${t.due}` : "3", time: late ? "期限切れ" : "期限", title: t.title, sub: late ? `期限を${daysBetween(t.due, today)}日過ぎています` : "今日が期限のタスク", warn: late, href: `/tasks?open=${t.id}` });
   }
