@@ -72,6 +72,11 @@ export function applyRefund(d: AppData, txId: string, amount: number, date: stri
   return { ok: true, next: settle({ ...d, transactions: [...withGross, refund] }, orig.id, ts) };
 }
 
+/** 返金のある支出を消す：その支出の返金の記録も一緒に消す（元の支出がない返金を残さない。再点検 高1） */
+export function deleteTxWithRefunds(d: AppData, txId: string): AppData {
+  return { ...d, transactions: d.transactions.filter((t) => t.id !== txId && t.refundOf !== txId) };
+}
+
 /** 返金の記録を取り消す：その記録を消して、元の支出を計算し直す（ほかの返金は、そのまま残る）。元の記録がもうなければ、返金の記録だけ消す */
 export function undoRefund(d: AppData, refundId: string, ts: string): AppData {
   const r = d.transactions.find((t) => t.id === refundId);

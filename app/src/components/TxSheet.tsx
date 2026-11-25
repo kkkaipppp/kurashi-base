@@ -211,7 +211,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         const wasCount = editing.countAs === "transfer" && editing.transferKind === "card" ? "transfer-card" : editing.countAs === "transfer" ? "" : (editing.countAs ?? "");
         const nowCount = draft.countAs === "transfer" && editing.countAs === "transfer" ? "" : (draft.countAs ?? "");
         // 全額返金した支出は、数え方が「収支に数えない」になっている（返金がそうした）。その表示のままなら、変えていない扱い
-        const countChanged = editing.countAs === "transfer" ? !(draft.countAs === "transfer" || draft.countAs === "") : nowCount !== wasCount;
+        const countChanged = editing.countAs === "transfer" ? draft.countAs !== "transfer" : nowCount !== wasCount;
         if (v.amount !== editing.amount || draft.type !== editing.type || countChanged || draft.paymentMethod !== editing.paymentMethod) {
           setSaveError("返金のある支出の、金額・種類・数え方・支払い方法は、直せません。返金の記録を消す（元に戻ります）と、直せるようになります");
           return;
@@ -290,7 +290,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (!editing) return;
     const ok = await ui.confirm({
       title: `この${editing.type === "expense" ? "支出" : "収入"}を削除しますか？`,
-      body: `${formatDateJa(editing.date)} ${formatYen(editing.amount)}（${catName(editing.categoryId)}）\n削除すると元に戻せません。`,
+      body: `${formatDateJa(editing.date)} ${formatYen(editing.amount)}（${catName(editing.categoryId)}）\n${refundedTotal(data, editing.id) > 0 ? "この支出の返金の記録も、一緒に削除します。\n" : ""}削除すると元に戻せません。`,
       ok: "削除する",
       danger: true,
     });

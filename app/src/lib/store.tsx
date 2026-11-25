@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { newId } from "./defaults";
 import { applyRecurringPayment, applyTxUpdate, mergeCategoryData, partialMark, revertPartialPayment, setTxTripData, unlinkTripFromTx } from "./dataOps";
-import { undoRefund } from "./refund";
+import { deleteTxWithRefunds, undoRefund } from "./refund";
 import { replaceEventEditableFields } from "./eventMerge";
 import { staleRecordError } from "./eventConcurrency";
 import { renameCategoryIn } from "./categoryRename";
@@ -176,7 +176,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const tx = d.transactions.find((x) => x.id === id);
           // 返金の記録を消すときは、元の支出を元に戻す
           if (tx?.refundOf) return undoRefund(d, id, now());
-          return { ...d, recurring: tx ? revertPartialPayment(d.recurring, tx, now()) : d.recurring, transactions: d.transactions.filter((x) => x.id !== id) };
+          // 返金のある支出を消すときは、その返金の記録も一緒に消す（返金だけが残らないように）
+          const rest = deleteTxWithRefunds(d, id);
+          return { ...rest, recurring: tx ? revertPartialPayment(d.recurring, tx, now()) : d.recurring };
         }),
       addEvent: (e) => {
         const ts = now();

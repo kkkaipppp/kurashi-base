@@ -31,6 +31,10 @@ export function dataHealth(d: AppData, today: string): HealthFinding[] {
   const goalIds = new Set(d.goals.map((g) => g.id));
   add({ id: "ev-goal", level: "info", text: "つなぎ先の目標がもうない予定があります（目標を消した可能性。予定は残っています）", count: d.events.filter((e) => e.goalId && !goalIds.has(e.goalId)).length, href: "/calendar" });
   add({ id: "refund-sum", level: "warn", text: "返金の合計と、元の支出の額が合わない記録があります（返金の記録を消すか、元の支出を確かめてください。自動では直しません）", count: refundConservationErrors(ledgerEvents(d)).length, href: "/history" });
+  {
+    const purchaseIds = new Set(d.transactions.map((t) => t.id));
+    add({ id: "refund-orphan", level: "warn", text: "元の支出が見つからない返金の記録があります（元の支出が消えた可能性。残高には数えていません）", count: d.transactions.filter((t) => t.refundOf && !purchaseIds.has(t.refundOf)).length, href: "/history" });
+  }
   add({ id: "tx-rec", level: "info", text: "固定費につないだ支出のうち、その固定費がもうないものがあります（固定費を消した可能性。記録は残っています）", count: d.transactions.filter((t) => t.recurringId && !recIds.has(t.recurringId)).length });
 
   // 二重かもしれない記録：同じ日・種類・金額・店名の記録が2件以上（自動では消さない）

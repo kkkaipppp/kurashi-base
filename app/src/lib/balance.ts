@@ -69,6 +69,8 @@ export function cashBalance(d: AppData, today: string): BalanceResult {
       }
       else spend += e.gross;
     } else if (e.kind === "refund") {
+      // 元の支出が見つからない返金は、足さない（データの点検で「要確認」に出す。再点検 高1）
+      if (!isCard.has(e.of)) continue;
       if (isCard.get(e.of)) cardRefunded += e.amount;
       else refunded += e.amount;
     } else if (e.kind === "cardSettlement") {

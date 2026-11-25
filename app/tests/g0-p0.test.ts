@@ -180,3 +180,23 @@ describe("独立点検（8db1a71・47d4ce9）の指摘への試験", () => {
     expect(monthLedger(d, "2026-11", "2026-11-25").perDay).not.toBeNull();
   });
 });
+
+describe("再点検（571b373）の指摘への試験", () => {
+  it("高1：返金のある元の支出を消すと、その返金の記録も一緒に消え、残高は元に戻る", async () => {
+    const { deleteTxWithRefunds } = await import("@/lib/refund");
+    let d = emptyData(now);
+    d.assets = [{ id: "a", name: "銀行", kind: "cash", value: 100000, asOf: "2026-11-01", cardDebt: 0, note: "", createdAt: now, updatedAt: now }];
+    d.transactions = [tx({ id: "p", date: "2026-11-05", amount: 50000, paymentMethod: "cash" })];
+    d = ok(applyRefund(d, "p", 20000, "2026-11-15", "r", now)).next;
+    const out = deleteTxWithRefunds(d, "p");
+    expect(out.transactions).toEqual([]);
+    expect((cashBalance(out, "2026-11-25") as { balance: number }).balance).toBe(100000);
+  });
+  it("高1：元の支出が見つからない返金（古いデータ）は、残高に足さず、データの点検に出す", () => {
+    const d = emptyData(now);
+    d.assets = [{ id: "a", name: "銀行", kind: "cash", value: 100000, asOf: "2026-11-01", cardDebt: 0, note: "", createdAt: now, updatedAt: now }];
+    d.transactions = [tx({ id: "r", type: "income", date: "2026-11-15", amount: 20000, countAs: "transfer", refundOf: "gone", categoryId: "inc-1" })];
+    expect((cashBalance(d, "2026-11-25") as { balance: number }).balance).toBe(100000);
+    expect(dataHealth(d, "2026-11-25").find((f) => f.id === "refund-orphan")?.count).toBe(1);
+  });
+});
