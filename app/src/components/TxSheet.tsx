@@ -380,9 +380,9 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         </div>
 
         <details className="-mt-1 text-[12px] text-ink-3">
-          <summary className="cursor-pointer py-1">返金・振替・分割払いを記録するには</summary>
+          <summary className="cursor-pointer py-1">返金・振替・分割払いについて</summary>
           <p className="pt-1">
-            返金は「収入」として、元の支出と同じカテゴリで登録してください。口座どうしの振替や分割払いの記録には、まだ対応していません。
+            返金は「収入」で登録します（元の支出と同じカテゴリで）。口座どうしの振替・分割払いは、まだ記録できません。
           </p>
         </details>
 
@@ -472,7 +472,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         )}
 
         {EXTRA && editing && editing.type === "expense" && !editing.refundOf && <RefundBox tx={editing} onDone={onClose} />}
-        {EXTRA && editing?.refundOf && <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">この記録は、返金です（収入にも支出にも数えません）。削除すると、元の支出が元に戻ります。</p>}
+        {EXTRA && editing?.refundOf && <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">この記録は返金です。元の支出の額を減らしています（集計では、収入にも支出にも入りません）。削除すると、元の支出が元に戻ります。</p>}
 
         <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
           <textarea id="tx-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
@@ -628,7 +628,7 @@ function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
   if (!open)
     return (
       <div className="rounded-xl bg-surface-2 px-3 py-2">
-        {already > 0 && <p className="mb-1 text-[12px] text-ink-2">これまでの返金：{formatYen(already)}（今の支出は、返金を引いたあとの額です）</p>}
+        {already > 0 && <p className="mb-1 text-[12px] text-ink-2">これまでの返金：{formatYen(already)}（この支出の額は、返金を引いたあとの額です）</p>}
         <Button variant="secondary" className="w-full" onClick={() => setOpen(true)}>
           返金があった
         </Button>
@@ -653,7 +653,11 @@ function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
       <p className="text-[13px] font-semibold">返金の額（返金できる残り {formatYen(left)} まで）</p>
       <input inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} className={inputCls} aria-label="返金の額" maxLength={14} />
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} aria-label="返金のあった日" />
-      <p className="text-[12px] text-ink-3">一部なら、この支出がその分だけ減ります。全額なら、この支出を収支に数えません。返金の記録を消すと、元に戻ります。</p>
+      <div className="space-y-0.5 text-[12px] text-ink-3">
+        <p>一部の返金：この支出の額が、その分だけ減ります。</p>
+        <p>全額の返金：この支出は、集計から外れます。</p>
+        <p>返金の記録を消すと、支出の額が元に戻ります。</p>
+      </div>
       <div className="flex gap-2">
         <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>
           やめる

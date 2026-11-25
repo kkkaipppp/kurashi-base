@@ -33,7 +33,7 @@ export default function InboxPage() {
     const differ = from ? categoryIsInvest(from) !== categoryIsInvest(to) : false;
     const ok = await ui.confirm({
       title: `「${merchant}」の${ids.length}件を「${to.name}」にしますか？`,
-      body: `カテゴリだけが変わります（金額・日付はそのまま）。${differ ? `「${to.name}」は${categoryIsInvest(to) ? "投資として数えるカテゴリ" : "生活費として数えるカテゴリ"}なので、予算と比べる額（生活費）が変わります。` : ""}設定の「直前の操作を取り消す」で戻せます。`,
+      body: `カテゴリだけが変わります（金額・日付はそのまま）。${differ ? `「${to.name}」は${categoryIsInvest(to) ? "投資に数えるカテゴリ（予算と比べる額から外れる）" : "生活費に数えるカテゴリ"}なので、ホームの「使った額」が変わります。` : ""}戻したいときは、設定の「直前の操作を取り消す」を使います。`,
       ok: "変える",
     });
     if (!ok) return;
@@ -66,7 +66,7 @@ export default function InboxPage() {
               </div>
               {suggest && (
                 <Button variant="secondary" className="w-full" onClick={() => apply(g.ids, g.merchant, suggest.categoryId)}>
-                  「{suggest.name}」にする（同じ店名が{suggest.count}件、そこに入っています）
+                  「{suggest.name}」にする
                 </Button>
               )}
               <div className="flex gap-2">

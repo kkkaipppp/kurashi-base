@@ -11,7 +11,7 @@ export interface TrendRow {
   expense: number;
   income: number;
   strong?: boolean; // 今日・今月など
-  future?: boolean; // まだ来ていない日・月（折れ線を引かない）
+  future?: boolean; // 今日より後の日・月（折れ線を引かない）
 }
 
 const W = 340;
@@ -39,7 +39,7 @@ export function cumulativeBalance(rows: TrendRow[]): number[] {
 
 export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { rows: TrendRow[]; title: string; lineLabel?: string }) {
   const cum = cumulativeBalance(rows);
-  // 累計は、まだ来ていない日・月の手前まで（表の「累計」の合計の行に使う）
+  // 累計は、今日より後の日・月の手前まで（表の「累計」の合計の行に使う）
   const lineLen = rows.findIndex((r) => r.future) === -1 ? rows.length : rows.findIndex((r) => r.future);
   const lineCum = cum.slice(0, lineLen);
   // 棒グラフだけ（2026-11-25 平尾さん「紫の線がわけわからん」→ 紫の累計の線をやめた。累計は「数字で見る」の表に残す）
@@ -137,7 +137,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
           </tfoot>
         </table>
         {/* 数字の根拠（何を数えているか。NEXT v21 CH:G01） */}
-        <p className="mb-2 text-[12px] text-ink-3">支出・収入はこの期間に記録したものの合計です（投資として数えた支出も含みます。予算と比べる「生活費」とは別の数字です）。まだ来ていない日・月は数えません。</p>
+        <p className="mb-2 text-[12px] text-ink-3">支出・収入はこの期間に記録したものの合計です（投資として数えた支出も含みます。予算と比べる「生活費」とは別の数字です）。今日より後の日・月は数えません。</p>
       </details>
     </figure>
   );

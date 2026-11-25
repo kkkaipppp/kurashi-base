@@ -176,7 +176,7 @@ function CalendarInner() {
                   const isToday = d === today;
                   const hol = holidayName(d);
                   const rest = i === 0 || !!hol; // 日曜と祝日は、薄い色（赤は支出、青は収入だけに使う）
-                  const future = d > today; // まだ来ていない日の金額は、薄い斜めの字（実際に使った額と区別する）
+                  const future = d > today; // 今日より後の日の金額は、薄い斜めの字（実際に使った額と区別する）
                   const label = `${formatDateJa(d)}${hol ? ` ${hol}` : ""}${showEv && info.ev ? ` 予定${info.ev}件（${info.titles.join("、")}${info.ev > info.titles.length ? "ほか" : ""}）` : ""}${showMoney && info.exp ? ` 支出${formatYen(info.exp)}` : ""}${showMoney && info.inc ? ` 収入${formatYen(info.inc)}` : ""}${dlDays.has(d) ? " 期限あり" : ""}`;
                   return (
                     <td key={d} className="h-px p-0 align-top">
@@ -235,9 +235,21 @@ function CalendarInner() {
             <span className="size-1.5 rounded-full bg-warn" />期限・固定費の支払日
           </span>
         </div>
-        <p className="mt-1 text-center text-[11px] text-ink-3" aria-hidden="true">
-          <span className="text-expense">赤い −数字＝支出</span>・<span className="text-income">青い＋数字＝収入</span>・<span className="italic opacity-60">薄い斜めの数字＝まだ来ていない日</span>・薄い日付＝日曜と祝日
-        </p>
+        {/* 凡例：1つずつ短く（赤＝支出、青＝収入、薄い斜め＝今日より後の日、薄い日付＝日曜・祝日） */}
+        <ul className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-[12px] text-ink-3" aria-hidden="true">
+          <li className="whitespace-nowrap">
+            <span className="font-semibold text-expense">赤</span>：支出
+          </li>
+          <li className="whitespace-nowrap">
+            <span className="font-semibold text-income">青</span>：収入
+          </li>
+          <li className="whitespace-nowrap">
+            <span className="font-semibold italic opacity-60">斜めの金額</span>：今日より後の日の分
+          </li>
+          <li className="whitespace-nowrap">
+            <span className="font-semibold">灰色の日付</span>：日曜・祝日
+          </li>
+        </ul>
       </Card>
 
       <section className="mt-4 space-y-3" aria-label="選んだ日の予定とお金">
@@ -249,7 +261,7 @@ function CalendarInner() {
           <p className="num text-[13px] text-ink-2">
             予定 {dayEvents.length}件・<span className="text-expense">支出 {formatYen(day.expense)}</span>・<span className="text-income">収入 {formatYen(day.income)}</span>
             {/* 固定費の支払い予定（実績の支出とは分けて出す。100点化の指示 A） */}
-            {dayFixed > 0 && <span className="text-warn">・固定費の支払い予定 {formatYen(dayFixed)}</span>}
+            {dayFixed > 0 && <span className="text-warn">・この日に払う固定費 {formatYen(dayFixed)}</span>}
             {dayDeadlines.length > 0 && `・期限など ${dayDeadlines.length}件`}
           </p>
           <button

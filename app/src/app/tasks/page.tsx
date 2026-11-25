@@ -46,19 +46,19 @@ function ToEventButton({ task }: { task: Task }) {
   const store = useStore();
   const data = useData();
   const ui = useUI();
-  if (taskIsEvent(data, task)) return <span className="px-1 text-[11px] font-semibold text-brand">予定あり</span>;
+  if (taskIsEvent(data, task)) return <span className="px-1 text-[11px] font-semibold text-brand">カレンダーに入っています</span>;
   return (
     <button
       type="button"
-      aria-label={`「${task.title}」を予定にする`}
+      aria-label={`「${task.title}」をカレンダーに入れる`}
       onClick={() => {
         const ts = new Date().toISOString();
         const r = store.commit((d) => makeEventFromTask(d, task.id, newId("ev"), todayStr(), ts));
-        ui.toast(r.ok ? "予定にしました（カレンダーに出ます）" : r.error, r.ok ? "ok" : "error");
+        ui.toast(r.ok ? "カレンダーに入れました" : r.error, r.ok ? "ok" : "error");
       }}
       className="min-h-11 rounded-lg px-2 text-[12px] font-semibold text-brand hover:bg-brand-soft"
     >
-      予定にする
+      カレンダーに入れる
     </button>
   );
 }

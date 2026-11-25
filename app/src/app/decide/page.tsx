@@ -41,14 +41,14 @@ export default function DecidePage() {
       </Card>
       {sc.ok && (
         <Card>
-          <SectionTitle>月末までのシナリオ比べ</SectionTitle>
+          <SectionTitle>月末まで、ケース別に比べる</SectionTitle>
           <table className="num w-full text-[13px]">
             <thead>
               <tr className="text-ink-3">
-                <th className="py-1 text-left font-semibold">シナリオ</th>
+                <th className="py-1 text-left font-semibold">ケース</th>
                 <th className="py-1 text-right font-semibold">月末の見込み</th>
-                <th className="py-1 text-right font-semibold">今のペースとの差</th>
-                {data.budget.monthly !== null && <th className="py-1 text-right font-semibold">予算との差</th>}
+                <th className="py-1 text-right font-semibold">今のままとの差</th>
+                {data.budget.monthly !== null && <th className="py-1 text-right font-semibold">予算との差（−は超過）</th>}
               </tr>
             </thead>
             <tbody>
@@ -62,7 +62,7 @@ export default function DecidePage() {
               ))}
             </tbody>
           </table>
-          <p className="mt-2 text-[12px] text-ink-3">どれも、今月の月末までの見込みです（確定ではありません）。使った額（{formatYen(sc.basis.spent)}）と、まだ来る固定費（{formatYen(sc.basis.unpaidFixed)}）は、どのシナリオでも同じです。変動費は、残り{sc.basis.daysAhead}日分（約{formatYen(sc.basis.variableAhead)}）だけを変えています。</p>
+          <p className="mt-2 text-[12px] text-ink-3">どれも、今月の月末までの見込みです（確定ではありません）。＋は増える、−は減ります。使った額（{formatYen(sc.basis.spent)}）と、これから払う固定費（{formatYen(sc.basis.unpaidFixed)}）は、どの行でも同じです。変えているのは、残り{sc.basis.daysAhead}日の日々の出費（約{formatYen(sc.basis.variableAhead)}。食費・日用品など、月ごとに変わる出費）だけです。</p>
         </Card>
       )}
       {a && (
@@ -82,7 +82,7 @@ export default function DecidePage() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="py-1">自由に使える残り</td>
+                    <td className="py-1">予算の残り（固定費を引いたあと）</td>
                     <td className="py-1 text-right">{y(a.freeLeft.before)}</td>
                     <td className={`py-1 text-right font-semibold ${a.overFree ? "text-expense" : ""}`}>{y(a.freeLeft.after)}</td>
                   </tr>
@@ -93,7 +93,7 @@ export default function DecidePage() {
                   </tr>
                   {a.projected && a.vsBudget && (
                     <tr>
-                      <td className="py-1">月末の見込みと予算の差</td>
+                      <td className="py-1">予算 − 月末の見込み（−は超過）</td>
                       <td className="py-1 text-right">{y(a.vsBudget.before)}</td>
                       <td className={`py-1 text-right font-semibold ${a.vsBudget.after < 0 ? "text-expense" : ""}`}>{y(a.vsBudget.after)}</td>
                     </tr>
@@ -101,7 +101,7 @@ export default function DecidePage() {
                 </tbody>
               </table>
             )}
-            {a.overFree && <p className="mt-2 rounded-xl bg-warn-soft px-3 py-2 text-[13px] text-warn">今月の予算の中では足りなくなります（自由に使える残りがマイナスになります）。</p>}
+            {a.overFree && <p className="mt-2 rounded-xl bg-warn-soft px-3 py-2 text-[13px] text-warn">今月の予算の中では足りなくなります（予算の残りがマイナスになります）。</p>}
             {a.budget !== null && !a.projected && <p className="mt-2 text-[12px] text-ink-3">月末の見込みは、記録が足りないので出していません。</p>}
           </Card>
           <Card>
@@ -114,11 +114,11 @@ export default function DecidePage() {
               ) : (
                 <li className="text-ink-3">予算が決まっていないので、割合は出せません</li>
               )}
-              <li>来月に来る固定費の登録は、合計 {formatYen(a.nextMonth.fixed)} です（登録されている予定額）</li>
+              <li>来月に払う固定費は、登録済みの分で合計 {formatYen(a.nextMonth.fixed)} です</li>
             </ul>
             <p className="mt-2 text-[12px] text-ink-3">来月の収入・ほかの支出は、まだ分からないので、入れていません。</p>
           </Card>
-          <p className="px-1 text-[12px] text-ink-3">今月の数字は、ホームと同じ計算（投資を除いた生活費・まだ来る固定費を引いた残り）です。見込みは確定ではありません。</p>
+          <p className="px-1 text-[12px] text-ink-3">今月の数字は、ホームと同じ計算です（予算から、使った額と、これから払う固定費を引いた残り。投資は含めません）。見込みは確定ではありません。</p>
         </>
       )}
     </main>
