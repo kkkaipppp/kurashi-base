@@ -116,6 +116,13 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
   const editId = useRef(cur?.id);
   const [wasEditing] = useState(Boolean(cur)); // 見出し用（消されても「編集」のまま）
   const lock = useRef(false);
+  // 書きかけで閉じるときは確かめる（ほかの入力シートと同じ。磨き込み 2026-11-26）
+  const [initial] = useState(() => JSON.stringify([name, amount, cycle, nextDue, categoryId, pay, active]));
+  const dirty = JSON.stringify([name, amount, cycle, nextDue, categoryId, pay, active]) !== initial;
+  const requestClose = async () => {
+    if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true }))) return;
+    onClose();
+  };
 
   const save = async () => {
     if (lock.current) return;
@@ -161,7 +168,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
     <Sheet
       title={wasEditing ? "固定費を編集" : "固定費を追加"}
       open
-      onRequestClose={onClose}
+      onRequestClose={requestClose}
       footer={
         <div className="flex gap-2">
           {cur && (

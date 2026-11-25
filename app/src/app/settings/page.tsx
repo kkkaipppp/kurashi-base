@@ -69,11 +69,14 @@ export default function SettingsPage() {
   };
 
   // --- ホーム表示 ---
-  const toggles: { key: HomeToggle; label: string }[] = [
-    { key: "todaySpent", label: "今日の支出（今月の残り予算の横）" },
-    { key: "nextRecurring", label: "次の固定費" },
-    { key: "needsReview", label: "確認したいこと（支払日・試験日・更新日など）" },
-  ];
+  // 自分用のホームは「次の固定費」「確認したいこと」をいつも出し、並びと表示はホームの「編集」で決める（ここの切り替えは効かないので出さない。磨き込み 2026-11-26）
+  const toggles: { key: HomeToggle; label: string }[] = PERSONAL_BUILD
+    ? [{ key: "todaySpent", label: "今日の支出（今月の残り予算の横）" }]
+    : [
+        { key: "todaySpent", label: "今日の支出（今月の残り予算の横）" },
+        { key: "nextRecurring", label: "次の固定費" },
+        { key: "needsReview", label: "確認したいこと（支払日・試験日・更新日など）" },
+      ];
 
   // --- カテゴリ ---
   const [catKind, setCatKind] = useState<TxType>("expense");
@@ -311,7 +314,7 @@ export default function SettingsPage() {
       <Card>
         <div id="budget" className="scroll-mt-20" />
         <SectionTitle>毎月の予算</SectionTitle>
-        <p className="mb-3 text-[13px] text-ink-3">残り予算＝この予算−今月の支出。空欄なら未設定。</p>
+        <p className="mb-3 text-[13px] text-ink-3">{PERSONAL_BUILD ? "残り予算＝この予算−今月の生活費（投資を除く）。空欄なら未設定。" : "残り予算＝この予算−今月の支出。空欄なら未設定。"}</p>
         <div className="flex items-start gap-2">
           <div className="flex-1">
             <Field label="予算（円）" htmlFor="budget-input" error={budgetErr}>
@@ -326,7 +329,11 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>ホームに表示する項目</SectionTitle>
-        <p className="mb-2 text-[13px] text-ink-3">今月の残り予算（予算がなければ今月の支出）と今日の予定は、いつも表示します。下の3つは、オンにすると、内容があるときだけ表示します。</p>
+        <p className="mb-2 text-[13px] text-ink-3">
+          {PERSONAL_BUILD
+            ? "今月の残り予算と今日の予定・次の固定費・確認したいことは、いつも表示します。カードの並びと表示は、ホームの「編集」で変えられます。"
+            : "今月の残り予算（予算がなければ今月の支出）と今日の予定は、いつも表示します。下の3つは、オンにすると、内容があるときだけ表示します。"}
+        </p>
         <ul className="divide-y divide-line">
           {toggles.map((t) => (
             <li key={t.key}>

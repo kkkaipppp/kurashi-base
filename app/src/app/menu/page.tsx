@@ -24,7 +24,11 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/recurring", label: "固定費", desc: "家賃・通信費などの決まった支払い", count: (d) => d.recurring.filter((r) => r.active).length },
       { href: "/tasks", label: "タスク", desc: "やることと期限", count: (d) => d.tasks.filter((t) => !t.done).length },
       { href: "/trips", label: "旅行", desc: "日程・行程・行き方を調べる", count: (d) => (d.trips ?? []).filter((t) => t.endDate >= todayStr()).length },
-      { href: "/import", label: "レシートを見て入力", desc: "レシートの画像を見ながら支出を入力（自動読み取りはまだ）" },
+      // 自分用の iPhone アプリでは、文字の読み取りとウィジェットが使える（磨き込み 2026-11-26。公開版の説明は変えない）
+      IS_PERSONAL
+        ? { href: "/import", label: "レシートを見て入力", desc: "レシートの写真から、日付・金額・店名の候補を読み取る（iPhone アプリ）" }
+        : { href: "/import", label: "レシートを見て入力", desc: "レシートの画像を見ながら支出を入力（自動読み取りはまだ）" },
+      ...(IS_PERSONAL ? [{ href: "/widget", label: "ウィジェット", desc: "iPhone のホーム画面に置くウィジェットの中身を確かめる" }] : []),
       { href: "/settings#backup", label: "バックアップと復元", desc: "記録をファイルに保存・ファイルから戻す" },
     ],
   },
@@ -63,7 +67,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { href: "/share", label: "共有", desc: "家族と一緒に使う", soon: true },
       { href: "/ai", label: "AI生活サポート", desc: "記録をもとに相談する", soon: true },
       { href: "/integrations", label: "外部サービス連携", desc: "銀行・カレンダーなどとつなぐ", soon: true },
-      { href: "/widget", label: "ウィジェット", desc: "ホーム画面に置く場合の表示を確認", soon: true },
+      ...(IS_PERSONAL ? [] : [{ href: "/widget", label: "ウィジェット", desc: "ホーム画面に置く場合の表示を確認", soon: true }]),
     ],
   },
 ];

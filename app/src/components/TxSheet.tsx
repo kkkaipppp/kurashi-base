@@ -387,9 +387,16 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
 
         <details className="-mt-1 text-[12px] text-ink-3">
           <summary className="cursor-pointer py-1">返金・振替・分割払いについて</summary>
-          <p className="pt-1">
-            返金は「収入」で登録します（元の支出と同じカテゴリで）。口座どうしの振替・分割払いは、まだ記録できません。
-          </p>
+          {EXTRA ? (
+            // 自分用：返金・口座間の移動を記録できる（案内を実際の機能に合わせる。磨き込み 2026-11-26）
+            <p className="pt-1">
+              返金は、元の支出を開いて「返金があった」から記録します。口座どうしの移動やカードの引き落としは、下の「数え方」で「収支に数えない」を選びます。分割払いは、まだ記録できません。
+            </p>
+          ) : (
+            <p className="pt-1">
+              返金は「収入」で登録します（元の支出と同じカテゴリで）。口座どうしの振替・分割払いは、まだ記録できません。
+            </p>
+          )}
         </details>
 
         <Field label="金額（円）" htmlFor="tx-amount" error={errors.amount}>
