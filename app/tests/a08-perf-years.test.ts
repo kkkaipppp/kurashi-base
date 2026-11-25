@@ -187,10 +187,10 @@ describe("A08：測る画面の安全", () => {
   });
   it("測る部品と画面は、記録を読み書きせず（useData・useStore を使わない）、外へ送らない。公開版では無効", () => {
     const root = path.resolve(import.meta.dirname, "..");
-    const files = ["src/app/perf/page.tsx", "src/lib/perfData.ts", "src/lib/perfBench.ts", "src/lib/perfIdb.ts"];
+    const files = ["src/app/perf/page.tsx", "src/components/PerfLab.tsx", "src/lib/perfData.ts", "src/lib/perfBench.ts", "src/lib/perfIdb.ts"];
     for (const f of files) {
       const s = fs.readFileSync(path.join(root, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-      expect(s, f).not.toMatch(/\b(useData|useStore|localStorage|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource)\b|window\.open|\bimport\(|https?:\/\//);
+      expect(s, f).not.toMatch(/\b(useData|useStore|localStorage|fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource)\b|window\.open|\bimport\((?!"@\/components\/PerfLab")|https?:\/\//);
     }
     expect(fs.readFileSync(path.join(root, "src/lib/edition.ts"), "utf8")).toMatch(/perfLab: \{ personal: true, public: false \}/);
   });
