@@ -26,6 +26,8 @@ const YearReport = PERIOD_REPORT ? dynamic(() => import("@/components/PeriodRepo
 const MONTH_BREAKDOWN = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // 月末の見込み：2026-11-25 から公開版でも出す（FEATURE_EDITIONS.forecast）
 const ForecastCard = FEATURES.forecast ? dynamic(() => import("@/components/ForecastCard").then((m) => m.ForecastCard)) : () => null;
+// 続けて使えているか（自分用だけ。公開版の組み立てには入れない）
+const UsageCard = FEATURES.usageDays && process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(() => import("@/components/UsageCard").then((m) => m.UsageCard)) : () => null;
 const CashBalanceCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/CashBalanceCard").then((m) => m.CashBalanceCard)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
 
@@ -184,6 +186,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
           </Card>
 
           <ForecastCard month={month} />
+          {month === monthKey(today) && <UsageCard />}
           <CashBalanceCard month={month} />
           <MonthBreakdownCard month={month} />
 

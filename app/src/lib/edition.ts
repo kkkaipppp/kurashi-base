@@ -34,6 +34,8 @@ export const FEATURE_EDITIONS = {
   lifeChange: { personal: true, public: false },
   /** 性能を測る（合成データで、計算と保存の時間・大きさを測る。記録には触れない。2026-11-25 o11 A08。自分用だけ） */
   perfLab: { personal: true, public: false },
+  /** 続けて使えているか（直近4週間の、記録した日の数。CHARTER の成功1・論点 Q15 は B。2026-11-26 まず自分用だけ） */
+  usageDays: { personal: true, public: false },
 } as const satisfies Record<string, Record<Edition, boolean>>;
 
 export type FeatureName = keyof typeof FEATURE_EDITIONS;
