@@ -9,6 +9,7 @@ import { staleRecordError } from "./eventConcurrency";
 import { renameCategoryIn } from "./categoryRename";
 import { LocalStorageRepository, type Repository } from "./repository";
 import { StoreCore, type CommitOptions, type CoreState } from "./storeCore";
+import { CHANNEL, IdbRepositoryAdapter } from "./idbAdapter";
 import type { SaveResult, UndoSnapshot } from "./storage";
 import type { AppData, CalendarEvent, Category, CollectionKey, HomeToggle, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
 
@@ -85,11 +86,28 @@ interface Store {
 }
 
 
+// 保存先：自分用の版は IndexedDB（起動時に localStorage の旧データを移す。旧データは消さない）。公開版は今までどおり localStorage（o11 A06 段階B）
+// 版の値は、このファイルの中で直接比べる（公開版の組み立てから、IndexedDB の部品を外すため）
+const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+function defaultRepository(): Repository {
+  if (PERSONAL_BUILD && typeof indexedDB !== "undefined") {
+    let legacy: Storage | null = null;
+    try {
+      legacy = window.localStorage;
+    } catch {
+      legacy = null;
+    }
+    const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(CHANNEL) : null;
+    return new IdbRepositoryAdapter({ factory: indexedDB, legacy, channel });
+  }
+  return new LocalStorageRepository();
+}
+
 const Ctx = createContext<Store | null>(null);
 
 export function StoreProvider({ children, repo: repoProp }: { children: React.ReactNode; repo?: Repository }) {
   // 保存の中心は React に依らない StoreCore（列・競合の確かめ・読み込み直し。lib/storeCore.ts）
-  const [core] = useState(() => new StoreCore(repoProp ?? new LocalStorageRepository()));
+  const [core] = useState(() => new StoreCore(repoProp ?? defaultRepository()));
   const [state, setState] = useState<CoreState>(core.snapshot);
   useEffect(() => core.subscribe(setState), [core]);
   useEffect(() => {
