@@ -64,6 +64,6 @@ describe("A06：1.5万件での速さ（前の実装と並べて）", () => {
       const [tn, to] = medians(fNew, fOld);
       console.log(`[A06 速さ] ${name}：新 ${tn.toFixed(2)}ms・旧 ${to.toFixed(2)}ms`);
       expect(tn).toBeLessThanOrEqual(to * 1.5 + 2);
-    });
+    }, 60_000); // 1.5万件を何回も測るので、全体を同時に動かすときの待ち時間を広げる
   }
 });
