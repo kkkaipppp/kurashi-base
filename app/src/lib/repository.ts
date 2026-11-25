@@ -1,4 +1,4 @@
-import { loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, wipeAllAppData, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
+import { loadData, quarantineAndReset, readUndo, restoreUndo, saveDataIfUnchanged, saveWithUndo, wipeAllAppData, type KV, type LoadResult, type SaveResult, type UndoSnapshot } from "./storage";
 import { validateAppData } from "./schema";
 import type { AppData } from "./types";
 
@@ -28,8 +28,10 @@ export interface Repository {
 /** 今の localStorage の保存（storage.ts）を、そのまま非同期の形に包む。token は保存した生の文字列 */
 export class LocalStorageRepository implements Repository {
   readonly kind = "localStorage" as const;
+  /** kv：保存場所（省くとブラウザの localStorage。試験と、IndexedDB が使えないときの代わりに渡す） */
+  constructor(private readonly kv?: KV | null) {}
   async load(): Promise<RepoLoadResult> {
-    const r = loadData();
+    const r = loadData(this.kv ?? undefined);
     if (r.status === "ok" || r.status === "new") return { ...r, token: r.persistedRaw };
     return r;
   }
@@ -38,22 +40,22 @@ export class LocalStorageRepository implements Repository {
     const v = validateAppData(next);
     if (!v.ok) return { ok: false, error: `保存できませんでした（${v.error}）。今までの記録は消えていません` };
     const base = (token ?? null) as string | null;
-    const r = undoReason ? saveWithUndo(next, base, undoReason, new Date().toISOString()) : saveDataIfUnchanged(next, base);
+    const r = undoReason ? saveWithUndo(next, base, undoReason, new Date().toISOString(), this.kv ?? undefined) : saveDataIfUnchanged(next, base, this.kv ?? undefined);
     return r.ok ? { ok: true, token: r.persistedRaw } : r;
   }
   async readUndo() {
-    return readUndo();
+    return readUndo(this.kv ?? undefined);
   }
   async undo(token: Token) {
-    const r = restoreUndo((token ?? null) as string | null, new Date().toISOString());
+    const r = restoreUndo((token ?? null) as string | null, new Date().toISOString(), this.kv ?? undefined);
     return r.ok ? { ok: true as const, token: r.persistedRaw, data: r.data } : r;
   }
   async wipe(token: Token): Promise<RepoSaveResult> {
-    const r = wipeAllAppData((token ?? null) as string | null);
+    const r = wipeAllAppData((token ?? null) as string | null, this.kv ?? undefined);
     return r.ok ? { ok: true, token: null } : r;
   }
   async quarantine(raw: string) {
-    return quarantineAndReset(raw);
+    return quarantineAndReset(raw, this.kv ?? undefined);
   }
   subscribe(onChange: () => void) {
     if (typeof window === "undefined") return () => {};

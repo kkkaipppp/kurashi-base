@@ -1,3 +1,4 @@
+import { emptyData } from "./defaults";
 import { validateAppData } from "./schema";
 import { STORAGE_KEY, type KV, type UndoSnapshot } from "./storage";
 import type { AppData } from "./types";
@@ -177,13 +178,36 @@ export class IndexedDbRepository {
   }
 
   /** すべて削除：本体と控えを消す（移行の印は残す＝旧データから、もう一度移さない） */
-  wipe(expectedRevision: number, now: string, empty: AppData) {
-    return this.guardedWrite<{ ok: true; revision: number }>(expectedRevision, (cur, _u, put, del) => {
+  async wipe(expectedRevision: number, now: string, empty: AppData) {
+    const r = await this.guardedWrite<{ ok: true; revision: number }>(expectedRevision, (cur, _u, put, del) => {
       const rev = (cur?.revision ?? 0) + 1;
       del("undo");
+      del("staging");
       put("data", { revision: rev, json: JSON.stringify(empty), savedAt: now } satisfies DataRow);
       return { ok: true, revision: rev };
     });
+    if (!r.ok) return r;
+    // 壊れたデータの退避分（corrupt:…）も消し、残っていないことを確かめる（すべて削除の約束。点検 高-3）
+    const left = await this.deleteKeys((k) => k.startsWith("corrupt:"));
+    if (left > 0) return { ok: false as const, error: `削除しきれなかったデータが ${left} 件あります。もう一度「すべて削除」をしてください` };
+    return r;
+  }
+
+  /** 条件に合うキーを消し、消したあとも残っている数を返す */
+  private async deleteKeys(match: (k: string) => boolean): Promise<number> {
+    const keys = ((await reqP(this.db.transaction(STORE, "readonly").objectStore(STORE).getAllKeys())) as IDBValidKey[]).map(String).filter(match);
+    if (keys.length) {
+      await new Promise<void>((resolve) => {
+        const tx = this.db.transaction(STORE, "readwrite");
+        const st = tx.objectStore(STORE);
+        for (const k of keys) st.delete(k);
+        tx.oncomplete = () => resolve();
+        tx.onabort = () => resolve();
+        tx.onerror = () => undefined;
+      });
+    }
+    const after = ((await reqP(this.db.transaction(STORE, "readonly").objectStore(STORE).getAllKeys())) as IDBValidKey[]).map(String).filter(match);
+    return after.length;
   }
 
   /** 読み込めないデータを、別のキーに退避してから、本体を消す（退避が書けなければ、何もしない） */
@@ -243,14 +267,57 @@ export class IndexedDbRepository {
     return ((await reqP(tx.objectStore(STORE).get("staging"))) as string | undefined) ?? null;
   }
 
-  promote(json: string, meta: MetaRow, now: string): Promise<boolean> {
-    return this.writeAll(
-      (st, put) => {
-        put("data", { revision: 1, json, savedAt: now } satisfies DataRow);
-        put("meta", meta);
-        st.delete("staging");
-      },
-    );
+  /**
+   * 正本への切り替え。本体も印もないときだけ書く（同じトランザクションの中で確かめる。すでに本体があれば、上書きしない。点検 高-1）。
+   * 結果：done（切り替えた）／exists（すでに本体か印がある＝何もしない）／failed
+   */
+  promote(json: string, meta: MetaRow, now: string): Promise<"done" | "exists" | "failed"> {
+    return new Promise((resolve) => {
+      let result: "done" | "exists" | "failed" = "failed";
+      let tx: IDBTransaction;
+      try {
+        tx = this.db.transaction(STORE, "readwrite");
+      } catch {
+        resolve("failed");
+        return;
+      }
+      const st = tx.objectStore(STORE);
+      const gd = st.get("data");
+      const gm = st.get("meta");
+      gm.onsuccess = () => {
+        if (gd.result || gm.result) {
+          result = "exists";
+          st.delete("staging");
+          return;
+        }
+        try {
+          for (const k of ["data", "meta"]) if (this.fault?.(k)) throw new DOMException("injected", "QuotaExceededError");
+          st.put({ revision: 1, json, savedAt: now } satisfies DataRow, "data");
+          st.put(meta, "meta");
+          st.delete("staging");
+          result = "done";
+        } catch {
+          result = "failed";
+          tx.abort();
+        }
+      };
+      tx.oncomplete = () => resolve(result);
+      tx.onabort = () => resolve("failed");
+    });
+  }
+
+  /** 移行の印だけを書く（旧データがない端末でも、あとから現れた旧データで上書きしないように。点検 高-1）。すでにあれば何もしない */
+  markMigrated(meta: MetaRow): Promise<boolean> {
+    return new Promise((resolve) => {
+      const tx = this.db.transaction(STORE, "readwrite");
+      const st = tx.objectStore(STORE);
+      const gm = st.get("meta");
+      gm.onsuccess = () => {
+        if (!gm.result) st.put(meta, "meta");
+      };
+      tx.oncomplete = () => resolve(true);
+      tx.onabort = () => resolve(false);
+    });
   }
 
   private writeAll(body: (st: IDBObjectStore, put: (k: string, v: unknown) => void) => void): Promise<boolean> {
@@ -328,7 +395,11 @@ export async function migrateFromLocalStorage(kv: KV, repo: IndexedDbRepository,
   } catch (e) {
     return { status: "failed", error: `旧データを読めませんでした（${(e as Error)?.message ?? "不明"}）` };
   }
-  if (raw === null) return { status: "nothing" };
+  if (raw === null) {
+    // 旧データがない端末：印だけ書く（あとから旧データが現れても、IndexedDB の記録を上書きしない。点検 高-1）
+    await repo.markMigrated({ migratedAt: now, source: "localStorage", integrity: integrity(emptyData(now), "") });
+    return { status: "nothing" };
+  }
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -348,7 +419,10 @@ export async function migrateFromLocalStorage(kv: KV, repo: IndexedDbRepository,
   const after = integrity(v2.data, staged);
   if (JSON.stringify(before) !== JSON.stringify(after)) return { status: "mismatch", before, after };
   // 3. 一致したときだけ、正本に切り替える（本体・印・仮置きの削除を同時に）
-  if (!(await repo.promote(staged, { migratedAt: now, source: "localStorage", integrity: after }, now))) return { status: "failed", error: "切り替えに失敗しました（旧データはそのまま）" };
+  const pr = await repo.promote(staged, { migratedAt: now, source: "localStorage", integrity: after }, now);
+  if (pr === "failed") return { status: "failed", error: "切り替えに失敗しました（旧データはそのまま）" };
+  // すでに本体か印がある（別のタブが先に移した・IndexedDB で先に記録した）：上書きしない
+  if (pr === "exists") return { status: "already" };
   // 4. 旧データ側に、小さな印だけ残す（旧データ本体は消さない。印が書けなくても、移行は成立している）
   try {
     kv.setItem(MOVED_MARK_KEY, now);

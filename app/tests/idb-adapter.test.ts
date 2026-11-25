@@ -13,7 +13,17 @@ const tx = (id: string, amount = 1000): Transaction => ({ id, type: "expense", d
 const addTx = (id: string) => (d: AppData): AppData => ({ ...d, transactions: [...d.transactions, tx(id)] });
 const memKV = (init: Record<string, string> = {}): KV & { store: Map<string, string> } => {
   const store = new Map(Object.entries(init));
-  return { store, getItem: (k) => store.get(k) ?? null, setItem: (k, v) => void store.set(k, v), removeItem: (k) => void store.delete(k) };
+  // 本物の localStorage と同じく、key()・length も持つ（すべて削除は、キーを1つずつ見て消す）
+  return {
+    store,
+    getItem: (k) => store.get(k) ?? null,
+    setItem: (k, v) => void store.set(k, v),
+    removeItem: (k) => void store.delete(k),
+    key: (i: number) => [...store.keys()][i] ?? null,
+    get length() {
+      return store.size;
+    },
+  } as KV & { store: Map<string, string> };
 };
 /** 同じ端末の別のタブどうしの知らせ（BroadcastChannel の代わり。送った本人には届かない） */
 class Bus {
@@ -156,5 +166,81 @@ describe("IndexedDB の部品：保存の中心の試験を、IndexedDB でも�
     const again = new StoreCore(new IdbRepositoryAdapter({ factory, legacy: memKV() }));
     await again.reload();
     expect(again.snapshot.data?.transactions.map((t) => t.id)).toEqual(["a"]);
+  });
+});
+
+describe("IndexedDB の切り替えの独立点検（高-1・高-3・中-1・中-2）", () => {
+  it("高-1：旧データなしで始めた端末に、あとから旧データが現れても、IndexedDB の記録を上書きしない", async () => {
+    const { legacy, make } = await setup();
+    const a = new StoreCore(make());
+    await a.reload();
+    expect((await a.commit(addTx("idb-only"))).ok).toBe(true);
+    legacy.setItem(STORAGE_KEY, JSON.stringify({ ...emptyData(now), transactions: [tx("legacy")] })); // 旧版に戻して記録した
+    const b = new StoreCore(make());
+    await b.reload();
+    expect(b.snapshot.data?.transactions.map((t) => t.id)).toEqual(["idb-only"]);
+  });
+  it("高-3：すべて削除は、旧データ側の kurashi-base: のキー（下書き・表示の設定・退避分）と、IndexedDB の退避分まで消す", async () => {
+    const old = { ...emptyData(now), transactions: [tx("old")] };
+    const { legacy, make, factory } = await setup({
+      [STORAGE_KEY]: JSON.stringify(old),
+      "kurashi-base:sheet-draft:v1:tx:new": "{}",
+      "kurashi-base:ui:calendar-show:v1": "money",
+      "kurashi-base:corrupt:1": "x",
+      "other-app:key": "keep",
+    });
+    const core = new StoreCore(make());
+    await core.reload();
+    // IndexedDB にも退避分を作っておく
+    const { openDb } = await import("@/lib/idbRepository");
+    const db = await openDb(factory);
+    await new Promise<void>((res) => {
+      const t = db.transaction("kv", "readwrite");
+      t.objectStore("kv").put({ json: "x" }, "corrupt:old");
+      t.oncomplete = () => res();
+    });
+    db.close();
+    expect((await core.wipe(emptyData(now))).ok).toBe(true);
+    const left = [...legacy.store.keys()].filter((k) => k.startsWith("kurashi-base:") && k !== MOVED_MARK_KEY);
+    expect(left).toEqual([]);
+    expect(legacy.store.get("other-app:key")).toBe("keep"); // ほかのアプリのキーには触れない
+    const db2 = await openDb(factory);
+    const keys = await new Promise<string[]>((res) => {
+      const g = db2.transaction("kv").objectStore("kv").getAllKeys();
+      g.onsuccess = () => res((g.result as IDBValidKey[]).map(String));
+    });
+    db2.close();
+    expect(keys.filter((k) => k.startsWith("corrupt:"))).toEqual([]);
+  });
+  it("中-1：旧データが壊れているとき、退避すると先へ進める（旧データ側を退避し、空から始まる）", async () => {
+    const { legacy, make } = await setup({ [STORAGE_KEY]: "{壊れた" });
+    const core = new StoreCore(make());
+    await core.reload();
+    expect(core.snapshot.status).toBe("corrupt");
+    expect((await core.resetCorrupt()).ok).toBe(true);
+    expect(core.snapshot.status).toBe("ready");
+    expect([...legacy.store.keys()].some((k) => k.startsWith("kurashi-base:corrupt:"))).toBe(true); // 壊れた中身は退避して残す
+  });
+  it("中-2：一度も移していない端末で、移行に失敗したら、この起動は localStorage で続ける（記録を外へ出せない画面に閉じ込めない）", async () => {
+    const old = { ...emptyData(now), transactions: [tx("old")] };
+    const legacy = memKV({ [STORAGE_KEY]: JSON.stringify(old) });
+    const ad = new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy, fault: (k) => k === "staging" });
+    const core = new StoreCore(ad);
+    await core.reload();
+    expect(core.snapshot.status).toBe("ready");
+    expect(core.snapshot.data?.transactions.map((t) => t.id)).toEqual(["old"]);
+    expect(ad.active).toBe("localStorage");
+    expect((await core.commit(addTx("new"))).ok).toBe(true);
+    expect(JSON.parse(legacy.store.get(STORAGE_KEY)!).transactions).toHaveLength(2);
+  });
+  it("中-2：一度でも移した端末では、localStorage に戻らない（古い中身を出さない）", async () => {
+    const { legacy, make } = await setup({ [STORAGE_KEY]: JSON.stringify({ ...emptyData(now), transactions: [tx("old")] }) });
+    const a = new StoreCore(make());
+    await a.reload();
+    expect(legacy.store.get(MOVED_MARK_KEY)).toBeDefined();
+    const broken = new IdbRepositoryAdapter({ factory: { open: () => { throw new Error("開けない"); } } as unknown as IDBFactory, legacy });
+    const b = new StoreCore(broken);
+    await b.reload();
+    expect(b.snapshot.status).toBe("unavailable");
   });
 });
