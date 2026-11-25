@@ -56,7 +56,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         merchant: editing.merchant,
         paymentMethod: editing.paymentMethod,
         note: editing.note,
-        countAs: editing.countAs ?? "",
+        countAs: editing.countAs === "transfer" && editing.transferKind === "card" ? "transfer-card" : (editing.countAs ?? ""),
         tripId: editing.tripId ?? "",
         linkRecurringId: "",
         linkPartial: false,
@@ -206,6 +206,11 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         setErrors(v.errors);
         return;
       }
+      // 返金のある支出の金額は直せない（返金の記録から計算し直す仕組みのため）。直すときは、返金の記録を消して（元に戻る）から
+      if (editing?.refundGross !== undefined && !asNew && v.amount !== editing.amount) {
+        setSaveError("返金のある支出の金額は、直せません。返金の記録を消す（元に戻ります）と、直せるようになります");
+        return;
+      }
       // 手でつないだ固定費は、保存の直前にも「今も候補か」を確かめる（書きかけの再開・金額の変更で古い指定が残らないように）
       const linkOk =
         draft.type === "expense" && draft.linkRecurringId && fixedCandidates({ type: draft.type, categoryId: draft.categoryId, amount: v.amount, merchant: draft.merchant, date: draft.date }, data.recurring).some((r) => r.id === draft.linkRecurringId)
@@ -230,10 +235,12 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         // 残り（予定額 − すでに払った分）より少ないときだけ（チェック欄の表示条件と同じ）。全部払い終わる額なら、一部の印は付けない
         ...(linkOk && draft.linkPartial && v.amount < remainingOf(data.recurring.find((r) => r.id === linkOk)) ? { recurringPartial: true } : {}),
         // 数え方・旅行は、空なら持たない（編集で外したときは store が消す）
-        countAs: draft.type === "expense" && draft.countAs ? draft.countAs : undefined,
+        countAs: draft.type === "expense" && draft.countAs ? (draft.countAs === "transfer-card" ? "transfer" : draft.countAs) : undefined,
+        transferKind: draft.type === "expense" && draft.countAs === "transfer-card" ? "card" : undefined,
         tripId: draft.tripId && (data.trips ?? []).some((t) => t.id === draft.tripId) ? draft.tripId : undefined,
       };
       if (input.countAs === undefined && !editing?.countAs) delete input.countAs;
+      if (input.transferKind === undefined && !editing?.transferKind) delete input.transferKind;
       if (input.tripId === undefined && !editing?.tripId) delete input.tripId;
       if (input.recurringId === undefined) delete input.recurringId;
       if (!force) {
@@ -587,7 +594,8 @@ function TxExtras({
           <option value="">カテゴリどおり（{catInvest ? "投資" : "生活費"}）</option>
           <option value="life">生活費として数える</option>
           <option value="invest">投資として数える（予算と比べない）</option>
-          <option value="transfer">収支に数えない（カード引落・口座間の移動など）</option>
+          <option value="transfer-card">カードの引き落とし（収支に数えない。残高は減る）</option>
+          <option value="transfer">収支に数えない（口座間の移動など。残高は変わらない）</option>
         </select>
       </Field>
       {trips.length > 0 && (
@@ -612,7 +620,8 @@ function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
   const store = useStore();
   const ui = useUI();
   const [open, setOpen] = useState(false);
-  const [amt, setAmt] = useState(String(tx.amount));
+  const left = (tx.refundGross ?? tx.amount) - refundedTotal(data, tx.id); // 返金できる残り（元の金額 − これまでの返金）
+  const [amt, setAmt] = useState(String(left > 0 ? left : tx.amount));
   const [date, setDate] = useState(todayStr());
   const already = refundedTotal(data, tx.id);
   if (tx.countAs === "transfer") return already > 0 ? <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">全額が返金されています（{formatYen(already)}）。</p> : null;
@@ -641,7 +650,7 @@ function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
   };
   return (
     <div className="space-y-2 rounded-xl border border-line px-3 py-3">
-      <p className="text-[13px] font-semibold">返金の額（今の支出 {formatYen(tx.amount)} まで）</p>
+      <p className="text-[13px] font-semibold">返金の額（返金できる残り {formatYen(left)} まで）</p>
       <input inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} className={inputCls} aria-label="返金の額" maxLength={14} />
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} aria-label="返金のあった日" />
       <p className="text-[12px] text-ink-3">一部なら、この支出がその分だけ減ります。全額なら、この支出を収支に数えません。返金の記録を消すと、元に戻ります。</p>

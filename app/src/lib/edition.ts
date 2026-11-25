@@ -26,6 +26,8 @@ export const FEATURE_EDITIONS = {
   inbox: { personal: true, public: false },
   /** 買い物の判断（2026-11-25 NEXT v21。まず自分用だけ） */
   decide: { personal: true, public: false },
+  /** 生活の変化（引っ越し・転職の計画。2026-11-25 NEXT v21 B03。まず自分用だけ） */
+  lifeChange: { personal: true, public: false },
 } as const satisfies Record<string, Record<Edition, boolean>>;
 
 export type FeatureName = keyof typeof FEATURE_EDITIONS;

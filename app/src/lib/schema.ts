@@ -46,6 +46,15 @@ const isHttpOrBlank = (v: unknown) => {
   }
 };
 const optional = (check: (v: unknown) => boolean) => (v: unknown) => v === undefined || check(v);
+const isLifeItem = (x: unknown): boolean => {
+  if (!isObj(x) || !optional(isBool)(x.applied)) return false;
+  if (x.kind === "budget") return (x.before === null || isAmt(x.before)) && (x.after === null || isAmt(x.after));
+  if (x.kind === "recurringStop") return isStr(x.recurringId) && isStr(x.name);
+  if (x.kind === "recurringAmount") return isStr(x.recurringId) && isStr(x.name) && isAmt(x.before) && isAmt(x.after);
+  return false;
+};
+const isLifeChanges = (v: unknown) =>
+  Array.isArray(v) && v.every((c) => isObj(c) && isStr(c.id) && isStr(c.title) && isValidDateStr(c.date as string) && oneOf("planned", "applied", "undone")(c.status) && isStr(c.createdAt) && Array.isArray(c.items) && c.items.every(isLifeItem));
 const isCheckList2 = (v: unknown) =>
   Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done) && (x.due === undefined || isDate(x.due)));
 const isCheckList = (v: unknown) =>
@@ -72,7 +81,7 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
   nisa: { label: "NISA", fields: { date: isDate, kind: oneOf("buy", "sell"), frame: oneOf("tsumitate", "growth"), amount: (v) => isAmt(v), name: isStr, note: isStr } },
   notes: { label: "生活記録・メモ", fields: { title: isStr, body: isStr, date: okDateOrBlank, pinned: isBool } },
   tasks: { label: "タスク", fields: { title: isStr, due: okDateOrBlank, done: isBool, note: isStr, eventId: optional(isStr) } },
-  assets: { label: "資産", fields: { name: isStr, kind: oneOf("cash", "investment", "nisa", "pension", "insurance", "property", "other"), value: numOrNull, asOf: okDateOrBlank, note: isStr } },
+  assets: { label: "資産", fields: { name: isStr, kind: oneOf("cash", "investment", "nisa", "pension", "insurance", "property", "other"), value: numOrNull, asOf: okDateOrBlank, note: isStr, cardDebt: optional(isAmt) } },
   contracts: { label: "契約", fields: { name: isStr, provider: isStr, amount: numOrNull, cycle: oneOf("monthly", "yearly", "none"), renewalDate: okDateOrBlank, status: oneOf("active", "cancelled"), note: isStr } },
   health: { label: "健康記録", fields: { date: isDate, item: isStr, value: numOrNull, unit: isStr, note: isStr } },
   documents: { label: "書類", fields: { title: isStr, category: isStr, expiry: okDateOrBlank, place: isStr, note: isStr } },
@@ -104,7 +113,7 @@ export function validateAppData(input: unknown): R {
       !isStr(t.date) || !isValidDateStr(t.date) || !isAmt(t.amount) || !isStr(t.categoryId) ||
       !isStr(t.merchant) || !isStr(t.paymentMethod) || !isStr(t.note) || !isStr(t.createdAt) ||
       // 100点化で足した任意の項目（無くてもよい。あれば形を確かめる）
-      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("life", "invest"))(t.refundWas)
+      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross)
     )
       return { ok: false, error: "取引のデータが壊れています" };
     if (ids.has(t.id)) return { ok: false, error: "取引IDが重複しています" };
@@ -150,7 +159,7 @@ export function validateAppData(input: unknown): R {
   const isStrList = (v: unknown) => Array.isArray(v) && v.every(isStr);
   if (!isObj(raw.prefs) || !isObj(raw.prefs.home) || !optional(isStrList)(raw.prefs.home.order) || !optional(isStrList)(raw.prefs.home.hidden) || !optional(isStrList)(raw.prefs.menuHidden))
     return { ok: false, error: "表示設定のデータが壊れています" };
-  if (!isObj(raw.meta) || !optional((v) => Array.isArray(v) && v.every((b) => isObj(b) && isStr(b.id) && isStr(b.at) && isStr(b.source) && isNum(b.added)))(raw.meta.imports))
+  if (!isObj(raw.meta) || !optional((v) => Array.isArray(v) && v.every((b) => isObj(b) && isStr(b.id) && isStr(b.at) && isStr(b.source) && isNum(b.added)))(raw.meta.imports) || !optional(isLifeChanges)(raw.meta.lifeChanges))
     return { ok: false, error: "管理情報が壊れています" };
 
   const subjectIds = new Set<string>();

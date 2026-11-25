@@ -68,3 +68,29 @@ describe("10年相当のデータ（性能）", () => {
     expect(mb).toBeLessThan(5);
   });
 });
+
+describe("保存容量のピーク（v22 G0：通常・取り消し用の控え・復元）", () => {
+  it("取り消し用の控えを書く操作（復元・置き換え）の最大の使用量は、データの約3倍。5MB（約500万字）に収まるデータの目安を出す", () => {
+    const sample = (n: number): AppData => {
+      const x = big();
+      x.transactions = x.transactions.slice(0, n);
+      return x;
+    };
+    const chars = (data: AppData) => JSON.stringify(data).length;
+    const N = 3000;
+    const d3 = sample(N);
+    const one = chars(d3);
+    const wrapped = JSON.stringify({ savedAt: now, reason: "復元", raw: JSON.stringify(d3) }).length;
+    const peak = one + wrapped + one; // 今のデータ ＋ 控え（文字列の中に入れるので、引用符が増える） ＋ 新しいデータ
+    const base = chars(sample(0)); // 取引以外の分（予定3千件・固定費など）
+    const perTx = (one - base) / N;
+    const LIMIT = 5_000_000;
+    const maxNormal = Math.floor((LIMIT - base) / perTx);
+    const maxUndo = Math.floor((LIMIT - (base * 3 + 0.1 * base)) / (perTx * 3.1));
+    console.log(`1件あたり ${perTx.toFixed(0)} 字／通常の保存で入る取引 約${maxNormal}件／控えを書く操作（復元・置き換え）で入る取引 約${maxUndo}件（予定3千件を含む計算）／ピーク倍率 ${(peak / one).toFixed(2)}倍`);
+    // 控えを書く操作のピークは、データの 3 倍を超える（控えの引用符の分）。倍率が増えていたら気づけるようにしておく
+    expect(peak / one).toBeGreaterThan(2.9);
+    expect(peak / one).toBeLessThan(3.4);
+    expect(maxUndo).toBeGreaterThan(1500); // 実際の使い方（数千件）では、まだ入る
+  });
+});

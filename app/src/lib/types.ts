@@ -1,3 +1,4 @@
+import type { LifeChange } from "./lifeChange";
 // 暮らしベース データモデル（schemaVersion 2。v1 からは schema.ts の migrate で移行）
 // 日付は端末ローカルの "YYYY-MM-DD"、時刻は "HH:mm" の文字列で持つ（UTC変換しない）。
 // 金額は日本円の整数（最小単位=1円）。収支の区別は type で行い、amount は常に正の整数。
@@ -23,8 +24,10 @@ export interface Transaction {
   tripId?: string; // 旅行の支出（Trip.id）
   recurringDue?: string; // 一部の支払いのとき、どの支払日の分か（取り消しで別の回の払い分を巻き込まないため）
   recurringPartial?: boolean; // 固定費の「一部の支払い」として記録した（残りは、まだ払っていない。NEXT v21 X02）
+  transferKind?: "card"; // 収支に数えない記録のうち「カード引き落とし」のとき（残高の目安に使う。NEXT v21 X05。lib/balance.ts）
   refundOf?: string; // 返金の記録：どの支出の返金か（NEXT v21 X02。収入にも数えない。lib/refund.ts）
-  refundWas?: "life" | "invest"; // 全額の返金で、元の支出の数え方を戻すための控え
+  refundGross?: number; // 返金がある支出：返金の前の元の金額（返金の記録の合計から、いまの金額を計算し直すための控え。lib/refund.ts）
+  refundWas?: "life" | "invest"; // 返金がある支出：返金の前の数え方の控え
   importBatchId?: string; // 取り込みの単位（CSV の取り込みごと。取り消しに使う。NEXT v21 CSV:C08）
   createdAt: string; // ISO
   updatedAt: string; // ISO
@@ -194,6 +197,8 @@ export interface Asset {
   kind: AssetKind;
   value: number | null; // 評価額（円）。null = 未入力
   asOf: string; // 評価日（"" = 未入力）
+  /** 種類が「現金」のとき：評価日の時点の、カードの未払い（任意。残高の目安で、引き落とし前のカード払いに足す。NEXT v22 G0） */
+  cardDebt?: number;
   note: string;
   createdAt: string;
   updatedAt: string;
@@ -301,7 +306,7 @@ export interface AppData extends Collections {
   trips: Trip[];
   budget: { monthly: number | null }; // 毎月の支出予算（円）。null = 未設定
   prefs: { home: HomePrefs; /** メニューに出さない機能の道筋（任意。非表示でも記録は消えない。NEXT v21 X16・D11） */ menuHidden?: string[] };
-  meta: { createdAt: string; lastBackupAt: string | null; /** 取り込みの履歴（任意。100点化以降に追加） */ imports?: ImportBatch[] };
+  meta: { createdAt: string; lastBackupAt: string | null; /** 取り込みの履歴（任意。100点化以降に追加） */ imports?: ImportBatch[]; /** 生活変化の計画と履歴（任意。NEXT v21 B03。lib/lifeChange.ts） */ lifeChanges?: LifeChange[] };
 }
 
 export const PAYMENT_METHODS: { id: string; label: string }[] = [

@@ -13,7 +13,7 @@ export interface TxDraft {
   paymentMethod: string;
   note: string;
   /** 100点化で追加（任意）。この記録だけの数え方（"" = カテゴリどおり） */
-  countAs?: "" | "life" | "invest" | "transfer";
+  countAs?: "" | "life" | "invest" | "transfer" | "transfer-card"; // transfer-card＝カード引き落とし（保存では countAs=transfer＋transferKind=card）
   /** 旅行の支出（"" = なし） */
   tripId?: string;
   /** 手で入れた支出を、固定費の支払いとしてつなぐ（"" = つながない） */

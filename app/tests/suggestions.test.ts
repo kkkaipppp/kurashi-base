@@ -108,3 +108,16 @@ describe("目標の節目", () => {
     expect(s.map((x) => x.key)).toEqual(["step:a:2", "step:a:1"]); // 過ぎたものが先
   });
 });
+
+describe("生活変化の適用日", () => {
+  it("適用日が来ていて、まだ適用していない計画を出す（自分用の設定のときだけ）。適用日の前・適用済みは出さない", () => {
+    const d = base();
+    d.meta.lifeChanges = [
+      { id: "a", title: "引っ越し", date: "2026-11-25", status: "planned", createdAt: now, items: [{ kind: "budget", before: null, after: 1000 }] },
+      { id: "b", title: "転職", date: "2026-12-25", status: "planned", createdAt: now, items: [{ kind: "budget", before: null, after: 1000 }] },
+      { id: "c", title: "済み", date: "2026-11-01", status: "applied", createdAt: now, items: [{ kind: "budget", before: null, after: 1000 }] },
+    ];
+    expect(suggestions(d, "2026-11-25", { inbox: true }).map((x) => x.key)).toEqual(["life:a"]);
+    expect(suggestions(d, "2026-11-25", {})).toEqual([]);
+  });
+});
