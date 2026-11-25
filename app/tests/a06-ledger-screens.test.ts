@@ -220,6 +220,7 @@ describe("A06：手で決めた期待値", () => {
     // 決めたファイルと、その中の行数。増えたら落ちる（決めたファイルの中に、台帳を通さない足し算を新しく書いても見つかる）。
     // 減ったときも落ちるので、そのときはここの数を直す（直したことが見える）
     const ALLOWED: Record<string, [number, string]> = {
+      "lib/perfData.ts": [2, "性能を測る合成データを作るだけ（記録の金額は足さない。A08）"],
       "lib/ledgerCore.ts": [7, "台帳そのもの"],
       "lib/aggregate.ts": [0, "台帳の出来事を sumEntries で足す"],
       "lib/periods.ts": [6, "台帳の出来事（CountedEntry）を足す"],

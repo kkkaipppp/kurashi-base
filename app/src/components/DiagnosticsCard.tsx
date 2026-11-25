@@ -5,7 +5,8 @@ import { Button, Card, SectionTitle } from "./ui";
 import { useUI } from "./UIContext";
 import { useData } from "@/lib/store";
 import { buildDiagnostics } from "@/lib/diagnostics";
-import { EDITION } from "@/lib/edition";
+import Link from "next/link";
+import { EDITION, FEATURES } from "@/lib/edition";
 import { isNativeApp } from "@/lib/platform";
 import { STORAGE_KEY, readUndo } from "@/lib/storage";
 
@@ -40,6 +41,11 @@ export function DiagnosticsCard() {
         <Button variant="secondary" onClick={make}>
           診断情報を作る
         </Button>
+        {FEATURES.perfLab && (
+          <Link href="/perf" className="text-center text-[13px] font-semibold text-brand underline">
+            性能を測る（作り物のデータで。記録には触れません）
+          </Link>
+        )}
       </div>
       {text && (
         <div className="mt-3 space-y-2">
