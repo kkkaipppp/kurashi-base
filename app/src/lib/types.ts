@@ -23,6 +23,8 @@ export interface Transaction {
   tripId?: string; // 旅行の支出（Trip.id）
   recurringDue?: string; // 一部の支払いのとき、どの支払日の分か（取り消しで別の回の払い分を巻き込まないため）
   recurringPartial?: boolean; // 固定費の「一部の支払い」として記録した（残りは、まだ払っていない。NEXT v21 X02）
+  refundOf?: string; // 返金の記録：どの支出の返金か（NEXT v21 X02。収入にも数えない。lib/refund.ts）
+  refundWas?: "life" | "invest"; // 全額の返金で、元の支出の数え方を戻すための控え
   importBatchId?: string; // 取り込みの単位（CSV の取り込みごと。取り消しに使う。NEXT v21 CSV:C08）
   createdAt: string; // ISO
   updatedAt: string; // ISO
