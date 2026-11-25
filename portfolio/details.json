@@ -1,8 +1,6 @@
 {
   "project_id": "kurashi-base",
-  "as_of": "2026-11-25T23:33:31+09:00",
+  "as_of": "2026-11-25T23:33:50+09:00",
   "blocker_items": [],
-  "approval_items": [
-    "Q32 まだ push していないコミット（master 約30件・feat/ios-widget）の push。あわ…"
-  ]
+  "approval_items": []
 }
