@@ -95,3 +95,16 @@ describe("別の場所に出ているものは出さない", () => {
     expect(suggestions(d, "2026-11-25", { skipRecurringIds: new Set(["a"]) }).map((x) => x.key)).toEqual(["rec:b"]);
   });
 });
+
+describe("目標の節目", () => {
+  it("3日以内・過ぎた節目を出す。終わった節目・達成済みの目標・4日先は出さない", () => {
+    const d = base();
+    const st = (id: string, due: string, done = false) => ({ id, text: `節目${id}`, done, due });
+    d.goals = [
+      goal({ id: "a", kind: "check", target: null, deadline: "", steps: [st("1", "2026-11-26"), st("2", "2026-11-24"), st("3", "2026-11-29"), st("4", "2026-11-26", true)] }),
+      goal({ id: "b", kind: "check", target: null, deadline: "", done: true, steps: [st("1", "2026-11-26")] }),
+    ];
+    const s = suggestions(d, "2026-11-25", {});
+    expect(s.map((x) => x.key)).toEqual(["step:a:2", "step:a:1"]); // 過ぎたものが先
+  });
+});

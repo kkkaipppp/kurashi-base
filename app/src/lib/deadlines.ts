@@ -23,6 +23,8 @@ export function deadlinesOn(data: AppData, date: string): DeadlineItem[] {
     if (c.status === "active" && c.renewalDate === date) out.push({ key: `c-${c.id}`, kind: "契約", title: `${c.name}の更新日`, href: `/contracts?open=${c.id}` });
   for (const d of data.documents) if (d.expiry === date) out.push({ key: `d-${d.id}`, kind: "書類", title: `${d.title}の期限`, href: `/documents?open=${d.id}` });
   for (const g of data.goals) if (g.deadline === date) out.push({ key: `g-${g.id}`, kind: "目標", title: `${g.title}の期限`, done: g.done, href: `/goals?open=${g.id}` });
+  // 目標の節目（やることの日付）。終わっていないものだけ
+  for (const g of data.goals) if (!g.done) for (const st of g.steps ?? []) if (!st.done && st.due === date) out.push({ key: `gs-${g.id}-${st.id}`, kind: "目標", title: `${g.title}：${st.text}`, href: `/goals?open=${g.id}` });
   for (const s of data.studySubjects)
     if (!s.archived && s.examDate === date) out.push({ key: `s-${s.id}`, kind: "試験", title: `${s.name}の試験日`, href: `/study?open=${s.id}` });
   return out;

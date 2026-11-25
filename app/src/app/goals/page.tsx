@@ -28,7 +28,7 @@ const config: CollectionConfig<"goals"> = {
     { name: "deadline", label: "期限", optional: true, type: "date", half: true },
     { name: "note", label: "メモ", optional: true, type: "textarea" },
     // やること（自分用）。1行に1つ。終わったものは、行の先頭に ✓
-    ...(PERSONAL_BUILD ? [{ name: "steps", label: "やること", optional: true, type: "textarea" as const, hint: "1行に1つ。終わったら、行の先頭に ✓ を付けます" }] : []),
+    ...(PERSONAL_BUILD ? [{ name: "steps", label: "やること", optional: true, type: "textarea" as const, hint: "1行に1つ。終わったら、行の先頭に ✓ を付けます。節目の日は、行の終わりに @2026-12-20 のように書きます" }] : []),
     { name: "done", label: "達成", type: "checkbox" },
   ],
   initial: () => ({ title: "", kind: "number", current: "0", target: "", unit: "", deadline: "", note: "", done: false }),

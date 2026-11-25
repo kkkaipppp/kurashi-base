@@ -54,3 +54,29 @@ describe("目標の達成率の表示", () => {
     expect(displayProgress({ ...g, kind: "number", target: 100, current: 40, steps: parseSteps("✓ a") }, 40)).toBe(40);
   });
 });
+
+describe("節目の日（やることの日付）", () => {
+  it("行の終わりの @日付 を節目の日にする。往復で同じ形。実在しない日付は節目にしない", () => {
+    const s = parseSteps("見積りを取る @2026-12-20\n✓ 申込書を出す＠2026-12-01\n契約 @2026-02-30");
+    expect(s[0]).toMatchObject({ text: "見積りを取る", due: "2026-12-20", done: false });
+    expect(s[1]).toMatchObject({ text: "申込書を出す", due: "2026-12-01", done: true });
+    expect(s[2].due).toBeUndefined();
+    expect(s[2].text).toContain("@2026-02-30"); // 日付として読めないものは、文字のまま残す
+    expect(stepsToText(parseSteps("見積りを取る @2026-12-20\n✓ 申込書を出す @2026-12-01"))).toBe("見積りを取る @2026-12-20\n✓ 申込書を出す @2026-12-01");
+  });
+  it("期限の一覧に、終わっていない節目だけが、その日に出る。達成済みの目標・終わった節目は出ない", async () => {
+    const { deadlinesOn } = await import("@/lib/deadlines");
+    const d = emptyData(now);
+    const g = { id: "g", title: "引っ越す", deadline: "", kind: "check" as const, target: null, current: 0, unit: "", done: false, note: "", createdAt: now, updatedAt: now };
+    d.goals = [{ ...g, steps: parseSteps("見積りを取る @2026-12-20\n✓ 申込書 @2026-12-20") }, { ...g, id: "h", done: true, steps: parseSteps("x @2026-12-20") }];
+    const items = deadlinesOn(d, "2026-12-20");
+    expect(items.map((x) => x.title)).toEqual(["引っ越す：見積りを取る"]);
+    expect(deadlinesOn(d, "2026-12-21")).toEqual([]);
+  });
+  it("保存の検査：節目の日が壊れた形は拒否する", () => {
+    const d = emptyData(now);
+    const g = { id: "g", title: "t", deadline: "", kind: "check" as const, target: null, current: 0, unit: "", done: false, note: "", createdAt: now, updatedAt: now };
+    d.goals = [{ ...g, steps: [{ id: "a", text: "x", done: false, due: "あした" }] }];
+    expect(validateAppData(d).ok).toBe(false);
+  });
+});

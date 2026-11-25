@@ -52,6 +52,18 @@ export function suggestions(d: AppData, today: string, opt: SuggestionOptions): 
     all.push({ key: `goal:${g.id}`, title: `目標「${g.title}」の期限まで${p.days}日`, why: `残り ${p.remaining.toLocaleString("ja-JP")}${g.unit}`, href: `/goals?open=${g.id}`, score: 600 - p.days * 10 });
   }
 
+  // 目標の節目（やることの日付）：3日以内・過ぎたもの（終わっていないものだけ）
+  for (const g of d.goals) {
+    if (g.done) continue;
+    for (const st of g.steps ?? []) {
+      if (st.done || !st.due) continue;
+      const days = daysBetween(today, st.due);
+      if (days > RECURRING_AHEAD_DAYS) continue;
+      const when = days < 0 ? `${-days}日過ぎています` : days === 0 ? "今日" : `${days}日後`;
+      all.push({ key: `step:${g.id}:${st.id}`, title: `${g.title}：${st.text}（${when}）`, why: "目標の節目です", href: `/goals?open=${g.id}`, score: 900 - days * 100 });
+    }
+  }
+
   const f = forecastMonthEnd(d, today);
   if (f.ok && f.vsBudget !== null && f.vsBudget < 0) {
     all.push({ key: "forecast", title: "今月は予算を超える見込みです", why: `約 ${formatYen(-f.vsBudget)} 超える見込み（確定ではありません）`, href: "/#forecast", score: 500 });

@@ -47,7 +47,7 @@ const isHttpOrBlank = (v: unknown) => {
 };
 const optional = (check: (v: unknown) => boolean) => (v: unknown) => v === undefined || check(v);
 const isCheckList2 = (v: unknown) =>
-  Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done));
+  Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done) && (x.due === undefined || isDate(x.due)));
 const isCheckList = (v: unknown) =>
   Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done));
 const isBookList = (v: unknown) =>

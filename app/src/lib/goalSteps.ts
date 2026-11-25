@@ -9,12 +9,20 @@ export interface GoalStep {
   id: string;
   text: string;
   done: boolean;
+  /** 節目の日（任意。行の終わりに「@2026-12-20」と書く）。期限の一覧・提案に出る */
+  due?: string;
 }
 
 export const MAX_STEPS = 30;
 export const MAX_STEP_LEN = 60;
 
 const DONE_MARK = /^[✓✔☑]\s*/;
+/** 行の終わりの節目の日（@2026-12-20。全角の＠も可） */
+const DUE_TAIL = /\s*[@＠](\d{4}-\d{2}-\d{2})\s*$/;
+function isRealDate(s: string): boolean {
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
 
 export function parseSteps(text: string): GoalStep[] {
   const out: GoalStep[] = [];
@@ -22,16 +30,20 @@ export function parseSteps(text: string): GoalStep[] {
     const line = raw.trim();
     if (!line) continue;
     const done = DONE_MARK.test(line);
-    const body = line.replace(DONE_MARK, "").trim().slice(0, MAX_STEP_LEN);
+    let body = line.replace(DONE_MARK, "").trim();
+    const m = DUE_TAIL.exec(body);
+    const due = m && isRealDate(m[1]) ? m[1] : undefined;
+    if (m && due) body = body.slice(0, m.index).trim();
+    body = body.slice(0, MAX_STEP_LEN);
     if (!body) continue;
-    out.push({ id: `st${out.length + 1}`, text: body, done });
+    out.push({ id: `st${out.length + 1}`, text: body, done, ...(due ? { due } : {}) });
     if (out.length >= MAX_STEPS) break;
   }
   return out;
 }
 
 export function stepsToText(steps: GoalStep[] | undefined): string {
-  return (steps ?? []).map((s) => (s.done ? "✓ " : "") + s.text).join("\n");
+  return (steps ?? []).map((s) => (s.done ? "✓ " : "") + s.text + (s.due ? ` @${s.due}` : "")).join("\n");
 }
 
 export interface StepProgress {
