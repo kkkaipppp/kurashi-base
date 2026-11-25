@@ -102,3 +102,27 @@ describe("見込みのグラフ（実線と破線）", () => {
     expect(forecastCurve(base(), "2026-11-20")).toBeNull();
   });
 });
+
+describe("ホームの『月末の見込み』と振り返りの数字（自分用）", () => {
+  const seed = (): AppData => {
+    const d = base();
+    d.budget.monthly = 60000;
+    d.recurring = [{ id: "r", name: "スマホ", amount: 8000, cycle: "monthly", anchorDay: 28, nextDueDate: "2026-11-28", categoryId: "exp-5", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
+    d.transactions = Array.from({ length: 12 }, (_, i) => tx({ id: `p${i}`, date: `2026-11-${String(i + 3).padStart(2, "0")}`, amount: 2000 }));
+    return d;
+  };
+  it("自分用では、ホームの一文が forecastMonthEnd と同じ額（100円単位）になる", async () => {
+    const { vi } = await import("vitest");
+    vi.resetModules();
+    vi.stubEnv("NEXT_PUBLIC_KB_EDITION", "personal");
+    const { buildInsights } = await import("@/lib/report");
+    const { forecastMonthEnd: fm } = await import("@/lib/forecast");
+    const d = seed();
+    const f = fm(d, "2026-11-25");
+    if (!f.ok) throw new Error("見込みが出ない");
+    const pace = buildInsights(d, "2026-11", "2026-11-25").find((x) => x.key === "pace");
+    expect(pace?.text).toContain(`約¥${(Math.round(f.projected / 100) * 100).toLocaleString("ja-JP")}`);
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+});
