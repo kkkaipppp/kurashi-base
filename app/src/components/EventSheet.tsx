@@ -14,11 +14,13 @@ import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from 
 import { OrphanDraft } from "./OrphanDraft";
 import { newId } from "@/lib/defaults";
 import { IS_PERSONAL } from "@/lib/edition";
+import { departureTime } from "@/lib/eventOps";
+import { EventActions } from "./EventActions";
 import { calendarTemplate, isSavableUrl, mapsDirections, safeExternalLink } from "@/lib/externalLinks";
 import { EVENT_KINDS, type CalendarEvent, type CheckItem, type EventKind } from "@/lib/types";
 
 export type EventSheetRequest =
-  | { mode: "view"; id: string } // 予定の詳細（押したときに開く）
+  | { mode: "view"; id: string; /** どの日の回を見ているか（繰り返しの予定の完了に使う） */ day?: string } // 予定の詳細（押したときに開く）
   | { mode: "edit"; id: string }
   | { mode: "new"; date?: string; tripId?: string; /** 複製：この予定の内容を引き継いで新しい予定にする（完了・実績は引き継がない。NEXT v21 CAL:C05） */ copyOf?: string };
 
@@ -30,6 +32,8 @@ interface Extra {
   tripId: string;
   kind: EventKind | "";
   cost: string;
+  /** 移動にかかる時間（分）。出発の目安に使う（自分用） */
+  travel: string;
 }
 
 const extraOf = (e?: CalendarEvent, tripId = ""): Extra => ({
@@ -39,10 +43,11 @@ const extraOf = (e?: CalendarEvent, tripId = ""): Extra => ({
   tripId: e?.tripId ?? tripId,
   kind: e?.kind ?? "",
   cost: e?.cost != null ? String(e.cost) : "",
+  travel: e?.travelMinutes ? String(e.travelMinutes) : "",
 });
 
 const hasExtra = (x: Extra, d: EventDraft) =>
-  !!(x.location || x.url || x.items.length || x.tripId || x.kind || x.cost || d.note || (d.repeat && d.repeat !== "none"));
+  !!(x.location || x.url || x.items.length || x.tripId || x.kind || x.cost || x.travel || d.note || (d.repeat && d.repeat !== "none"));
 
 export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: () => void }) {
   const data = useData();
@@ -64,13 +69,13 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
       </Sheet>
     );
   }
-  if (mode === "view" && ev) return <EventDetail ev={ev} onClose={onClose} onEdit={() => setMode("edit")} />;
+  if (mode === "view" && ev) return <EventDetail ev={ev} day={req.mode === "view" ? req.day : undefined} onClose={onClose} onEdit={() => setMode("edit")} />;
   return <EventForm editing={mode === "edit" ? editingEvent : undefined} req={req} onClose={onClose} />;
 }
 
 /* ---------------- 予定の詳細 ---------------- */
 
-function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () => void; onEdit: () => void }) {
+function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: string; onClose: () => void; onEdit: () => void }) {
   const data = useData();
   const store = useStore();
   const ui = useUI();
@@ -157,6 +162,15 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
             <p className="text-[15px] whitespace-pre-wrap break-words">{ev.note}</p>
           </div>
         )}
+        {IS_PERSONAL && <EventActions ev={ev} day={day} onClose={onClose} />}
+        {ev.travelMinutes ? (
+          <div>
+            <p className="text-[12px] font-semibold text-ink-3">移動時間</p>
+            <p className="num text-[15px]">
+              {ev.travelMinutes}分{departureTime(ev) ? `（出発の目安 ${departureTime(ev)}）` : ""}
+            </p>
+          </div>
+        ) : null}
         {ev.cost != null && (
           <div>
             <p className="text-[12px] font-semibold text-ink-3">費用の目安</p>
@@ -365,9 +379,12 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       const costTxt = extra.cost.replace(/[,，円\s]/g, "").normalize("NFKC");
       const cost = costTxt === "" ? null : Number(costTxt);
       if (cost !== null && (!Number.isInteger(cost) || cost < 0 || cost > 100_000_000)) errs.cost = "費用は0以上の整数（円）で入力してください";
+      const travelTxt = extra.travel.replace(/[分\s]/g, "").normalize("NFKC");
+      const travel = travelTxt === "" ? null : Number(travelTxt);
+      if (travel !== null && (!Number.isInteger(travel) || travel < 0 || travel > 1440)) errs.travel = "移動時間は0〜1440の整数（分）で入力してください";
       if (Object.keys(errs).length) {
         setErrors(errs);
-        if (errs.url || errs.cost || errs.note || errs.repeat || errs.repeatUntil) setShowMore(true);
+        if (errs.url || errs.cost || errs.travel || errs.note || errs.repeat || errs.repeatUntil) setShowMore(true);
         return;
       }
       const pending = newItem.trim() ? [...extra.items, { id: newId("it"), text: newItem.trim().slice(0, 60), done: false }] : extra.items;
@@ -386,6 +403,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
         ...(extra.tripId ? { tripId: extra.tripId } : { tripId: undefined }),
         ...(extra.kind ? { kind: extra.kind } : { kind: undefined }),
         ...(cost !== null ? { cost } : { cost: undefined }),
+        ...(IS_PERSONAL && travel ? { travelMinutes: travel } : IS_PERSONAL ? { travelMinutes: undefined } : editing?.travelMinutes ? { travelMinutes: editing.travelMinutes } : {}),
       };
       // undefined の項目は保存しない（JSON に残さない）
       for (const k of Object.keys(input) as (keyof typeof input)[]) if (input[k] === undefined) delete input[k];
@@ -607,6 +625,13 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
               <input id="ev-cost" inputMode="numeric" value={extra.cost} onChange={(e) => setX("cost", e.target.value)} placeholder="例：14000" className={inputCls} maxLength={12} aria-invalid={!!errors.cost} />
             </Field>
             <p className="-mt-2 text-[12px] text-ink-3">支出の記録は「＋」からです。</p>
+
+            {IS_PERSONAL && (
+              <Field label="移動にかかる時間（分）" optional htmlFor="ev-travel" error={errors.travel}>
+                <input id="ev-travel" inputMode="numeric" value={extra.travel} onChange={(e) => setX("travel", e.target.value)} placeholder="例：30" className={inputCls} maxLength={4} aria-invalid={!!errors.travel} />
+                <p className="mt-1 text-[12px] text-ink-3">入れると、開始時刻から引いた「出発の目安」を出します（地図の推計ではありません）。</p>
+              </Field>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="繰り返し" htmlFor="ev-rep" error={errors.repeat}>
