@@ -110,6 +110,7 @@ export class IdbRepositoryAdapter implements Repository {
     return { ok: true, token: r.revision };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- 境界の形に合わせる（IndexedDB は本体を自分で読む）
   async quarantine(_raw: string) {
     const r = await (await this.open()).quarantine(this.now());
     if (r.ok) this.notify();
