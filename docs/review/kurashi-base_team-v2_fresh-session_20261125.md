@@ -90,7 +90,7 @@
 → 独立して回すには、少なくとも (1) details_check を PJ の中に持つか、無いときは NOT_RUN として扱う決まりにする (2) progress.py の親フォルダへの書き出しを、親がないときに飛ばす (3) STATE を今の状態に直す、が要る。
 
 ## 5. 平尾さんの判断が要ること（まとめ）
-- 公開版を 11-30 までどう扱うか（PM の質問。①止めて点検が推奨）。
+- 公開版を 11-30 までどう扱うか（PM の質問。①止めて点検が推奨）。→ **2026-11-25、平尾さんが③に決定：「これまでどおり、直しができたら毎回 push して公開版を更新する」**（このセッションのチャットで本人が「③」と回答）。push は毎回 平尾さんの OK の後、という決まりは変わらない。Claude の提案：次の push の前に、公開用ビルドで release-checker の点検を通す（11-23 の GO が古いため）。
 - 11-25 09:09 の push の承認の記録を確かめる。
 - 一部払いの直し方の3点（data-safety）。
 - 実機確認の1回分を頼むか（ios-ux の文面）。
@@ -122,3 +122,8 @@
 - kurashi-ios-ux：`docs/STATE.md`・`docs/PJ_RULES.md`・`docs/LESSONS.md`・`docs/v21/REPORT.md`・`docs/review/PLAN100_RESPONSE.md`・`docs/review/REVIEW_O1_RESPONSE.md`・`docs/release/GO_EVIDENCE_20261122.md`・`app/src/lib/edition.ts`、feat/ios-widget の `docs/widget/WIDGET_PLAN.md`・`NotifyCard.tsx`・`AddFromQuery.tsx` ほか（`git show`・`git grep`）。実行：git の照会（branch・diff --stat・log）
 
 **実行しなかったもの**：`../00_経営管理/scripts/details_check.py`・`tools/progress.py sync`・`npm run check`・commit・push。
+
+
+## 追記（暮らしベースのチャット、2026-11-25）
+- 11-25 09:09 の push の承認は、このあと平尾さんが確認し、DECISIONS に記録した（上の「承認の記録を確かめる」は対応済み）。
+- 5f5c447 を push した（平尾さんの OK）。公開版の扱い③（毎回 push して更新。push は毎回、平尾さんの OK 後）は、本部の連絡にもとづき DECISIONS に記録した。
