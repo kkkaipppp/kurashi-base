@@ -21,7 +21,7 @@ export function CashBalanceCard({ month }: { month: string }) {
       <SectionTitle>現金・預金の残高の目安</SectionTitle>
       {!r.ok ? (
         <p className="text-[13px] text-ink-3">
-          基準になる残高がないので、残高は出しません。<Link href="/assets" className="font-semibold text-brand underline">資産</Link>に、種類「現金」で、残高と評価日を入れてください（口座が複数あるときは、合計を1件に）。
+          計算のもとになる残高が入っていません。<Link href="/assets" className="font-semibold text-brand underline">資産</Link>に、種類「現金・預金」で、残高と日付を入れてください。口座が複数なら、合計を1件で。
         </p>
       ) : (
         <>
@@ -31,12 +31,12 @@ export function CashBalanceCard({ month }: { month: string }) {
           </p>
           {r.cardPending > 0 && (
             <p className="num mt-0.5 text-[14px] font-semibold">
-              引き落とし前のカード払い {formatYen(r.cardPending)} → 引き落とし後 約{formatYen(r.afterCard)}
+              カードで使って、まだ引かれていない額 {formatYen(r.cardPending)}。引かれたあとの残高は 約{formatYen(r.afterCard)}
             </p>
           )}
           <dl className="num mt-2 space-y-0.5 rounded-xl border border-dashed border-line px-3 py-2 text-[12px] text-ink-2">
             <div className="flex justify-between">
-              <dt>基準（{r.base.name}・{formatDateJa(r.base.asOf)}）</dt>
+              <dt>もとの残高（{r.base.name}・{formatDateJa(r.base.asOf)}時点）</dt>
               <dd>{formatYen(r.base.value)}</dd>
             </div>
             <div className="flex justify-between">
@@ -52,9 +52,11 @@ export function CashBalanceCard({ month }: { month: string }) {
               <dd>−{formatYen(r.cardSettled)}</dd>
             </div>
           </dl>
-          <p className="mt-2 text-[12px] text-ink-3">
-            確定した残高ではありません。基準の日より後の記録から計算しています（口座間の移動は数えません。カード払いは、引き落としの記録をしたときに減ります）。実際の残高と合わないときは、資産の残高を入れ直してください。
-          </p>
+          <div className="mt-2 space-y-0.5 text-[12px] text-ink-3">
+            <p>目安です。もとの残高の日より後の記録から計算しています。</p>
+            <p>口座どうしの移動は数えません。カード払いは、引き落としを記録したときに減ります。</p>
+            <p>合わないときは、資産の残高を入れ直してください。</p>
+          </div>
         </>
       )}
     </Card>

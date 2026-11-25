@@ -61,7 +61,7 @@ export function suggestions(d: AppData, today: string, opt: SuggestionOptions): 
       const days = daysBetween(today, st.due);
       if (days > RECURRING_AHEAD_DAYS) continue;
       const when = days < 0 ? `${-days}日過ぎています` : days === 0 ? "今日" : `${days}日後`;
-      all.push({ key: `step:${g.id}:${st.id}`, title: `${g.title}：${st.text}（${when}）`, why: "目標の節目です", href: `/goals?open=${g.id}`, score: 900 - days * 100 });
+      all.push({ key: `step:${g.id}:${st.id}`, title: `${g.title}：${st.text}（${when}）`, why: "目標の途中の日です", href: `/goals?open=${g.id}`, score: 900 - days * 100 });
     }
   }
 
@@ -72,7 +72,7 @@ export function suggestions(d: AppData, today: string, opt: SuggestionOptions): 
 
   // 生活変化の適用日が来ている計画（自動では適用しない。本人が押す）
   if (opt.inbox) {
-    for (const c of dueChanges(d, today)) all.push({ key: `life:${c.id}`, title: `「${c.title}」の適用日です`, why: "固定費・予算の変更を、まだ適用していません", href: "/life", score: 700 });
+    for (const c of dueChanges(d, today)) all.push({ key: `life:${c.id}`, title: `「${c.title}」の変更の日です`, why: "「生活の変化」で決めた変更を、まだ反映していません", href: "/life", score: 700 });
   }
 
   if (opt.inbox) {

@@ -35,7 +35,7 @@ const config: CollectionConfig<"assets"> = {
     { name: "value", label: "評価額（円）", optional: true, type: "number", half: true, hint: "分からなければ空欄のままで大丈夫です" },
     { name: "asOf", label: "評価日", optional: true, type: "date", half: true },
     // 種類が「現金・預金」のとき、評価日の時点のカードの未払い（自分用。残高の目安で「引き落とし前のカード払い」に足す）
-    ...(PERSONAL_BUILD ? [{ name: "cardDebt", label: "評価日のカード未払い（円）", optional: true, type: "number" as const, hint: "現金・預金の残高の目安に使います。分からなければ空欄（0として計算します）" }] : []),
+    ...(PERSONAL_BUILD ? [{ name: "cardDebt", label: "この日付時点で、カードの引き落とし待ち（円）", optional: true, type: "number" as const, hint: "例：先月分のカード利用で、まだ口座から引かれていない金額。現金・預金の残高の目安に使います。分からなければ空欄（0として計算します）" }] : []),
     { name: "note", label: "メモ", optional: true, type: "textarea" },
   ],
   initial: ({ today }) => ({ name: "", kind: "cash", value: "", asOf: today, note: "" }),

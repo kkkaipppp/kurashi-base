@@ -12,8 +12,8 @@ import { addLifeChange, applyLifeChange, listChanges, removePlanned, totalMonthl
 
 /**
  * 生活変化（自分用。NEXT v21 B03：引っ越し・転職など）。
- * これからの設定（固定費の金額・やめる・月の予算）の変更を、適用日つきの「計画」として残す。
- * 適用は、押したときだけ。変えるのは設定だけで、過去の記録は書き換えない。取り消すと、適用した分が元に戻る
+ * これからの設定（固定費の金額・やめる・月の予算）の変更を、変更の日つきの「計画」として残す。
+ * 適用は、押したときだけ。変えるのは設定だけで、過去の記録は書き換えない。取り消すと、反映した分が元に戻る
  */
 export default function LifePage() {
   const data = useData();
@@ -69,7 +69,7 @@ export default function LifePage() {
   };
 
   const apply = async (c: LifeChange) => {
-    const ok = await ui.confirm({ title: `「${c.title}」を適用しますか？`, body: `固定費・予算の設定が変わります（過去の記録は変わりません）。あとで取り消せます。\n1か月あたりの影響：${formatSignedYen(totalMonthlyImpact(data, c))}`, ok: "適用する" });
+    const ok = await ui.confirm({ title: `「${c.title}」を反映しますか？`, body: `固定費・予算の設定が変わります（過去の記録は変わりません）。あとで取り消せます。\n固定費の合計が、毎月 ${formatSignedYen(totalMonthlyImpact(data, c))}（＋は増える、−は減る）`, ok: "この変更を反映する" });
     if (!ok) return;
     const ts = new Date().toISOString();
     let applied = 0;
@@ -81,16 +81,16 @@ export default function LifePage() {
       return x.next;
     });
     if (!r.ok) return ui.toast(r.error, "error");
-    ui.toast(skipped > 0 ? `${applied}件を適用しました。${skipped}件は、変更前の値が今と違うので、変えていません` : `${applied}件を適用しました`, skipped > 0 ? "error" : "ok");
+    ui.toast(skipped > 0 ? `${applied}件を反映しました。${skipped}件は、計画を作ったあとに金額が変わっていたので、そのままにしました` : `${applied}件を反映しました`, skipped > 0 ? "error" : "ok");
   };
   const undo = async (c: LifeChange) => {
-    const ok = await ui.confirm({ title: `「${c.title}」を取り消しますか？`, body: "適用した分を、元に戻します（そのあとに自分で変えた項目は、そのままです）。履歴は残ります。", ok: "取り消す" });
+    const ok = await ui.confirm({ title: `「${c.title}」を取り消しますか？`, body: "反映した分を、元に戻します（そのあとに自分で変えた項目は、そのままです）。履歴は残ります。", ok: "取り消す" });
     if (!ok) return;
     const r = store.commit((d) => undoLifeChange(d, c.id, new Date().toISOString()));
     ui.toast(r.ok ? "取り消しました" : r.error, r.ok ? "ok" : "error");
   };
   const remove = async (c: LifeChange) => {
-    const ok = await ui.confirm({ title: `「${c.title}」の計画を消しますか？`, body: "まだ適用していない計画だけが消えます。", ok: "消す", danger: true });
+    const ok = await ui.confirm({ title: `「${c.title}」の計画を消しますか？`, body: "まだ反映していない計画だけが消えます。", ok: "消す", danger: true });
     if (!ok) return;
     const r = store.commit((d) => removePlanned(d, c.id));
     ui.toast(r.ok ? "消しました" : r.error, r.ok ? "ok" : "error");
@@ -102,14 +102,14 @@ export default function LifePage() {
   return (
     <main className="space-y-3">
       <PageHeader title="生活の変化" />
-      <p className="px-1 text-[13px] text-ink-3">引っ越し・転職などで変わる、固定費や予算を、適用日つきの計画として残します。押すまで、何も変わりません。過去の記録は、書き換えません。</p>
+      <p className="px-1 text-[13px] text-ink-3">引っ越し・転職などで変わる、固定費や予算を、変更の日つきの計画として残します。押すまで、何も変わりません。過去の記録は、書き換えません。</p>
       <Card>
         <SectionTitle>新しい計画</SectionTitle>
         <div className="space-y-3">
           <Field label="名前" htmlFor="life-title">
             <input id="life-title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} placeholder="例：引っ越し" maxLength={40} />
           </Field>
-          <Field label="適用日" htmlFor="life-date">
+          <Field label="変更の日" htmlFor="life-date">
             <input id="life-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
           </Field>
           <div>
@@ -142,7 +142,7 @@ export default function LifePage() {
                   <li key={i}>{label(it)}</li>
                 ))}
               </ul>
-              <p className="num mt-1">固定費の1か月あたりの影響：{formatSignedYen(impact)}（予算は含みません）</p>
+              <p className="num mt-1">固定費の合計が、毎月 {formatSignedYen(impact)}（＋は増える、−は減る。予算の変更は含みません）</p>
             </div>
           )}
           <Button className="w-full" onClick={save} disabled={!canSave}>
@@ -163,7 +163,7 @@ export default function LifePage() {
                 <div>
                   <p className="text-[15px] font-bold">{c.title}</p>
                   <p className="text-[12px] text-ink-3">
-                    適用日 {formatDateJa(c.date)}・{c.status === "planned" ? (c.date <= today ? "適用日です（まだ変えていません）" : "計画") : c.status === "applied" ? "適用済み" : "取り消し済み"}
+                    変更の日 {formatDateJa(c.date)}・{c.status === "planned" ? (c.date <= today ? "変更の日です（まだ変えていません）" : "計画") : c.status === "applied" ? "反映済み" : "取り消し済み"}
                   </p>
                 </div>
               </div>
@@ -171,16 +171,16 @@ export default function LifePage() {
                 {c.items.map((it, i) => (
                   <li key={i} className={it.applied === false ? "text-ink-3 line-through" : ""}>
                     {label(it)}
-                    {it.applied === false && "（変更前の値が今と違うので、変えませんでした）"}
+                    {it.applied === false && "（計画を作ったあとに金額が変わっていたので、そのままにしました）"}
                   </li>
                 ))}
               </ul>
-              <p className="num mt-1 text-[12px] text-ink-3">固定費の1か月あたりの影響：{formatSignedYen(totalMonthlyImpact(data, c))}</p>
+              <p className="num mt-1 text-[12px] text-ink-3">固定費の合計が、毎月 {formatSignedYen(totalMonthlyImpact(data, c))}（＋は増える、−は減る）</p>
               <div className="mt-2 flex gap-2">
                 {c.status === "planned" && (
                   <>
                     <Button className="flex-1" onClick={() => apply(c)}>
-                      適用する
+                      この変更を反映する
                     </Button>
                     <Button variant="secondary" className="flex-1" onClick={() => remove(c)}>
                       消す

@@ -18,8 +18,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
       ...(IS_PERSONAL
         ? [
             { href: "/search", label: "さがす", desc: "記録・予定・メモ・契約などを、1つの言葉で探す" },
-            { href: "/decide", label: "買い物の判断", desc: "買う前に、予算や月末の見込みへの影響を並べる" },
-            { href: "/life", label: "生活の変化", desc: "引っ越し・転職で変わる固定費や予算を、適用日つきで計画する" },
+            { href: "/decide", label: "買い物の判断", desc: "買う前に、今月と来月の予算がどうなるか見る" },
+            { href: "/life", label: "生活の変化", desc: "引っ越し・転職で変わる固定費や予算を、いつからかを決めて計画する" },
             { href: "/inbox", label: "未整理の記録", desc: "「その他」の記録を、店名ごとにまとめて整理", count: (d: AppData) => inboxCount(d) },
           ]
         : []),

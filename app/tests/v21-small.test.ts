@@ -281,6 +281,6 @@ describe("点検の直し（第2回）", () => {
     const ev = src("components/EventSheet.tsx");
     expect(ev).toContain("&& !copySrc) clearSheetDraft(");
     expect(ev).toContain("if (!copySrc && (!(pending && !resumeAsked) || asNew)) clearSheetDraft(");
-    expect(src("app/inbox/page.tsx")).toContain("予算と比べる額（生活費）が変わります");
+    expect(src("app/inbox/page.tsx")).toContain("ホームの「使った額」が変わります"); // 言葉を直した（2026-11-25 画面の言葉の見直し）
   });
 });

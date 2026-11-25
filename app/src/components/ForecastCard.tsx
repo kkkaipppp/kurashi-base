@@ -25,7 +25,7 @@ export function ForecastCard({ month }: { month: string }) {
         <>
           <p className="num text-[24px] font-bold">
             約{formatYen(f.projected)}
-            <span className="ml-1 text-[12px] font-medium text-ink-3">（生活費・見込み）</span>
+            <span className="ml-1 text-[12px] font-medium text-ink-3">（投資を除く・見込み）</span>
           </p>
           {f.vsBudget !== null && (
             <p className={`num mt-0.5 text-[14px] font-semibold ${f.vsBudget < 0 ? "text-expense" : "text-income"}`}>
@@ -43,12 +43,12 @@ export function ForecastCard({ month }: { month: string }) {
               <dd>＋{formatYen(f.unpaidFixed)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt>変動費 {formatYen(f.dailyVariable)}／日 × 残り{f.daysAhead}日</dt>
+              <dt>ふだんの出費 1日{formatYen(f.dailyVariable)} × 残り{f.daysAhead}日</dt>
               <dd>＋{formatYen(f.dailyVariable * f.daysAhead)}</dd>
             </div>
           </dl>
           <p className="mt-2 text-[12px] text-ink-3">
-            確定ではありません。変動費は、直近{f.basisDays}日の記録（{f.basisTx}件。固定費と投資を除く）の1日あたりで計算しています。
+            確定ではありません。ふだんの出費は、直近{f.basisDays}日の支出（{f.basisTx}件。固定費・投資は除く）の、1日あたりです。
           </p>
         </>
       )}

@@ -83,7 +83,7 @@ function SearchInner() {
           className={`${inputCls} pl-10`}
         />
       </div>
-      <p className="px-1 text-[12px] text-ink-3">端末の中の記録だけを探します。スペースで区切ると「すべて含む」ものを探します。数字だけを入れると、金額が同じものも出ます。</p>
+      <p className="px-1 text-[12px] text-ink-3">この端末の記録だけを探します。例：「スーパー 12月」と入れると、両方を含むものが出ます。数字だけを入れると、同じ金額の記録も出ます。</p>
       {q.trim() === "" ? null : groups.length === 0 ? (
         <Empty>「{q.trim()}」に合うものは見つかりません</Empty>
       ) : (

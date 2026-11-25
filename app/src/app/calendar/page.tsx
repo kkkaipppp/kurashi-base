@@ -261,7 +261,7 @@ function CalendarInner() {
           <p className="num text-[13px] text-ink-2">
             予定 {dayEvents.length}件・<span className="text-expense">支出 {formatYen(day.expense)}</span>・<span className="text-income">収入 {formatYen(day.income)}</span>
             {/* 固定費の支払い予定（実績の支出とは分けて出す。100点化の指示 A） */}
-            {dayFixed > 0 && <span className="text-warn">・固定費の支払い予定 {formatYen(dayFixed)}</span>}
+            {dayFixed > 0 && <span className="text-warn">・この日に払う固定費 {formatYen(dayFixed)}</span>}
             {dayDeadlines.length > 0 && `・期限など ${dayDeadlines.length}件`}
           </p>
           <button
