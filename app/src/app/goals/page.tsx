@@ -22,8 +22,8 @@ const config: CollectionConfig<"goals"> = {
   fields: [
     { name: "title", label: "内容", type: "text", required: true, placeholder: "例：旅行のために30万円ためる" },
     { name: "kind", label: "種類", type: "select", options: [{ value: "number", label: "数値目標（例：30万円ためる）" }, { value: "check", label: "達成目標（例：引っ越す）" }] },
-    { name: "current", label: "今の値", type: "number", decimal: true, half: true, hint: "数値目標のとき" },
-    { name: "target", label: "目標の値", type: "number", decimal: true, half: true },
+    { name: "current", label: "今の数", type: "number", decimal: true, half: true, hint: "数値目標のとき（例：12万円ためるなら 120000）" },
+    { name: "target", label: "目標の数", type: "number", decimal: true, half: true },
     { name: "unit", label: "単位", optional: true, type: "text", half: true, placeholder: "例：円、冊、kg" },
     { name: "deadline", label: "期限", optional: true, type: "date", half: true },
     { name: "note", label: "メモ", optional: true, type: "textarea" },
@@ -48,7 +48,7 @@ const config: CollectionConfig<"goals"> = {
   validate: (d) => {
     if (str(d, "kind") !== "number") return {} as Record<string, string>;
     const t = numberFromDraft(str(d, "target"));
-    return t === null || t <= 0 ? { target: "数値目標では、目標の値（0より大きい数）を入力してください" } : ({} as Record<string, string>);
+    return t === null || t <= 0 ? { target: "数値目標では、目標の数（0より大きい数）を入力してください" } : ({} as Record<string, string>);
   },
   // 数値目標の必要なペース（自分用。NEXT v21 GOAL_PLANNING。目安で、達成を保証する数字ではない）
   header: ({ list, today }) => {
@@ -68,7 +68,7 @@ const config: CollectionConfig<"goals"> = {
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-[12px] text-ink-3">目標の値・今の値・期限から計算した目安です（残り ÷ 期限までの日数 × 30日、切り上げ）。</p>
+        <p className="mt-2 text-[12px] text-ink-3">目標の数・今の数・期限から計算した目安です（残り ÷ 期限までの日数 × 30日、切り上げ）。</p>
       </Card>
     );
   },
