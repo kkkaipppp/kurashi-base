@@ -18,6 +18,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       ...(IS_PERSONAL
         ? [
             { href: "/search", label: "さがす", desc: "記録・予定・メモ・契約などを、1つの言葉で探す" },
+            { href: "/decide", label: "買い物の判断", desc: "買う前に、予算や月末の見込みへの影響を並べる" },
             { href: "/inbox", label: "未整理の記録", desc: "「その他」の記録を、店名ごとにまとめて整理", count: (d: AppData) => inboxCount(d) },
           ]
         : []),

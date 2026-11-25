@@ -27,6 +27,8 @@ export function dataHealth(d: AppData, today: string): HealthFinding[] {
   add({ id: "rec-cat", level: "warn", text: "カテゴリが見つからない固定費があります", count: d.recurring.filter((r) => !catIds.has(r.categoryId)).length, href: "/recurring" });
   add({ id: "tx-trip", level: "warn", text: "つなぎ先の旅行が見つからない支出があります", count: d.transactions.filter((t) => t.tripId && !tripIds.has(t.tripId)).length, href: "/history" });
   add({ id: "ev-trip", level: "warn", text: "つなぎ先の旅行が見つからない予定があります", count: d.events.filter((e) => e.tripId && !tripIds.has(e.tripId)).length, href: "/calendar" });
+  const goalIds = new Set(d.goals.map((g) => g.id));
+  add({ id: "ev-goal", level: "info", text: "つなぎ先の目標がもうない予定があります（目標を消した可能性。予定は残っています）", count: d.events.filter((e) => e.goalId && !goalIds.has(e.goalId)).length, href: "/calendar" });
   add({ id: "tx-rec", level: "info", text: "固定費につないだ支出のうち、その固定費がもうないものがあります（固定費を消した可能性。記録は残っています）", count: d.transactions.filter((t) => t.recurringId && !recIds.has(t.recurringId)).length });
 
   // 二重かもしれない記録：同じ日・種類・金額・店名の記録が2件以上（自動では消さない）

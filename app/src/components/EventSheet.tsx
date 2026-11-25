@@ -14,11 +14,13 @@ import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from 
 import { OrphanDraft } from "./OrphanDraft";
 import { newId } from "@/lib/defaults";
 import { IS_PERSONAL } from "@/lib/edition";
+import { departureTime } from "@/lib/eventOps";
+import { EventActions } from "./EventActions";
 import { calendarTemplate, isSavableUrl, mapsDirections, safeExternalLink } from "@/lib/externalLinks";
 import { EVENT_KINDS, type CalendarEvent, type CheckItem, type EventKind } from "@/lib/types";
 
 export type EventSheetRequest =
-  | { mode: "view"; id: string } // 予定の詳細（押したときに開く）
+  | { mode: "view"; id: string; /** どの日の回を見ているか（繰り返しの予定の完了に使う） */ day?: string } // 予定の詳細（押したときに開く）
   | { mode: "edit"; id: string }
   | { mode: "new"; date?: string; tripId?: string; /** 複製：この予定の内容を引き継いで新しい予定にする（完了・実績は引き継がない。NEXT v21 CAL:C05） */ copyOf?: string };
 
@@ -30,6 +32,10 @@ interface Extra {
   tripId: string;
   kind: EventKind | "";
   cost: string;
+  /** 移動にかかる時間（分）。出発の目安に使う（自分用） */
+  travel: string;
+  /** 関連する目標（自分用。"" = なし） */
+  goalId: string;
 }
 
 const extraOf = (e?: CalendarEvent, tripId = ""): Extra => ({
@@ -39,10 +45,12 @@ const extraOf = (e?: CalendarEvent, tripId = ""): Extra => ({
   tripId: e?.tripId ?? tripId,
   kind: e?.kind ?? "",
   cost: e?.cost != null ? String(e.cost) : "",
+  travel: e?.travelMinutes ? String(e.travelMinutes) : "",
+  goalId: e?.goalId ?? "",
 });
 
 const hasExtra = (x: Extra, d: EventDraft) =>
-  !!(x.location || x.url || x.items.length || x.tripId || x.kind || x.cost || d.note || (d.repeat && d.repeat !== "none"));
+  !!(x.location || x.url || x.items.length || x.tripId || x.kind || x.cost || x.travel || x.goalId || d.note || (d.repeat && d.repeat !== "none"));
 
 export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: () => void }) {
   const data = useData();
@@ -64,13 +72,13 @@ export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: 
       </Sheet>
     );
   }
-  if (mode === "view" && ev) return <EventDetail ev={ev} onClose={onClose} onEdit={() => setMode("edit")} />;
+  if (mode === "view" && ev) return <EventDetail ev={ev} day={req.mode === "view" ? req.day : undefined} onClose={onClose} onEdit={() => setMode("edit")} />;
   return <EventForm editing={mode === "edit" ? editingEvent : undefined} req={req} onClose={onClose} />;
 }
 
 /* ---------------- 予定の詳細 ---------------- */
 
-function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () => void; onEdit: () => void }) {
+function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: string; onClose: () => void; onEdit: () => void }) {
   const data = useData();
   const store = useStore();
   const ui = useUI();
@@ -80,6 +88,7 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
   const gcal = calendarTemplate({ ...ev, location: ev.location });
   const link = ev.url ? safeExternalLink(ev.url) : null;
   const kind = EVENT_KINDS.find((k) => k.id === ev.kind)?.label;
+  const goal = ev.goalId ? data.goals.find((g) => g.id === ev.goalId) : undefined;
 
   const remove = async () => {
     const ok = await ui.confirm({
@@ -157,6 +166,23 @@ function EventDetail({ ev, onClose, onEdit }: { ev: CalendarEvent; onClose: () =
             <p className="text-[15px] whitespace-pre-wrap break-words">{ev.note}</p>
           </div>
         )}
+        {IS_PERSONAL && <EventActions ev={ev} day={day} onClose={onClose} />}
+        {goal && (
+          <div>
+            <p className="text-[12px] font-semibold text-ink-3">目標</p>
+            <Link href={`/goals?open=${goal.id}`} className="inline-flex min-h-11 items-center text-[15px] font-semibold text-brand underline">
+              {goal.title}
+            </Link>
+          </div>
+        )}
+        {ev.travelMinutes ? (
+          <div>
+            <p className="text-[12px] font-semibold text-ink-3">移動時間</p>
+            <p className="num text-[15px]">
+              {ev.travelMinutes}分{departureTime(ev) ? `（出発の目安 ${departureTime(ev)}）` : ""}
+            </p>
+          </div>
+        ) : null}
         {ev.cost != null && (
           <div>
             <p className="text-[12px] font-semibold text-ink-3">費用の目安</p>
@@ -365,9 +391,12 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       const costTxt = extra.cost.replace(/[,，円\s]/g, "").normalize("NFKC");
       const cost = costTxt === "" ? null : Number(costTxt);
       if (cost !== null && (!Number.isInteger(cost) || cost < 0 || cost > 100_000_000)) errs.cost = "費用は0以上の整数（円）で入力してください";
+      const travelTxt = extra.travel.replace(/[分\s]/g, "").normalize("NFKC");
+      const travel = travelTxt === "" ? null : Number(travelTxt);
+      if (travel !== null && (!Number.isInteger(travel) || travel < 0 || travel > 1440)) errs.travel = "移動時間は0〜1440の整数（分）で入力してください";
       if (Object.keys(errs).length) {
         setErrors(errs);
-        if (errs.url || errs.cost || errs.note || errs.repeat || errs.repeatUntil) setShowMore(true);
+        if (errs.url || errs.cost || errs.travel || errs.note || errs.repeat || errs.repeatUntil) setShowMore(true);
         return;
       }
       const pending = newItem.trim() ? [...extra.items, { id: newId("it"), text: newItem.trim().slice(0, 60), done: false }] : extra.items;
@@ -386,6 +415,9 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
         ...(extra.tripId ? { tripId: extra.tripId } : { tripId: undefined }),
         ...(extra.kind ? { kind: extra.kind } : { kind: undefined }),
         ...(cost !== null ? { cost } : { cost: undefined }),
+        // 目標：選んだ目標が今もあるときだけ（自分用。公開版は、今ある値をそのまま持つ）
+        ...(IS_PERSONAL ? (extra.goalId && data.goals.some((g) => g.id === extra.goalId) ? { goalId: extra.goalId } : { goalId: undefined }) : editing?.goalId ? { goalId: editing.goalId } : {}),
+        ...(IS_PERSONAL && travel ? { travelMinutes: travel } : IS_PERSONAL ? { travelMinutes: undefined } : editing?.travelMinutes ? { travelMinutes: editing.travelMinutes } : {}),
       };
       // undefined の項目は保存しない（JSON に残さない）
       for (const k of Object.keys(input) as (keyof typeof input)[]) if (input[k] === undefined) delete input[k];
@@ -607,6 +639,29 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
               <input id="ev-cost" inputMode="numeric" value={extra.cost} onChange={(e) => setX("cost", e.target.value)} placeholder="例：14000" className={inputCls} maxLength={12} aria-invalid={!!errors.cost} />
             </Field>
             <p className="-mt-2 text-[12px] text-ink-3">支出の記録は「＋」からです。</p>
+
+            {IS_PERSONAL && data.goals.some((g) => !g.done || g.id === extra.goalId) && (
+              <Field label="関連する目標" optional htmlFor="ev-goal">
+                <select id="ev-goal" value={extra.goalId} onChange={(e) => setX("goalId", e.target.value)} className={inputCls}>
+                  <option value="">なし</option>
+                  {data.goals
+                    .filter((g) => !g.done || g.id === extra.goalId)
+                    .map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.title}
+                      </option>
+                    ))}
+                </select>
+                <p className="mt-1 text-[12px] text-ink-3">この予定を、目標のための行動として数えます（時間・費用は、この予定のまま一度だけ）。</p>
+              </Field>
+            )}
+
+            {IS_PERSONAL && (
+              <Field label="移動にかかる時間（分）" optional htmlFor="ev-travel" error={errors.travel}>
+                <input id="ev-travel" inputMode="numeric" value={extra.travel} onChange={(e) => setX("travel", e.target.value)} placeholder="例：30" className={inputCls} maxLength={4} aria-invalid={!!errors.travel} />
+                <p className="mt-1 text-[12px] text-ink-3">入れると、開始時刻から引いた「出発の目安」を出します（地図の推計ではありません）。</p>
+              </Field>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="繰り返し" htmlFor="ev-rep" error={errors.repeat}>

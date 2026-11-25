@@ -1,5 +1,6 @@
 "use client";
 
+import { isDoneOn } from "@/lib/eventOps";
 import { formatDateJa } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 import { useData } from "@/lib/store";
@@ -61,16 +62,22 @@ export function eventTimeLabel(e: CalendarEvent, day?: string): string {
 
 export function EventRow({ ev, day }: { ev: CalendarEvent; day?: string }) {
   const ui = useUI();
+  // 完了した回は、取り消し線と ✓（色だけに頼らない）
+  const done = isDoneOn(ev, day ?? ev.startDate);
   return (
     <li>
       <button
         type="button"
-        onClick={() => ui.openEvent({ mode: "view", id: ev.id })}
+        onClick={() => ui.openEvent({ mode: "view", id: ev.id, day })}
         className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2"
       >
-        <span className="h-9 w-1.5 shrink-0 rounded-full bg-event" aria-hidden="true" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-semibold">{ev.title}</span>
+        <span className={`h-9 w-1.5 shrink-0 rounded-full ${done ? "bg-ink-3" : "bg-event"}`} aria-hidden="true" />
+        <span className={`min-w-0 flex-1 ${done ? "opacity-60" : ""}`}>
+          <span className={`block truncate text-[15px] font-semibold ${done ? "line-through" : ""}`}>
+            {done && <span className="sr-only">完了：</span>}
+            {done && "✓ "}
+            {ev.title}
+          </span>
           <span className="block truncate text-[12px] text-ink-3">
             {eventTimeLabel(ev, day)}
             {ev.location ? `・${ev.location}` : ""}
