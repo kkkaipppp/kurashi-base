@@ -46,6 +46,8 @@ const isHttpOrBlank = (v: unknown) => {
   }
 };
 const optional = (check: (v: unknown) => boolean) => (v: unknown) => v === undefined || check(v);
+const isCheckList2 = (v: unknown) =>
+  Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done));
 const isCheckList = (v: unknown) =>
   Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done));
 const isBookList = (v: unknown) =>
@@ -76,7 +78,7 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
   documents: { label: "書類", fields: { title: isStr, category: isStr, expiry: okDateOrBlank, place: isStr, note: isStr } },
   studySubjects: { label: "勉強（資格）", fields: { name: isStr, examDate: okDateOrBlank, targetHours: (v) => v === null || (isNum(v) && (v as number) > 0), archived: isBool, catalogId: optional(isStr), books: optional(isBookList) } },
   studyLogs: { label: "勉強記録", fields: { subjectId: isStr, date: isDate, minutes: (v) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 1440, note: isStr } },
-  goals: { label: "目標", fields: { title: isStr, deadline: okDateOrBlank, kind: oneOf("number", "check"), target: numOrNull, current: isNum, unit: isStr, done: isBool, note: isStr } },
+  goals: { label: "目標", fields: { title: isStr, deadline: okDateOrBlank, kind: oneOf("number", "check"), target: numOrNull, current: isNum, unit: isStr, done: isBool, note: isStr, steps: optional(isCheckList2) } },
 };
 
 export function validateAppData(input: unknown): R {

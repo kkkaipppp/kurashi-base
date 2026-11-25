@@ -263,6 +263,8 @@ export interface Goal {
   unit: string;
   done: boolean;
   note: string;
+  /** やること（任意。NEXT v21 T06。自分用の入力。数字の進み具合は変えない） */
+  steps?: { id: string; text: string; done: boolean }[];
   createdAt: string;
   updatedAt: string;
 }

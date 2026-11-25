@@ -6,8 +6,12 @@ import { bool, numStr, str } from "@/lib/draft";
 import { daysLeft, dueLabel, goalProgress } from "@/lib/life";
 import { goalPace, goalPaceText } from "@/lib/goalPlan";
 import { goalActions } from "@/lib/goalLinks";
+import { parseSteps, stepProgress, stepsToText } from "@/lib/goalSteps";
 import { IS_PERSONAL } from "@/lib/edition";
 import { Card } from "@/components/ui";
+
+// 版の値を、このファイルの中で直接比べる（公開版の組み立てから、自分用の入力を外すため）
+const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 
 const config: CollectionConfig<"goals"> = {
   key: "goals",
@@ -23,10 +27,12 @@ const config: CollectionConfig<"goals"> = {
     { name: "unit", label: "単位", optional: true, type: "text", half: true, placeholder: "例：円、冊、kg" },
     { name: "deadline", label: "期限", optional: true, type: "date", half: true },
     { name: "note", label: "メモ", optional: true, type: "textarea" },
+    // やること（自分用）。1行に1つ。終わったものは、行の先頭に ✓
+    ...(PERSONAL_BUILD ? [{ name: "steps", label: "やること", optional: true, type: "textarea" as const, hint: "1行に1つ。終わったら、行の先頭に ✓ を付けます" }] : []),
     { name: "done", label: "達成", type: "checkbox" },
   ],
   initial: () => ({ title: "", kind: "number", current: "0", target: "", unit: "", deadline: "", note: "", done: false }),
-  toDraft: (g) => ({ title: g.title, kind: g.kind, current: String(g.current), target: numStr(g.target), unit: g.unit, deadline: g.deadline, note: g.note, done: g.done }),
+  toDraft: (g) => ({ title: g.title, kind: g.kind, current: String(g.current), target: numStr(g.target), unit: g.unit, deadline: g.deadline, note: g.note, steps: stepsToText(g.steps), done: g.done }),
   fromDraft: (d) => ({
     title: str(d, "title"),
     kind: str(d, "kind") as "number" | "check",
@@ -35,6 +41,8 @@ const config: CollectionConfig<"goals"> = {
     unit: str(d, "unit"),
     deadline: str(d, "deadline"),
     note: str(d, "note"),
+    // 自分用だけ。空なら、やることなし（公開版は、この項目を触らない＝あるものはそのまま残る）
+    ...(PERSONAL_BUILD ? { steps: parseSteps(str(d, "steps")).length > 0 ? parseSteps(str(d, "steps")) : undefined } : {}),
     done: bool(d, "done"),
   }),
   validate: (d) => {
@@ -76,6 +84,7 @@ const config: CollectionConfig<"goals"> = {
       sub:
         (g.kind === "number" && g.target !== null ? `${fmt(g.current)} / ${fmt(g.target)}${g.unit}・` : "") +
         (g.deadline ? `${formatDateJa(g.deadline, true)}まで` : "期限なし") +
+        (stepProgress(g).total > 0 && IS_PERSONAL ? `・やること${stepProgress(g).done}/${stepProgress(g).total}` : "") +
         (act && act.events > 0 ? `・予定${act.events}件（完了${act.doneCount}回）` : ""),
       muted: g.done,
       badge: g.done ? { text: "達成", tone: "ok" } : d !== null && d < 0 ? { text: dueLabel(d), tone: "warn" } : undefined,

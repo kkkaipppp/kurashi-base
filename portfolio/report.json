@@ -1,7 +1,7 @@
 {
   "project_id": "kurashi-base",
   "mode": "production",
-  "as_of": "2026-11-25T13:02:54+09:00",
+  "as_of": "2026-11-25T13:31:05+09:00",
   "phase": "ロードマップ M5 友人限定β（3/5 完了）。WBS 88/112 完了、未決の論点 11件",
   "progress_pct": 79,
   "quality": "UNKNOWN",
@@ -11,5 +11,5 @@
   "blockers": 1,
   "approvals": 2,
   "next_action": "V21 支出と旅行のひも付け（友人β では作らない（2026-11-22 平尾さん決定）。友人の感想を見てから決める。受入 TRIP-013。今は行程の「費用の目安」だけ）",
-  "evidence_ref": "docs/progress/PROGRESS.html@ccb9298"
+  "evidence_ref": "docs/progress/PROGRESS.html@9779cba"
 }

@@ -1,0 +1,48 @@
+import type { Goal } from "./types";
+
+/**
+ * 目標の「やること」（NEXT v21 T06：目標 → やること。自分用の追加項目で、任意）。
+ * 入力は、1行に1つ。終わったものは、行の先頭に「✓」を付ける。数字の目標の進み具合は、今までどおり「今の値 ÷ 目標の値」（やることでは変えない）。
+ * 「達成」は本人が決める（やることが全部終わっても、勝手に達成にしない）。
+ */
+export interface GoalStep {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export const MAX_STEPS = 30;
+export const MAX_STEP_LEN = 60;
+
+const DONE_MARK = /^[✓✔☑]\s*/;
+
+export function parseSteps(text: string): GoalStep[] {
+  const out: GoalStep[] = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const done = DONE_MARK.test(line);
+    const body = line.replace(DONE_MARK, "").trim().slice(0, MAX_STEP_LEN);
+    if (!body) continue;
+    out.push({ id: `st${out.length + 1}`, text: body, done });
+    if (out.length >= MAX_STEPS) break;
+  }
+  return out;
+}
+
+export function stepsToText(steps: GoalStep[] | undefined): string {
+  return (steps ?? []).map((s) => (s.done ? "✓ " : "") + s.text).join("\n");
+}
+
+export interface StepProgress {
+  total: number;
+  done: number;
+  /** 0〜100（やることがなければ null） */
+  pct: number | null;
+}
+
+export function stepProgress(g: Pick<Goal, "steps">): StepProgress {
+  const total = g.steps?.length ?? 0;
+  const done = g.steps?.filter((s) => s.done).length ?? 0;
+  return { total, done, pct: total === 0 ? null : Math.round((done / total) * 100) };
+}
