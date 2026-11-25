@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useData, useStore, type TripInput } from "@/lib/store";
+import { sumEntries, txEntries } from "@/lib/ledgerCore";
 import { addDays, daysBetween, formatDateJa, isValidDateStr, todayStr } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 import { eventsOnDay } from "@/lib/aggregate";
@@ -135,7 +136,7 @@ function TripDetail({ trip, onBack, onEdit, onOpenTrip }: { trip: Trip; onBack: 
   const search = webSearch(q);
   // 自分用：旅行につないだ支出（100点化の指示 F。メモの文字ではなく旅行の ID でつなぐ）
   const linkedTx = IS_PERSONAL ? data.transactions.filter((t) => t.tripId === trip.id).sort((a, b) => b.date.localeCompare(a.date)) : [];
-  const spentTotal = linkedTx.reduce((s, t) => s + (t.type === "expense" && t.countAs !== "transfer" ? t.amount : 0), 0);
+  const spentTotal = sumEntries(txEntries(linkedTx), () => true).expense; // 共通台帳の数え方（o11 A06）
   // 前の作り（メモに「旅行：名前」）で入れた支出は、候補として出して、本人が「つなぐ」を押したときだけつなぐ
   const memoCands = IS_PERSONAL ? tripMemoCandidates(data.transactions, trip) : [];
 

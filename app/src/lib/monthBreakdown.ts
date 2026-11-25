@@ -1,4 +1,4 @@
-import { categoryMap, isMoveOnly, txIsFixed, txIsInvest } from "./classify";
+import { isLifeExpense, ledgerEntries } from "./ledgerCore";
 import type { AppData } from "./types";
 
 /**
@@ -26,19 +26,20 @@ export interface MonthBreakdown {
 
 
 export function monthBreakdown(data: AppData, key: string, today: string): MonthBreakdown {
-  const cats = categoryMap(data);
+  // 金額は共通台帳から（o11 A06。ホーム・振り返り・ウィジェットの予算の比べ方は lib/ledger.ts の budgetSpent で同じにしている）
+  const entries = ledgerEntries(data);
   let fixed = 0;
   let variable = 0;
   let invest = 0;
   let income = 0;
-  for (const t of data.transactions) {
-    if (t.date.slice(0, 7) !== key || isMoveOnly(t)) continue;
-    if (t.type === "income") {
+  for (const t of entries) {
+    if (t.date.slice(0, 7) !== key) continue;
+    if (t.kind === "income") {
       income += t.amount;
       continue;
     }
-    if (txIsInvest(t, cats)) invest += t.amount;
-    else if (txIsFixed(t, data.recurring)) fixed += t.amount;
+    if (t.invest) invest += t.amount;
+    else if (t.fixed) fixed += t.amount;
     else variable += t.amount;
   }
   let nisaBuy = 0;
@@ -55,9 +56,9 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
   const day = today.slice(0, 7) === key ? Number(today.slice(8, 10)) : 31;
   const byCat = (k: string) => {
     const mp = new Map<string, number>();
-    for (const t of data.transactions) {
+    for (const t of entries) {
       // 投資は「使った」ではないので、増えたものには入れない
-      if (t.type !== "expense" || isMoveOnly(t) || txIsInvest(t, cats) || t.date.slice(0, 7) !== k || Number(t.date.slice(8, 10)) > day) continue;
+      if (!isLifeExpense(t) || t.date.slice(0, 7) !== k || Number(t.date.slice(8, 10)) > day) continue;
       mp.set(t.categoryId, (mp.get(t.categoryId) ?? 0) + t.amount);
     }
     return mp;
@@ -65,7 +66,7 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
   const now = byCat(key);
   const prev = byCat(prevKey);
   // 先月に記録が1件でもあれば比べる（同じ日までに無くても「増えた」は出せる）
-  const hasPrev = data.transactions.some((t) => t.type === "expense" && !isMoveOnly(t) && t.date.slice(0, 7) === prevKey);
+  const hasPrev = entries.some((t) => t.kind === "expense" && t.date.slice(0, 7) === prevKey);
   const ids = new Set([...now.keys(), ...prev.keys()]);
   const diffs = [...ids].map((categoryId) => ({ categoryId, now: now.get(categoryId) ?? 0, prev: prev.get(categoryId) ?? 0, diff: (now.get(categoryId) ?? 0) - (prev.get(categoryId) ?? 0) }));
   const increases = hasPrev ? diffs.filter((x) => x.diff > 0).sort((a, b) => b.diff - a.diff).slice(0, 3) : [];
