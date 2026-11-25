@@ -2,7 +2,7 @@ import Link from "next/link";
 import { formatSignedYen, formatYen } from "@/lib/money";
 
 /**
- * 縦の棒グラフ（支出＝赤・収入＝青）と、収支の累計の折れ線（推移）。
+ * 縦の棒グラフ（支出＝赤・収入＝青）。収支の累計は、折れ線ではなく「数字で見る」の表に出す（2026-11-25 平尾さんの指示）。
  * 振り返りの「週」「年」で使う（2026-11-24 平尾さん：縦の棒グラフと推移見たい）。
  * 数字は下の表にも出す（読み上げ・細かい金額のため）。
  */
@@ -39,26 +39,18 @@ export function cumulativeBalance(rows: TrendRow[]): number[] {
 
 export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { rows: TrendRow[]; title: string; lineLabel?: string }) {
   const cum = cumulativeBalance(rows);
-  // 折れ線は、まだ来ていない日・月の手前まで
+  // 累計は、まだ来ていない日・月の手前まで（表の「累計」の合計の行に使う）
   const lineLen = rows.findIndex((r) => r.future) === -1 ? rows.length : rows.findIndex((r) => r.future);
   const lineCum = cum.slice(0, lineLen);
-  // 棒（支出・収入）と累計の折れ線は、目盛りを分ける（レビュー o1 の P07：累計が大きいと棒が小さく見えるため）。
-  // 棒の目盛りは左、累計の目盛りは右（紫）
+  // 棒グラフだけ（2026-11-25 平尾さん「紫の線がわけわからん」→ 紫の累計の線をやめた。累計は「数字で見る」の表に残す）
   const barMax = Math.max(1, ...rows.flatMap((r) => [r.expense, r.income]));
-  const lMax = Math.max(0, ...lineCum);
-  const lMin = Math.min(0, ...lineCum);
-  // 累計がずっと0のときは、線を棒の0と同じ高さ（下）に描く
-  const lSpan = lMax - lMin || 1;
-  const flat = lMax === lMin;
   const plotW = W - PAD_L - PAD_R;
   const plotH = H - PAD_T - PAD_B;
   const yb = (v: number) => PAD_T + (1 - v / barMax) * plotH;
-  const yl = (v: number) => (flat ? PAD_T + plotH : PAD_T + ((lMax - v) / lSpan) * plotH);
   const slot = plotW / Math.max(1, rows.length);
   const barW = Math.max(2, Math.min(12, slot * 0.32));
   const cx = (i: number) => PAD_L + slot * i + slot / 2;
   const base = yb(0);
-  const line = lineCum.map((v, i) => `${i === 0 ? "M" : "L"}${cx(i).toFixed(1)},${yl(v).toFixed(1)}`).join(" ");
   const empty = rows.every((r) => r.expense === 0 && r.income === 0);
   const totalExpense = rows.reduce((a, r) => a + r.expense, 0);
   const totalIncome = rows.reduce((a, r) => a + r.income, 0);
@@ -80,7 +72,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
   }
   return (
     <figure className="space-y-2">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${title}の縦の棒グラフと、${lineLabel}の推移`}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${title}の縦の棒グラフ（支出と収入）`}>
         {/* 棒の目盛り（左）：上と0 */}
         {[barMax, 0].map((v, k) => (
           <g key={`b${k}`}>
@@ -90,16 +82,6 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
             </text>
           </g>
         ))}
-        {/* 累計の目盛り（右、紫）：いちばん上・いちばん下（0 をまたぐときは 0 の点線も） */}
-        {lineCum.length > 0 &&
-          [...new Set([lMax, lMin])].map((v, k) => (
-            <text key={`l${k}`} x={W - PAD_R + 4} y={yl(v) + 3} textAnchor="start" fontSize="9" fill="var(--event)">
-              {shortAmount(v)}
-            </text>
-          ))}
-        {lineCum.length > 0 && lMin < 0 && lMax > 0 && (
-          <line x1={PAD_L} x2={W - PAD_R} y1={yl(0)} y2={yl(0)} stroke="var(--event)" strokeOpacity={0.35} strokeWidth={0.8} strokeDasharray="2 3" />
-        )}
         {rows.map((r, i) => (
           <g key={r.label + i}>
             {r.strong && <rect x={cx(i) - slot / 2 + 1} y={PAD_T} width={slot - 2} height={plotH} rx={4} fill="var(--brand-soft)" />}
@@ -112,10 +94,6 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
             )}
           </g>
         ))}
-        <path d={line} fill="none" stroke="var(--event)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-        {lineCum.map((v, i) => (
-          <circle key={i} cx={cx(i)} cy={yl(v)} r={2.2} fill="var(--event)" />
-        ))}
       </svg>
       <figcaption className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-ink-3">
         <span className="flex items-center gap-1">
@@ -124,15 +102,12 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
         <span className="flex items-center gap-1">
           <span className="inline-block size-2.5 rounded-sm bg-income" />収入（棒）
         </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-0.5 w-3 rounded bg-event" />
-          {lineLabel}（線）
-        </span>
-        <span className="w-full text-center">単位は円。棒は左の目盛り、線は右の紫の目盛り</span>
+        <span className="w-full text-center">単位は円。収支の累計は、下の「数字で見る」にあります</span>
       </figcaption>
       <details className="rounded-xl bg-surface-2 px-3 py-1 text-[12px]">
         <summary className="min-h-9 cursor-pointer py-2 font-semibold text-ink-2">数字で見る</summary>
         <table className="num mb-2 w-full">
+          <caption className="sr-only">{lineLabel}</caption>
           <thead>
             <tr className="text-ink-3">
               <th className="py-1 text-left font-semibold"> </th>

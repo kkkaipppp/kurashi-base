@@ -141,7 +141,7 @@ export default function CalendarPage() {
         <table className="w-full table-fixed border-separate border-spacing-0.5" role="grid" aria-label={`${formatMonthJa(month)}のカレンダー`}>
           <thead>
             <tr>
-              {WEEK.map((w, i) => (
+              {WEEK.map((w) => (
                 <th key={w} scope="col" className="pb-1 text-[11px] font-semibold text-ink-3">
                   {w}
                 </th>

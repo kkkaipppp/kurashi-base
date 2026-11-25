@@ -58,10 +58,9 @@ describe("P06・P07 週の見出しとグラフ", () => {
     expect(weekLabel("2026-11-23", "2026-11-24")).toBe("11/23(月)");
     expect(weekLabel("2025-12-29", "2026-01-02")).toBe("2025/12/29(月)");
   });
-  it("棒と累計の目盛りを分け、記録がない期間は「支出を追加」", () => {
+  it("記録がない期間は「支出を追加」（棒グラフの目盛りだけ。紫の累計の線は、2026-11-25 にやめた）", () => {
     const s = src("components/TrendChart.tsx");
     expect(s).toContain("const yb = (v: number)");
-    expect(s).toContain("const yl = (v: number)");
     expect(s).toContain("この期間は、まだ記録がありません");
     expect(s).toContain('href="/?add=expense"');
   });
