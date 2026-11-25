@@ -117,6 +117,106 @@ export class IndexedDbRepository {
     });
   }
 
+  /**
+   * 1つのトランザクションで「版の照合 → 書き換え」をする（取り消し・すべて削除・退避で使う）。
+   * body が返したものを結果にする。版が違えば書かずに conflict
+   */
+  private guardedWrite<T extends { ok: true }>(
+    expectedRevision: number,
+    body: (cur: DataRow | undefined, undo: UndoSnapshot | undefined, put: (k: string, v: unknown) => void, del: (k: string) => void) => T | { ok: false; error: string },
+  ): Promise<T | { ok: false; error: string; conflict?: true }> {
+    return new Promise((resolve) => {
+      let result: T | { ok: false; error: string; conflict?: true } = { ok: false, error: "保存できませんでした" };
+      let tx: IDBTransaction;
+      try {
+        tx = this.db.transaction(STORE, "readwrite");
+      } catch (e) {
+        resolve({ ok: false, error: `保存できませんでした（${(e as Error)?.message ?? "不明"}）` });
+        return;
+      }
+      const st = tx.objectStore(STORE);
+      const put = (key: string, val: unknown) => {
+        if (this.fault?.(key)) throw new DOMException("injected", "QuotaExceededError");
+        st.put(val, key);
+      };
+      const del = (key: string) => void st.delete(key);
+      const g = st.get("data");
+      const gu = st.get("undo");
+      gu.onsuccess = () => {
+        const cur = g.result as DataRow | undefined;
+        if ((cur?.revision ?? 0) !== expectedRevision) {
+          result = { ok: false, error: "保存できませんでした。ほかのタブで記録が変わっていました。読み込み直してから、もう一度やり直してください", conflict: true };
+          tx.abort();
+          return;
+        }
+        try {
+          result = body(cur, gu.result as UndoSnapshot | undefined, put, del);
+          if (!result.ok) tx.abort();
+        } catch (e) {
+          result = { ok: false, error: quota(e) ? "保存できませんでした。この端末の保存容量がいっぱいです。今までの記録は消えていません" : "保存できませんでした" };
+          tx.abort();
+        }
+      };
+      tx.oncomplete = () => resolve(result.ok ? result : { ok: false, error: "保存できませんでした" });
+      tx.onabort = () => resolve(result.ok ? { ok: false, error: "保存できませんでした（途中で止まりました。今までの記録は消えていません）" } : result);
+      tx.onerror = () => undefined;
+    });
+  }
+
+  /** 取り消し：控えを本体に戻し、今の本体を新しい控えにする（もう一度押せばやり直せる） */
+  undo(expectedRevision: number, now: string) {
+    return this.guardedWrite<{ ok: true; revision: number; data: AppData }>(expectedRevision, (cur, u, put) => {
+      if (!u) return { ok: false, error: "元に戻せる控えがありません" };
+      const v = validateAppData(JSON.parse(u.raw));
+      if (!v.ok) return { ok: false, error: "控えが壊れているため、元に戻せません" };
+      const rev = (cur?.revision ?? 0) + 1;
+      if (cur) put("undo", { savedAt: now, reason: `取り消し（${u.reason}）`, raw: cur.json } satisfies UndoSnapshot);
+      put("data", { revision: rev, json: u.raw, savedAt: now } satisfies DataRow);
+      return { ok: true, revision: rev, data: v.data };
+    });
+  }
+
+  /** すべて削除：本体と控えを消す（移行の印は残す＝旧データから、もう一度移さない） */
+  wipe(expectedRevision: number, now: string, empty: AppData) {
+    return this.guardedWrite<{ ok: true; revision: number }>(expectedRevision, (cur, _u, put, del) => {
+      const rev = (cur?.revision ?? 0) + 1;
+      del("undo");
+      put("data", { revision: rev, json: JSON.stringify(empty), savedAt: now } satisfies DataRow);
+      return { ok: true, revision: rev };
+    });
+  }
+
+  /** 読み込めないデータを、別のキーに退避してから、本体を消す（退避が書けなければ、何もしない） */
+  quarantine(now: string) {
+    return new Promise<{ ok: true } | { ok: false; error: string }>((resolve) => {
+      let ok = false;
+      const tx = this.db.transaction(STORE, "readwrite");
+      const st = tx.objectStore(STORE);
+      const g = st.get("data");
+      g.onsuccess = () => {
+        const cur = g.result as DataRow | undefined;
+        if (!cur) return;
+        try {
+          if (this.fault?.("corrupt")) throw new DOMException("injected", "QuotaExceededError");
+          st.put({ savedAt: now, json: cur.json }, `corrupt:${now}`);
+          st.delete("data");
+          ok = true;
+        } catch {
+          tx.abort();
+        }
+      };
+      tx.oncomplete = () => resolve(ok ? { ok: true } : { ok: false, error: "退避するデータがありません" });
+      tx.onabort = () => resolve({ ok: false, error: "退避できませんでした。データはそのままです" });
+    });
+  }
+
+  /** 生の本体（読み込めないときの退避・診断用） */
+  async rawData(): Promise<{ revision: number; json: string } | null> {
+    const tx = this.db.transaction(STORE, "readonly");
+    const row = (await reqP(tx.objectStore(STORE).get("data"))) as DataRow | undefined;
+    return row ? { revision: row.revision, json: row.json } : null;
+  }
+
   async readUndo(): Promise<UndoSnapshot | null> {
     const tx = this.db.transaction(STORE, "readonly");
     const u = (await reqP(tx.objectStore(STORE).get("undo"))) as UndoSnapshot | undefined;
