@@ -146,6 +146,16 @@ export class IdbRepositoryAdapter implements Repository {
         return this.useFallback(m.status === "failed" ? `${m.error}。今までの記録は、元の場所に残っています` : "移した中身が元と合わないため、切り替えませんでした。今までの記録は、元の場所に残っています");
       }
     }
+    // IndexedDB に印があるのに、旧データ側に「移した」印がない（移したときに容量不足などで書けなかった）なら、起動のたびに書き直す。
+    // この印がないと、あとで IndexedDB だけが消えたときに、古い記録を黙って移し直してしまう（点検3回目 中-1）
+    if (this.opts.legacy && !this.everMigrated()) {
+      const meta = await repo.meta();
+      try {
+        this.opts.legacy.setItem(MOVED_MARK_KEY, meta?.migratedAt ?? this.now());
+      } catch {
+        /* 書けなければ、次の起動でもう一度 */
+      }
+    }
     const r = await repo.load();
     if (!r.ok) {
       const raw = await repo.rawData();
