@@ -133,7 +133,7 @@ describe("A 入力とカレンダー", () => {
 describe("C グラフの単位と設定のまとまり", () => {
   it("週・年のグラフに、単位（円）と左右の目盛りの読み方を書く", () => {
     const s = src("components/TrendChart.tsx");
-    expect(s).toContain("単位は円。棒は左の目盛り、線は右の紫の目盛り");
+    expect(s).toContain("単位は円。収支の累計は、下の「数字で見る」にあります"); // 紫の折れ線をやめた（平尾さん 2026-11-25）
   });
   it("設定は目的ごとの見出しで分ける（自分用だけ）。今までのアンカーは残す", () => {
     const s = src("app/settings/page.tsx");

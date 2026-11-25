@@ -12,7 +12,10 @@ import { formatYen } from "@/lib/money";
 import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from "@/lib/sheetDraft";
 import { OrphanDraft } from "./OrphanDraft";
 import { categoryIsInvest, fixedCandidates } from "@/lib/classify";
-import { PAYMENT_METHODS, type TxSource, type TxType } from "@/lib/types";
+import { PAYMENT_METHODS, type Transaction, type TxSource, type TxType } from "@/lib/types";
+import { applyRefund, refundedTotal } from "@/lib/refund";
+import { newId } from "@/lib/defaults";
+import { parseAmount } from "@/lib/money";
 
 export type TxSheetRequest =
   | { mode: "edit"; id: string }
@@ -189,6 +192,11 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
 
   const save = async (force = false, keepOpen = false, asNew = false) => {
     if (lock.current) return;
+    // 返金の記録は直せない（元の支出と金額が合わなくなるため）。削除すれば、元の支出が元に戻る
+    if (editing?.refundOf && !asNew) {
+      setSaveError("返金の記録は、直せません。削除すると、元の支出が元に戻ります。返金し直すときは、元の支出から返金してください");
+      return;
+    }
     lock.current = true;
     setBusy(true);
     setSaveError(null);
@@ -456,6 +464,9 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           <TxExtras draft={draft} set={set} editingRecurringId={editing?.recurringId ?? (req.mode === "new" ? req.recurringId : undefined)} />
         )}
 
+        {EXTRA && editing && editing.type === "expense" && !editing.refundOf && <RefundBox tx={editing} onDone={onClose} />}
+        {EXTRA && editing?.refundOf && <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">この記録は、返金です（収入にも支出にも数えません）。削除すると、元の支出が元に戻ります。</p>}
+
         <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
           <textarea id="tx-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
         </Field>
@@ -591,6 +602,57 @@ function TxExtras({
           </select>
         </Field>
       )}
+    </div>
+  );
+}
+
+/** 返金を記録する（自分用）。元の支出が、返金の分だけ減る（全額なら収支に数えない）。返金の記録を消すと、元に戻る */
+function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
+  const data = useData();
+  const store = useStore();
+  const ui = useUI();
+  const [open, setOpen] = useState(false);
+  const [amt, setAmt] = useState(String(tx.amount));
+  const [date, setDate] = useState(todayStr());
+  const already = refundedTotal(data, tx.id);
+  if (tx.countAs === "transfer") return already > 0 ? <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">全額が返金されています（{formatYen(already)}）。</p> : null;
+  if (!open)
+    return (
+      <div className="rounded-xl bg-surface-2 px-3 py-2">
+        {already > 0 && <p className="mb-1 text-[12px] text-ink-2">これまでの返金：{formatYen(already)}（今の支出は、返金を引いたあとの額です）</p>}
+        <Button variant="secondary" className="w-full" onClick={() => setOpen(true)}>
+          返金があった
+        </Button>
+      </div>
+    );
+  const parsed = parseAmount(amt);
+  const submit = () => {
+    const n = parsed.ok ? parsed.value : NaN;
+    const r = applyRefund(data, tx.id, n, date, newId("tx"), new Date().toISOString());
+    if (!r.ok) return ui.toast(r.error, "error");
+    const ts = new Date().toISOString();
+    const rid = newId("tx");
+    const res = store.commit((d) => {
+      const x = applyRefund(d, tx.id, n, date, rid, ts);
+      return x.ok ? x.next : d;
+    });
+    ui.toast(res.ok ? "返金を記録しました" : res.error, res.ok ? "ok" : "error");
+    if (res.ok) onDone();
+  };
+  return (
+    <div className="space-y-2 rounded-xl border border-line px-3 py-3">
+      <p className="text-[13px] font-semibold">返金の額（今の支出 {formatYen(tx.amount)} まで）</p>
+      <input inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} className={inputCls} aria-label="返金の額" maxLength={14} />
+      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} aria-label="返金のあった日" />
+      <p className="text-[12px] text-ink-3">一部なら、この支出がその分だけ減ります。全額なら、この支出を収支に数えません。返金の記録を消すと、元に戻ります。</p>
+      <div className="flex gap-2">
+        <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>
+          やめる
+        </Button>
+        <Button className="flex-1" onClick={submit}>
+          返金を記録する
+        </Button>
+      </div>
     </div>
   );
 }

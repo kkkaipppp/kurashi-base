@@ -58,3 +58,13 @@ describe("週・年の収支（2026-11-24 平尾さん：年間と週の収支�
     expect(page).toContain("if (!PERIOD_REPORT) return <MonthReportPage />;");
   });
 });
+
+describe("グラフに紫の折れ線を出さない（平尾さん 2026-11-25）", () => {
+  const s = readFileSync(join(__dirname, "..", "src", "components", "TrendChart.tsx"), "utf8");
+  it("棒グラフだけ。累計は、数字の表に残す", () => {
+    expect(s).not.toContain('<path d={line}');
+    expect(s).not.toContain("右の紫の目盛り");
+    expect(s).toContain("収支の累計は、下の「数字で見る」にあります");
+    expect(s).toContain("<th className=\"py-1 text-right font-semibold\">累計</th>");
+  });
+});
