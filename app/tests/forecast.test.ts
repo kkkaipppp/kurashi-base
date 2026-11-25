@@ -28,7 +28,7 @@ describe("月末の見込み", () => {
       tx({ id: "fix", categoryId: "exp-5", amount: 8000, date: "2026-10-28", recurringId: "r" }),
       tx({ id: "old", date: "2026-10-28", amount: 500 }), // 窓の最初の日（記録の始まり）
     ];
-    const f = forecastMonthEnd(d, "2026-11-25");
+    const f = forecastMonthEnd(d, "2026-11-25", undefined, true); // 自分用の数え方（投資を除く）
     expect(f.ok).toBe(true);
     if (!f.ok) return;
     expect(f.spent).toBe(28000); // 今月の生活費（投資を除く）

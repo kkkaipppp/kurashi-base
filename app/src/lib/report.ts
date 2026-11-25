@@ -1,4 +1,3 @@
-import { IS_PERSONAL } from "./edition";
 import { forecastMonthEnd } from "./forecast";
 import { summarizeMonth, txInMonth } from "./aggregate";
 import { txEntries } from "./ledgerCore";
@@ -101,22 +100,15 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
       });
   }
 
-  // 今のペースのまま月末まで使った場合の単純計算（7日目以降、予算があるときだけ）
+  // 月末の見込み（7日目以降、予算があるときだけ）。振り返りの「月末の見込み」と同じ数字を使う（同じ名前で、画面ごとに数字が違わないように）。
+  // 支出の範囲は予算と同じ（自分用は投資を除く、公開版はすべての支出。2026-11-26 公開版もそろえた）。出せないときは、この一文を出さない
   if (isCurrent && data.budget.monthly !== null && day >= 7 && cur > 0) {
-    const [y, m] = key.split("-").map(Number);
+    const f = forecastMonthEnd(data, today);
     // 細かい金額は見込みとして不自然なので、100円単位に丸める
-    let projected = Math.round(((cur / day) * daysInMonth(y, m)) / 100) * 100;
-    // 自分用：振り返りの「月末の見込み」と同じ数字を使う（同じ名前で、画面ごとに数字が違わないように）。出せないときは、この一文を出さない
-    let show = true;
-    if (IS_PERSONAL) {
-      const f = forecastMonthEnd(data, today);
-      if (f.ok) projected = Math.round(f.projected / 100) * 100;
-      else show = false;
-    }
-    if (show)
+    if (f.ok)
       out.push({
         key: "pace",
-        text: `月末の見込み：約${formatYen(projected)}（予算 ${formatYen(data.budget.monthly)}）`,
+        text: `月末の見込み：約${formatYen(Math.round(f.projected / 100) * 100)}（予算 ${formatYen(data.budget.monthly)}）`,
       });
   }
   return out;

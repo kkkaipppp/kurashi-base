@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatSignedYen, formatYen } from "@/lib/money";
+import { BUDGET_EXCLUDES_INVEST } from "@/lib/ledgerCore";
 
 /**
  * 縦の棒グラフ（支出＝赤・収入＝青）。収支の累計は、折れ線ではなく「数字で見る」の表に出す（2026-11-25 平尾さんの指示）。
@@ -137,7 +138,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
           </tfoot>
         </table>
         {/* 数字の根拠（何を数えているか。NEXT v21 CH:G01） */}
-        <p className="mb-2 text-[12px] text-ink-3">支出・収入はこの期間に記録したものの合計です（投資として数えた支出も含みます。予算と比べる「生活費」とは別の数字です）。今日より後の日・月は数えません。</p>
+        <p className="mb-2 text-[12px] text-ink-3">支出・収入はこの期間に記録したものの合計です{BUDGET_EXCLUDES_INVEST ? "（投資として数えた支出も含みます。予算と比べる「生活費」とは別の数字です）" : ""}。今日より後の日・月は数えません。</p>
       </details>
     </figure>
   );

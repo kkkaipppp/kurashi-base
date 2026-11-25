@@ -89,12 +89,12 @@ describe("D 家計の計算をひとつに（指示書の検証データ）", ()
     const tx = (id: string, amount: number, categoryId: string) => ({ id, type: "expense" as const, date: "2026-11-10", amount, currency: "JPY" as const, categoryId, merchant: "", paymentMethod: "", note: "", source: "manual" as const, createdAt: now, updatedAt: now });
     d.transactions = [tx("a", 96420, "exp-1"), tx("b", 100000, "inv")];
     d.recurring = [{ id: "r", name: "スマホ", amount: 8000, cycle: "monthly", anchorDay: 28, nextDueDate: "2026-11-28", categoryId: "exp-5", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
-    const l = monthLedger(d, "2026-11", "2026-11-24");
+    const l = monthLedger(d, "2026-11", "2026-11-24", true); // 自分用の数え方（投資を除く）
     expect([l.lifeExpense, l.investMove, l.lifeBudgetLeft, l.unpaidFixed, l.freeLeft, l.perDay, l.daysLeft]).toEqual([96420, 100000, 23580, 8000, 15580, 2225, 7]);
     // 支払いを記録すると、未記録の固定費が減り、生活費が増え、自由に使える残りは変わらない
     d.transactions.push(tx("c", 8000, "exp-5"));
     d.recurring[0].nextDueDate = "2026-12-28";
-    const after = monthLedger(d, "2026-11", "2026-11-24");
+    const after = monthLedger(d, "2026-11", "2026-11-24", true);
     expect([after.unpaidFixed, after.lifeExpense, after.freeLeft]).toEqual([0, 104420, 15580]);
   });
   it("予算と比べる額は、自分用は投資を除いた生活費、公開版はすべての支出（ホーム・ナビ・振り返り・ウィジェットで同じ）", async () => {

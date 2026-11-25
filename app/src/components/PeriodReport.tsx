@@ -8,6 +8,7 @@ import { dailyInWeek, monthlyInYear, summarizePeriod, weekRange, weeklyTrend, ye
 import { TrendChart } from "./TrendChart";
 import { WeeklyReviewCard } from "./WeeklyReviewCard";
 import { monthBreakdown } from "@/lib/monthBreakdown";
+import { BUDGET_EXCLUDES_INVEST } from "@/lib/ledgerCore";
 import { useData } from "@/lib/store";
 
 const WD = ["月", "火", "水", "木", "金", "土", "日"];
@@ -119,8 +120,8 @@ export function YearReport() {
   const thisMonth = Number(today.slice(5, 7));
   const thisYear = Number(today.slice(0, 4));
   const monthsWithData = months.filter((m) => m.expense > 0 || m.income > 0).length;
-  // 生活と投資（年）：月ごとの計算を足す（レビュー o1 の家計の機能 3）
-  const yb = months.reduce(
+  // 生活と投資（年）：月ごとの計算を足す（レビュー o1 の家計の機能 3）。自分用だけ（公開版は投資の考え方を持ち込まない。2026-11-26）
+  const yb = !BUDGET_EXCLUDES_INVEST ? null : months.reduce(
     (acc, m) => {
       const b = monthBreakdown(data, `${year}-${String(m.month).padStart(2, "0")}`, today);
       return { life: acc.life + b.lifeBalance, invest: acc.invest + b.invest, nisa: acc.nisa + b.nisaBuy, fixed: acc.fixed + b.fixed, variable: acc.variable + b.variable };
@@ -153,7 +154,8 @@ export function YearReport() {
         <SectionTitle>月ごとの推移</SectionTitle>
         <TrendChart title={`${year}年の月ごと`} rows={months.map((m) => ({ label: `${m.month}月`, expense: m.expense, income: m.income, strong: year === thisYear && m.month === thisMonth, future: year > thisYear || (year === thisYear && m.month > thisMonth) }))} lineLabel="この年の収支の累計" />
       </Card>
-      <Card>
+      {yb && (
+        <Card>
         <SectionTitle>生活と投資（この年）</SectionTitle>
         <dl className="num grid grid-cols-2 gap-2 text-center">
           <div className="rounded-xl bg-surface-2 py-2">
@@ -169,7 +171,8 @@ export function YearReport() {
           固定費 {formatYen(yb.fixed)}・変動費 {formatYen(yb.variable)}
           {yb.nisa > 0 && `・NISA の買付 ${formatYen(yb.nisa)}（投資への入金と重なることがあるので、足していません）`}
         </p>
-      </Card>
+        </Card>
+      )}
       <TopCategories list={s.byCategory} catName={catName} />
     </>
   );

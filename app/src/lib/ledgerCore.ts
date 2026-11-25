@@ -1,4 +1,5 @@
 import { categoryMap, txIsFixed, txIsInvest } from "./classify";
+import { IS_PERSONAL } from "./edition";
 import type { AppData, Transaction } from "./types";
 
 /**
@@ -186,3 +187,12 @@ export function sumEntries(entries: CountedEntry[], pick: (e: CountedEntry) => b
 
 /** 生活費（投資を除いた支出）か */
 export const isLifeExpense = (e: CountedEntry) => e.kind === "expense" && !e.invest;
+
+/**
+ * 予算と比べる支出から、投資を除くか。自分用は投資を除いた生活費、公開版はすべての支出
+ * （2026-11-26 平尾さん「全部おすすめで」：公開版は予算の使用率・月末の見込み・買い物の判断を「すべての支出」にそろえ、投資の考え方を持ち込まない）
+ */
+export const BUDGET_EXCLUDES_INVEST: boolean = IS_PERSONAL;
+
+/** 予算と比べる支出か（excludeInvest が true なら投資を除く） */
+export const isBudgetExpense = (excludeInvest: boolean) => (e: CountedEntry) => e.kind === "expense" && (!excludeInvest || !e.invest);

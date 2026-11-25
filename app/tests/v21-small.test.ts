@@ -75,7 +75,7 @@ describe("X04 投資／生活費（投資100000円は資産の移動。生活費
     const b = monthBreakdown(d, "2026-11", "2026-11-25");
     expect([b.lifeExpense, b.invest]).toEqual([3000, 100000]);
     expect(budgetSpent(d, "2026-11", "2026-11-25", true)).toBe(3000);
-    expect(monthLedger(d, "2026-11", "2026-11-25").lifeBudgetLeft).toBe(117000);
+    expect(monthLedger(d, "2026-11", "2026-11-25", true).lifeBudgetLeft).toBe(117000); // 自分用の数え方
   });
 });
 
@@ -238,9 +238,10 @@ describe("点検の直し（第2回）", () => {
       { id: "r2", name: "積立", amount: 30000, cycle: "monthly", anchorDay: 28, nextDueDate: "2026-11-28", categoryId: "inv", paymentMethod: "", active: true, createdAt: now, updatedAt: now },
     ];
     d.transactions = Array.from({ length: 4 }, (_, i) => tx({ id: `v${i}`, date: `2026-11-0${i + 1}`, amount: 1000 }));
-    const f = forecastMonthEnd(d, "2026-11-25");
+    // 自分用の数え方（投資を除く）。公開版は tests/budget-basis-public.test.ts
+    const f = forecastMonthEnd(d, "2026-11-25", undefined, true);
     expect(f.ok && f.unpaidFixed).toBe(8000);
-    expect(monthLedger(d, "2026-11", "2026-11-25").unpaidFixed).toBe(8000);
+    expect(monthLedger(d, "2026-11", "2026-11-25", true).unpaidFixed).toBe(8000);
   });
   it("汎用 CSV：元 ID がない行の ID は、カテゴリを足しても・チェックを切り替えても変わらない（取り込み直しで二重にならない）", () => {
     const text = "日付,金額,内容,カテゴリ\n2026-11-01,-500,カフェ,外食\n2026-11-01,-500,カフェ,外食\n";

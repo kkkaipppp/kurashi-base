@@ -1,12 +1,12 @@
 import { eventsOnDay } from "./aggregate";
-import { isLifeExpense, ledgerEntries } from "./ledgerCore";
+import { isBudgetExpense, ledgerEntries } from "./ledgerCore";
 import { addDays } from "./date";
 import type { AppData } from "./types";
 
 /**
  * 週ごとの見直し（NEXT v21 Phase 4「週次の振り返り」。GOAL_PLANNING 5：行動実績と成果を分け、断定しない）。
  * その週（月曜〜日曜）について、記録されたことだけを並べる：
- * - 使ったお金（生活費。投資を除く）と、前の週の同じ曜日までとの差
+ * - 使ったお金（excludeInvest が true なら生活費＝投資を除く。公開版はすべての支出）と、前の週の同じ曜日までとの差
  * - いちばん使ったカテゴリ
  * - 予定の件数
  * - 次の週にあるもの：予定・固定費の支払い・期限のタスク・契約の更新日（まだ起きていないので「予定」と書く）
@@ -24,11 +24,12 @@ export interface WeeklyReview {
   next: { from: string; to: string; events: number; fixed: { name: string; amount: number; date: string }[]; tasks: number; renewals: number };
 }
 
-export function weeklyReview(data: AppData, from: string, today: string): WeeklyReview {
+export function weeklyReview(data: AppData, from: string, today: string, excludeInvest = true): WeeklyReview {
   const to = addDays(from, 6);
   const upTo = today < to ? today : to; // 今週は、今日まで
   const entries = ledgerEntries(data);
-  const life = (a: string, b: string) => entries.filter((t) => isLifeExpense(t) && t.date >= a && t.date <= b);
+  const pick = isBudgetExpense(excludeInvest);
+  const life = (a: string, b: string) => entries.filter((t) => pick(t) && t.date >= a && t.date <= b);
   const cur = life(from, upTo);
   const spent = cur.reduce((s, t) => s + t.amount, 0);
   const span = Math.max(0, Math.round((Date.parse(`${upTo}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000));

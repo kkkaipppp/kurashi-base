@@ -1,12 +1,13 @@
 import { categoryIsInvest, categoryMap } from "./classify";
-import { isLifeExpense, ledgerEntries, type CountedEntry } from "./ledgerCore";
+import { BUDGET_EXCLUDES_INVEST, isBudgetExpense, ledgerEntries, type CountedEntry } from "./ledgerCore";
 import { unpaidRecurringOccurrences, unpaidRecurringThisMonth } from "./allowance";
 import { addDays, daysBetween, daysInMonth, parseDateStr } from "./date";
 import type { AppData } from "./types";
 
 /**
  * 月末の支出の見込み（NEXT v21 DECISION_SUPPORT・FINANCIAL_CHARTS G05・X23：予測と確定を区別し、根拠と不足を示す）。
- * 見込み＝今月の生活費（投資を除く）＋ まだ来る今月の固定費 ＋ 変動費の1日あたり × 残りの日数。
+ * 見込み＝今月の支出 ＋ まだ来る今月の固定費 ＋ 変動費の1日あたり × 残りの日数。
+ * 支出の範囲は予算と同じ（excludeInvest。自分用は投資を除いた生活費、公開版はすべての支出。lib/ledgerCore.ts の BUDGET_EXCLUDES_INVEST）。
  * - 変動費の1日あたり：過去28日（今日を含まない）の、固定費でも投資でもない支出 ÷ 日数。記録が始まった日より前は数えない
  * - 記録が少ない（その窓の日数が7日未満・変動費の記録が3件未満）ときは、見込みを出さない（「記録なし」と「0円」を取り違えない）
  * - 確定した記録ではない。画面では「見込み」と書き、破線などで確定と区別する
@@ -36,8 +37,14 @@ export type Forecast =
     }
   | { ok: false; reason: "tooFewDays" | "tooFewRecords" | "noData" };
 
-/** life：今の生活費の出来事（省くとデータから作る。グラフと見込みで2回作らないように渡せる） */
-export function forecastMonthEnd(data: AppData, today: string, life: CountedEntry[] = ledgerEntries(data).filter(isLifeExpense)): Forecast {
+/** life：見込みに数える支出の出来事（省くとデータから作る。グラフと見込みで2回作らないように渡せる。excludeInvest と同じ範囲で作ること） */
+export function forecastMonthEnd(
+  data: AppData,
+  today: string,
+  life?: CountedEntry[],
+  excludeInvest: boolean = BUDGET_EXCLUDES_INVEST,
+): Forecast {
+  life ??= ledgerEntries(data).filter(isBudgetExpense(excludeInvest));
   const { y, m, d } = parseDateStr(today);
   const month = today.slice(0, 7);
   const cats = categoryMap(data);
@@ -46,8 +53,8 @@ export function forecastMonthEnd(data: AppData, today: string, life: CountedEntr
   if (expenses.length === 0) return { ok: false, reason: "noData" };
 
   const spent = expenses.filter((t) => t.date.slice(0, 7) === month && t.date <= today).reduce((a, t) => a + t.amount, 0);
-  // 投資の固定費（積立など）は、生活費の見込みに入れない
-  const unpaidFixed = unpaidRecurringThisMonth(data.recurring, today, (r) => categoryIsInvest(cats.get(r.categoryId)));
+  // 投資を除くとき：投資の固定費（積立など）も、生活費の見込みに入れない
+  const unpaidFixed = unpaidRecurringThisMonth(data.recurring, today, excludeInvest ? (r) => categoryIsInvest(cats.get(r.categoryId)) : undefined);
 
   // 変動費の窓：今日の前日から28日さかのぼる。いちばん古い記録より前は、記録がなかっただけかもしれないので数えない
   const first = expenses.reduce((a, t) => (t.date < a ? t.date : a), expenses[0].date);
@@ -83,9 +90,9 @@ export interface ForecastCurve {
   projected: number[];
 }
 
-export function forecastCurve(data: AppData, today: string): ForecastCurve | null {
-  const life = ledgerEntries(data).filter(isLifeExpense);
-  const f = forecastMonthEnd(data, today, life);
+export function forecastCurve(data: AppData, today: string, excludeInvest: boolean = BUDGET_EXCLUDES_INVEST): ForecastCurve | null {
+  const life = ledgerEntries(data).filter(isBudgetExpense(excludeInvest));
+  const f = forecastMonthEnd(data, today, life, excludeInvest);
   if (!f.ok) return null;
   const { y, m, d } = parseDateStr(today);
   const dim = daysInMonth(y, m);
@@ -102,7 +109,7 @@ export function forecastCurve(data: AppData, today: string): ForecastCurve | nul
 
   // 固定費：まだ来る日に載せる。すでに過ぎた分・今日の分は、明日にまとめる（合計は月末の見込みと同じ）
   const fixedOn = new Array<number>(dim + 1).fill(0);
-  for (const occurrence of unpaidRecurringOccurrences(data.recurring, today, (r) => categoryIsInvest(cats.get(r.categoryId)))) {
+  for (const occurrence of unpaidRecurringOccurrences(data.recurring, today, excludeInvest ? (r) => categoryIsInvest(cats.get(r.categoryId)) : undefined)) {
     const day = Math.max(d + 1, Number(occurrence.date.slice(8, 10)));
     if (day <= dim) fixedOn[day] += occurrence.amount;
   }
