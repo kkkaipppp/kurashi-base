@@ -59,7 +59,7 @@ export function buildCalendarItems(data: AppData, today: string): CalendarItem[]
     for (let guard = 0; d <= to && guard < 3620; guard++) {
       if (d >= from) {
         items.push({
-          title: `固定費 ${clipText(r.name, CAL_TEXT_MAX)} ${formatYen(r.amount)}`,
+          title: `固定費 ${clipText(r.name, CAL_TEXT_MAX - 24)} ${formatYen(r.amount)}`, // 金額まで入れて200文字の内側（点検 低-1）
           startDate: d,
           endDate: d,
           allDay: true,

@@ -3,6 +3,8 @@ import { IndexedDbRepository, MOVED_MARK_KEY, migrateFromLocalStorage, openDb, t
 import { LocalStorageRepository, type Repository, type RepoLoadResult, type RepoSaveResult, type Token } from "./repository";
 import { STORAGE_KEY, quarantineAndReset, wipeAllAppData, type KV } from "./storage";
 import type { AppData } from "./types";
+import { countData } from "./backup";
+import { validateAppData } from "./schema";
 
 /**
  * IndexedDB の保存を、保存の境界（Repository）の形に合わせる部品（o11 A06 段階B）。
@@ -25,6 +27,23 @@ export interface IdbAdapterOptions {
 }
 
 const lostConnection = (error: string) => /closing|closed|InvalidState|connection/i.test(error);
+
+/** 旧データの本体に、記録が1件以上あるか（カテゴリは数えない）。読めない中身は「ある」とみなす（黙って捨てない） */
+function legacyHasRecords(raw: string): boolean {
+  try {
+    const v = validateAppData(JSON.parse(raw));
+    if (!v.ok) return true;
+    return Object.entries(countData(v.data)).some(([k, n]) => k !== "categories" && n > 0);
+  } catch {
+    return true;
+  }
+}
+
+/** IndexedDB が空になっていたときの説明（読み込めない画面に出す） */
+export function lostStoreMessage(movedAt: string): string {
+  const day = /^\d{4}-\d{2}-\d{2}/.test(movedAt) ? `${Number(movedAt.slice(5, 7))}月${Number(movedAt.slice(8, 10))}日` : "以前";
+  return `記録の保存先が空になっていました（iPhone が容量を空けるために消した可能性があります）。元の場所には、${day}に保存先を移す前の古い記録だけが残っています。古い記録で続けると、それより後の記録が戻らないため、ここでは開きません。最新の記録は「ファイル」→ このiPhone内 → くらしベース → 自動バックアップ にあります。下の「別の場所に移して最初から始める」を押してから、設定の「バックアップから復元」で戻してください`;
+}
 
 export class IdbRepositoryAdapter implements Repository {
   readonly kind = "indexedDB" as const;
@@ -70,6 +89,18 @@ export class IdbRepositoryAdapter implements Repository {
     return first;
   }
 
+  /** 一度移したあとで IndexedDB が空になったとき、旧データ（記録が1件以上ある）と移した日時。そうでなければ null */
+  private staleLegacy(): { raw: string; movedAt: string } | null {
+    try {
+      const movedAt = this.opts.legacy?.getItem(MOVED_MARK_KEY);
+      const raw = this.opts.legacy?.getItem(STORAGE_KEY);
+      if (!movedAt || !raw || !legacyHasRecords(raw)) return null;
+      return { raw, movedAt };
+    } catch {
+      return null;
+    }
+  }
+
   /** 一度でも IndexedDB へ移したか（旧データ側の印）。移していなければ、localStorage で続けても古い中身を出さない */
   private everMigrated(): boolean {
     try {
@@ -101,6 +132,10 @@ export class IdbRepositoryAdapter implements Repository {
     }
     // まだ移していなければ、旧データを移す（失敗しても旧データは残る。次の起動でやり直す）
     if (this.opts.legacy && !(await repo.meta())) {
+      // 一度移したのに、IndexedDB が空になっている（iPhone が容量を空けるために消したなど）。
+      // 旧データは移す前の古い中身なので、黙って今の記録にしない（その後の記録が消えたように見え、自動バックアップも古い中身で上書きされる。o11 A07 点検 高-1）
+      const stale = this.staleLegacy();
+      if (stale) return { status: "corrupt", error: lostStoreMessage(stale.movedAt), raw: stale.raw };
       const m = await migrateFromLocalStorage(this.opts.legacy, repo, this.now());
       this.migration = m.status;
       if (m.status === "invalid") {
