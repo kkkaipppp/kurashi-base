@@ -376,7 +376,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
               role="radio"
               aria-checked={draft.type === t}
               onClick={() => switchType(t)}
-              className={`min-h-10 rounded-lg text-[15px] font-semibold transition ${
+              className={`min-h-11 rounded-lg text-[15px] font-semibold transition ${
                 draft.type === t ? (t === "expense" ? "bg-surface text-expense shadow-sm" : "bg-surface text-income shadow-sm") : "text-ink-2"
               }`}
             >

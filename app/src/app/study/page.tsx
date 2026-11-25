@@ -70,7 +70,7 @@ export default function StudyPage() {
       <PageHeader
         title="資格の学習"
         right={
-          <Button onClick={() => setForm({ key: Date.now() })} className="min-h-10 px-3 text-[14px]">
+          <Button onClick={() => setForm({ key: Date.now() })} className="min-h-11 px-3 text-[14px]">
             ＋ 資格を追加
           </Button>
         }
@@ -96,7 +96,7 @@ export default function StudyPage() {
 
 /* ---------------- 資格のカード ---------------- */
 
-const linkCls = "inline-flex min-h-10 items-center rounded-lg border border-line px-3 text-[13px] font-semibold text-brand hover:bg-brand-soft";
+const linkCls = "inline-flex min-h-11 items-center rounded-lg border border-line px-3 text-[13px] font-semibold text-brand hover:bg-brand-soft";
 
 function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onEdit: () => void }) {
   const data = useData();
@@ -116,7 +116,7 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
 
   return (
     <li>
-      <Card className={s.archived ? "opacity-70" : ""}>
+      <Card className={s.archived ? "bg-surface-2" : ""}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <h2 className="text-[17px] leading-snug font-bold break-words">
@@ -128,7 +128,7 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
               {s.examDate && `（${formatDateJa(s.examDate)}）`}
             </p>
           </div>
-          <Button variant="secondary" onClick={onEdit} className="min-h-10 shrink-0 px-3 text-[14px]">
+          <Button variant="secondary" onClick={onEdit} className="min-h-11 shrink-0 px-3 text-[14px]">
             編集
           </Button>
         </div>

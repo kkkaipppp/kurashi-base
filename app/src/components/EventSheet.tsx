@@ -580,7 +580,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
                       <button
                         type="button"
                         onClick={() => setX("items", extra.items.filter((x) => x.id !== i.id))}
-                        className="min-h-9 rounded-lg px-2 text-[13px] text-ink-3 hover:bg-surface-2"
+                        className="min-h-11 rounded-lg px-2 text-[13px] text-ink-3 hover:bg-surface-2"
                         aria-label={`${i.text}を持ち物から外す`}
                       >
                         外す

@@ -362,7 +362,7 @@ export default function SettingsPage() {
         <SectionTitle>カテゴリ</SectionTitle>
         <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="カテゴリの種別">
           {(["expense", "income"] as const).map((k) => (
-            <button key={k} type="button" role="radio" aria-checked={catKind === k} onClick={() => { setCatKind(k); setEditingCatId(null); }} className={`min-h-10 rounded-lg text-[14px] font-semibold ${catKind === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
+            <button key={k} type="button" role="radio" aria-checked={catKind === k} onClick={() => { setCatKind(k); setEditingCatId(null); }} className={`min-h-11 rounded-lg text-[14px] font-semibold ${catKind === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
               {k === "expense" ? "支出" : "収入"}
             </button>
           ))}
@@ -400,7 +400,7 @@ export default function SettingsPage() {
                       {!c.archived && (
                         <button
                           type="button"
-                          className="min-h-10 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
+                          className="min-h-11 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
                           onClick={() => {
                             setEditingCatId(c.id);
                             setEditingCatName(c.name);
@@ -418,7 +418,7 @@ export default function SettingsPage() {
                           const r = await store.setCategoryArchived(c.id, !c.archived);
                           if (!r.ok) ui.toast(r.error, "error");
                         }}
-                        className="min-h-10 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
+                        className="min-h-11 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
                       >
                         {c.archived ? "再表示" : "非表示"}
                       </button>

@@ -146,7 +146,7 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         {heading ? <h2 className="text-[17px] font-bold">{heading}</h2> : <span />}
-        <Button onClick={add} disabled={!!blocked} className="min-h-10 px-3 text-[14px]">
+        <Button onClick={add} disabled={!!blocked} className="min-h-11 px-3 text-[14px]">
           ＋ {config.addLabel ?? `${config.noun}を追加`}
         </Button>
       </div>
@@ -169,7 +169,7 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
                     <button
                       type="button"
                       onClick={() => setEditing({ id, key: Date.now() })}
-                      className={`flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2 ${v.muted ? "opacity-60" : ""}`}
+                      className={`flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2 ${v.muted ? "bg-surface-2" : ""}`}
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-semibold">{v.title}</span>

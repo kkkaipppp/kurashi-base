@@ -40,7 +40,7 @@ export default function RecurringPage() {
       <PageHeader
         title="固定費"
         right={
-          <Button onClick={() => setEditing({ key: Date.now() })} className="min-h-10 px-3 text-[14px]">
+          <Button onClick={() => setEditing({ key: Date.now() })} className="min-h-11 px-3 text-[14px]">
             ＋ 追加
           </Button>
         }
@@ -62,7 +62,7 @@ export default function RecurringPage() {
             const overdue = r.active && r.nextDueDate < today;
             return (
               <li key={r.id}>
-                <Card className={`py-3 ${r.active ? "" : "opacity-60"}`}>
+                <Card className={`py-3 ${r.active ? "" : "bg-surface-2"}`}>
                   <div className="flex items-start justify-between gap-2">
                     <button type="button" onClick={() => setEditing({ id: r.id, key: Date.now() })} className="min-w-0 flex-1 text-left">
                       <p className="truncate text-[15px] font-bold">{r.name}</p>
@@ -80,7 +80,7 @@ export default function RecurringPage() {
                     <p className="num shrink-0 text-[16px] font-bold">{formatYen(r.amount)}</p>
                   </div>
                   {r.active && (
-                    <Button variant="secondary" onClick={() => record(r)} className="mt-2 w-full min-h-10 text-[14px]">
+                    <Button variant="secondary" onClick={() => record(r)} className="mt-2 w-full min-h-11 text-[14px]">
                       支払いを記録
                     </Button>
                   )}

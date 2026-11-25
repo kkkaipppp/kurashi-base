@@ -83,7 +83,7 @@ export default function ReportPage() {
             role="radio"
             aria-checked={span === s.key}
             onClick={() => setSpan(s.key)}
-            className={`min-h-10 rounded-lg text-[14px] font-semibold ${span === s.key ? "bg-surface shadow-sm" : "text-ink-2"}`}
+            className={`min-h-11 rounded-lg text-[14px] font-semibold ${span === s.key ? "bg-surface shadow-sm" : "text-ink-2"}`}
           >
             {s.label}
           </button>
@@ -154,7 +154,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
             </p>
             {pct !== null && (
               <div className="mt-2">
-                <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-label="予算の使用率">
+                <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-valuetext={`予算の${pct}%${pct > 100 ? "（超過）" : ""}`} aria-label="予算の使用率">
                   <div className={`h-full rounded-full ${pct > 100 ? "bg-expense" : "bg-brand"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                 </div>
                 <p className="num mt-1 text-right text-[12px] text-ink-3">予算の{pct}%{LIFE_BUDGET ? "（投資を除く）" : ""}</p>
@@ -187,7 +187,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
                 {insights.map((i) => (
                   <li key={i.key} className="text-[14px]">
                     {i.href ? (
-                      <Link href={i.href} className="flex min-h-10 items-center justify-between gap-2 underline-offset-2 hover:underline">
+                      <Link href={i.href} className="flex min-h-11 items-center justify-between gap-2 underline-offset-2 hover:underline">
                         <span>{i.text}</span>
                         <IconChevronR className="size-4 shrink-0 text-ink-3" />
                       </Link>
@@ -214,7 +214,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
                     <li key={p.id || "rest"}>
                       <Link
                         href={p.id ? `/history?m=${month}&cat=${p.id}` : `/history?m=${month}`}
-                        className="flex min-h-9 flex-wrap items-center gap-x-2 rounded-lg px-1 text-[13px] hover:bg-surface-2"
+                        className="flex min-h-11 flex-wrap items-center gap-x-2 rounded-lg px-1 text-[13px] hover:bg-surface-2"
                       >
                         <span className="size-2.5 shrink-0 rounded-full" style={{ background: p.color }} aria-hidden="true" />
                         <span className="min-w-0 flex-1 truncate">{p.name}</span>
@@ -248,7 +248,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
       <Card>
         <SectionTitle
           action={
-            <Link href="/recurring" className="min-h-9 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+            <Link href="/recurring" className="min-h-11 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand hover:bg-brand-soft">
               固定費を見る
             </Link>
           }

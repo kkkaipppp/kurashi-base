@@ -60,7 +60,7 @@ export default function TripsPage() {
             title="旅行"
             sub="旅行の日程と行程（移動・宿泊・観光など）をまとめます"
             right={
-              <Button onClick={() => setForm({ mode: "new" })} className="min-h-10 px-3 text-[14px]">
+              <Button onClick={() => setForm({ mode: "new" })} className="min-h-11 px-3 text-[14px]">
                 ＋ 旅行を追加
               </Button>
             }
@@ -78,7 +78,7 @@ export default function TripsPage() {
                 return (
                   <li key={t.id}>
                     <button type="button" onClick={() => setOpenId(t.id)} className="w-full text-left">
-                      <Card className={`flex items-center gap-3 hover:bg-surface-2 ${t.endDate < today ? "opacity-70" : ""}`}>
+                      <Card className={`flex items-center gap-3 hover:bg-surface-2 ${t.endDate < today ? "bg-surface-2" : ""}`}>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[16px] font-bold">{t.title}</span>
                           <span className="block text-[13px] text-ink-2">
@@ -157,7 +157,7 @@ function TripDetail({ trip, onBack, onEdit, onOpenTrip }: { trip: Trip; onBack: 
             </p>
             {trip.destination && <p className="text-[14px] text-ink-2">行き先：{trip.destination}</p>}
           </div>
-          <Button variant="secondary" onClick={onEdit} className="min-h-10 shrink-0 px-3 text-[14px]">
+          <Button variant="secondary" onClick={onEdit} className="min-h-11 shrink-0 px-3 text-[14px]">
             編集
           </Button>
         </div>
@@ -242,7 +242,7 @@ function TripDetail({ trip, onBack, onEdit, onOpenTrip }: { trip: Trip; onBack: 
               <button
                 type="button"
                 onClick={() => ui.openEvent({ mode: "new", date: d, tripId: trip.id })}
-                className="min-h-10 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft"
+                className="min-h-11 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft"
               >
                 ＋ 行程を追加
               </button>
