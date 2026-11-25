@@ -39,7 +39,7 @@ export function ForecastCard({ month }: { month: string }) {
               <dd>{formatYen(f.spent)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt>まだ来る今月の固定費</dt>
+              <dt>今月、これから払う固定費</dt>
               <dd>＋{formatYen(f.unpaidFixed)}</dd>
             </div>
             <div className="flex justify-between">

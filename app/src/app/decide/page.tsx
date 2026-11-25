@@ -62,7 +62,7 @@ export default function DecidePage() {
               ))}
             </tbody>
           </table>
-          <p className="mt-2 text-[12px] text-ink-3">どれも、今月の月末までの見込みです（確定ではありません）。使った額（{formatYen(sc.basis.spent)}）と、まだ来る固定費（{formatYen(sc.basis.unpaidFixed)}）は、どのシナリオでも同じです。変動費は、残り{sc.basis.daysAhead}日分（約{formatYen(sc.basis.variableAhead)}）だけを変えています。</p>
+          <p className="mt-2 text-[12px] text-ink-3">どれも、今月の月末までの見込みです（確定ではありません）。使った額（{formatYen(sc.basis.spent)}）と、これから払う固定費（{formatYen(sc.basis.unpaidFixed)}）は、どのシナリオでも同じです。変動費は、残り{sc.basis.daysAhead}日分（約{formatYen(sc.basis.variableAhead)}）だけを変えています。</p>
         </Card>
       )}
       {a && (
@@ -118,7 +118,7 @@ export default function DecidePage() {
             </ul>
             <p className="mt-2 text-[12px] text-ink-3">来月の収入・ほかの支出は、まだ分からないので、入れていません。</p>
           </Card>
-          <p className="px-1 text-[12px] text-ink-3">今月の数字は、ホームと同じ計算（投資を除いた生活費・まだ来る固定費を引いた残り）です。見込みは確定ではありません。</p>
+          <p className="px-1 text-[12px] text-ink-3">今月の数字は、ホームと同じ計算（投資を除いた生活費・これから払う固定費を引いた残り）です。見込みは確定ではありません。</p>
         </>
       )}
     </main>
