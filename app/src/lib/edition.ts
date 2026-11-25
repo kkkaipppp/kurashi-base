@@ -9,7 +9,8 @@
 export type Edition = "personal" | "public";
 
 export const EDITION: Edition = process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? "personal" : "public";
-export const IS_PERSONAL = EDITION === "personal";
+// 環境の値を直接比べる形にする（組み立てのときに true/false が決まり、公開版では、自分用の部品の塊が取り除かれる）
+export const IS_PERSONAL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 
 /** 機能ごとに、どの版で有効か。public を true にするのは、平尾さんが公開を決めてから（友人β用の確認表で点検する） */
 export const FEATURE_EDITIONS = {

@@ -48,6 +48,6 @@ describe("データの点検", () => {
   it("読むだけ（データを書き換えない）。設定に自分用だけで出る", () => {
     const lib = readFileSync(join(__dirname, "..", "src", "lib", "dataHealth.ts"), "utf8");
     expect(lib).not.toMatch(/useStore|replaceAll|localStorage|setItem/); // 保存を呼ばない（結果の配列を作るだけ）
-    expect(readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8")).toContain("const DataHealthCard = IS_PERSONAL ? dynamic(");
+    expect(readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8")).toContain("const DataHealthCard = PERSONAL_BUILD ? dynamic(");
   });
 });

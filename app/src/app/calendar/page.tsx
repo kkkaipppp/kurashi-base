@@ -19,8 +19,10 @@ const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 /** マスに名前を出す予定の数（それより多い日は「+n」） */
 const EVENT_TITLES_IN_CELL = 2;
 
+// 組み立てのときに決まる値を、このファイルの中で直接比べる（別ファイルの定数だと、公開版のビルドから自分用の部品の塊が取り除かれない）
+const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // 予定のない時間帯（自分用。NEXT v21 X10）
-const FreeTimeCard = IS_PERSONAL ? dynamic(() => import("@/components/FreeTimeCard").then((m) => m.FreeTimeCard)) : null;
+const FreeTimeCard = PERSONAL_BUILD ? dynamic(() => import("@/components/FreeTimeCard").then((m) => m.FreeTimeCard)) : null;
 
 const SHOW_KEY = "kurashi-base:ui:calendar-show:v1";
 

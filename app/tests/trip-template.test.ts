@@ -64,6 +64,6 @@ describe("旅行のコピー", () => {
   it("自分用だけ。取り消しの控えを残して保存する", () => {
     const comp = readFileSync(join(__dirname, "..", "src", "components", "TripCopy.tsx"), "utf8");
     expect(comp).toContain("store.replaceAll(c.next,");
-    expect(readFileSync(join(__dirname, "..", "src", "app", "trips", "page.tsx"), "utf8")).toContain("const TripCopy = IS_PERSONAL ? dynamic(");
+    expect(readFileSync(join(__dirname, "..", "src", "app", "trips", "page.tsx"), "utf8")).toContain("const TripCopy = PERSONAL_BUILD ? dynamic(");
   });
 });

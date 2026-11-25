@@ -30,6 +30,6 @@ describe("診断情報", () => {
     const lib = readFileSync(join(__dirname, "..", "src", "lib", "diagnostics.ts"), "utf8");
     const comp = readFileSync(join(__dirname, "..", "src", "components", "DiagnosticsCard.tsx"), "utf8");
     expect(lib + comp).not.toMatch(/fetch\(|XMLHttpRequest|sendBeacon|mailto:/);
-    expect(readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8")).toContain("const DiagnosticsCard = IS_PERSONAL ? dynamic(");
+    expect(readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8")).toContain("const DiagnosticsCard = PERSONAL_BUILD ? dynamic(");
   });
 });

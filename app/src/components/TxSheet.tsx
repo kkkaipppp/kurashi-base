@@ -219,7 +219,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           ? { recurringId: editing?.recurringId ?? (req.mode === "new" && req.recurringId ? req.recurringId : linkOk) }
           : {}),
         // 一部だけの支払い（選んだ固定費の予定額より少ないときだけ。残りは、まだ払っていない）
-        ...(linkOk && draft.linkPartial && v.amount < (data.recurring.find((r) => r.id === linkOk)?.amount ?? 0) ? { recurringPartial: true } : {}),
+        // 残り（予定額 − すでに払った分）より少ないときだけ（チェック欄の表示条件と同じ）。全部払い終わる額なら、一部の印は付けない
+        ...(linkOk && draft.linkPartial && v.amount < remainingOf(data.recurring.find((r) => r.id === linkOk)) ? { recurringPartial: true } : {}),
         // 数え方・旅行は、空なら持たない（編集で外したときは store が消す）
         countAs: draft.type === "expense" && draft.countAs ? draft.countAs : undefined,
         tripId: draft.tripId && (data.trips ?? []).some((t) => t.id === draft.tripId) ? draft.tripId : undefined,
@@ -510,6 +511,10 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
 
 
 /** 自分用だけ：固定費の支払いとしてつなぐ・この記録の数え方・旅行（100点化の指示 D・F。どれも押したときだけ変わる） */
+/** 固定費の、今の支払日の残り（予定額 − すでに払った分） */
+const remainingOf = (r: { amount: number; nextDueDate: string; partialPaid?: { due: string; paid: number } } | undefined) =>
+  !r ? 0 : r.amount - (r.partialPaid && r.partialPaid.due === r.nextDueDate ? r.partialPaid.paid : 0);
+
 function TxExtras({
   draft,
   set,

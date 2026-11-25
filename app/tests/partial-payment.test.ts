@@ -117,3 +117,56 @@ describe("一部の支払い：取り消しが別の回を巻き込まない・�
   });
 });
 
+
+describe("一部の支払いの記録を編集したとき（点検役の指摘：金額を直したあとに消すとずれた）", () => {
+  const setup = () => {
+    let list = [rc()];
+    const t = tx({ id: "t", recurringId: "r", amount: 3000, ...partialMark(list, "r", 3000, true) });
+    list = applyRecurringPayment(list, "r", 3000, true, now);
+    const d: AppData = emptyData(now);
+    d.recurring = list;
+    d.transactions = [t];
+    const base = (x: Transaction) => {
+      const { id: _i, createdAt: _c, updatedAt: _u, currency: _cur, ...p } = x; // eslint-disable-line @typescript-eslint/no-unused-vars
+      return p;
+    };
+    return { d, t, base };
+  };
+  it("金額を3000→1000に直すと、払った額も1000になる。そのあと消すと、未払いは予定額5000に戻る", () => {
+    const { d, t, base } = setup();
+    const edited = applyTxUpdate(d, "t", { ...base(t), amount: 1000 }, now);
+    expect(edited.recurring[0].partialPaid?.paid).toBe(1000);
+    expect(unpaidRecurringThisMonth(edited.recurring, "2026-11-25")).toBe(4000);
+    const after = revertPartialPayment(edited.recurring, edited.transactions[0], now);
+    expect(after[0].partialPaid).toBeUndefined();
+    expect(unpaidRecurringThisMonth(after, "2026-11-25")).toBe(5000); // 記録0件 → 未払いは満額
+  });
+  it("金額を、全部払い終わる額（5000）に直すと、次の支払日が進み、その記録は一部の印がない完了の記録になる", () => {
+    const { d, t, base } = setup();
+    const edited = applyTxUpdate(d, "t", { ...base(t), amount: 5000 }, now);
+    expect(edited.recurring[0].nextDueDate).toBe("2026-12-28");
+    expect(edited.recurring[0].partialPaid).toBeUndefined();
+    expect(edited.transactions[0].recurringPartial).toBeUndefined();
+    expect(edited.transactions[0].recurringDue).toBeUndefined();
+  });
+  it("金額を0以下に近づける（払った額が0以下）と、一部払いの記録が消える。固定費へのつなぎを外すと、払った分が戻る", () => {
+    const { d, t, base } = setup();
+    const e0 = applyTxUpdate(d, "t", { ...base(t), amount: 3000 }, now); // 変えない：何も動かない
+    expect(e0.recurring[0].partialPaid?.paid).toBe(3000);
+    const unlinked = applyTxUpdate(d, "t", { ...base(t), recurringId: undefined, recurringPartial: undefined, recurringDue: undefined }, now);
+    expect(unlinked.recurring[0].partialPaid).toBeUndefined();
+    expect(unlinked.transactions[0].recurringId).toBeUndefined();
+    expect(unlinked.transactions[0].recurringPartial).toBeUndefined();
+  });
+  it("新しくつなぐとき、編集の入力に一部の印が残っていても、全部払い終わる額なら印を付けない", () => {
+    const d: AppData = emptyData(now);
+    d.recurring = [rc({ partialPaid: { due: "2026-11-28", paid: 3000 } })]; // 残り2000
+    d.transactions = [tx({ id: "t", amount: 2500 })];
+    const { id: _i, createdAt: _c, updatedAt: _u, currency: _cur, ...p } = d.transactions[0]; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const next = applyTxUpdate(d, "t", { ...p, recurringId: "r", recurringPartial: true }, now); // 2500 ≥ 残り2000
+    expect(next.recurring[0].nextDueDate).toBe("2026-12-28");
+    expect(next.transactions[0].recurringPartial).toBeUndefined();
+    expect(next.transactions[0].recurringDue).toBeUndefined();
+    expect(src("components/TxSheet.tsx")).toContain("v.amount < remainingOf(");
+  });
+});

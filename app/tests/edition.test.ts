@@ -18,7 +18,8 @@ describe("版（personal / public）", () => {
   });
   it("画面の設定では切り替えない（版を変える入力や保存がない）", () => {
     const settings = readFileSync(join(__dirname, "..", "src", "app", "settings", "page.tsx"), "utf8");
-    expect(settings).not.toMatch(/KB_EDITION|setEdition/);
+    // 版の値を読むだけ（公開版から自分用の部品を外す比較）はよい。版を変える入力・保存だけを禁じる
+    expect(settings).not.toMatch(/setEdition|setItem[(][^)]*EDITION/);
     const ed = readFileSync(join(__dirname, "..", "src", "lib", "edition.ts"), "utf8");
     expect(ed).not.toMatch(/localStorage|useState/);
   });

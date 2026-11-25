@@ -23,13 +23,15 @@ import { NativeStatusCard } from "@/components/NativeStatusCard";
 // 設定を目的ごとのまとまりに分ける見出し（100点化の指示 C。自分用だけ。公開版は友人β中なので今のまま）
 const GROUPS = IS_PERSONAL;
 // カテゴリの数え方・まとめる（自分用だけ。公開版では読み込まない）
+// 組み立てのときに決まる値を、このファイルの中で直接比べる（別ファイルの定数だと、公開版のビルドから自分用の部品の塊が取り除かれない）
+const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // 決まった形ではない CSV の列の対応づけ（自分用だけ。NEXT v21 CSV:C03）
-const CsvGenericPanel = IS_PERSONAL ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
-const MenuVisibilityCard = IS_PERSONAL ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
-const ImportHistoryCard = IS_PERSONAL ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
-const DataHealthCard = IS_PERSONAL ? dynamic(() => import("@/components/DataHealthCard").then((m) => m.DataHealthCard)) : null;
-const DiagnosticsCard = IS_PERSONAL ? dynamic(() => import("@/components/DiagnosticsCard").then((m) => m.DiagnosticsCard)) : null;
-const CategoryTools = IS_PERSONAL ? dynamic(() => import("@/components/CategoryTools").then((m) => m.CategoryTools)) : null;
+const CsvGenericPanel = PERSONAL_BUILD ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
+const MenuVisibilityCard = PERSONAL_BUILD ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
+const ImportHistoryCard = PERSONAL_BUILD ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
+const DataHealthCard = PERSONAL_BUILD ? dynamic(() => import("@/components/DataHealthCard").then((m) => m.DataHealthCard)) : null;
+const DiagnosticsCard = PERSONAL_BUILD ? dynamic(() => import("@/components/DiagnosticsCard").then((m) => m.DiagnosticsCard)) : null;
+const CategoryTools = PERSONAL_BUILD ? dynamic(() => import("@/components/CategoryTools").then((m) => m.CategoryTools)) : null;
 function GroupLabel({ id, children }: { id: string; children: string }) {
   if (!GROUPS) return null;
   return (
