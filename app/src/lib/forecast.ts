@@ -1,5 +1,5 @@
 import { categoryIsInvest, categoryMap } from "./classify";
-import { isLifeExpense, ledgerEntries } from "./ledgerCore";
+import { isLifeExpense, ledgerEntries, type CountedEntry } from "./ledgerCore";
 import { unpaidRecurringOccurrences, unpaidRecurringThisMonth } from "./allowance";
 import { addDays, daysBetween, daysInMonth, parseDateStr } from "./date";
 import type { AppData } from "./types";
@@ -36,12 +36,13 @@ export type Forecast =
     }
   | { ok: false; reason: "tooFewDays" | "tooFewRecords" | "noData" };
 
-export function forecastMonthEnd(data: AppData, today: string): Forecast {
+/** life：今の生活費の出来事（省くとデータから作る。グラフと見込みで2回作らないように渡せる） */
+export function forecastMonthEnd(data: AppData, today: string, life: CountedEntry[] = ledgerEntries(data).filter(isLifeExpense)): Forecast {
   const { y, m, d } = parseDateStr(today);
   const month = today.slice(0, 7);
   const cats = categoryMap(data);
   // 生活費（投資を除く支出）は共通台帳から（o11 A06）
-  const expenses = ledgerEntries(data).filter(isLifeExpense);
+  const expenses = life;
   if (expenses.length === 0) return { ok: false, reason: "noData" };
 
   const spent = expenses.filter((t) => t.date.slice(0, 7) === month && t.date <= today).reduce((a, t) => a + t.amount, 0);
@@ -83,15 +84,15 @@ export interface ForecastCurve {
 }
 
 export function forecastCurve(data: AppData, today: string): ForecastCurve | null {
-  const f = forecastMonthEnd(data, today);
+  const life = ledgerEntries(data).filter(isLifeExpense);
+  const f = forecastMonthEnd(data, today, life);
   if (!f.ok) return null;
   const { y, m, d } = parseDateStr(today);
   const dim = daysInMonth(y, m);
   const month = today.slice(0, 7);
   const cats = categoryMap(data);
   const perDay = new Array<number>(dim).fill(0);
-  for (const t of ledgerEntries(data)) {
-    if (!isLifeExpense(t)) continue;
+  for (const t of life) {
     if (t.date.slice(0, 7) !== month || t.date > today) continue;
     perDay[Number(t.date.slice(8, 10)) - 1] += t.amount;
   }
