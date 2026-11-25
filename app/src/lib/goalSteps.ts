@@ -46,3 +46,10 @@ export function stepProgress(g: Pick<Goal, "steps">): StepProgress {
   const done = g.steps?.filter((s) => s.done).length ?? 0;
   return { total, done, pct: total === 0 ? null : Math.round((done / total) * 100) };
 }
+
+/** 画面に出す達成率：達成済みは100。達成目標（数字なし）で、やることがあれば、やることの進み具合。それ以外は今までどおり */
+export function displayProgress(g: Goal, base: number): number {
+  if (g.done) return 100;
+  if (g.kind === "check") return stepProgress(g).pct ?? base;
+  return base;
+}

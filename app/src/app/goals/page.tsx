@@ -6,7 +6,7 @@ import { bool, numStr, str } from "@/lib/draft";
 import { daysLeft, dueLabel, goalProgress } from "@/lib/life";
 import { goalPace, goalPaceText } from "@/lib/goalPlan";
 import { goalActions } from "@/lib/goalLinks";
-import { parseSteps, stepProgress, stepsToText } from "@/lib/goalSteps";
+import { displayProgress, parseSteps, stepProgress, stepsToText } from "@/lib/goalSteps";
 import { IS_PERSONAL } from "@/lib/edition";
 import { Card } from "@/components/ui";
 
@@ -74,7 +74,8 @@ const config: CollectionConfig<"goals"> = {
   },
   sort: (a, b) => Number(a.done) - Number(b.done) || (a.deadline || "9999").localeCompare(b.deadline || "9999"),
   row: (g, { today, data }) => {
-    const p = goalProgress(g);
+    // 自分用：達成目標でやることがあれば、その進み具合を出す
+    const p = PERSONAL_BUILD ? displayProgress(g, goalProgress(g)) : goalProgress(g);
     // 自分用：この目標につないだ予定（行動）の数。完了した回の数も出す（予定の完了と目標の達成は別）
     const act = IS_PERSONAL ? goalActions(data, g.id, today) : null;
     const d = daysLeft(g.deadline, today);
@@ -93,7 +94,8 @@ const config: CollectionConfig<"goals"> = {
           <span className="h-1.5 w-14 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
             <span className="block h-full rounded-full bg-brand" style={{ width: `${p}%` }} />
           </span>
-          達成率{p}%
+          {PERSONAL_BUILD ? "" : "達成率"}
+          {p}%
         </span>
       ),
     };

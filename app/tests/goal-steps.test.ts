@@ -43,3 +43,14 @@ describe("目標のやること", () => {
     expect(page).toContain("parseSteps");
   });
 });
+
+describe("目標の達成率の表示", () => {
+  const g = { id: "g", title: "引っ越す", deadline: "", kind: "check" as const, target: null, current: 0, unit: "", done: false, note: "", createdAt: now, updatedAt: now };
+  it("達成目標でやることがあれば、やることの進み具合。なければ今までどおり。達成済みは100。数字の目標は変えない", async () => {
+    const { displayProgress } = await import("@/lib/goalSteps");
+    expect(displayProgress({ ...g, steps: parseSteps("a\n✓ b") }, 0)).toBe(50);
+    expect(displayProgress(g, 0)).toBe(0);
+    expect(displayProgress({ ...g, done: true, steps: parseSteps("a") }, 0)).toBe(100);
+    expect(displayProgress({ ...g, kind: "number", target: 100, current: 40, steps: parseSteps("✓ a") }, 40)).toBe(40);
+  });
+});
