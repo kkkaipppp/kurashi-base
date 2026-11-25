@@ -39,7 +39,7 @@ describe("日本の祝日（2026-11-23 平尾さん：カレンダーで祝日�
     const s = readFileSync(join(__dirname, "..", "src", "app", "calendar", "page.tsx"), "utf8");
     expect(s).toContain("holidayName(d)");
     expect(s).toContain("+{shortYen(info.inc)}");
-    expect(s).toContain("赤い日付＝日曜と祝日");
+    expect(s).toContain("薄い日付＝日曜と祝日");
   });
 });
 
@@ -50,5 +50,19 @@ describe("カレンダーのマスに予定の名前を出す（2026-11-23 平�
     expect(s).toContain("info.titles.map(");
     expect(s).toContain("+{info.ev - info.titles.length}");
     expect(s).toContain('info.titles.join("、")');
+  });
+});
+
+describe("カレンダーの色の使い分け（赤は支出、青は収入だけ）", () => {
+  const s = readFileSync(join(__dirname, "..", "src", "app", "calendar", "page.tsx"), "utf8");
+  it("日付と曜日の見出しは、赤・青にしない（日曜・祝日・土曜は薄い色か、そのまま）", () => {
+    expect(s).not.toContain('i === 0 ? "text-expense"');
+    expect(s).not.toContain('i === 6 ? "text-income"');
+    expect(s).toContain('!isSel && rest ? "text-ink-3"');
+  });
+  it("まだ来ていない日の金額は、薄い斜めの字（実際に使った額と区別する）", () => {
+    expect(s).toContain("const future = d > today");
+    expect(s).toContain('future ? "italic opacity-60"');
+    expect(s).toContain("薄い斜めの数字＝まだ来ていない日");
   });
 });

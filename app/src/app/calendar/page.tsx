@@ -142,7 +142,7 @@ export default function CalendarPage() {
           <thead>
             <tr>
               {WEEK.map((w, i) => (
-                <th key={w} scope="col" className={`pb-1 text-[11px] font-semibold ${i === 0 ? "text-expense" : i === 6 ? "text-income" : "text-ink-3"}`}>
+                <th key={w} scope="col" className="pb-1 text-[11px] font-semibold text-ink-3">
                   {w}
                 </th>
               ))}
@@ -157,7 +157,8 @@ export default function CalendarPage() {
                   const isSel = d === selected;
                   const isToday = d === today;
                   const hol = holidayName(d);
-                  const red = i === 0 || !!hol; // 日曜と祝日は赤
+                  const rest = i === 0 || !!hol; // 日曜と祝日は、薄い色（赤は支出、青は収入だけに使う）
+                  const future = d > today; // まだ来ていない日の金額は、薄い斜めの字（実際に使った額と区別する）
                   const label = `${formatDateJa(d)}${hol ? ` ${hol}` : ""}${showEv && info.ev ? ` 予定${info.ev}件（${info.titles.join("、")}${info.ev > info.titles.length ? "ほか" : ""}）` : ""}${showMoney && info.exp ? ` 支出${formatYen(info.exp)}` : ""}${showMoney && info.inc ? ` 収入${formatYen(info.inc)}` : ""}${dlDays.has(d) ? " 期限あり" : ""}`;
                   return (
                     <td key={d} className="h-px p-0 align-top">
@@ -170,7 +171,7 @@ export default function CalendarPage() {
                           isSel ? "bg-brand text-brand-ink" : isToday ? "bg-brand-soft" : "hover:bg-surface-2"
                         }`}
                       >
-                        <span className={`num text-[14px] font-semibold ${!isSel && red ? "text-expense" : !isSel && i === 6 ? "text-income" : ""}`}>
+                        <span className={`num text-[14px] font-semibold ${!isSel && rest ? "text-ink-3" : ""}`}>
                           {Number(d.slice(8))}
                         </span>
                         <span className="mt-0.5 flex h-1.5 gap-0.5" aria-hidden="true">
@@ -191,12 +192,12 @@ export default function CalendarPage() {
                           </span>
                         )}
                         {showMoney && info.exp > 0 && (
-                          <span className={`num mt-0.5 max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-expense"}`} aria-hidden="true">
+                          <span className={`num mt-0.5 max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-expense"} ${future ? "italic opacity-60" : ""}`} aria-hidden="true">
                             −{shortYen(info.exp)}
                           </span>
                         )}
                         {showMoney && info.inc > 0 && (
-                          <span className={`num max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-income"}`} aria-hidden="true">
+                          <span className={`num max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-income"} ${future ? "italic opacity-60" : ""}`} aria-hidden="true">
                             +{shortYen(info.inc)}
                           </span>
                         )}
@@ -217,7 +218,7 @@ export default function CalendarPage() {
           </span>
         </div>
         <p className="mt-1 text-center text-[11px] text-ink-3" aria-hidden="true">
-          <span className="text-expense">赤い −数字＝支出</span>・<span className="text-income">青い＋数字＝収入</span>・赤い日付＝日曜と祝日
+          <span className="text-expense">赤い −数字＝支出</span>・<span className="text-income">青い＋数字＝収入</span>・<span className="italic opacity-60">薄い斜めの数字＝まだ来ていない日</span>・薄い日付＝日曜と祝日
         </p>
       </Card>
 
