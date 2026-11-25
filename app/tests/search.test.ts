@@ -48,8 +48,8 @@ describe("横断検索", () => {
     expect(g[0].hits).toHaveLength(5);
     expect(g[0].hits[0].id).toBe("x11"); // いちばん新しい
   });
-  it("自分用だけの機能。メニューとホームに入口がある。外へは送らない", () => {
-    expect(FEATURE_EDITIONS.search).toEqual({ personal: true, public: false });
+  it("自分用と公開版の両方の機能。メニューとホームに入口がある。外へは送らない", () => {
+    expect(FEATURE_EDITIONS.search).toEqual({ personal: true, public: true }); // 2026-11-25 平尾さんの決定（①）：自分用と友達用（公開版）の両方で出す
     expect(src("app/menu/page.tsx")).toContain('href: "/search"');
     expect(src("app/page.tsx")).toContain('href="/search"');
     expect(src("lib/search.ts")).not.toMatch(/fetch\(|XMLHttpRequest|sendBeacon/);

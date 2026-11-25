@@ -404,6 +404,12 @@ export default function HomePage() {
         <div className="flex shrink-0 flex-col items-end gap-1">
           <DevBadge />
           {/* ホームの編集（右上。自分用だけ。100点化の指示 E） */}
+          {/* さがす：2026-11-25 から公開版（友達用）にも出す。ホームの編集は自分用だけ */}
+          {!PERSONAL && (
+            <Link href="/search" aria-label="さがす" className="inline-flex size-11 items-center justify-center rounded-lg text-brand hover:bg-brand-soft">
+              <IconSearch className="size-5" />
+            </Link>
+          )}
           {PERSONAL && (
             <div className="flex items-center gap-0.5">
               <Link href="/search" aria-label="さがす" className="inline-flex size-11 items-center justify-center rounded-lg text-brand hover:bg-brand-soft">

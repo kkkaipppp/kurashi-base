@@ -27,7 +27,8 @@ const GROUPS = IS_PERSONAL;
 const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // 決まった形ではない CSV の列の対応づけ（自分用だけ。NEXT v21 CSV:C03）
 // カレンダーのファイル（.ics）から予定を取り込む（自分用。Q31＝①）
-const IcsImportCard = PERSONAL_BUILD ? dynamic(() => import("@/components/IcsImportCard").then((m) => m.IcsImportCard)) : null;
+// 2026-11-25 から公開版（友達用）にも出す（FEATURE_EDITIONS.icsImport）
+const IcsImportCard = true ? dynamic(() => import("@/components/IcsImportCard").then((m) => m.IcsImportCard)) : null;
 const CsvGenericPanel = PERSONAL_BUILD ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
 const MenuVisibilityCard = PERSONAL_BUILD ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
 const ImportHistoryCard = PERSONAL_BUILD ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;

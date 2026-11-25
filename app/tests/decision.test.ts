@@ -59,8 +59,8 @@ describe("買い物の判断", () => {
     expect(a.vsBudget).not.toBeNull();
     expect(assessPurchase(emptyData(now), 1000, "2026-11-24").projected).toBeNull();
   });
-  it("自分用だけ。「買うべき」とは言わない。外へ送らない", () => {
-    expect(FEATURE_EDITIONS.decide).toEqual({ personal: true, public: false });
+  it("自分用と公開版の両方。「買うべき」とは言わない。外へ送らない", () => {
+    expect(FEATURE_EDITIONS.decide).toEqual({ personal: true, public: true }); // 2026-11-25 平尾さんの決定（①）：自分用と友達用（公開版）の両方で出す
     const page = src("app/decide/page.tsx");
     expect(page).toContain("買うかどうかは、決めません");
     expect(page).not.toMatch(/買うべき|買わない方|おすすめ/); // 画面の言葉は、判断を押しつけない
