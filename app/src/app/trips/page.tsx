@@ -85,7 +85,7 @@ export default function TripsPage() {
                             {formatDateJa(t.startDate)}〜{formatDateJa(t.endDate)}
                             {t.destination && `・${t.destination}`}
                           </span>
-                          <span className="block text-[12px] text-ink-3">
+                          <span className={`block text-[12px] ${t.endDate < today ? "text-ink-2" : "text-ink-3"}`}>
                             {tripStatus(t, today)}・行程{n}件
                           </span>
                         </span>

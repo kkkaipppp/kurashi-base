@@ -66,7 +66,7 @@ export default function RecurringPage() {
                   <div className="flex items-start justify-between gap-2">
                     <button type="button" onClick={() => setEditing({ id: r.id, key: Date.now() })} className="min-w-0 flex-1 text-left">
                       <p className="truncate text-[15px] font-bold">{r.name}</p>
-                      <p className="text-[12px] text-ink-3">
+                      <p className={`text-[12px] ${r.active ? "text-ink-3" : "text-ink-2"}`}>
                         {cycleLabel(r.cycle)}{r.cycle === "weekly" ? "" : ` ${r.anchorDay}日`} ・ {data.categories.find((c) => c.id === r.categoryId)?.name ?? "（不明）"}
                         {!r.active && "・停止中"}
                       </p>

@@ -105,7 +105,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
         <span className="w-full text-center">単位は円。収支の累計は、下の「数字で見る」にあります</span>
       </figcaption>
       <details className="rounded-xl bg-surface-2 px-3 py-1 text-[12px]">
-        <summary className="min-h-11 cursor-pointer py-2 font-semibold text-ink-2">数字で見る</summary>
+        <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-ink-2">数字で見る</summary>
         <table className="num mb-2 w-full">
           <caption className="sr-only">{lineLabel}</caption>
           <thead>

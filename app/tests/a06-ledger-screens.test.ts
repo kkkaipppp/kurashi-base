@@ -56,9 +56,7 @@ describe("A06：切り替えの前と後で、すべての集計が同じ答え�
         expect(nPer.dailyInWeek(T, w.from)).toEqual(oPer.dailyInWeek(T, w.from));
         expect(nPer.weeklyTrend(T, w.from)).toEqual(oPer.weeklyTrend(T, w.from));
         expect(nWr.weeklyReview(d, w.from, today)).toEqual(oWr.weeklyReview(d, w.from, today));
-        // 「月末の見込み」の一文（pace）は、2026-11-26 から公開版でもカードと同じ数字にした（意図した変更）。それ以外は前と同じ
-        const noPace = (xs: { key: string }[]) => xs.filter((x) => x.key !== "pace");
-        expect(noPace(nRep.buildInsights(d, mo, today))).toEqual(noPace(oRep.buildInsights(d, mo, today)));
+        expect(nRep.buildInsights(d, mo, today)).toEqual(oRep.buildInsights(d, mo, today));
         expect(nFc.forecastMonthEnd(d, today)).toEqual(oFc.forecastMonthEnd(d, today));
         expect(nFc.forecastCurve(d, today)).toEqual(oFc.forecastCurve(d, today));
       }

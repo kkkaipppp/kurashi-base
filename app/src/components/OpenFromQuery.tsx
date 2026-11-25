@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { isValidDateStr } from "@/lib/date";
 
 /**
  * URL の ?open=<id> を読み、該当する記録の編集シートを開く（今日のナビなどから個別の記録へ直接行くため）。
@@ -17,7 +18,7 @@ function Inner({ ids, onOpen }: { ids: string[]; onOpen: (id: string, date?: str
     if (!id || (id !== "new" && !ids.includes(id))) return;
     // open=new&date=YYYY-MM-DD：＋の「タスク」を、カレンダーで選んだ日から始める（期限の初めの値。磨き込み 2026-11-26）
     const date = sp.get("date");
-    onOpen(id, id === "new" && date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined);
+    onOpen(id, id === "new" && date && isValidDateStr(date) ? date : undefined);
     const params = new URLSearchParams(sp.toString());
     params.delete("open");
     params.delete("date");

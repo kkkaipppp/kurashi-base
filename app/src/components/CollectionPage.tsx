@@ -174,11 +174,11 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-semibold">{v.title}</span>
                         {(v.sub || v.badge) && (
-                          <span className="flex items-center gap-1.5 text-[12px] text-ink-3">
+                          <span className={`flex items-center gap-1.5 text-[12px] ${v.muted ? "text-ink-2" : "text-ink-3"}`}>
                             {v.badge && (
                               <span
                                 className={`shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
-                                  v.badge.tone === "warn" ? "bg-warn-soft text-warn" : v.badge.tone === "ok" ? "bg-brand-soft text-brand" : "bg-surface-2 text-ink-2"
+                                  v.badge.tone === "warn" ? "bg-warn-soft text-warn" : v.badge.tone === "ok" ? "bg-brand-soft text-brand" : "bg-surface-2 text-ink-2 ring-1 ring-line"
                                 }`}
                               >
                                 {v.badge.text}

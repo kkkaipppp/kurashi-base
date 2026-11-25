@@ -258,7 +258,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
       <Card>
         <SectionTitle
           action={
-            <Link href="/recurring" className="min-h-11 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+            <Link href="/recurring" className="inline-flex min-h-11 items-center rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
               固定費を見る
             </Link>
           }

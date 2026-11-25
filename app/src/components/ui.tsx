@@ -88,7 +88,8 @@ export function Field({
 /** 保存できなかったとき、開いている入力の画面の、最初の間違いの欄へ移る（キーボードで隠れた欄の間違いも見えるように。磨き込み 2026-11-26） */
 export function focusFirstInvalid() {
   requestAnimationFrame(() => {
-    const scope = [...document.querySelectorAll('[role="dialog"]')].at(-1) ?? document;
+    const dialogs = document.querySelectorAll('[role="dialog"]');
+    const scope = dialogs.length ? dialogs[dialogs.length - 1] : document;
     const el = scope.querySelector<HTMLElement>('[aria-invalid="true"]');
     if (!el) return;
     el.scrollIntoView({ block: "center" });

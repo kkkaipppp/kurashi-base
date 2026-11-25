@@ -89,6 +89,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
       const kind = (e as CustomEvent<string>).detail;
       if (!["expense", "income", "event", "choose"].includes(kind)) return;
       if (openSheets.current.tx || openSheets.current.ev) {
+        cfBefore.current = document.activeElement as HTMLElement | null;
         const ok = await new Promise<boolean>((resolve) =>
           setCf((current) => {
             // ほかの確認が開いていたら、その答えは「いいえ」にしてから聞く（答えが返らないままにしない）
@@ -116,9 +117,12 @@ export function UIProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("kb-open-add", onAdd);
   }, []);
 
+  // 確認の窓を開く前に focus があった所（閉じたら、そこへ戻す）。窓の「キャンセル」が autoFocus で先に focus を取るので、開く前に覚えておく（点検 中-1）
+  const cfBefore = useRef<HTMLElement | null>(null);
   const confirm = useCallback(
     (o: ConfirmOpts) =>
       new Promise<boolean>((resolve) => {
+        cfBefore.current = document.activeElement as HTMLElement | null;
         // ほかの確認が開いていたら、その答えは「いいえ」にしてから聞く（答えが返らないまま重ならないように。磨き込み 2026-11-26）
         setCf((current) => {
           current?.resolve(false);
@@ -154,7 +158,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const cfOpen = !!cf;
   useEffect(() => {
     if (!cfOpen) return;
-    const before = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -177,6 +180,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
     window.addEventListener("keydown", onKey, true);
     return () => {
       window.removeEventListener("keydown", onKey, true);
+      const before = cfBefore.current;
+      cfBefore.current = null;
       if (before && document.contains(before)) before.focus();
     };
   }, [cfOpen, closeCf]);

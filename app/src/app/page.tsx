@@ -175,7 +175,7 @@ export default function HomePage() {
         <Card>
           <SectionTitle
             action={
-              <Link href="/calendar" className="min-h-11 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+              <Link href="/calendar" className="inline-flex min-h-11 items-center rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
                 カレンダー
               </Link>
             }
@@ -369,7 +369,7 @@ export default function HomePage() {
           <Card>
             <SectionTitle
               action={
-                <Link href="/history" className="min-h-11 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+                <Link href="/history" className="inline-flex min-h-11 items-center rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
                   すべて見る
                 </Link>
               }

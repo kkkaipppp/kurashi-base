@@ -779,6 +779,7 @@ export default function SettingsPage() {
           <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
             <li>繰り返し予定の1回分だけの変更、分割払いの記録</li>
             <li>端末どうしの同期・共有・AI・ほかのサービスとのつながり（メニューの「準備中」に説明があります）</li>
+            <li>iPhone のショートカット</li>
             <li>文字の読み取り・通知・ウィジェットは iPhone アプリの中だけ（パソコンのブラウザでは使えません）</li>
           </ul>
         ) : (
