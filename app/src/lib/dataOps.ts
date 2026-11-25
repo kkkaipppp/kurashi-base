@@ -51,7 +51,7 @@ export function applyTxUpdate(d: AppData, id: string, t: TxPatch, ts: string): A
         delete merged.recurringDue;
       }
       // 空にした任意の項目は残さない
-      for (const k of ["countAs", "tripId", "recurringId", "recurringPartial", "recurringDue"] as const) if (merged[k] === undefined || merged[k] === false) delete merged[k];
+      for (const k of ["countAs", "transferKind", "tripId", "recurringId", "recurringPartial", "recurringDue"] as const) if (merged[k] === undefined || merged[k] === false) delete merged[k];
       return merged;
     }),
   };

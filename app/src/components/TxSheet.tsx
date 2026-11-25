@@ -56,7 +56,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         merchant: editing.merchant,
         paymentMethod: editing.paymentMethod,
         note: editing.note,
-        countAs: editing.countAs ?? "",
+        countAs: editing.countAs === "transfer" && editing.transferKind === "card" ? "transfer-card" : (editing.countAs ?? ""),
         tripId: editing.tripId ?? "",
         linkRecurringId: "",
         linkPartial: false,
@@ -230,10 +230,12 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         // 残り（予定額 − すでに払った分）より少ないときだけ（チェック欄の表示条件と同じ）。全部払い終わる額なら、一部の印は付けない
         ...(linkOk && draft.linkPartial && v.amount < remainingOf(data.recurring.find((r) => r.id === linkOk)) ? { recurringPartial: true } : {}),
         // 数え方・旅行は、空なら持たない（編集で外したときは store が消す）
-        countAs: draft.type === "expense" && draft.countAs ? draft.countAs : undefined,
+        countAs: draft.type === "expense" && draft.countAs ? (draft.countAs === "transfer-card" ? "transfer" : draft.countAs) : undefined,
+        transferKind: draft.type === "expense" && draft.countAs === "transfer-card" ? "card" : undefined,
         tripId: draft.tripId && (data.trips ?? []).some((t) => t.id === draft.tripId) ? draft.tripId : undefined,
       };
       if (input.countAs === undefined && !editing?.countAs) delete input.countAs;
+      if (input.transferKind === undefined && !editing?.transferKind) delete input.transferKind;
       if (input.tripId === undefined && !editing?.tripId) delete input.tripId;
       if (input.recurringId === undefined) delete input.recurringId;
       if (!force) {
@@ -587,7 +589,8 @@ function TxExtras({
           <option value="">カテゴリどおり（{catInvest ? "投資" : "生活費"}）</option>
           <option value="life">生活費として数える</option>
           <option value="invest">投資として数える（予算と比べない）</option>
-          <option value="transfer">収支に数えない（カード引落・口座間の移動など）</option>
+          <option value="transfer-card">カードの引き落とし（収支に数えない。残高は減る）</option>
+          <option value="transfer">収支に数えない（口座間の移動など。残高は変わらない）</option>
         </select>
       </Field>
       {trips.length > 0 && (
