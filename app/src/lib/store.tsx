@@ -68,7 +68,7 @@ interface Store {
   renameCategory: (id: string, name: string) => P;
   /** 復元など、全体が大きく変わる保存。前の状態を1つ控える（reason は取り消すときに表示） */
   /** base：置き換える内容を作るときに使ったデータ（渡すと、今の最新と違うときは保存しない） */
-  replaceAll: (d: AppData, reason: string, base?: AppData) => P;
+  replaceAll: (d: AppData, reason: string, base: AppData) => P;
   /** すべて削除。控えも残さない */
   wipeAll: (empty: AppData) => P;
   /** 取り消し用の控え（保存のたびに読み直した値。同期で読める） */

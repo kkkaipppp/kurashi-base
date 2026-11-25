@@ -150,9 +150,13 @@ export class StoreCore {
   resetCorrupt(): Promise<SaveResult> {
     return this.enqueue(async () => {
       if (!this.state.raw) return { ok: false, error: "対象のデータがありません" };
-      const r = await this.repo.quarantine(this.state.raw);
-      if (r.ok) await this.loadNow();
-      return r;
+      try {
+        const r = await this.repo.quarantine(this.state.raw);
+        if (r.ok) await this.loadNow();
+        return r;
+      } catch (e) {
+        return { ok: false, error: `退避できませんでした（${(e as Error)?.message ?? "不明"}）。データはそのままです` };
+      }
     });
   }
 }
