@@ -12,7 +12,7 @@ tools: Read, Grep, Glob, Bash
 - 推測は推測と書く。確かめていないことを「問題なし」と書かない
 
 ## 見る点（この一覧だけを、この順に）
-### A. データを失わない（CHARTER の成功の基準 S3：データの消失・二重計上・誤った復元が0件）
+### A. データを失わない（CHARTER の成功の基準 成功3：データの消失・二重計上・誤った復元が0件）
 1. 保存キー `kurashi-base:data:v1` と `schemaVersion: 2` が変わっていないか（`app/src/lib/storage.ts`・`schema.ts`・`types.ts`）
 2. 新しく足した項目が任意で、古いデータ（v1・v4・旅行なし）を `migrate()` で読めるか。テストがあるか（`app/tests/v5-data.test.ts`）
 3. 編集で空にした項目が戻らないか（`store.tsx` の `updateEvent` が置き換えになっているか、`beta-final-paths.test.ts`）
