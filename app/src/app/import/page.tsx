@@ -78,6 +78,14 @@ export default function ImportPage() {
         ui.toast("文字は読めましたが、日付・金額・店名の候補が見つかりませんでした。画像を見ながら入力してください", "error");
         return;
       }
+      // 候補の確かさを、はっきり知らせる（読み間違いを、確定した値に見せない）
+      const doubts = [
+        g.amount && g.amountConfidence === "low" ? "金額は自信がありません" : "",
+        !g.date ? "日付は読めなかったので、今日の日付が入ります" : "",
+        !g.amount ? "金額は読めませんでした" : "",
+        !g.merchant ? "店名は読めませんでした" : "",
+      ].filter(Boolean);
+      if (doubts.length) ui.toast(`${doubts.join("。")}。画像と照らして確かめてください`, "error");
       ui.openTx({
         mode: "new",
         type: "expense",

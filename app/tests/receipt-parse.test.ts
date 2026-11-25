@@ -28,7 +28,9 @@ describe("合計金額", () => {
   });
   it("カンマ・円・全角を読む。合計の行が複数あるときは、いちばん大きい金額", () => {
     expect(findAmount(["お会計 １２，３４５円"])).toEqual({ amount: 12345, confidence: "high" });
-    expect(findAmount(["合計 1,000", "税込合計 1,100"])).toEqual({ amount: 1100, confidence: "high" });
+    expect(findAmount(["合計 1,100", "税込合計 1,100"])).toEqual({ amount: 1100, confidence: "high" }); // 同じ金額の合計の行が複数でも、確度は高い
+    // 違う金額の合計の行が複数あるとき（合計とお支払金額など）は、最大を出すが、確度は低い（確かめてもらう）
+    expect(findAmount(["合計 ¥1,280", "お支払金額 ¥1,000（ポイント利用）"])).toEqual({ amount: 1280, confidence: "low" });
   });
   it("合計の行がないときは、お預り・お釣りを除いた最大の金額（確度は低い）。金額がなければ null", () => {
     expect(findAmount(["コーヒー 480", "サンドイッチ 650"])).toEqual({ amount: 650, confidence: "low" });
@@ -38,6 +40,17 @@ describe("合計金額", () => {
   it("電話番号・時刻・日付の数字を、金額と取り違えない", () => {
     expect(findAmount(["TEL 03-1234-5678", "2026/11/24 12:34", "合計 ¥880"])).toEqual({ amount: 880, confidence: "high" });
     expect(findAmount(["TEL 03-1234-5678", "2026/11/24 12:34"])).toEqual({ amount: null, confidence: null });
+  });
+});
+
+describe("合計の取り違え（点検役の指摘）", () => {
+  it("ポイント合計・割引合計・点数・伝票番号・カード番号・商品ごとの「税込」を、合計にしない", () => {
+    expect(findAmount(["合計 ¥980", "ポイント合計 1,500"])).toEqual({ amount: 980, confidence: "high" });
+    expect(findAmount(["割引合計 ¥3,000", "合計 ¥980"])).toEqual({ amount: 980, confidence: "high" });
+    expect(findAmount(["お買上点数 3", "お会計 ¥980 No.12345"])).toEqual({ amount: 980, confidence: "high" });
+    expect(findAmount(["カード番号 1234567890123456", "合計 ¥500"])).toEqual({ amount: 500, confidence: "high" });
+    expect(findAmount(["牛乳 税込 ¥198", "パン 税込 ¥140"])).toEqual({ amount: null, confidence: null }); // 税込だけの行は合計にしない
+    expect(findAmount(["合計 ¥319 (内消費税 ¥29)"])).toEqual({ amount: 319, confidence: "high" }); // 税の金額と同じ行でも、合計の行は最大
   });
 });
 
@@ -77,5 +90,14 @@ describe("画面と部品（iPhone アプリ）", () => {
     expect(page).toContain('title: "読み取った候補を確認"');
     expect(page).not.toContain("addTx(");
     expect(page).toContain("文字の自動読み取り（OCR）は、まだありません。"); // 公開版（ブラウザ）の案内は今のまま
+  });
+});
+
+describe("候補の確かさを知らせる（点検役の指摘）", () => {
+  it("確度が低い・日付が読めない・店名が読めないときは、確かめるよう知らせる。取引は自動で作らない", () => {
+    const page = readFileSync(join(__dirname, "..", "src", "app", "import", "page.tsx"), "utf8");
+    expect(page).toContain("金額は自信がありません");
+    expect(page).toContain("日付は読めなかったので、今日の日付が入ります");
+    expect(page).toContain("画像と照らして確かめてください");
   });
 });

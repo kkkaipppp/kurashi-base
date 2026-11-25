@@ -38,3 +38,16 @@ describe("通知（iPhone アプリ）", () => {
     expect(src("components/WidgetSync.tsx")).toContain('"kb-reminders-changed"');
   });
 });
+
+describe("第4回の点検の直し（iPhone アプリ）", () => {
+  it("拒否されたあとに許可しても登録される（denied のときは「登録した」としない。前面に戻ったときも入れ替える）", () => {
+    const s = src("components/WidgetSync.tsx");
+    expect(s).toContain("if (r.denied) return;");
+    expect(s).toContain('document.addEventListener("visibilitychange", onVisible);');
+  });
+  it("文字の読み取りの結果は、一度だけ返す（完了と例外の両方が来ても二重に返さない）", () => {
+    expect(swift).toContain("var finished = false");
+    expect(swift).toContain("(@escaping () -> Void) -> Void"); // 非同期の中で使うので @escaping
+    expect(swift).toContain("if finished { return }");
+  });
+});

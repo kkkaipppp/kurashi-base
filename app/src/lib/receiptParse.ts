@@ -48,7 +48,9 @@ export function findDate(lines: string[], today: string): string | null {
 const NUM = /[¥￥]?\s*(\d{1,3}(?:,\d{3})+|\d+)\s*円?/g;
 const amountsIn = (line: string): number[] => {
   const out: number[] = [];
-  const s = nfkc(line).replace(/(?:\d{2,4}[/.\-]\d{1,2}[/.\-]\d{1,2})|(?:\d{1,2}:\d{2})|(?:\d{2,4}-\d{2,4}-\d{3,4})/g, " "); // 日付・時刻・電話番号は除く
+  const s = nfkc(line)
+    .replace(/(?:\d{2,4}[/.\-]\d{1,2}[/.\-]\d{1,2})|(?:\d{1,2}:\d{2})|(?:\d{2,4}-\d{2,4}-\d{3,4})/g, " ") // 日付・時刻・電話番号は除く
+    .replace(/(?:点数|No\.?|NO\.?|番号|伝票|レジ|カード)\s*[:：#]?\s*\d+|\d+\s*点/g, " "); // 点数・伝票番号・カード番号も除く
   for (const m of s.matchAll(NUM)) {
     const n = Number(m[1].replace(/,/g, ""));
     if (Number.isSafeInteger(n) && n > 0 && n <= 100_000_000) out.push(n);
@@ -56,22 +58,33 @@ const amountsIn = (line: string): number[] => {
   return out;
 };
 
-const TOTAL = /合計|お会計|ご請求|総額|税込|お支払金額|ご利用金額|お買上|請求金額/;
-const NOT_TOTAL = /小計|お預り|お預かり|釣|ポイント|割引|値引|消費税|内税|外税|対象|クーポン|チャージ残高|残高/;
+// 合計の行の言葉。「税込」だけの行（商品ごとに付く）は合計にしない
+const TOTAL = /合計|お会計|ご請求|総額|お支払金額|ご利用金額|お買上金額|請求金額/;
+// 合計ではない行の言葉（「ポイント合計」「割引合計」のように、合計の言葉と一緒でも、合計にしない）
+const NOT_TOTAL = /小計|お預り|お預かり|釣|ポイント|割引|値引|クーポン|チャージ残高|残高|点数|対象/;
 
 export function findAmount(lines: string[]): { amount: number | null; confidence: "high" | "low" | null } {
   const high: number[] = [];
   const low: number[] = [];
+  const conflict: number[] = [];
   for (const raw of lines) {
     const line = nfkc(raw);
-    if (NOT_TOTAL.test(line) && !TOTAL.test(line)) continue;
+    // 小計・お預り・お釣り・ポイント・割引などの行は、合計の言葉が一緒にあっても使わない。
+    // ただし「お支払金額 ¥1,000（ポイント利用）」のような、支払いの行は、合計と違う金額かもしれないので、あとで確かめる印にする
+    if (NOT_TOTAL.test(line)) {
+      if (/お支払|お会計|ご請求|請求金額|ご利用金額/.test(line) && !/お預り|お預かり|釣/.test(line)) conflict.push(...amountsIn(line));
+      continue;
+    }
     const a = amountsIn(line);
     if (a.length === 0) continue;
-    if (TOTAL.test(line) && !/小計/.test(line)) high.push(Math.max(...a));
-    else if (!NOT_TOTAL.test(line)) low.push(...a);
+    if (TOTAL.test(line)) high.push(Math.max(...a));
+    else if (!/消費税|内税|外税|税込/.test(line)) low.push(...a);
   }
-  if (high.length) return { amount: Math.max(...high), confidence: "high" };
-  // 合計の行がないときは、いちばん大きい金額（低い確度）。1件だけ読めた金額も、確かめてもらう
+  const uniq = [...new Set(high)];
+  // 合計の行が1種類の金額だけなら、確度は高い。違う金額の合計の行が複数あるとき（「合計」と「お支払金額」など）は、確度を低くして、確かめてもらう
+  if (uniq.length === 1) return { amount: uniq[0], confidence: conflict.some((c) => c !== uniq[0]) ? "low" : "high" };
+  if (uniq.length > 1) return { amount: Math.max(...uniq), confidence: "low" };
+  // 合計の行がないときは、いちばん大きい金額（低い確度）
   return low.length ? { amount: Math.max(...low), confidence: "low" } : { amount: null, confidence: null };
 }
 

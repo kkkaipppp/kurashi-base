@@ -85,8 +85,18 @@ export function WidgetSync() {
   const [remindTick, setRemindTick] = useState(0);
   useEffect(() => {
     const on = () => setRemindTick((n) => n + 1);
+    // 設定アプリで許可を変えて戻ってきたときも、入れ替える
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      lastReminders.current = "";
+      on();
+    };
     window.addEventListener("kb-reminders-changed", on);
-    return () => window.removeEventListener("kb-reminders-changed", on);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("kb-reminders-changed", on);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -101,7 +111,9 @@ export function WidgetSync() {
       if (!settings.on && lastReminders.current === "off") return;
       if (json === lastReminders.current) return;
       NativeBridge.scheduleReminders({ json })
-        .then(() => {
+        .then((r) => {
+          // 拒否されていたときは「登録した」とせず、あとで許可されたら、もう一度登録する
+          if (r.denied) return;
           lastReminders.current = settings.on ? json : "off";
         })
         .catch(() => {

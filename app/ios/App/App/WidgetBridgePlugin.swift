@@ -408,9 +408,18 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("画像を読み込めませんでした")
             return
         }
+        // 結果は1回だけ返す（読み取りの完了と例外の両方が来ても、二重に返さない）
+        var finished = false
+        let finish: (@escaping () -> Void) -> Void = { body in
+            DispatchQueue.main.async {
+                if finished { return }
+                finished = true
+                body()
+            }
+        }
         let request = VNRecognizeTextRequest { req, error in
             if let error = error {
-                call.reject("文字を読み取れませんでした：\(error.localizedDescription)")
+                finish { call.reject("文字を読み取れませんでした：\(error.localizedDescription)") }
                 return
             }
             let obs = (req.results as? [VNRecognizedTextObservation]) ?? []
@@ -421,7 +430,7 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                 return a.boundingBox.minX < b.boundingBox.minX
             }
             let lines = sorted.compactMap { $0.topCandidates(1).first?.string }.filter { !$0.isEmpty }
-            call.resolve(["lines": lines])
+            finish { call.resolve(["lines": lines]) }
         }
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true
@@ -432,7 +441,7 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             do {
                 try handler.perform([request])
             } catch {
-                call.reject("文字を読み取れませんでした：\(error.localizedDescription)")
+                finish { call.reject("文字を読み取れませんでした：\(error.localizedDescription)") }
             }
         }
     }
