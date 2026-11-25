@@ -39,7 +39,7 @@ describe("日本の祝日（2026-11-23 平尾さん：カレンダーで祝日�
     const s = readFileSync(join(__dirname, "..", "src", "app", "calendar", "page.tsx"), "utf8");
     expect(s).toContain("holidayName(d)");
     expect(s).toContain("+{shortYen(info.inc)}");
-    expect(s).toContain("薄い日付＝日曜と祝日");
+    expect(s).toContain("：日曜・祝日");
   });
 });
 
@@ -63,6 +63,6 @@ describe("カレンダーの色の使い分け（赤は支出、青は収入だ�
   it("まだ来ていない日の金額は、薄い斜めの字（実際に使った額と区別する）", () => {
     expect(s).toContain("const future = d > today");
     expect(s).toContain('future ? "italic opacity-60"');
-    expect(s).toContain("薄い斜めの数字＝まだ来ていない日");
+    expect(s).toContain("：まだ来ていない日");
   });
 });
