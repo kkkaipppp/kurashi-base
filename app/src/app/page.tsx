@@ -221,14 +221,15 @@ export default function HomePage() {
         {/* 次の固定費（今日の予定の近くに。レビュー o1 の P09） */}
         {(PERSONAL || prefs.nextRecurring) && next && (
           <Link href={`/recurring?open=${next.id}`} className="block">
-            <Card className="flex items-center justify-between py-3 hover:bg-surface-2">
-              <div>
+            <Card className="flex items-center justify-between gap-3 py-3 hover:bg-surface-2">
+              {/* 長い名前・大きい金額でも、横にはみ出さない（N03・N15 の画面幅の点検） */}
+              <div className="min-w-0 flex-1">
                 <h2 className="text-[14px] font-semibold text-ink-2">次の固定費</h2>
-                <p className="text-[13px] text-ink-3">
+                <p className="text-[13px] text-ink-3 [overflow-wrap:anywhere]">
                   {formatDateJa(next.nextDueDate)} {next.name}
                 </p>
               </div>
-              <p className="num text-lg font-bold">{formatYen(next.amount)}</p>
+              <p className="num shrink-0 text-lg font-bold">{formatYen(next.amount)}</p>
             </Card>
           </Link>
         )}

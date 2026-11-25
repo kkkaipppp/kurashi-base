@@ -206,14 +206,15 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
             {r.expense === 0 ? (
               <p className="text-[14px] text-ink-3">この月の支出はありません。</p>
             ) : (
-              <div className="flex items-center gap-4">
+              // 狭いとき（文字を大きくしたときなど）は、円グラフの下に一覧を並べる（N03・N15 の画面幅の点検）
+              <div className="flex flex-wrap items-center gap-4">
                 <Donut parts={parts} total={r.expense} />
-                <ul className="min-w-0 flex-1 space-y-0.5">
+                <ul className="min-w-0 flex-1 basis-48 space-y-0.5">
                   {parts.map((p) => (
                     <li key={p.id || "rest"}>
                       <Link
                         href={p.id ? `/history?m=${month}&cat=${p.id}` : `/history?m=${month}`}
-                        className="flex min-h-9 items-center gap-2 rounded-lg px-1 text-[13px] hover:bg-surface-2"
+                        className="flex min-h-9 flex-wrap items-center gap-x-2 rounded-lg px-1 text-[13px] hover:bg-surface-2"
                       >
                         <span className="size-2.5 shrink-0 rounded-full" style={{ background: p.color }} aria-hidden="true" />
                         <span className="min-w-0 flex-1 truncate">{p.name}</span>
