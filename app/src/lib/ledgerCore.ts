@@ -131,9 +131,27 @@ export function countedEntries(events: LedgerEvent[]): CountedEntry[] {
 const NO_CATS: AppData["categories"] = [];
 const NO_REC: AppData["recurring"] = [];
 
-/** データ全体から（投資・固定費の分け方つき） */
+/**
+ * データ全体から（投資・固定費の分け方つき）。countedEntries(ledgerEvents(d)) と同じ答えを、出来事を作らずに直接作る
+ * （画面で何度も呼ばれるため。同じ答えであることは tests/a06-ledger-screens.test.ts で確かめる）。
+ * 固定費の「カテゴリと金額が同じ」の判定は、使っている固定費から先に表を作る（記録ごとに固定費を全部見ない）
+ */
 export function ledgerEntries(d: Pick<AppData, "transactions" | "categories" | "recurring">): CountedEntry[] {
-  return countedEntries(ledgerEvents(d));
+  const cats = categoryMap(d);
+  const fixedAmounts = new Map<string, Set<number>>(); // カテゴリ → 使っている固定費の金額
+  for (const r of d.recurring) if (r.active) fixedAmounts.set(r.categoryId, (fixedAmounts.get(r.categoryId) ?? new Set<number>()).add(r.amount));
+  const out: CountedEntry[] = [];
+  for (const t of d.transactions) {
+    // 収支に数えない記録（口座間の移動・カードの引き落とし・返金の記録・全額返金した買い物）は入れない
+    if (t.countAs === "transfer") continue;
+    if (t.type === "income") {
+      out.push({ txId: t.id, date: t.date, kind: "income", amount: t.amount, categoryId: t.categoryId, invest: false, fixed: false });
+      continue;
+    }
+    const fixed = t.type === "expense" && (!!t.recurringId || !!fixedAmounts.get(t.categoryId)?.has(t.amount));
+    out.push({ txId: t.id, date: t.date, kind: "expense", amount: t.amount, categoryId: t.categoryId, invest: txIsInvest(t, cats), fixed });
+  }
+  return out;
 }
 
 /** 記録だけから（支出・収入・カテゴリ別だけを使うとき。投資・固定費の分け方は入らない） */

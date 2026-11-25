@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, PageHeader } from "@/components/ui";
-import { daySummary, eventsOnDay, remainingBudget, summarizeMonth } from "@/lib/aggregate";
+import { daySummary, eventsOnDay, remainingBudget } from "@/lib/aggregate";
+import { budgetSpent } from "@/lib/ledger";
 import { formatDateJa, monthKey, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { useData } from "@/lib/store";
@@ -12,7 +13,8 @@ export default function WidgetPreviewPage() {
   const today = todayStr();
   const events = eventsOnDay(data.events, today);
   const spent = daySummary(data.transactions, today).expense;
-  const remaining = remainingBudget(data.budget.monthly, summarizeMonth(data.transactions, monthKey(today)).expense);
+  // 予算と比べる額は、ホームと同じもの（自分用は投資を除いた生活費。lib/ledger.ts の budgetSpent。独立点検 中2）
+  const remaining = remainingBudget(data.budget.monthly, budgetSpent(data, monthKey(today), today));
 
   return (
     <main className="space-y-3">

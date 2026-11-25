@@ -11,6 +11,9 @@ import * as nWr from "@/lib/weeklyReview";
 import * as nRep from "@/lib/report";
 import * as nFc from "@/lib/forecast";
 import * as nRv from "@/lib/restoreView";
+import { countedEntries, isLifeExpense, ledgerEntries, ledgerEvents, sumEntries, txEntries } from "@/lib/ledgerCore";
+import { isMoveOnly } from "@/lib/classify";
+import type { Transaction } from "@/lib/types";
 // 切り替える前の実装（HEAD 5830afe 時点の写し。比べるためだけに置く）
 import * as oAgg from "./legacy/aggregate";
 import * as oPer from "./legacy/periods";
@@ -26,7 +29,7 @@ import * as oRv from "./legacy/restoreView";
 // 3) 手で決めた期待値（全額返金の記録はカテゴリ別にも件数にも出ない、など）
 import { MONTHS, now, synth, tx } from "./fixtures/synth";
 
-const TODAYS = ["2026-02-28", "2026-09-30", "2026-10-01", "2026-11-25", "2026-12-31", "2027-01-15"];
+const TODAYS = ["2026-02-28", "2026-09-30", "2026-10-01", "2026-11-25", "2026-12-31", "2027-01-15", "2028-02-29"];
 
 describe("A06：切り替えの前と後で、すべての集計が同じ答え（200通り）", () => {
   it("月・日・期間・週・年・月の内訳・週の見直し・振り返り・月末の見込み・復元の確認", () => {
@@ -57,12 +60,39 @@ describe("A06：切り替えの前と後で、すべての集計が同じ答え�
         expect(nFc.forecastMonthEnd(d, today)).toEqual(oFc.forecastMonthEnd(d, today));
         expect(nFc.forecastCurve(d, today)).toEqual(oFc.forecastCurve(d, today));
       }
-      for (const y of [2026, 2027]) {
+      for (const y of [2026, 2027, 2028]) {
         expect(nPer.monthlyInYear(T, y)).toEqual(oPer.monthlyInYear(T, y));
         const r = nPer.yearRange(y);
         expect(nPer.summarizePeriod(T, r.from, r.to)).toEqual(oPer.summarizePeriod(T, r.from, r.to));
       }
       expect(nRv.figures(d)).toEqual(oRv.figures(d));
+    }
+  });
+});
+
+describe("A06：速く作る ledgerEntries は、出来事から作るものと同じ", () => {
+  it("200通りで countedEntries(ledgerEvents(d)) と一致（固定費・投資の分け方も）", () => {
+    for (let s = 1; s <= 200; s++) {
+      const d = synth(s);
+      expect(ledgerEntries(d)).toEqual(countedEntries(ledgerEvents(d)));
+    }
+  });
+});
+
+describe("A06：旅行の合計・履歴の絞り込みの合計（画面の中の計算）", () => {
+  // 切り替える前の画面の式（旅行：t.type === "expense" && t.countAs !== "transfer"、履歴：支出と収入の両方）
+  const oldTrip = (list: Transaction[]) => list.reduce((s, t) => s + (t.type === "expense" && t.countAs !== "transfer" ? t.amount : 0), 0);
+  const oldHist = (list: Transaction[]) => [list.filter((t) => t.type === "expense" && t.countAs !== "transfer").reduce((a, t) => a + t.amount, 0), list.filter((t) => t.type === "income" && t.countAs !== "transfer").reduce((a, t) => a + t.amount, 0)];
+  it("200通り・いろいろな絞り込みで、前の式と同じ答え", () => {
+    for (let s = 1; s <= 200; s++) {
+      const d = synth(s);
+      const lists = [d.transactions, d.transactions.filter((t) => t.type === "expense"), d.transactions.filter((t) => t.paymentMethod === "card"), d.transactions.filter((t) => t.categoryId === "exp-1"), d.transactions.filter((_, i) => i % 3 === 0)];
+      for (const list of lists) {
+        const n = sumEntries(txEntries(list), () => true);
+        expect(n.expense).toBe(oldTrip(list));
+        expect([n.expense, n.income]).toEqual(oldHist(list));
+        expect(n.expense).toBe(list.filter((t) => t.type === "expense" && !isMoveOnly(t)).reduce((a, t) => a + t.amount, 0));
+      }
     }
   });
 });
@@ -101,14 +131,23 @@ describe("A06：同じ条件の金額は、画面どうしで一致する（200�
       }
       const f = nRv.figures(d);
       expect([f.expense, f.income]).toEqual([allExp, allInc]); // 復元の確認の合計＝各月の合計
-      // 月末の見込みの「今月これまで」＝ 今日までの生活費（週の見直しと同じ数え方）
-      const fc = nFc.forecastMonthEnd(d, "2026-11-25");
-      if (fc.ok) {
-        const w = nWr.weeklyReview(d, "2026-11-01", "2026-11-25"); // 月曜でなくても、期間の生活費として使える
-        const life = nMb.monthBreakdown(d, "2026-11", "2026-11-25");
-        expect(fc.spent).toBeLessThanOrEqual(life.lifeExpense);
-        expect(w.spent).toBeLessThanOrEqual(fc.spent + 0); // 11/1〜11/7 は 11/1〜11/25 の一部
+      // 月末の日には、月末の見込みの「今月これまで」＝ その月の生活費（振り返りの月の内訳と同じ）
+      for (const mo of MONTHS) {
+        const [y, m] = mo.split("-").map(Number);
+        const end = `${mo}-${String(daysInMonth(y, m)).padStart(2, "0")}`;
+        const fc = nFc.forecastMonthEnd(d, end);
+        if (fc.ok) expect(fc.spent).toBe(nMb.monthBreakdown(d, mo, end).lifeExpense);
+        // 月末のグラフの実線の終わり＝今月これまで
+        const curve = nFc.forecastCurve(d, end);
+        if (curve && fc.ok) expect(curve.actual[curve.actual.length - 1]).toBe(fc.spent);
       }
+      // 週の見直しの「今週これまで」＝ その週の毎日の支出から投資を除いたもの（日曜を今日として）
+      const wk = nPer.weekRange("2026-11-25");
+      const w = nWr.weeklyReview(d, wk.from, wk.to);
+      const lifeOfWeek = ledgerEntries(d).filter((e) => isLifeExpense(e) && e.date >= wk.from && e.date <= wk.to).reduce((a, e) => a + e.amount, 0);
+      expect(w.spent).toBe(lifeOfWeek);
+      const invOfWeek = ledgerEntries(d).filter((e) => e.kind === "expense" && e.invest && e.date >= wk.from && e.date <= wk.to).reduce((a, e) => a + e.amount, 0);
+      expect(w.spent + invOfWeek).toBe(nPer.summarizePeriod(T, wk.from, wk.to).expense);
     }
   });
 });
@@ -161,6 +200,48 @@ describe("A06：手で決めた期待値", () => {
       const src = read(p);
       expect(src, p).not.toMatch(/isMoveOnly\(|countAs !== "transfer"|countAs === "transfer"/);
     }
+  });
+  it("見張り：app/src 全体で、記録の金額を足す書き方は、決めたファイルだけ（新しく増えたら、台帳を通すか、ここに理由つきで足す）", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const root = path.resolve(import.meta.dirname, "../src");
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (/\.(ts|tsx)$/.test(e.name)) files.push(path.relative(root, p).split(path.sep).join("/"));
+      }
+    };
+    walk(root);
+    // 金額を足す書き方：「+= x.amount」「+ x.amount, 0)」「a + x.amount」
+    const SUM = /\+=\s*\w+\.amount|\+\s*\w+\.amount\s*,\s*0\)|\w+\s*\+\s*\w+\.amount\b/;
+    const ALLOWED: Record<string, string> = {
+      "lib/ledgerCore.ts": "台帳そのもの",
+      "lib/aggregate.ts": "台帳の出来事（CountedEntry）を足す",
+      "lib/periods.ts": "台帳の出来事を足す",
+      "lib/monthBreakdown.ts": "台帳の出来事と NISA の記録を足す",
+      "lib/weeklyReview.ts": "台帳の出来事を足す",
+      "lib/report.ts": "台帳の出来事を足す",
+      "lib/forecast.ts": "台帳の出来事と、固定費の予定を足す",
+      "lib/refund.ts": "返金の記録の合計（台帳の保存則と同じ）",
+      "lib/allowance.ts": "固定費の予定（記録ではない）",
+      "lib/nisa.ts": "NISA の記録（収支ではない）",
+      "lib/balance.ts": "台帳の出来事（ledgerEvents）を足す",
+      "lib/inbox.ts": "未整理の記録の店ごとの合計（整理の目安。収支ではない）",
+      "lib/idbRepository.ts": "移行の点検用の合計（記録の全件。収支ではない）",
+      "lib/dataOps.ts": "固定費の一部払いの残り",
+      "lib/scenarios.ts": "ケース別の比較（固定費の予定）",
+      "lib/decision.ts": "買い物の判断（予定の額）",
+      "lib/lifeChange.ts": "生活の変化（予定の額）",
+      "app/settings/page.tsx": "CSV の取り込み前の合計（まだ記録ではない）",
+      "app/calendar/page.tsx": "その日の固定費の予定",
+      "app/contracts/page.tsx": "契約の月額",
+      "app/recurring/page.tsx": "固定費の月額",
+      "app/report/page.tsx": "固定費の月額",
+    };
+    const found = files.filter((f) => SUM.test(fs.readFileSync(path.join(root, f), "utf8")));
+    expect(found.filter((f) => !(f in ALLOWED))).toEqual([]);
   });
   it("日付の境界：うるう年でない2月の28日・年またぎの週", () => {
     const d = base();

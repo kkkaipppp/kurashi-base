@@ -26,7 +26,7 @@ export interface MonthBreakdown {
 
 
 export function monthBreakdown(data: AppData, key: string, today: string): MonthBreakdown {
-  // 金額は共通台帳から（o11 A06。ホーム・振り返り・ウィジェットで同じ答えになる）
+  // 金額は共通台帳から（o11 A06。ホーム・振り返り・ウィジェットの予算の比べ方は lib/ledger.ts の budgetSpent で同じにしている）
   const entries = ledgerEntries(data);
   let fixed = 0;
   let variable = 0;
