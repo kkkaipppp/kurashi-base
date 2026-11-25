@@ -52,6 +52,10 @@ describe("くらしの気づき（B10：データがないときは出さない�
     expect(buildInsights(d, "2026-11", "2026-11-10").some((i) => i.key === "pace")).toBe(false);
     d.budget.monthly = 50000;
     expect(buildInsights(d, "2026-11", "2026-11-06").some((i) => i.key === "pace")).toBe(false);
-    expect(buildInsights(d, "2026-11", "2026-11-10").find((i) => i.key === "pace")?.text).toBe("月末の見込み：約¥9,000（予算 ¥50,000）");
+    // 記録が1件だけ：振り返りの「月末の見込み」カードは出さないので、一文も出さない（2026-11-26 から公開版も同じ。前は ¥9,000 と出ていた）
+    expect(buildInsights(d, "2026-11", "2026-11-10").some((i) => i.key === "pace")).toBe(false);
+    // 記録が十分あれば出る（金額はカードと同じ。tests/forecast.test.ts）
+    d.transactions = Array.from({ length: 8 }, (_, i) => tx(`2026-11-0${i + 1}`, 1000));
+    expect(buildInsights(d, "2026-11", "2026-11-10").find((i) => i.key === "pace")?.text).toMatch(/^月末の見込み：約¥[\d,]+（予算 ¥50,000）$/);
   });
 });

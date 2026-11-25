@@ -126,3 +126,23 @@ describe("ホームの『月末の見込み』と振り返りの数字（自分�
     vi.resetModules();
   });
 });
+
+describe("磨き込み 2026-11-26：公開版でも、月末の見込みの一文はカードと同じ", () => {
+  it("カードが出せるときは同じ額、出せないとき（記録が少ない）は一文も出さない", async () => {
+    const { buildInsights } = await import("@/lib/report");
+    const { forecastMonthEnd: fm } = await import("@/lib/forecast");
+    const { emptyData } = await import("@/lib/defaults");
+    const now = "2026-11-25T00:00:00.000Z";
+    const base = emptyData(now);
+    base.budget.monthly = 100000;
+    const mk = (n: number) => ({ ...base, transactions: Array.from({ length: n }, (_, i) => ({ id: `p${i}`, type: "expense" as const, date: `2026-11-${String(i + 3).padStart(2, "0")}`, amount: 2000, currency: "JPY" as const, categoryId: "exp-1", merchant: "", paymentMethod: "", note: "", source: "manual" as const, createdAt: now, updatedAt: now })) });
+    const many = mk(12);
+    const f = fm(many, "2026-11-25");
+    expect(f.ok).toBe(true);
+    if (f.ok) expect(buildInsights(many, "2026-11", "2026-11-25").find((x) => x.key === "pace")?.text).toContain(`約¥${(Math.round(f.projected / 100) * 100).toLocaleString("ja-JP")}`);
+    // 記録が1件だけ（7日目以降でも）：カードは出さないので、一文も出さない
+    const few = mk(1);
+    expect(fm(few, "2026-11-25").ok).toBe(false);
+    expect(buildInsights(few, "2026-11", "2026-11-25").find((x) => x.key === "pace")).toBeUndefined();
+  });
+});

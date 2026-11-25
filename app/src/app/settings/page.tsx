@@ -766,12 +766,21 @@ export default function SettingsPage() {
         <SectionTitle>このアプリについて</SectionTitle>
         <p className="text-[13px] text-ink-2">くらしベース（KURASHI BASE）β版（試用版）</p>
         <p className="mt-2 text-[13px] font-semibold text-ink-2">まだ対応していないこと</p>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
-          <li>レシートの文字の自動読み取り（OCR）— レシートの画像を見ながら手で入力します</li>
-          <li>繰り返し予定の1回分だけの変更、振替・分割払いの記録</li>
-          <li>通知、ホーム画面のウィジェット、iPhone のショートカット</li>
-          <li>端末どうしの同期・共有・AI・ほかのサービスとのつながり（メニューの「準備中」に説明があります）</li>
-        </ul>
+        {PERSONAL_BUILD ? (
+          // 自分用：iPhone アプリでは文字の読み取り・通知・ウィジェットが使えるので、「まだ対応していない」に入れない（磨き込み 2026-11-26）
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
+            <li>繰り返し予定の1回分だけの変更、分割払いの記録</li>
+            <li>端末どうしの同期・共有・AI・ほかのサービスとのつながり（メニューの「準備中」に説明があります）</li>
+            <li>文字の読み取り・通知・ウィジェットは iPhone アプリの中だけ（パソコンのブラウザでは使えません）</li>
+          </ul>
+        ) : (
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
+            <li>レシートの文字の自動読み取り（OCR）— レシートの画像を見ながら手で入力します</li>
+            <li>繰り返し予定の1回分だけの変更、振替・分割払いの記録</li>
+            <li>通知、ホーム画面のウィジェット、iPhone のショートカット</li>
+            <li>端末どうしの同期・共有・AI・ほかのサービスとのつながり（メニューの「準備中」に説明があります）</li>
+          </ul>
+        )}
       </Card>
     </main>
   );

@@ -1,4 +1,3 @@
-import { IS_PERSONAL } from "./edition";
 import { forecastMonthEnd } from "./forecast";
 import { summarizeMonth, txInMonth } from "./aggregate";
 import { txEntries } from "./ledgerCore";
@@ -106,13 +105,12 @@ export function buildInsights(data: AppData, key: string, today: string): Insigh
     const [y, m] = key.split("-").map(Number);
     // 細かい金額は見込みとして不自然なので、100円単位に丸める
     let projected = Math.round(((cur / day) * daysInMonth(y, m)) / 100) * 100;
-    // 自分用：振り返りの「月末の見込み」と同じ数字を使う（同じ名前で、画面ごとに数字が違わないように）。出せないときは、この一文を出さない
+    // 振り返りの「月末の見込み」カードと同じ数字を使う（同じ名前で、画面ごとに数字が違わないように）。
+    // カードが「記録が少ないので出さない」ときは、この一文も出さない（公開版でも。前は公開版だけ、カードは出さないのに一文は出ていた。磨き込み 2026-11-26）
     let show = true;
-    if (IS_PERSONAL) {
-      const f = forecastMonthEnd(data, today);
-      if (f.ok) projected = Math.round(f.projected / 100) * 100;
-      else show = false;
-    }
+    const f = forecastMonthEnd(data, today);
+    if (f.ok) projected = Math.round(f.projected / 100) * 100;
+    else show = false;
     if (show)
       out.push({
         key: "pace",
