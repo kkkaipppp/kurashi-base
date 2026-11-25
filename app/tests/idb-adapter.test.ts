@@ -3,6 +3,8 @@ import { IDBFactory } from "fake-indexeddb";
 import { emptyData } from "@/lib/defaults";
 import { IdbRepositoryAdapter } from "@/lib/idbAdapter";
 import { MOVED_MARK_KEY } from "@/lib/idbRepository";
+import { LOST_STORE_PREFIX, NO_OLD_RECORDS, lostStoreMessage } from "@/lib/lostStore";
+import { applyRestore, buildBackup, parseBackup } from "@/lib/backup";
 import { StoreCore, BASE_CHANGED } from "@/lib/storeCore";
 import { STORAGE_KEY, UNDO_KEY, type KV } from "@/lib/storage";
 import type { AppData, Transaction } from "@/lib/types";
@@ -266,58 +268,114 @@ describe("再点検（7b7f83b）の中-G", () => {
   });
 });
 
-describe("o11 A07 点検 高-1：一度移したあとで IndexedDB が空になった端末", () => {
-  const moved = async () => {
-    // 1回目の起動で移し、そのあと IndexedDB に新しい記録を足す
+describe("o11 A07 点検 高-1（2回目の中-B・中-C）：一度移したあとで IndexedDB が空になった端末", () => {
+  /** 1回目の起動で移し、そのあと IndexedDB に新しい記録を足す。kv を渡すと、旧データ側をそれにする */
+  const moved = async (legacy = memKV()) => {
     const old = { ...emptyData(now), transactions: [tx("old")] };
-    const legacy = memKV({ [STORAGE_KEY]: JSON.stringify(old) });
+    legacy.setItem(STORAGE_KEY, JSON.stringify(old));
     const a = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
     await a.reload();
     expect((await a.commit(addTx("after-move"))).ok).toBe(true);
-    expect(legacy.store.get(MOVED_MARK_KEY)).toBeDefined();
+    expect(legacy.getItem(MOVED_MARK_KEY)).toBeTruthy();
     // IndexedDB だけが消えた（新しい IDBFactory。旧データ側の本体と印は残る）
     const factory = new IDBFactory();
     return { legacy, old, factory, core: new StoreCore(new IdbRepositoryAdapter({ factory, legacy, now: () => now })) };
   };
-  it("旧データの古い中身を、黙って今の記録にしない（読み込めない画面で、理由と戻し方を出す）。旧データは消さない", async () => {
+  it("旧データの古い中身を、黙って今の記録にしない（理由と戻し方を出して止める）。保存もしない。旧データは消さない", async () => {
     const { legacy, old, core } = await moved();
     await core.reload();
     expect(core.snapshot.status).toBe("corrupt");
     expect(core.snapshot.data).toBeNull();
-    expect(core.snapshot.error).toContain("保存先が空になっていました");
-    expect(core.snapshot.error).toContain("自動バックアップ");
-    expect(core.snapshot.raw).toBe(JSON.stringify(old)); // 「ファイルに保存」で古い中身も持ち出せる
-    expect(legacy.store.get(STORAGE_KEY)).toBe(JSON.stringify(old));
-    // 保存もしない（古い中身で上書きしない）
+    expect(core.snapshot.error?.startsWith(LOST_STORE_PREFIX)).toBe(true);
+    expect(core.snapshot.error).toContain("古い記録だけが残っています");
+    expect(core.snapshot.error).toContain("kurashi-base_largest_backup.json");
+    expect(core.snapshot.raw).toBe(JSON.stringify(old)); // 「古い記録をファイルに保存」で持ち出せる
+    expect(legacy.getItem(STORAGE_KEY)).toBe(JSON.stringify(old));
     expect((await core.commit(addTx("x"))).ok).toBe(false);
   });
-  it("「別の場所に移して最初から始める」で、古い中身は退避して残り、空から始まる。そのあと復元できる。次の起動でも止まらない", async () => {
+  it("「記録がない状態から始める」→ 空から始まる。古い記録は元の場所にそのまま（写しを作らない）。本当の復元（applyRestore）で戻せる。次の起動でも止まらない", async () => {
     const { legacy, old, core, factory } = await moved();
     await core.reload();
     expect((await core.resetCorrupt()).ok).toBe(true);
     expect(core.snapshot.status).toBe("ready");
     expect(core.snapshot.data?.transactions).toEqual([]);
-    const kept = [...legacy.store.entries()].filter(([k]) => k.startsWith("kurashi-base:corrupt:")).map(([, v]) => v);
-    expect(kept).toContain(JSON.stringify(old));
-    // バックアップから復元（置き換え）
-    const backup = { ...emptyData(now), transactions: [tx("old"), tx("after-move")] };
-    expect((await core.commit(() => backup, { undoReason: "復元" })).ok).toBe(true);
+    expect(legacy.getItem(STORAGE_KEY)).toBe(JSON.stringify(old));
+    expect([...legacy.store.keys()].some((k) => k.startsWith("kurashi-base:corrupt:"))).toBe(false);
+    // 自動バックアップのファイルから、置き換えで戻す（設定の「バックアップから復元」と同じ道）
+    const file = parseBackup(JSON.stringify(buildBackup({ ...emptyData(now), transactions: [tx("old"), tx("after-move")] }, now)));
+    expect(file.ok).toBe(true);
+    if (!file.ok) return;
+    const restored = applyRestore(core.snapshot.data!, file.preview.data, "replace");
+    expect(restored.ok).toBe(true);
+    if (!restored.ok) return;
+    expect((await core.commit(() => restored.data, { undoReason: "復元" })).ok).toBe(true);
     const again = new StoreCore(new IdbRepositoryAdapter({ factory, legacy }));
     await again.reload();
     expect(again.snapshot.status).toBe("ready");
     expect(again.snapshot.data?.transactions.map((t) => t.id)).toEqual(["old", "after-move"]);
   });
-  it("旧データに記録がない（カテゴリだけ）なら、止めずに空から始める", async () => {
-    const legacy = memKV({ [STORAGE_KEY]: JSON.stringify(emptyData(now)), [MOVED_MARK_KEY]: now });
-    const core = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
+  it("旧データ側の容量がいっぱいでも、先へ進める（中-B：退避の写しを作らない）", async () => {
+    const legacy = memKV();
+    const { core } = await moved(legacy);
     await core.reload();
+    const set = legacy.setItem;
+    legacy.setItem = () => {
+      throw new DOMException("full", "QuotaExceededError");
+    };
+    expect((await core.resetCorrupt()).ok).toBe(true);
     expect(core.snapshot.status).toBe("ready");
+    legacy.setItem = set;
   });
-  it("まだ一度も移していない端末は、今までどおり移す（印がなければ止めない）", async () => {
+  it("旧データに記録がない（カテゴリだけ・本体なし）ときも、黙って空から始めず、理由と戻し方を出す（中-C）。ファイルに保存は出さない", async () => {
+    for (const body of [JSON.stringify(emptyData(now)), null]) {
+      const legacy = memKV({ [MOVED_MARK_KEY]: now, ...(body ? { [STORAGE_KEY]: body } : {}) });
+      const core = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
+      await core.reload();
+      expect(core.snapshot.status).toBe("corrupt");
+      expect(core.snapshot.error).toContain("記録が、見つかりません");
+      expect(core.snapshot.raw).toBe(NO_OLD_RECORDS);
+      expect((await core.resetCorrupt()).ok).toBe(true);
+      expect(core.snapshot.status).toBe("ready");
+    }
+  });
+  it("すべて削除のあとで IndexedDB が消えても、止めて知らせる。旧データが壊れていても、止めて知らせる（壊れた中身は持ち出せる）", async () => {
+    const { legacy, make } = await setup({ [STORAGE_KEY]: JSON.stringify({ ...emptyData(now), transactions: [tx("old")] }) });
+    const a = new StoreCore(make());
+    await a.reload();
+    expect((await a.wipe(emptyData(now))).ok).toBe(true);
+    const lost = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
+    await lost.reload();
+    expect(lost.snapshot.status).toBe("corrupt");
+    expect(lost.snapshot.error?.startsWith(LOST_STORE_PREFIX)).toBe(true);
+    const broken = memKV({ [MOVED_MARK_KEY]: now, [STORAGE_KEY]: "{壊れた" });
+    const b = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy: broken }));
+    await b.reload();
+    expect(b.snapshot.status).toBe("corrupt");
+    expect(b.snapshot.raw).toBe("{壊れた");
+  });
+  it("まだ一度も移していない端末・初めての端末・すべて削除のあと（IndexedDB は残る）は、止めない", async () => {
     const legacy = memKV({ [STORAGE_KEY]: JSON.stringify({ ...emptyData(now), transactions: [tx("old")] }) });
     const core = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
     await core.reload();
     expect(core.snapshot.status).toBe("ready");
     expect(core.snapshot.data?.transactions.map((t) => t.id)).toEqual(["old"]);
+    const fresh = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy: memKV() }));
+    await fresh.reload();
+    expect(fresh.snapshot.status).toBe("ready");
+    // すべて削除のあと（IndexedDB の印は残る）の再起動
+    const { legacy: l2, make } = await setup({ [STORAGE_KEY]: JSON.stringify({ ...emptyData(now), transactions: [tx("old")] }) });
+    const w = new StoreCore(make());
+    await w.reload();
+    expect((await w.wipe(emptyData(now))).ok).toBe(true);
+    expect(l2.getItem(MOVED_MARK_KEY)).toBeTruthy();
+    const after = new StoreCore(make());
+    await after.reload();
+    expect(after.snapshot.status).toBe("ready");
+    expect(after.snapshot.data?.transactions).toEqual([]);
+  });
+  it("説明の日付は、端末の現地の日付（日本時間の朝に移しても、前の日にしない）", () => {
+    const msg = lostStoreMessage(new Date(2026, 10, 25, 7, 30).toISOString(), true);
+    expect(msg).toContain("11月25日に保存先を移す前");
+    expect(lostStoreMessage("壊れた日時", false)).toContain("以前に保存先を移したあと");
   });
 });

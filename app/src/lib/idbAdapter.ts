@@ -1,10 +1,11 @@
 import { emptyData } from "./defaults";
-import { IndexedDbRepository, MOVED_MARK_KEY, migrateFromLocalStorage, openDb, type FaultInjector } from "./idbRepository";
+import { IndexedDbRepository, MOVED_MARK_KEY, integrity, migrateFromLocalStorage, openDb, type FaultInjector } from "./idbRepository";
 import { LocalStorageRepository, type Repository, type RepoLoadResult, type RepoSaveResult, type Token } from "./repository";
 import { STORAGE_KEY, quarantineAndReset, wipeAllAppData, type KV } from "./storage";
 import type { AppData } from "./types";
 import { countData } from "./backup";
 import { validateAppData } from "./schema";
+import { lostStoreMessage, NO_OLD_RECORDS } from "./lostStore";
 
 /**
  * IndexedDB の保存を、保存の境界（Repository）の形に合わせる部品（o11 A06 段階B）。
@@ -37,12 +38,6 @@ function legacyHasRecords(raw: string): boolean {
   } catch {
     return true;
   }
-}
-
-/** IndexedDB が空になっていたときの説明（読み込めない画面に出す） */
-export function lostStoreMessage(movedAt: string): string {
-  const day = /^\d{4}-\d{2}-\d{2}/.test(movedAt) ? `${Number(movedAt.slice(5, 7))}月${Number(movedAt.slice(8, 10))}日` : "以前";
-  return `記録の保存先が空になっていました（iPhone が容量を空けるために消した可能性があります）。元の場所には、${day}に保存先を移す前の古い記録だけが残っています。古い記録で続けると、それより後の記録が戻らないため、ここでは開きません。最新の記録は「ファイル」→ このiPhone内 → くらしベース → 自動バックアップ にあります。下の「別の場所に移して最初から始める」を押してから、設定の「バックアップから復元」で戻してください`;
 }
 
 export class IdbRepositoryAdapter implements Repository {
@@ -89,13 +84,16 @@ export class IdbRepositoryAdapter implements Repository {
     return first;
   }
 
-  /** 一度移したあとで IndexedDB が空になったとき、旧データ（記録が1件以上ある）と移した日時。そうでなければ null */
-  private staleLegacy(): { raw: string; movedAt: string } | null {
+  /**
+   * 一度移したあとで IndexedDB が空になったとき（旧データ側に移した印があるのに、IndexedDB に印がない）、旧データと移した日時。そうでなければ null。
+   * IndexedDB の印は、移すとき・旧データがないとき・すべて削除のあとも残るので、印がないのは IndexedDB が消えたときだけ（点検2回目 中-C）
+   */
+  private staleLegacy(): { raw: string; movedAt: string; hasOld: boolean } | null {
     try {
       const movedAt = this.opts.legacy?.getItem(MOVED_MARK_KEY);
-      const raw = this.opts.legacy?.getItem(STORAGE_KEY);
-      if (!movedAt || !raw || !legacyHasRecords(raw)) return null;
-      return { raw, movedAt };
+      if (!movedAt) return null;
+      const raw = this.opts.legacy?.getItem(STORAGE_KEY) ?? "";
+      return { raw, movedAt, hasOld: !!raw && legacyHasRecords(raw) };
     } catch {
       return null;
     }
@@ -135,7 +133,7 @@ export class IdbRepositoryAdapter implements Repository {
       // 一度移したのに、IndexedDB が空になっている（iPhone が容量を空けるために消したなど）。
       // 旧データは移す前の古い中身なので、黙って今の記録にしない（その後の記録が消えたように見え、自動バックアップも古い中身で上書きされる。o11 A07 点検 高-1）
       const stale = this.staleLegacy();
-      if (stale) return { status: "corrupt", error: lostStoreMessage(stale.movedAt), raw: stale.raw };
+      if (stale) return { status: "corrupt", error: lostStoreMessage(stale.movedAt, stale.hasOld), raw: stale.hasOld ? stale.raw : NO_OLD_RECORDS };
       const m = await migrateFromLocalStorage(this.opts.legacy, repo, this.now());
       this.migration = m.status;
       if (m.status === "invalid") {
@@ -221,6 +219,15 @@ export class IdbRepositoryAdapter implements Repository {
       const r = await repo.quarantine(this.now());
       if (r.ok) this.notify();
       return r;
+    }
+    // 保存先が空になっていた端末：古い記録は元の場所にそのまま残し（写しを作らないので、容量が足りなくても進める。点検2回目 中-B）、
+    // IndexedDB に印だけ書いて、記録がない状態から始める（次の起動から、古い記録を移し直さない・止めない）
+    if (this.opts.legacy && !(await repo.meta()) && this.staleLegacy()) {
+      const now = this.now();
+      const ok = await repo.markMigrated({ migratedAt: now, source: "localStorage", integrity: integrity(emptyData(now), "") });
+      if (!ok) return { ok: false as const, error: "記録がない状態から始められませんでした。古い記録はそのままです" };
+      this.notify();
+      return { ok: true as const };
     }
     if (this.opts.legacy) return quarantineAndReset(raw, this.opts.legacy);
     return { ok: false as const, error: "退避するデータがありません" };

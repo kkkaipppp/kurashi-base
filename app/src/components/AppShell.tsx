@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { StoreProvider, useStore } from "@/lib/store";
+import { LOST_STORE_PREFIX, NO_OLD_RECORDS } from "@/lib/lostStore";
 import { UIProvider, useUI } from "./UIContext";
 import { Button, IconCalendar, IconChart, IconGrid, IconHome, IconPlus } from "./ui";
 
@@ -34,14 +35,16 @@ function Gate({ children }: { children: ReactNode }) {
   );
 }
 
-function StorageProblem({ title, body, children }: { title: string; body: string; children?: ReactNode }) {
+function StorageProblem({ title, body, children, browserHint = true }: { title: string; body: string; children?: ReactNode; browserHint?: boolean }) {
   return (
     <main className="mx-auto flex min-h-dvh max-w-[480px] flex-col justify-center gap-3 px-6">
       <h1 className="text-xl font-bold">{title}</h1>
       <p className="text-ink-2">{body}</p>
-      <p className="text-[13px] text-ink-3">
-        くらしベースはデータをこの端末のブラウザ内に保存します。ブラウザの設定（プライベートブラウズ、サイトデータの保存制限）を確認してから再読み込みしてください。
-      </p>
+      {browserHint && (
+        <p className="text-[13px] text-ink-3">
+          くらしベースはデータをこの端末のブラウザ内に保存します。ブラウザの設定（プライベートブラウズ、サイトデータの保存制限）を確認してから再読み込みしてください。
+        </p>
+      )}
       {children}
       <Button variant="secondary" onClick={() => location.reload()}>
         再読み込み
@@ -63,20 +66,28 @@ function CorruptScreen() {
     // Safari ではすぐに無効にすると保存が始まらないことがあるため、少し待つ（設定のバックアップと同じ）
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
   };
+  // 保存先が空になっていた場面（lib/lostStore.ts）：壊れたデータではないので、言い方を変える（点検2回目 低-6）
+  const lost = !!s.error?.startsWith(LOST_STORE_PREFIX);
+  const hasFile = !!s.corruptRaw && s.corruptRaw !== NO_OLD_RECORDS;
   return (
-    <StorageProblem title="保存データを読み込めません" body={`${s.error ?? ""}。データは削除していません。`}>
-      <Button variant="secondary" onClick={download}>
-        読み込めないデータをファイルに保存
-      </Button>
+    <StorageProblem title={lost ? "記録の保存先が空になっていました" : "保存データを読み込めません"} body={lost ? `${s.error ?? ""}。` : `${s.error ?? ""}。データは削除していません。`} browserHint={!lost}>
+      {hasFile && (
+        <Button variant="secondary" onClick={download}>
+          {lost ? "古い記録をファイルに保存" : "読み込めないデータをファイルに保存"}
+        </Button>
+      )}
       <Button
         variant="danger"
         onClick={async () => {
-          if (!confirm("読み込めないデータを退避し、記録がない状態から始めます。実行しますか？")) return;
+          const ask = lost
+            ? "記録がない状態から始めます（古い記録は元の場所に残します）。このあと、設定の「バックアップから復元」で最新の記録を戻してください。実行しますか？"
+            : "読み込めないデータを退避し、記録がない状態から始めます。実行しますか？";
+          if (!confirm(ask)) return;
           const r = await s.resetCorrupt();
           if (!r.ok) setMsg(r.error);
         }}
       >
-        別の場所に移して最初から始める
+        {lost ? "記録がない状態から始める" : "別の場所に移して最初から始める"}
       </Button>
       {msg && (
         <p role="alert" className="text-danger">
