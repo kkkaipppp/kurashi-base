@@ -63,7 +63,7 @@ describe("B 入力の下書き（端末の中の別のキー。記録の保存�
     for (const f of ["components/TxSheet.tsx", "components/EventSheet.tsx"]) {
       const s = src(f);
       expect(s).toContain("if (pending && !resumeAsked) return;");
-      expect(s).toContain("書きかけのあとに変わっています");
+      expect(s).toContain("下書きのあとに変わっています"); // 「書きかけ」→「下書き」に統一（o11・2026-11-25）
       expect(s).toContain("<OrphanDraft");
     }
   });
@@ -71,7 +71,7 @@ describe("B 入力の下書き（端末の中の別のキー。記録の保存�
     for (const f of ["components/TxSheet.tsx", "components/EventSheet.tsx"]) {
       const s = src(f);
       expect(s).toContain("saveSheetDraft");
-      expect(s).toContain("の書きかけがあります");
+      expect(s).toContain("の下書きがあります");
       expect(s).toContain("続きから");
       expect(s).toContain("// 保存がうまくいったときだけ下書きを消す");
     }

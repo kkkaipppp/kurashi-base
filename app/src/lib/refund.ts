@@ -37,6 +37,7 @@ function settle(d: AppData, origId: string, ts: string): AppData {
 }
 
 export function applyRefund(d: AppData, txId: string, amount: number, date: string, refundId: string, ts: string): RefundResult {
+  if (!refundId.trim() || d.transactions.some((t) => t.id === refundId)) return { ok: false, error: "返金の記録IDが重複または不正です" };
   const orig = d.transactions.find((t) => t.id === txId);
   if (!orig) return { ok: false, error: "元の記録が見つかりません" };
   if (orig.type !== "expense") return { ok: false, error: "返金にできるのは、支出の記録だけです" };

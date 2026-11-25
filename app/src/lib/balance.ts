@@ -29,7 +29,7 @@ export type BalanceResult =
   | { ok: false; reason: "noBase" };
 
 export function cashBalance(d: AppData, today: string): BalanceResult {
-  const bases = d.assets.filter((a) => a.kind === "cash" && a.value !== null && a.asOf !== "" && isValidDateStr(a.asOf));
+  const bases = d.assets.filter((a) => a.kind === "cash" && a.value !== null && a.asOf !== "" && isValidDateStr(a.asOf) && a.asOf <= today);
   if (bases.length === 0) return { ok: false, reason: "noBase" };
   const b = bases.reduce((a, x) => (x.asOf > a.asOf ? x : a));
   let income = 0;

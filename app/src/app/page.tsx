@@ -103,15 +103,15 @@ export default function HomePage() {
     <>
         {/* 1. 今月の残り予算 */}
         <section className="rounded-2xl bg-brand p-4 text-brand-ink shadow-sm" aria-labelledby="home-budget">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 id="home-budget" className="text-[14px] font-semibold opacity-90">
                 {remaining === null ? "今月の支出" : "今月の残り予算"}
               </h2>
               {remaining === null ? (
-                <p className="num mt-1 text-[32px] leading-tight font-bold">{formatYen(sum.expense)}</p>
+                <p className="num mt-1 text-[32px] break-words leading-tight font-bold">{formatYen(sum.expense)}</p>
               ) : (
-                <p className={`num text-[32px] leading-tight font-bold ${remaining < 0 ? "text-[#ffd9d2]" : ""}`}>
+                <p className={`num text-[32px] break-words leading-tight font-bold ${remaining < 0 ? "text-[#ffd9d2]" : ""}`}>
                   {remaining < 0 ? `予算を${formatYen(-remaining)}超過` : formatSignedYen(remaining)}
                 </p>
               )}
@@ -127,7 +127,7 @@ export default function HomePage() {
             data.transactions.length >= BUDGET_HINT_AFTER && (
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[13px] opacity-90">
-                {lastMonthExpense > 0 ? `先月の支出は${formatYen(lastMonthExpense)}でした。` : ""}予算を決めると残りの金額も表示できます（任意）
+                {lastMonthExpense > 0 ? `先月の支出は${formatYen(lastMonthExpense)}でした。` : ""}予算を設定すると、今月の残り予算が分かります。設定は任意です。
               </p>
               <Link href="/settings#budget" className="inline-flex min-h-11 items-center rounded-xl bg-white/15 px-4 text-[14px] font-semibold hover:bg-white/25">
                 予算を設定する

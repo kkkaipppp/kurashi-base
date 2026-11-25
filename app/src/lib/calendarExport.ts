@@ -1,4 +1,4 @@
-import { addDays } from "./date";
+import { addDays, daysBetween } from "./date";
 import { occursOn } from "./aggregate";
 import { advanceDueDate } from "./recurring";
 import { formatYen } from "./money";
@@ -52,7 +52,8 @@ export function buildCalendarItems(data: AppData, today: string): CalendarItem[]
   for (const r of data.recurring) {
     if (!r.active) continue;
     let d = r.nextDueDate;
-    for (let guard = 0; d <= to && guard < 400; guard++) {
+    if (d < from && r.cycle === "weekly") d = addDays(d, Math.ceil(daysBetween(d, from) / 7) * 7);
+    for (let guard = 0; d <= to && guard < 3620; guard++) {
       if (d >= from) {
         items.push({
           title: `固定費 ${r.name} ${formatYen(r.amount)}`,

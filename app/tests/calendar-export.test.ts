@@ -50,3 +50,11 @@ describe("iPhone のカレンダーに入れる予定（2026-11-24 平尾さん�
     expect(items.map((i) => i.startDate)).toEqual(["2026-11-27", "2026-12-27", "2027-01-27", "2027-02-27", "2027-03-27", "2027-04-27"]);
   });
 });
+
+it("古い週次固定費も書き出し期間に含める", () => {
+  const d = emptyData(now);
+  d.recurring = [rec({cycle: "weekly", nextDueDate: "1900-01-01"})];
+  const items = buildCalendarItems(d, "2026-11-24");
+  expect(items.length).toBe(30);
+  expect(items[0].startDate).toBe("2026-10-26");
+});

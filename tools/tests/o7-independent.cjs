@@ -1,0 +1,7 @@
+// Run after compiling the selected TS modules with tsc; argument is output directory.
+const assert=require('node:assert/strict');const path=require('node:path');const dir=path.resolve(process.argv[2]);
+const {buildCalendarItems,calendarWindow}=require(path.join(dir,'calendarExport.js'));const {emptyData}=require(path.join(dir,'defaults.js'));const {applyRefund}=require(path.join(dir,'refund.js'));const {safeExternalLink}=require(path.join(dir,'externalLinks.js'));
+let n=0; const today='2026-11-24', {from,to}=calendarWindow(today);
+for(let y=1900;y<=2026;y++){const start=`${y}-01-01`;const d=emptyData();d.recurring=[{active:true,cycle:'weekly',nextDueDate:start,anchorDay:1,amount:100,name:'test'}];const expected=[];for(let t=Date.parse(from);t<=Date.parse(to);t+=86400000){if(t>=Date.parse(start)&&(t-Date.parse(start))%604800000===0)expected.push(new Date(t).toISOString().slice(0,10));}assert.deepEqual(buildCalendarItems(d,today).map(x=>x.startDate),expected);n++;}
+for(const id of ['e','',' ']){const d=emptyData();d.transactions=[{id:'e',type:'expense',amount:1000}];assert.equal(applyRefund(d,'e',100,today,id,today).ok,false);n++;}
+for(const u of ['https://trusted.example@other.example/','https://user:pass@example.com/','javascript:alert(1)']){assert.equal(safeExternalLink(u),null);n++;}assert.equal(safeExternalLink('https://example.com/'),'https://example.com/');n++;console.log(`${n} independent cases passed`);

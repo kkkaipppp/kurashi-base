@@ -34,10 +34,10 @@ export function TxRow({ tx, showDate = false }: { tx: Transaction; showDate?: bo
           {exp ? "支" : "収"}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-semibold">{tx.merchant || cat}</span>
-          <span className="block truncate text-[12px] text-ink-3">{sub}</span>
+          <span className="block break-words text-base font-semibold">{tx.merchant || cat}</span>
+          <span className="block break-words text-[13px] text-ink-3">{sub}</span>
         </span>
-        <span className={`num shrink-0 text-[15px] font-bold ${exp ? "text-ink" : "text-income"}`}>
+        <span className={`num max-w-[48%] break-all text-right text-base font-bold ${exp ? "text-ink" : "text-income"}`}>
           <span className="sr-only">{exp ? "支出" : "収入"}</span>
           {exp ? "-" : "+"}
           {formatYen(tx.amount)}
@@ -72,13 +72,13 @@ export function EventRow({ ev, day }: { ev: CalendarEvent; day?: string }) {
         className="flex min-h-14 w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2"
       >
         <span className={`h-9 w-1.5 shrink-0 rounded-full ${done ? "bg-ink-3" : "bg-event"}`} aria-hidden="true" />
-        <span className={`min-w-0 flex-1 ${done ? "opacity-60" : ""}`}>
-          <span className={`block truncate text-[15px] font-semibold ${done ? "line-through" : ""}`}>
+        <span className={`min-w-0 flex-1 ${done ? "" : ""}`}>
+          <span className={`block break-words text-base font-semibold ${done ? "line-through" : ""}`}>
             {done && <span className="sr-only">完了：</span>}
             {done && "✓ "}
             {ev.title}
           </span>
-          <span className="block truncate text-[12px] text-ink-3">
+          <span className="block break-words text-[13px] text-ink-3">
             {eventTimeLabel(ev, day)}
             {ev.location ? `・${ev.location}` : ""}
           </span>
