@@ -391,17 +391,32 @@ describe("o11 A07 点検3回目：移した印・始め直したあと", () => {
       set(k, v);
     };
     const factory = new IDBFactory();
-    const a = new StoreCore(new IdbRepositoryAdapter({ factory, legacy }));
+    const a = new StoreCore(new IdbRepositoryAdapter({ factory, legacy, now: () => "2026-11-01T00:00:00.000Z" }));
     await a.reload();
     expect(a.snapshot.status).toBe("ready");
     expect(legacy.getItem(MOVED_MARK_KEY)).toBeNull();
     expect((await a.commit(addTx("after-move"))).ok).toBe(true);
     // 2回目の起動：書けるようになっていれば、印を書き直す
-    legacy.setItem = set;
-    const b = new StoreCore(new IdbRepositoryAdapter({ factory, legacy }));
+    let writes = 0;
+    legacy.setItem = (k: string, v: string) => {
+      writes++;
+      set(k, v);
+    };
+    const b = new StoreCore(new IdbRepositoryAdapter({ factory, legacy, now: () => "2026-11-25T09:00:00.000Z" }));
     await b.reload();
     expect(b.snapshot.data?.transactions.map((t) => t.id)).toEqual(["old", "after-move"]);
-    expect(legacy.getItem(MOVED_MARK_KEY)).toBeTruthy();
+    // 書き直す値は、本当に移した日時（IndexedDB の印）。今の時刻ではない
+    expect(legacy.getItem(MOVED_MARK_KEY)).toBe("2026-11-01T00:00:00.000Z");
+    expect(writes).toBe(1);
+    // 印がそろったあとの起動では、書き込まない
+    const b2 = new StoreCore(new IdbRepositoryAdapter({ factory, legacy }));
+    await b2.reload();
+    expect(writes).toBe(1);
+    legacy.setItem = set;
+    // IndexedDB が開けない起動では、localStorage の古い中身に戻らない
+    const broken = new StoreCore(new IdbRepositoryAdapter({ factory: { open: () => { throw new Error("開けない"); } } as unknown as IDBFactory, legacy }));
+    await broken.reload();
+    expect(broken.snapshot.status).toBe("unavailable");
     // IndexedDB だけが消えた：古い記録を黙って開かない
     const lost = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
     await lost.reload();

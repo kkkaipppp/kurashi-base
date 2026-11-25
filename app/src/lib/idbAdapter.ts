@@ -150,10 +150,13 @@ export class IdbRepositoryAdapter implements Repository {
     // この印がないと、あとで IndexedDB だけが消えたときに、古い記録を黙って移し直してしまう（点検3回目 中-1）
     if (this.opts.legacy && !this.everMigrated()) {
       const meta = await repo.meta();
-      try {
-        this.opts.legacy.setItem(MOVED_MARK_KEY, meta?.migratedAt ?? this.now());
-      } catch {
-        /* 書けなければ、次の起動でもう一度 */
+      // IndexedDB の印もない（印を書けなかった）ときは書かない（記録が一度もない端末に「保存先が消えた」を出さない。確認の点検 低-A）
+      if (meta) {
+        try {
+          this.opts.legacy.setItem(MOVED_MARK_KEY, meta.migratedAt);
+        } catch {
+          /* 書けなければ、次の起動でもう一度 */
+        }
       }
     }
     const r = await repo.load();
