@@ -38,9 +38,10 @@ const CategoryTools = PERSONAL_BUILD ? dynamic(() => import("@/components/Catego
 function GroupLabel({ id, children }: { id: string; children: string }) {
   if (!GROUPS) return null;
   return (
-    <p id={id} className="scroll-mt-20 px-1 pt-2 text-[12px] font-bold tracking-wide text-ink-3">
+    // 区切りは見出しにする（読み上げで区切りへ飛べるように。磨き込み 2026-11-26）
+    <h2 id={id} className="scroll-mt-20 px-1 pt-2 text-[12px] font-bold tracking-wide text-ink-3">
       {children}
-    </p>
+    </h2>
   );
 }
 

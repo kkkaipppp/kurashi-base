@@ -119,7 +119,11 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const confirm = useCallback(
     (o: ConfirmOpts) =>
       new Promise<boolean>((resolve) => {
-        setCf({ ...o, resolve });
+        // ほかの確認が開いていたら、その答えは「いいえ」にしてから聞く（答えが返らないまま重ならないように。磨き込み 2026-11-26）
+        setCf((current) => {
+          current?.resolve(false);
+          return { ...o, resolve };
+        });
       }),
     [],
   );
@@ -137,10 +141,45 @@ export function UIProvider({ children }: { children: ReactNode }) {
     [confirm, toast, calendarDate],
   );
 
-  const closeCf = (v: boolean) => {
-    cf?.resolve(v);
-    setCf(null);
-  };
+  const closeCf = useCallback((v: boolean) => {
+    setCf((current) => {
+      current?.resolve(v);
+      return null;
+    });
+  }, []);
+
+  // 確認の窓：Esc で「いいえ」。Tab は窓の中だけを回る。閉じたら、開く前の場所へ戻る。
+  // Esc は下のシートへ届けない（シートの「閉じる」の確認が、もう1つ重ならないように。磨き込み 2026-11-26）
+  const cfBox = useRef<HTMLDivElement>(null);
+  const cfOpen = !!cf;
+  useEffect(() => {
+    if (!cfOpen) return;
+    const before = document.activeElement as HTMLElement | null;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closeCf(false);
+        return;
+      }
+      if (e.key !== "Tab" || !cfBox.current) return;
+      const items = [...cfBox.current.querySelectorAll<HTMLElement>("button")];
+      if (!items.length) return;
+      const i = items.indexOf(document.activeElement as HTMLElement);
+      if (e.shiftKey && i <= 0) {
+        e.preventDefault();
+        items[items.length - 1].focus();
+      } else if (!e.shiftKey && (i === -1 || i === items.length - 1)) {
+        e.preventDefault();
+        items[0].focus();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      if (before && document.contains(before)) before.focus();
+    };
+  }, [cfOpen, closeCf]);
 
   return (
     <Ctx.Provider value={ui}>
@@ -170,18 +209,19 @@ export function UIProvider({ children }: { children: ReactNode }) {
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="cf-title"
+          aria-describedby={cf.body ? "cf-body" : undefined}
         >
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => closeCf(false)}
             aria-hidden="true"
           />
-          <div className="relative w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
+          <div ref={cfBox} className="relative w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
             <h2 id="cf-title" className="text-[17px] font-bold">
               {cf.title}
             </h2>
             {cf.body && (
-              <p className="mt-2 text-[14px] whitespace-pre-line text-ink-2">
+              <p id="cf-body" className="mt-2 text-[14px] whitespace-pre-line text-ink-2">
                 {cf.body}
               </p>
             )}

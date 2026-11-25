@@ -85,3 +85,22 @@ describe("磨き込み：中・低（押せる所・色・読み上げ）", () =
     expect(cal).toMatch(/holidayName\(selected\) && <span className="ml-2 text-\[14px\] font-semibold text-ink-2">/);
   });
 });
+
+describe("磨き込み：確認の窓・空の月・設定の見出し", () => {
+  it("確認の窓は Esc で「いいえ」・Tab は窓の中だけ・閉じたら元の場所へ・本文を説明としてつなぐ・重ねて開かない", () => {
+    const u = code("components/UIContext.tsx");
+    expect(u).toMatch(/if \(e\.key === "Escape"\) \{\s*e\.preventDefault\(\);\s*e\.stopImmediatePropagation\(\);\s*closeCf\(false\);/);
+    expect(u).toContain('window.addEventListener("keydown", onKey, true)');
+    expect(u).toContain("if (before && document.contains(before)) before.focus();");
+    expect(u).toContain('aria-describedby={cf.body ? "cf-body" : undefined}');
+    expect(u).toMatch(/setCf\(\(current\) => \{\s*current\?\.resolve\(false\);\s*return \{ \.\.\.o, resolve \};/);
+  });
+  it("振り返りの空の月の「支出を追加」は、その場で開き、今月以外はその月の1日から", () => {
+    const r = code("app/report/page.tsx");
+    expect(r).toContain('ui.openTx({ mode: "new", type: "expense", date: month === monthKey(today) ? undefined : `${month}-01` })');
+    expect(r).not.toContain('href="/?add=expense"');
+  });
+  it("設定の区切りは見出し（読み上げで飛べる）", () => {
+    expect(code("app/settings/page.tsx")).toMatch(/<h2 id=\{id\} className="scroll-mt-20 px-1 pt-2/);
+  });
+});

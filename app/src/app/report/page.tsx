@@ -9,6 +9,7 @@ import { buildInsights, monthReport, weeklyBuckets } from "@/lib/report";
 import { budgetSpent } from "@/lib/ledger";
 import { cycleLabel } from "@/lib/recurring";
 import { useData } from "@/lib/store";
+import { useUI } from "@/components/UIContext";
 import dynamic from "next/dynamic";
 import { FEATURES } from "@/lib/edition";
 
@@ -99,6 +100,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
   const data = useData();
   const today = todayStr();
   const [month, setMonth] = useState(monthKey(today));
+  const ui = useUI();
   const r = monthReport(data, month);
   const weeks = weeklyBuckets(data.transactions, month);
   const insights = buildInsights(data, month, today);
@@ -137,9 +139,14 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
         <Empty
           action={
             // 空の月は、まず記録できるように（レビュー o1 の P16）
-            <Link href="/?add=expense" className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink">
+            // その場で入力を開く。今月以外を見ているときは、その月の1日から始める（ホームへ移らない。磨き込み 2026-11-26）
+            <button
+              type="button"
+              onClick={() => ui.openTx({ mode: "new", type: "expense", date: month === monthKey(today) ? undefined : `${month}-01` })}
+              className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink"
+            >
               支出を追加
-            </Link>
+            </button>
           }
         >
           {formatMonthJa(month)}は、まだ支出・収入の記録がありません。「＋」から記録すると、ここに使い方の内訳が出ます。
