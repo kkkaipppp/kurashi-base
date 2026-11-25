@@ -42,7 +42,7 @@ describe("通知（iPhone アプリ）", () => {
 describe("第4回の点検の直し（iPhone アプリ）", () => {
   it("拒否されたあとに許可しても登録される（denied のときは「登録した」としない。前面に戻ったときも入れ替える）", () => {
     const s = src("components/WidgetSync.tsx");
-    expect(s).toMatch(/if \(r\.denied\) \{[^}]*return;\s*\}/); // 拒否のときは「登録した」としない（失敗は設定に出す。A07 中-3）
+    expect(s).toMatch(/const o = reminderOutcome\(r, settings\.on\);\s*if \(o\.done\) lastReminders/); // 拒否のときは「登録した」としない（lib/nativeSyncPlan.ts の reminderOutcome。A07）
     expect(s).toContain('document.addEventListener("visibilitychange", onVisible);');
   });
   it("文字の読み取りの結果は、一度だけ返す（完了と例外の両方が来ても二重に返さない）", () => {

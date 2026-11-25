@@ -12,17 +12,18 @@ import { synth } from "./fixtures/synth";
 // o11 A07：iPhone アプリ（Swift）と画面（TypeScript）の境目の約束を、両方のソースを読んで確かめる。
 // Swift は Windows では組み立てられないので、組み立てと実機は Mac で行う（docs/integration/A07_NATIVE_BOUNDARY.md）
 const root = path.resolve(import.meta.dirname, "..");
-const read = (p: string) => fs.readFileSync(path.join(root, p), "utf8");
-/** Swift のコメントを除く（コメントに残った書き方で、試験が通ってしまわないように。点検 中-4） */
-const code = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1"); // URL の :// は残す
-const PLUGIN = code(read("ios/App/App/WidgetBridgePlugin.swift"));
-const WIDGET = code(read("ios/App/KurashiWidget/KurashiWidget.swift"));
-const MAINVC = code(read("ios/App/App/MainViewController.swift"));
+const readRaw = (p: string) => fs.readFileSync(path.join(root, p), "utf8");
+/** コメントを除く（コメントに同じ書き方が残っていても、試験が通ってしまわないように。点検 中-4・2回目 足りない試験2）。URL の :// は残す */
+const code = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+const read = (p: string) => code(readRaw(p));
+const PLUGIN = read("ios/App/App/WidgetBridgePlugin.swift");
+const WIDGET = read("ios/App/KurashiWidget/KurashiWidget.swift");
+const MAINVC = read("ios/App/App/MainViewController.swift");
 /** ios/App の中の Swift のファイルすべて（新しいファイルが増えても見る。組み立ての出力は除く） */
 const SWIFT_FILES = (fs.readdirSync(path.join(root, "ios/App"), { recursive: true }) as string[])
   .map((f) => f.replaceAll("\\", "/"))
   .filter((f) => f.endsWith(".swift") && !/(^|\/)(build|DerivedData|Pods|\.build)\//.test(f));
-const SWIFT_ALL = SWIFT_FILES.map((f) => code(read(`ios/App/${f}`))).join("\n");
+const SWIFT_ALL = SWIFT_FILES.map((f) => read(`ios/App/${f}`)).join("\n");
 /** 括弧の対応を見て、call.resolve( … ) の中身を取り出す（何行に分けて書いても拾う） */
 function resolveArgs(src: string): string[] {
   const out: string[] = [];
@@ -63,7 +64,7 @@ function swiftFields(src: string, name: string): Record<string, string> {
     if (depth === 0) break;
   }
   // 名前を変える・自分で読む書き方をしていたら、この取り出し方では確かめられない（点検 中-5）
-  expect(body, `${name} に var・CodingKeys・init(from:) がない`).not.toMatch(/\bvar \w+:|CodingKeys|init\(from/);
+  expect(body, `${name} に var・CodingKeys・init(from:)・初期値つきの let がない`).not.toMatch(/\bvar \w+|CodingKeys|init\(from|\blet \w+(: [\w[\]?]+)? =/);
   const out: Record<string, string> = {};
   for (const m of body.matchAll(/\blet (\w+): ([\w[\]?]+)/g)) out[m[1]] = m[2];
   expect(Object.keys(out).length, `${name} の項目`).toBeGreaterThan(0);
@@ -123,6 +124,26 @@ describe("A07：Swift と TypeScript の約束", () => {
     expect(n).toBeGreaterThanOrEqual(10);
     // JSON の読み方を変える設定はしていない（項目名は、そのままの名前で読む）
     expect(SWIFT_ALL).not.toMatch(/keyDecodingStrategy|dateDecodingStrategy|convertFromSnakeCase/);
+  });
+
+  it("Swift が返す項目の名前が、画面の戻り値の型（lib/nativeBridge.ts）にある（2回目 足りない試験3）", () => {
+    const nb = read("src/lib/nativeBridge.ts");
+    const tsReturns: Record<string, Set<string>> = {};
+    for (const m of nb.matchAll(/^\s+(\w+)\(options: \{[^}]*\}\): Promise<(?:\{([^}]*)\}|void)>/gm)) tsReturns[m[1]] = new Set([...(m[2] ?? "").matchAll(/(\w+)\??:/g)].map((f) => f[1]));
+    expect(Object.keys(tsReturns).sort()).toEqual(["recognizeText", "scheduleReminders", "setSummary", "syncCalendar", "writeBackup"]);
+    const parts = PLUGIN.split(/@objc func /).slice(1);
+    let n = 0;
+    for (const part of parts) {
+      const name = part.match(/^(\w+)\(/)![1];
+      if (!tsReturns[name]) continue;
+      for (const r of resolveArgs(part)) {
+        for (const k of r.matchAll(/"(\w+)":/g)) {
+          expect(tsReturns[name].has(k[1]), `${name} が返す ${k[1]} を、画面の型が知っている`).toBe(true);
+          n++;
+        }
+      }
+    }
+    expect(n).toBeGreaterThanOrEqual(8);
   });
 
   it("ウィジェットの要約は、Swift の Summary として読める（200通りのデータと、名前のとても長い予定）", () => {

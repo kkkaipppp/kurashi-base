@@ -12,6 +12,8 @@ export interface SyncState {
 export type SyncStatus = Partial<Record<SyncKind, SyncState>>;
 
 export const NATIVE_SYNC_KEY = "kurashi-base:native-sync:v1";
+/** 結果が変わったときに出す合図 */
+export const SYNC_EVENT = "kb-native-sync";
 export const SYNC_LABELS: Record<SyncKind, string> = {
   summary: "ウィジェット",
   calendar: "カレンダー",
@@ -52,6 +54,8 @@ export function recordSync(kind: SyncKind, ok: boolean, detail?: string, kv: KVL
     if (prev && prev.ok === ok && prev.detail === detail && ok) return;
     cur[kind] = { at, ok, ...(detail ? { detail } : {}) };
     kv.setItem(NATIVE_SYNC_KEY, JSON.stringify(cur));
+    // 設定の「iPhone の連携」が開いていれば、すぐに出し直す（点検2回目 低-7）
+    if (typeof window !== "undefined") window.dispatchEvent(new Event(SYNC_EVENT));
   } catch {
     /* 結果を残せなくても、記録には影響しない */
   }

@@ -4,16 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { useData } from "@/lib/store";
 import { todayStr } from "@/lib/date";
-import { buildBackup, countData } from "@/lib/backup";
+import { buildBackup } from "@/lib/backup";
 import { buildWidgetSummary } from "@/lib/widgetSummary";
 import { buildCalendarItems, calendarWindow } from "@/lib/calendarExport";
 import { autoBackupDay, backupRecordCount, NativeBridge } from "@/lib/nativeBridge";
 import { buildReminders } from "@/lib/reminders";
 import { loadReminderSettings } from "@/lib/reminderStore";
 import { errorText, recordSync } from "@/lib/nativeSyncStatus";
-
-/** 記録が1件以上あるか（カテゴリは数えない）。0件のときは、カレンダー・通知の写しを消さない（o11 A07 点検 中-1） */
-const hasRecords = (d: Parameters<typeof countData>[0]) => backupRecordCount(countData(d)) > 0;
+import { calendarOutcome, reminderOutcome, shouldSyncCalendar, shouldSyncReminders } from "@/lib/nativeSyncPlan";
 
 /**
  * iPhone アプリの中だけで動く部品（Web 版では何もしない）。
@@ -68,9 +66,8 @@ export function WidgetSync() {
   }, []);
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    // 記録が0件（新しい端末・読み込めなかったあと・すべて削除の直後）のときは、もう書いた予定を消さない。
-    // 消したいときは、設定の「入れた予定を消す」で消せる（点検 中-1）
-    if (!hasRecords(data)) return;
+    // 記録が0件のときは、もう書いた予定を消さない（消すのは設定の「入れた予定を消す」。lib/nativeSyncPlan.ts）
+    if (!shouldSyncCalendar(data)) return;
     const t = setTimeout(() => {
       const today = todayStr();
       const json = JSON.stringify(buildCalendarItems(data, today));
@@ -85,8 +82,8 @@ export function WidgetSync() {
       NativeBridge.syncCalendar({ from, to, json })
         .then((r) => {
           lastCalendar.current = key;
-          const skipped = Number(r.skipped ?? 0);
-          recordSync("calendar", skipped === 0, skipped ? `日時を読めなかった予定が${skipped}件あり、書いていません` : undefined);
+          const o = calendarOutcome(r);
+          recordSync("calendar", o.ok, o.detail);
         })
         .catch((e) => {
           // カレンダーへのアクセスを許可していないときなど。記録には影響しない（失敗は設定に出す）
@@ -124,8 +121,8 @@ export function WidgetSync() {
   }, []);
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    // 記録が0件のときは、通知を入れ替えない（もう登録した通知を消さない。点検 中-1）
-    if (!hasRecords(data)) return;
+    // 記録が0件でも入れ替える（消した予定・タスクの通知を残さない。lib/nativeSyncPlan.ts）
+    if (!shouldSyncReminders()) return;
     const t = setTimeout(() => {
       const settings = loadReminderSettings();
       const now = new Date();
@@ -138,15 +135,10 @@ export function WidgetSync() {
       if (json === lastReminders.current) return;
       NativeBridge.scheduleReminders({ json })
         .then((r) => {
-          // 拒否されていたときは「登録した」とせず、あとで許可されたら、もう一度登録する
-          if (r.denied) {
-            if (settings.on) recordSync("reminders", false, "通知が許可されていません（iPhone の設定 → くらしベース → 通知）");
-            return;
-          }
-          const failed = Number(r.failed ?? 0);
-          // 一部を登録できなかったときは、次の機会にもう一度入れ替える
-          if (failed === 0) lastReminders.current = settings.on ? json : "off";
-          recordSync("reminders", failed === 0, failed ? `${failed}件の通知を登録できませんでした` : undefined);
+          // 拒否・一部の失敗のときは「登録した」とせず、次の機会（許可されたあと・前面に戻ったとき）にもう一度入れ替える
+          const o = reminderOutcome(r, settings.on);
+          if (o.done) lastReminders.current = settings.on ? json : "off";
+          recordSync("reminders", o.ok, o.detail);
         })
         .catch((e) => {
           // 通知を登録できなくても、記録には影響しない（失敗は設定に出す。消した予定の通知が残っていることがある）

@@ -3,13 +3,18 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { errorText, loadSyncStatus, NATIVE_SYNC_KEY, recordSync, syncProblems } from "@/lib/nativeSyncStatus";
 import { wipeAllAppData } from "@/lib/storage";
+import { emptyData } from "@/lib/defaults";
+import { buildReminders, DEFAULT_REMINDERS } from "@/lib/reminders";
+import { calendarOutcome, hasRecords, reminderOutcome, shouldSyncCalendar, shouldSyncReminders } from "@/lib/nativeSyncPlan";
 
 // o11 A07 点検 中-1〜中-3：iPhone アプリへの受け渡しの失敗を黙って捨てない・記録0件で写しを消さない・書き込み中の変更を取りこぼさない
 const kv = () => {
   const m = new Map<string, string>();
   return { m, getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k), key: (i: number) => [...m.keys()][i] ?? null, get length() { return m.size; } };
 };
-const src = fs.readFileSync(path.resolve(import.meta.dirname, "../src/components/WidgetSync.tsx"), "utf8");
+/** コメントを除いた中身（コメントに同じ書き方が残っていても、素通りしない。点検2回目 足りない試験2） */
+const stripComments = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+const src = stripComments(fs.readFileSync(path.resolve(import.meta.dirname, "../src/components/WidgetSync.tsx"), "utf8"));
 
 describe("受け渡しの結果を残す（中-3）", () => {
   it("失敗を残し、設定に出す一覧になる。成功すれば消える", () => {
@@ -55,17 +60,35 @@ describe("受け渡しの結果を残す（中-3）", () => {
     expect(src).not.toMatch(/\.catch\(\(\) => \{\}\)/);
   });
   it("通知を一部しか登録できなかったときは、次の機会にもう一度入れ替える（登録したことにしない）", () => {
-    expect(src).toMatch(/if \(failed === 0\) lastReminders\.current = /);
+    expect(src).toMatch(/const o = reminderOutcome\(r, settings\.on\);\s*if \(o\.done\) lastReminders\.current = /);
+    expect(src).toMatch(/recordSync\("reminders", o\.ok, o\.detail\)/);
   });
 });
 
 describe("記録0件のとき・書き込み中の変更（中-1・中-2）", () => {
-  it("記録が0件のときは、カレンダーと通知を入れ替えない（もう書いた写しを消さない）", () => {
-    const cal = src.slice(src.indexOf("// iPhone のカレンダーへの反映"), src.indexOf("// 通知（"));
-    const rem = src.slice(src.indexOf("// 通知（"), src.indexOf("// 自動バックアップと"));
-    expect(cal).toMatch(/if \(!hasRecords\(data\)\) return;/);
-    expect(rem).toMatch(/if \(!hasRecords\(data\)\) return;/);
+  it("画面の部品は、決め方（lib/nativeSyncPlan.ts）を使う：カレンダーは記録0件で書き直さない・通知はいつも入れ替える", () => {
+    expect(src).toMatch(/if \(!shouldSyncCalendar\(data\)\) return;\s*const t = setTimeout\(\(\) => \{\s*const today = todayStr\(\);\s*const json = JSON\.stringify\(buildCalendarItems/);
+    expect(src).toMatch(/if \(!shouldSyncReminders\(\)\) return;\s*const t = setTimeout\(\(\) => \{\s*const settings = loadReminderSettings/);
     expect(src).toContain("if (records === 0) return;"); // 自動バックアップは前から
+  });
+  it("決め方：記録0件ならカレンダーは書き直さない（カテゴリだけは0件）・通知は入れ替える（0件なら全部消える）", () => {
+    const d = emptyData("2026-11-25T00:00:00.000Z");
+    expect(hasRecords(d)).toBe(false);
+    expect(shouldSyncCalendar(d)).toBe(false);
+    expect(shouldSyncReminders()).toBe(true);
+    expect(buildReminders(d, "2026-11-25T09:00:00", { ...DEFAULT_REMINDERS, on: true })).toEqual([]);
+    d.tasks.push({ id: "k", title: "t", due: "", done: false, note: "", createdAt: "x", updatedAt: "x" });
+    expect(hasRecords(d)).toBe(true);
+    expect(shouldSyncCalendar(d)).toBe(true);
+  });
+  it("決め方：通知の結果（拒否・一部の失敗・オフ）", () => {
+    expect(reminderOutcome({ denied: true }, true)).toEqual({ done: false, ok: false, detail: expect.stringContaining("許可されていません") });
+    expect(reminderOutcome({ failed: 2 }, true)).toEqual({ done: false, ok: false, detail: "2件の通知を登録できませんでした" });
+    expect(reminderOutcome({}, true)).toEqual({ done: true, ok: true });
+    // オフのときは、拒否されていても警告を残さない（点検2回目 低-1）
+    expect(reminderOutcome({ denied: true }, false)).toEqual({ done: true, ok: true });
+    expect(calendarOutcome({ skipped: 3 })).toEqual({ ok: false, detail: "日時を読めなかった予定が3件あり、書いていません" });
+    expect(calendarOutcome({})).toEqual({ ok: true });
   });
   it("カレンダーへの書き込み中に記録が変わったら、終わったあとにもう一度見る。前面に戻ったときも見る", () => {
     expect(src).toMatch(/if \(calendarBusy\.current\) \{\s*calendarAgain\.current = true;/);

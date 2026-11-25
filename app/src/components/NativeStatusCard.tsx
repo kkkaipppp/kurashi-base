@@ -5,7 +5,9 @@ import { Button, Card, SectionTitle } from "./ui";
 import { isNativeApp } from "@/lib/platform";
 import { useUI } from "./UIContext";
 import { NotifyCard } from "./NotifyCard";
-import { loadSyncStatus, syncProblems } from "@/lib/nativeSyncStatus";
+import { loadSyncStatus, SYNC_EVENT, syncProblems } from "@/lib/nativeSyncStatus";
+import { useData } from "@/lib/store";
+import { hasRecords } from "@/lib/nativeSyncPlan";
 
 /**
  * iPhone アプリの中だけに出す「自動バックアップ」と「iPhone のカレンダーへの反映」の状態（レビュー o1 の P03・P05）。
@@ -50,6 +52,9 @@ const fmt = (iso?: string) =>
 
 export function NativeStatusCard() {
   const ui = useUI();
+  // 記録は読むだけ（記録が0件のときは、カレンダーを書き直さないことを知らせる）
+  const data = useData();
+  const empty = !hasRecords(data);
   const [native, setNative] = useState(false);
   const [backup, setBackup] = useState<BackupStatus | null>(null);
   const [cal, setCal] = useState<CalendarStatus | null>(null);
@@ -73,9 +78,21 @@ export function NativeStatusCard() {
     if (n) load();
   }, [load]);
 
+  // 受け渡しの結果が変わったら、すぐに出し直す（点検2回目 低-7）
+  useEffect(() => {
+    const on = () => setProblems(syncProblems(loadSyncStatus()));
+    window.addEventListener(SYNC_EVENT, on);
+    return () => window.removeEventListener(SYNC_EVENT, on);
+  }, []);
+
   if (!native) return null;
 
   const resync = async () => {
+    // 記録が0件のときは、書き直さない（点検2回目 低-2）
+    if (empty) {
+      ui.toast("記録がないので、カレンダーは書き直しません。入れた予定を消すときは「入れた予定を消す」を押してください");
+      return;
+    }
     setBusy(true);
     try {
       await call("requestCalendarResync");
@@ -201,6 +218,11 @@ export function NativeStatusCard() {
           <dt className="text-ink-2">カレンダーへの最後の反映</dt>
           <dd className="num">{fmt(cal?.lastSyncAt)}</dd>
         </dl>
+        {calOn && empty && (
+          <p className="mt-2 text-[13px] text-ink-2">
+            記録がないあいだは、iPhone のカレンダーに入れた予定を書き直さず、残しています（消すときは「入れた予定を消す」）。通知は消えます。
+          </p>
+        )}
         {problems.length > 0 && (
           <div role="status" className="mt-2 rounded-lg border border-warn/40 p-2 text-[13px]">
             <p className="font-semibold text-warn">iPhone に渡せなかったものがあります</p>
@@ -243,7 +265,7 @@ export function NativeStatusCard() {
               設定を開く
             </Button>
           )}
-          {!calOn && (
+          {(!calOn || empty) && (
             <Button
               variant="secondary"
               onClick={removeLater}

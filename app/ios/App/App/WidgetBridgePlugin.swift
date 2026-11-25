@@ -270,7 +270,8 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                         written += 1
                     }
                     try store.commit()
-                    UserDefaults.standard.set(stamp, forKey: Self.lastSyncKey)
+                    // 読めなかった予定があったときは、同じ中身でも次にもう一度書き直す（「書いた」ことにしない。点検2回目 低-3）
+                    if skipped == 0 { UserDefaults.standard.set(stamp, forKey: Self.lastSyncKey) } else { UserDefaults.standard.removeObject(forKey: Self.lastSyncKey) }
                     UserDefaults.standard.set(true, forKey: Self.ownedMigratedKey)
                     UserDefaults.standard.set(ISO8601DateFormatter().string(from: Date()), forKey: Self.lastSyncAtKey)
                     call.resolve(["written": written, "skipped": skipped])
