@@ -1,6 +1,6 @@
 {
   "project_id": "kurashi-base",
-  "as_of": "2026-11-25T13:49:19+09:00",
+  "as_of": "2026-11-25T13:50:19+09:00",
   "blocker_items": [
     "V14 OCR 画像2,000件の取得と SHA の固定（tools/ocr_benchmark に取得・検査のスクリ…"
   ],

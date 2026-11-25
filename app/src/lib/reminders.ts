@@ -1,6 +1,6 @@
 import { eventsOnDay } from "./aggregate";
 import { addDays, formatDateJa } from "./date";
-import { occurrenceKey } from "./eventOps";
+import { departureTime, occurrenceKey } from "./eventOps";
 import { formatYen } from "./money";
 import type { AppData } from "./types";
 
@@ -100,7 +100,11 @@ export function buildReminders(d: AppData, now: string, s: ReminderSettings): Re
         if (e.allDay || !/^\d{2}:\d{2}$/.test(e.startTime) || e.doneDates?.includes(occurrenceKey(e, date))) continue;
         // 何日かにまたがる予定は、開始の日だけ
         if (e.startDate !== e.endDate && e.startDate !== date) continue;
-        add(`kb|ev|${e.id}|${date}|lead`, e.title || "（名前なし）", `${e.startTime}から${e.location ? `（${e.location}）` : ""}・${s.eventLead}分前です`, date, toMin(e.startTime) - s.eventLead, { date, min: toMin(e.startTime) });
+        // 移動時間を登録した予定は、開始ではなく「出発」の N 分前に知らせる（出発の目安が出せるときだけ。前の日にさかのぼるときは、今までどおり）
+        const dep = departureTime(e);
+        const base = dep ? toMin(dep) : toMin(e.startTime);
+        const label = dep ? `出発の目安 ${dep}・${e.startTime}から${e.location ? `（${e.location}）` : ""}・出発の${s.eventLead}分前です` : `${e.startTime}から${e.location ? `（${e.location}）` : ""}・${s.eventLead}分前です`;
+        add(`kb|ev|${e.id}|${date}|lead`, e.title || "（名前なし）", label, date, base - s.eventLead, { date, min: toMin(e.startTime) });
       }
     if (s.fixedMorning)
       for (const r of d.recurring) {

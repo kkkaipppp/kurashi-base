@@ -121,3 +121,20 @@ describe("静穏時間のずらし（点検役の指摘：日付ごとに正し�
     expect(buildReminders(d, now, { ...S, morning: "06:30" })[0].at).toBe("2026-11-27T07:00");
   });
 });
+
+describe("出発の目安がある予定の通知", () => {
+  it("移動時間を登録した予定は、開始ではなく『出発』の N 分前に知らせる（10:00開始・移動40分・30分前 → 08:50）。本文に出発の目安を書く", () => {
+    const r = buildReminders(mk((d) => (d.events = [ev({ id: "a", travelMinutes: 40 })])), now, S);
+    expect(r).toHaveLength(1);
+    expect(r[0].at).toBe("2026-11-26T08:50");
+    expect(r[0].body).toContain("出発の目安 09:20");
+  });
+  it("移動時間がない予定は、今までどおり開始の N 分前", () => {
+    const r = buildReminders(mk((d) => (d.events = [ev({ id: "a" })])), now, S);
+    expect(r[0].at).toBe("2026-11-26T09:30");
+  });
+  it("前の日にさかのぼる出発（0:30開始・移動60分）は、目安を作らず、今までどおり", () => {
+    const r = buildReminders(mk((d) => (d.events = [ev({ id: "a", startTime: "00:30", endTime: "01:00", travelMinutes: 60 })])), "2026-11-25T09:00:00", { ...S, quietFrom: "00:00", quietTo: "00:00" });
+    expect(r.every((x) => !x.body.includes("出発の目安"))).toBe(true);
+  });
+});
