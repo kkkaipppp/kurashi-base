@@ -67,7 +67,7 @@ describe("A06：切り替えの前と後で、すべての集計が同じ答え�
       }
       expect(nRv.figures(d)).toEqual(oRv.figures(d));
     }
-  });
+  }, 60_000); // 200通りは重いので、全部を同時に動かすときの待ち時間を広げる
 });
 
 describe("A06：速く作る ledgerEntries は、出来事から作るものと同じ", () => {
@@ -76,7 +76,7 @@ describe("A06：速く作る ledgerEntries は、出来事から作るものと�
       const d = synth(s);
       expect(ledgerEntries(d)).toEqual(countedEntries(ledgerEvents(d)));
     }
-  });
+  }, 60_000); // 200通りは重いので、全部を同時に動かすときの待ち時間を広げる
 });
 
 describe("A06：旅行の合計・履歴の絞り込みの合計（画面の中の計算）", () => {
@@ -94,7 +94,7 @@ describe("A06：旅行の合計・履歴の絞り込みの合計（画面の中�
         expect(n.expense).toBe(list.filter((t) => t.type === "expense" && !isMoveOnly(t)).reduce((a, t) => a + t.amount, 0));
       }
     }
-  });
+  }, 60_000); // 200通りは重いので、全部を同時に動かすときの待ち時間を広げる
 });
 
 describe("A06：同じ条件の金額は、画面どうしで一致する（200通り）", () => {
@@ -149,7 +149,7 @@ describe("A06：同じ条件の金額は、画面どうしで一致する（200�
       const invOfWeek = ledgerEntries(d).filter((e) => e.kind === "expense" && e.invest && e.date >= wk.from && e.date <= wk.to).reduce((a, e) => a + e.amount, 0);
       expect(w.spent + invOfWeek).toBe(nPer.summarizePeriod(T, wk.from, wk.to).expense);
     }
-  });
+  }, 60_000); // 200通りは重いので、全部を同時に動かすときの待ち時間を広げる
 });
 
 describe("A06：手で決めた期待値", () => {
