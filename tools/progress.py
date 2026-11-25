@@ -2,7 +2,7 @@
 
   py -3 -I tools/progress.py init                      # docs/ux-autonomous/10_PARENT_WBS.csv から docs/progress/WBS.csv を作る（既にあれば何もしない）
   py -3 -I tools/progress.py set W004 DONE "根拠" [SHA]   # 状態を更新（DONE は根拠必須）
-  py -3 -I tools/progress.py sync                      # ROADMAP/WBS/STATUS/論点（ISSUES.csv）と、ガント・ロードマップ・論点一覧の画面（PROGRESS.html）を docs/progress と親フォルダ 00_全体進捗/暮らしベース/ に書き出す
+  py -3 -I tools/progress.py sync                      # ROADMAP/WBS/STATUS/論点（ISSUES.csv）と、ガント・ロードマップ・論点一覧の画面（PROGRESS.html）を docs/progress と docs/parent_progress_export に書き出す（親フォルダ 00_全体進捗/暮らしベース/ があれば、そこにも写す。無ければ飛ばす）
 
 状態は NOT_STARTED / IN_PROGRESS / DONE / BLOCKED / NOT_RUN の5種のみ。
 """
@@ -190,6 +190,20 @@ def update_report(s: dict, sha: str) -> None:
         _write_json(DETAILS, d)
 
 
+def copy_to(dest: Path, files: list, optional: bool) -> str:
+    """files（元, 名前）を dest へ写す。optional のとき、dest の親フォルダが無ければ作らず飛ばす（失敗にしない）"""
+    if optional and not dest.parent.exists():
+        return f"skipped（親フォルダが無いので飛ばしました。任意の同期） -> {dest}"
+    dest.mkdir(parents=True, exist_ok=True)
+    failed = []
+    for src, name in files:  # 1つが開かれていて書けなくても、ほかは同期する
+        try:
+            shutil.copyfile(src, dest / name)
+        except OSError as e:
+            failed.append(f"{name}（{e.strerror}。Excel などで開いていたら閉じて、もう一度 sync）")
+    return ("sync failed: " + "、".join(failed) + " ->" if failed else "synced ->") + f" {dest}"
+
+
 def cmd_sync(extra: dict[str, str]) -> None:
     fields, rows = read()
     mod = _board()
@@ -220,15 +234,9 @@ def cmd_sync(extra: dict[str, str]) -> None:
     files = [(WBS, "WBS.csv"), (ROADMAP, "ROADMAP.md"), (STATUS, "STATUS.md"), (board, "PROGRESS.html")]
     if (PROG / "ISSUES.csv").exists():
         files.append((PROG / "ISSUES.csv", "ISSUES.csv"))
-    for dest in (PARENT, EXPORT):
-        dest.mkdir(parents=True, exist_ok=True)
-        failed = []
-        for src, name in files:  # 1つが開かれていて書けなくても、ほかは同期する
-            try:
-                shutil.copyfile(src, dest / name)
-            except OSError as e:
-                failed.append(f"{name}（{e.strerror}。Excel などで開いていたら閉じて、もう一度 sync）")
-        print(("sync failed: " + "、".join(failed) + " ->" if failed else "synced ->"), dest)
+    # PJ の中（EXPORT）は必ず書く。親フォルダ（PARENT）は任意：無ければ作らず飛ばす（PJ の中だけで作業が完結する）
+    print(copy_to(EXPORT, files, optional=False))
+    print(copy_to(PARENT, files, optional=True))
     print("--- WBS の変化（前のコミットから） ---")
     print("\n".join(changes) or "なし")
     print(f"--- 本部への報告 --- {s['milestone']}／WBS {s['done']}/{s['total']}／次：{s['next'][0]['ID'] + ' ' + s['next'][0]['Task'] if s['next'] else 'なし'}／判断待ち {len(s['decide'])}件")

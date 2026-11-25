@@ -14,7 +14,7 @@
 2. `docs/STATE.md` を更新
 3. 決めたことを `docs/DECISIONS.md`、起きたこと・リスクを `docs/RAID.md` に
 4. `cd app && npm run check` を通す（落ちたまま終えない。落ちたら正直に書く）
-5. `py -3 -I tools/progress.py sync` を実行する。WBS・ロードマップ・論点から、進捗の画面（`docs/progress/PROGRESS.html`）と本部への報告（`portfolio/report.json`・`details.json`）が作り直され、親フォルダ `00_全体進捗/暮らしベース/` に同期される。そのあと本部の検査（`tools/report_check.py` と `../00_経営管理/scripts/details_check.py`）に通す
+5. `py -3 -I tools/progress.py sync` を実行する。WBS・ロードマップ・論点から、進捗の画面（`docs/progress/PROGRESS.html`）と本部への報告（`portfolio/report.json`・`details.json`）が作り直され、親フォルダ `00_全体進捗/暮らしベース/` に同期される。そのあと PJ 内の検査（`py -3 -I tools/report_check.py portfolio/report.json` と `py -3 -I tools/details_check.py portfolio/details.json`）に通す。親フォルダ `00_全体進捗/暮らしベース/` が無いときは、その同期は飛ばされる（PJ の中の報告だけで完結する）。`tools/details_check.py` は本部の `details_check.py` を写したもの（出所と元の SHA-256 を先頭に記録）
 6. 最後の返信で、sync が出す「WBS の変化」と「本部への報告」（今いるマイルストン・完了数・次の作業・判断待ち）を平尾さんに伝える
 7. 報告・相談の先は「PJ本部」（local_f790714b-5d36-465e-a67a-ceb9fe4dd5ac。スタンプ工房・受託デスク・暮らしベース・BOARD LOUNGE を見る。2026-11-23 平尾さんの決定で本部を「本部・PJ本部・定常本部」の3つに分けた）。プレイブックはこれまでどおり本部から届く。`portfolio/report.json` はこれまでどおり書く
 
