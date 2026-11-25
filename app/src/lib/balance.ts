@@ -15,7 +15,10 @@ import type { AppData } from "./types";
 export type BalanceResult =
   | {
       ok: true;
-      base: { name: string; value: number; asOf: string; cardDebt: number };
+      /** cardDebt：もとの残高の日の、カードの引き落とし待ち。null＝入っていない（不明。0 とは決めつけない。o11 工程2） */
+      base: { name: string; value: number; asOf: string; cardDebt: number | null };
+      /** 引き落とし待ちの額が確かか（もとの日の額が不明なら false＝下の額は「少なくとも」の額） */
+      cardPendingKnown: boolean;
       income: number;
       spend: number;
       cardSettled: number;
@@ -46,8 +49,10 @@ export function cashBalance(d: AppData, today: string): BalanceResult {
     else spend += t.amount;
   }
   const value = b.value as number;
-  const debt0 = typeof b.cardDebt === "number" ? b.cardDebt : 0; // 基準の日の時点のカード未払い（入れていなければ 0）
+  // 基準の日の時点のカード未払い。入っていなければ不明（0 と決めつけない）。計算には 0 を使うが、「少なくとも」の額として扱う
+  const known = typeof b.cardDebt === "number";
+  const debt0 = known ? (b.cardDebt as number) : 0;
   const cardPending = Math.max(0, debt0 + cardBought - cardSettled);
   const balance = value + income - spend - cardSettled;
-  return { ok: true, base: { name: b.name, value, asOf: b.asOf, cardDebt: debt0 }, income, spend, cardSettled, cardPending, balance, afterCard: balance - cardPending };
+  return { ok: true, base: { name: b.name, value, asOf: b.asOf, cardDebt: known ? debt0 : null }, cardPendingKnown: known, income, spend, cardSettled, cardPending, balance, afterCard: balance - cardPending };
 }

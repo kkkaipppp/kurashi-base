@@ -31,7 +31,7 @@ export function CashBalanceCard({ month }: { month: string }) {
           </p>
           {r.cardPending > 0 && (
             <p className="num mt-0.5 text-[14px] font-semibold">
-              カードで使って、まだ引かれていない額 {formatYen(r.cardPending)}。引かれたあとの残高は 約{formatYen(r.afterCard)}
+              カードで使って、まだ引かれていない額 {r.cardPendingKnown ? "" : "少なくとも "}{formatYen(r.cardPending)}。引かれたあとの残高は {r.cardPendingKnown ? "約" : "多くても約"}{formatYen(r.afterCard)}
             </p>
           )}
           <dl className="num mt-2 space-y-0.5 rounded-xl border border-dashed border-line px-3 py-2 text-[12px] text-ink-2">
@@ -54,6 +54,7 @@ export function CashBalanceCard({ month }: { month: string }) {
           </dl>
           <div className="mt-2 space-y-0.5 text-[12px] text-ink-3">
             <p>目安です。もとの残高の日より後の記録から計算しています。</p>
+            {!r.cardPendingKnown && <p>もとの残高の日に、カードの引き落とし待ちがあったかは、入っていません（不明）。分かれば資産に入れてください。</p>}
             <p>口座どうしの移動は数えません。カード払いは、引き落としを記録したときに減ります。</p>
             <p>合わないときは、資産の残高を入れ直してください。</p>
           </div>

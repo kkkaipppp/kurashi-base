@@ -75,12 +75,22 @@ describe("G0 カードの債務（独立した期待値）", () => {
     expect(r.afterCard).toBe(500000 - 100000 - 30000);
     expect(validateAppData(d).ok).toBe(true);
   });
-  it("基準日のカード未払いを入れていないときは 0 として扱う（今までどおり）", () => {
+  it("基準日のカード未払いを入れていないときは「不明」。0 と決めつけず、引き落とし待ちは『少なくとも』の額（o11 工程2）", () => {
     const d = emptyData(now);
     d.assets = [{ id: "a", name: "銀行", kind: "cash", value: 500000, asOf: "2026-11-01", note: "", createdAt: now, updatedAt: now }];
     d.transactions = [tx({ id: "k", date: "2026-11-10", amount: 30000, paymentMethod: "card" })];
     const r = cashBalance(d, "2026-11-25");
     if (!r.ok) throw new Error("出ない");
     expect(r.cardPending).toBe(30000);
+    expect(r.cardPendingKnown).toBe(false);
+    expect(r.base.cardDebt).toBeNull();
+  });
+  it("基準日のカード未払いを 0 と入れたときは、確かな額として扱う", () => {
+    const d = emptyData(now);
+    d.assets = [{ id: "a", name: "銀行", kind: "cash", value: 500000, asOf: "2026-11-01", cardDebt: 0, note: "", createdAt: now, updatedAt: now }];
+    const r = cashBalance(d, "2026-11-25");
+    if (!r.ok) throw new Error("出ない");
+    expect(r.cardPendingKnown).toBe(true);
+    expect(r.base.cardDebt).toBe(0);
   });
 });
