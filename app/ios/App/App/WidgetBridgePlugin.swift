@@ -4,6 +4,7 @@ import Capacitor
 import WidgetKit
 import EventKit
 import UserNotifications
+import Vision
 
 /// Web の画面（components/WidgetSync.tsx）から受け取った要約を、ウィジェットと一緒に使う置き場（App Group）に書く。
 /// あわせて、その日の自動バックアップを書類フォルダに書く。
@@ -24,7 +25,8 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "openAppSettings", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "scheduleReminders", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "reminderStatus", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "requestReminderPermission", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "requestReminderPermission", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "recognizeText", returnType: CAPPluginReturnPromise)
     ]
 
     static let appGroup = "group.jp.kurashibase.personal"
@@ -396,6 +398,45 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    // MARK: - 文字の読み取り（NEXT v21 OCR。iPhone の Vision。端末の中だけで行い、画像も文字も外へは送らない）
+
+    /// 画像（base64 の JPEG/PNG）から、文字を上から下の順に読み取る。結果は「行の一覧」だけ（画像は保存しない）。
+    /// 読み取った内容は候補にすぎない（日付・金額・店名の解釈と確認は、画面側で本人が行う）
+    @objc func recognizeText(_ call: CAPPluginCall) {
+        guard let b64 = call.getString("image"), b64.utf8.count < 12_000_000,
+              let data = Data(base64Encoded: b64), let image = UIImage(data: data), let cg = image.cgImage else {
+            call.reject("画像を読み込めませんでした")
+            return
+        }
+        let request = VNRecognizeTextRequest { req, error in
+            if let error = error {
+                call.reject("文字を読み取れませんでした：\(error.localizedDescription)")
+                return
+            }
+            let obs = (req.results as? [VNRecognizedTextObservation]) ?? []
+            // 上から下へ（boundingBox は左下が原点なので、minY の大きい順）。同じ高さは左から
+            let sorted = obs.sorted { a, b in
+                let ay = a.boundingBox.midY, by = b.boundingBox.midY
+                if abs(ay - by) > 0.012 { return ay > by }
+                return a.boundingBox.minX < b.boundingBox.minX
+            }
+            let lines = sorted.compactMap { $0.topCandidates(1).first?.string }.filter { !$0.isEmpty }
+            call.resolve(["lines": lines])
+        }
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        request.recognitionLanguages = ["ja-JP", "en-US"]
+        DispatchQueue.global(qos: .userInitiated).async {
+            let orientation = CGImagePropertyOrientation(image.imageOrientation)
+            let handler = VNImageRequestHandler(cgImage: cg, orientation: orientation, options: [:])
+            do {
+                try handler.perform([request])
+            } catch {
+                call.reject("文字を読み取れませんでした：\(error.localizedDescription)")
+            }
+        }
+    }
+
     // MARK: - 通知（NEXT v21 X13）
 
     /// くらしベースが登録した通知の ID の頭（これで始まるものだけを入れ替える。ほかのアプリ・ほかの通知には触れない）
@@ -501,6 +542,23 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                 UIApplication.shared.open(url)
             }
             call.resolve()
+        }
+    }
+}
+
+/// UIImage の向きを、Vision が使う向きに変える
+extension CGImagePropertyOrientation {
+    init(_ o: UIImage.Orientation) {
+        switch o {
+        case .up: self = .up
+        case .upMirrored: self = .upMirrored
+        case .down: self = .down
+        case .downMirrored: self = .downMirrored
+        case .left: self = .left
+        case .leftMirrored: self = .leftMirrored
+        case .right: self = .right
+        case .rightMirrored: self = .rightMirrored
+        @unknown default: self = .up
         }
     }
 }

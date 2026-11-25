@@ -13,6 +13,8 @@ export interface NativeBridge {
   syncCalendar(options: { from: string; to: string; json: string }): Promise<{ written: number; disabled?: boolean }>;
   /** くらしベースの通知を、いま必要なものに入れ替える（空なら全部消す。許可がなければ聞く／拒否なら denied） */
   scheduleReminders(options: { json: string }): Promise<{ scheduled: number; removed?: number; denied?: boolean }>;
+  /** 画像（base64）から、文字を上から下の順に読み取る（iPhone の Vision。端末の中だけ。候補で、確認は本人） */
+  recognizeText(options: { image: string }): Promise<{ lines: string[] }>;
 }
 
 export const NativeBridge = registerPlugin<NativeBridge>("WidgetBridge");

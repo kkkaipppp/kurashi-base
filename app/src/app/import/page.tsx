@@ -5,6 +5,11 @@ import { useData } from "@/lib/store";
 import { fingerprintBytes } from "@/lib/duplicates";
 import { formatDateJa } from "@/lib/date";
 import { formatYen } from "@/lib/money";
+import { parseReceipt } from "@/lib/receiptParse";
+import { imageToBase64 } from "@/lib/imageScale";
+import { NativeBridge } from "@/lib/nativeBridge";
+import { useIsNativeApp } from "@/lib/platform";
+import { todayStr } from "@/lib/date";
 import type { Transaction } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, IconAlert, IconImage, PageHeader } from "@/components/ui";
@@ -21,6 +26,11 @@ export default function ImportPage() {
   const [picked, setPicked] = useState<Picked | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
+  const native = useIsNativeApp();
+  // 文字の読み取り（iPhone アプリだけ）：読み取った行と、そこから出した候補。取引は、本人が入力画面で確認して保存するまで作らない
+  const [ocr, setOcr] = useState<{ lines: string[] } | null>(null);
+  const [ocrBusy, setOcrBusy] = useState(false);
+  const fileRef = useRef<File | null>(null);
 
   // プレビューURLを解放
   useEffect(() => () => {
@@ -29,6 +39,8 @@ export default function ImportPage() {
 
   const clear = () => {
     setPicked(null);
+    setOcr(null);
+    fileRef.current = null;
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -44,11 +56,43 @@ export default function ImportPage() {
     try {
       const fp = await fingerprintBytes(await f.arrayBuffer());
       const dupOf = data.transactions.filter((t) => t.sourceFingerprint === fp);
+      fileRef.current = f;
       setPicked({ url: URL.createObjectURL(f), name: f.name, size: f.size, fingerprint: fp, dupOf });
     } catch {
       setError("画像を読み込めませんでした。別の画像を選ぶか、手で入力してください");
     } finally {
       setReading(false);
+    }
+  };
+
+  // 画像の文字を読み取り、日付・合計・店名の「候補」を入力欄に入れて入力画面を開く（確認して保存するのは本人）
+  const readText = async () => {
+    if (!picked || !fileRef.current) return;
+    setOcrBusy(true);
+    try {
+      const image = await imageToBase64(fileRef.current);
+      const { lines } = await NativeBridge.recognizeText({ image });
+      setOcr({ lines });
+      const g = parseReceipt(lines, todayStr());
+      if (!g.amount && !g.merchant && !g.date) {
+        ui.toast("文字は読めましたが、日付・金額・店名の候補が見つかりませんでした。画像を見ながら入力してください", "error");
+        return;
+      }
+      ui.openTx({
+        mode: "new",
+        type: "expense",
+        title: "読み取った候補を確認",
+        date: g.date ?? undefined,
+        initial: { amount: g.amount ? String(g.amount) : "", merchant: g.merchant ?? "", note: "" },
+        source: "image",
+        sourceFingerprint: picked.fingerprint,
+        previewUrl: picked.url,
+        onSaved: clear,
+      });
+    } catch {
+      ui.toast("文字を読み取れませんでした。画像を見ながら入力してください", "error");
+    } finally {
+      setOcrBusy(false);
     }
   };
 
@@ -71,8 +115,17 @@ export default function ImportPage() {
 
       <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3">
         <p className="text-[13px] text-ink-2">
-          <span className="font-bold text-warn">文字の自動読み取り（OCR）は、まだありません。</span>
-          画像を見ながら金額・日付・店名を入力して登録します。入力した内容を確認するまで、取引は登録されません。
+          {native ? (
+            <>
+              <span className="font-bold text-brand">文字の読み取りは、iPhone の中だけで行います。</span>
+              画像の文字から、日付・金額・店名の「候補」を入力欄に入れます。読み間違いがあるので、必ず確かめてから保存してください（確認するまで、取引は登録されません）。
+            </>
+          ) : (
+            <>
+              <span className="font-bold text-warn">文字の自動読み取り（OCR）は、まだありません。</span>
+              画像を見ながら金額・日付・店名を入力して登録します。入力した内容を確認するまで、取引は登録されません。
+            </>
+          )}
         </p>
       </section>
 
@@ -116,8 +169,21 @@ export default function ImportPage() {
               <Button variant="secondary" onClick={clear}>
                 取り消す
               </Button>
-              <Button onClick={startEntry}>入力へ進む</Button>
+              <Button variant={native ? "secondary" : "primary"} onClick={startEntry}>
+                {native ? "手で入力する" : "入力へ進む"}
+              </Button>
             </div>
+            {native && (
+              <Button onClick={readText} disabled={ocrBusy} className="w-full" aria-busy={ocrBusy}>
+                {ocrBusy ? "読み取り中…" : "文字を読み取って、候補を入れる"}
+              </Button>
+            )}
+            {ocr && (
+              <details className="rounded-xl bg-surface-2 px-3 py-1 text-[12px]">
+                <summary className="min-h-11 cursor-pointer py-2 font-semibold text-ink-2">読み取った文字（{ocr.lines.length}行）</summary>
+                <pre className="mb-2 max-h-48 overflow-auto whitespace-pre-wrap break-all">{ocr.lines.join("\n")}</pre>
+              </details>
+            )}
           </div>
         )}
         {error && (
