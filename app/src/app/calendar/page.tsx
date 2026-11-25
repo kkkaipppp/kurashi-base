@@ -3,7 +3,9 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { IS_PERSONAL } from "@/lib/edition";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { dayFromSearch, searchWithDay } from "@/lib/searchState";
 import { deadlineDays, deadlinesOn } from "@/lib/deadlines";
 import { formatMinutes } from "@/lib/life";
 import { useData } from "@/lib/store";
@@ -33,11 +35,27 @@ function shortYen(n: number): string {
 }
 
 export default function CalendarPage() {
+  // useSearchParams は、書き出し（静的）のとき Suspense の中で使う必要がある
+  return (
+    <Suspense fallback={null}>
+      <CalendarInner />
+    </Suspense>
+  );
+}
+
+function CalendarInner() {
   const data = useData();
+  const params = useSearchParams();
   const ui = useUI();
   const today = todayStr();
-  const [month, setMonth] = useState(monthKey(today));
-  const [selected, setSelected] = useState(today);
+  // 選んだ日は、アドレスの ?d= に残す（日付の詳細 → 別の画面 → 戻る、で、選んだ日が戻る。履歴は増やさない）
+  const initialDay = dayFromSearch(params.toString()) || today;
+  const [month, setMonth] = useState(monthKey(initialDay));
+  const [selected, setSelected] = useState(initialDay);
+  useEffect(() => {
+    const next = searchWithDay(window.location.search, selected, today);
+    if (next !== window.location.search) window.history.replaceState(window.history.state, "", `${window.location.pathname}${next}`);
+  }, [selected, today]);
   // マスに出すもの（レビュー o1 の P10：狭いマスに予定と金額が混ざるので、見たいほうだけにもできる）
   const [show, setShow] = useState<"all" | "event" | "money">("all");
   // 見たいほうを覚える（表示だけの設定。記録とは別のキー。読めない・書けない端末でも動く。NEXT v21 CAL:C12）

@@ -7,8 +7,8 @@ import { useData } from "@/lib/store";
 import { useUI } from "@/components/UIContext";
 import { Card, Empty, IconChevronR, IconSearch, PageHeader, inputCls } from "@/components/ui";
 import { FEATURES } from "@/lib/edition";
-import { searchAll, SEARCH_PER_KIND, type SearchHit } from "@/lib/search";
-import { queryFromSearch, searchWithQuery } from "@/lib/searchState";
+import { filterGroups, KIND_LABEL, searchAll, SEARCH_PER_KIND, type SearchHit } from "@/lib/search";
+import { kindFromSearch, queryFromSearch, searchWithState } from "@/lib/searchState";
 
 /** 横断検索（自分用。NEXT v21 Phase 2）：記録・予定・固定費・旅行・タスク・メモ・契約・書類などを、1つの言葉で探す */
 export default function SearchPage() {
@@ -27,12 +27,15 @@ function SearchInner() {
   // 検索語は、アドレスの ?q= から始める（検索 → 別の画面 → 戻る、で、検索語が戻る）
   const [q, setQ] = useState(() => queryFromSearch(params.toString()));
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const allGroups = useMemo(() => searchAll(data, q, 200), [data, q]);
+  // 種類の絞り込み（?k= に残す）。いまの結果にない種類は、絞り込まない
+  const [kind, setKind] = useState(() => kindFromSearch(params.toString(), Object.keys(KIND_LABEL)));
+  const groups = useMemo(() => filterGroups(allGroups, kind), [allGroups, kind]);
   // 入力のたびに、アドレスの ?q= を書き換える（履歴は増やさない）
   useEffect(() => {
-    const next = searchWithQuery(window.location.search, q);
+    const next = searchWithState(window.location.search, q, kind);
     if (next !== window.location.search) window.history.replaceState(window.history.state, "", `${window.location.pathname}${next}`);
-  }, [q]);
-  const groups = useMemo(() => searchAll(data, q, 200), [data, q]);
+  }, [q, kind]);
   if (!FEATURES.search) {
     return (
       <main>
@@ -85,6 +88,19 @@ function SearchInner() {
         <Empty>「{q.trim()}」に合うものは見つかりません</Empty>
       ) : (
         <>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="種類で絞り込む">
+            {[{ kind: "", label: "すべて" }, ...allGroups.map((g) => ({ kind: g.kind as string, label: `${g.label} ${g.total}` }))].map((c) => (
+              <button
+                key={c.kind || "all"}
+                type="button"
+                aria-pressed={kind === c.kind}
+                onClick={() => setKind(c.kind)}
+                className={`min-h-9 rounded-full border px-3 text-[13px] font-semibold ${kind === c.kind ? "border-brand bg-brand-soft text-brand" : "border-line text-ink-2"}`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
           <p className="num px-1 text-[13px] font-semibold text-ink-2">{total}件</p>
           {groups.map((g) => {
             const showAll = open[g.kind];

@@ -56,6 +56,11 @@ export function parseQuery(q: string): { words: string[]; amount: number | null 
   return { words, amount };
 }
 
+/** 種類で絞り込む（kind が空ならすべて）。件数の表示は、絞り込んだあとの種類だけ */
+export function filterGroups(groups: SearchGroup[], kind: string): SearchGroup[] {
+  return kind ? groups.filter((g) => g.kind === kind) : groups;
+}
+
 export function searchAll(data: AppData, q: string, perKind: number = SEARCH_PER_KIND): SearchGroup[] {
   const { words, amount } = parseQuery(q);
   if (words.length === 0) return [];
