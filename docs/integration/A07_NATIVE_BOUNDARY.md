@@ -1,8 +1,9 @@
 # A07 iPhone アプリと画面の境目（o11 工程・ネイティブ境界）
 
 状態：**実装・独立点検（3回＋直しの確認）・回帰試験・実機の確認まで済み。**
-- master：7cf1bdd → 2d2bf6a → 2b58edc → 216a1ad。公開版のチェックは 682件合格。
-- feat/ios-widget：4c2976f → 51d806b → 58ad6c2 → cf69419。自分用のチェックは 738件合格。
+- master：7cf1bdd → 2d2bf6a → 2b58edc → 216a1ad → 98ebf2b。公開版のチェックは 682件合格。
+- feat/ios-widget：4c2976f → 51d806b → 58ad6c2 → cf69419 → 8df1d0d。自分用のチェックは 738件合格。
+- 確認の点検の低（IndexedDB の印もないときは旧データ側の印を書かない・件数を省けない）は master 98ebf2b・feat 8df1d0d で直した。
 - iPhone には 21:17 に 58ad6c2 を入れて実機で確かめ、21:28 に cf69419（試験と低-4 の直し）を入れた。
 
 受入（docs/v22/ARCHITECTURE_O9.md）：実 Swift の確認・保存の正本は1つ・通知／OCR／ウィジェットの回帰。
