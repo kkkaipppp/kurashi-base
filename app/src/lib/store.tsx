@@ -1,13 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { newId } from "./defaults";
 import { applyRecurringPayment, applyTxUpdate, mergeCategoryData, partialMark, revertPartialPayment, setTxTripData, unlinkTripFromTx } from "./dataOps";
 import { deleteTxWithRefunds, undoRefund } from "./refund";
 import { replaceEventEditableFields } from "./eventMerge";
 import { staleRecordError } from "./eventConcurrency";
 import { renameCategoryIn } from "./categoryRename";
-import { LocalStorageRepository, type Repository, type RepoLoadResult, type RepoSaveResult, type Token } from "./repository";
+import { LocalStorageRepository, type Repository } from "./repository";
+import { StoreCore, type CommitOptions, type CoreState } from "./storeCore";
 import type { SaveResult, UndoSnapshot } from "./storage";
 import type { AppData, CalendarEvent, Category, CollectionKey, HomeToggle, ItemOf, RecurringExpense, Transaction, Trip } from "./types";
 
@@ -66,7 +67,8 @@ interface Store {
   setCategoryArchived: (id: string, archived: boolean) => P;
   renameCategory: (id: string, name: string) => P;
   /** 復元など、全体が大きく変わる保存。前の状態を1つ控える（reason は取り消すときに表示） */
-  replaceAll: (d: AppData, reason: string) => P;
+  /** base：置き換える内容を作るときに使ったデータ（渡すと、今の最新と違うときは保存しない） */
+  replaceAll: (d: AppData, reason: string, base?: AppData) => P;
   /** すべて削除。控えも残さない */
   wipeAll: (empty: AppData) => P;
   /** 取り消し用の控え（保存のたびに読み直した値。同期で読める） */
@@ -82,113 +84,30 @@ interface Store {
   corruptRaw: string | null;
 }
 
-const NOT_LOADED = "保存できませんでした。データを読み込めていません。再読み込みしてください";
 
 const Ctx = createContext<Store | null>(null);
 
 export function StoreProvider({ children, repo: repoProp }: { children: React.ReactNode; repo?: Repository }) {
-  const [repo] = useState<Repository>(() => repoProp ?? new LocalStorageRepository());
-  const [state, setState] = useState<{ status: Status; data: AppData | null; error: string | null; raw: string | null }>({
-    status: "loading",
-    data: null,
-    error: null,
-    raw: null,
-  });
-  const dataRef = useRef<AppData | null>(null);
-  const tokenRef = useRef<Token>(null);
-  const undoRef = useRef<UndoSnapshot | null>(null);
-  /** 保存を1つずつ順に行う（前の保存が終わってから、次の変更を最新のデータに当てる） */
-  const queueRef = useRef<Promise<unknown>>(Promise.resolve());
-
-  const refreshUndo = useCallback(async () => {
-    try {
-      undoRef.current = await repo.readUndo();
-    } catch {
-      undoRef.current = null;
-    }
-  }, [repo]);
-
-  const applyLoad = useCallback(
-    (r: RepoLoadResult) => {
-      if (r.status === "ok" || r.status === "new") {
-        dataRef.current = r.data;
-        tokenRef.current = "token" in r ? r.token : null;
-        setState({ status: "ready", data: r.data, error: null, raw: null });
-      } else if (r.status === "corrupt") {
-        dataRef.current = null;
-        tokenRef.current = null;
-        setState({ status: "corrupt", data: null, error: r.error, raw: r.raw });
-      } else {
-        dataRef.current = null;
-        tokenRef.current = null;
-        setState({ status: "unavailable", data: null, error: r.error, raw: null });
-      }
-    },
-    [],
-  );
-
-  const reload = useCallback(async () => {
-    applyLoad(await repo.load());
-    await refreshUndo();
-  }, [repo, applyLoad, refreshUndo]);
-
+  // 保存の中心は React に依らない StoreCore（列・競合の確かめ・読み込み直し。lib/storeCore.ts）
+  const [core] = useState(() => new StoreCore(repoProp ?? new LocalStorageRepository()));
+  const [state, setState] = useState<CoreState>(core.snapshot);
+  useEffect(() => core.subscribe(setState), [core]);
   useEffect(() => {
     // ブラウザでのみ読めるため、マウント後に読み込む
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 読み込みはマウントのあと（保存場所はブラウザでだけ読める）
-    void reload();
+    void core.reload();
     // ブラウザに「この記録を消さないで」と頼む（容量が足りないときなどに、ブラウザが自分で消すのを防ぐ。
     // 履歴の消去など、本人が消すのは防げない）。対応していないブラウザでは何もしない
     navigator.storage?.persist?.().catch(() => {});
-    // 他のタブでの変更を反映
-    return repo.subscribe(() => void reload());
-  }, [repo, reload]);
-
-  /** 保存の結果を画面に反映する。ほかのタブで変わっていたら、最新を読み込み直す（入力中のシートはそのまま） */
-  const finish = useCallback(
-    async (next: AppData, r: RepoSaveResult, undoTouched: boolean): Promise<SaveResult> => {
-      if (r.ok) {
-        tokenRef.current = r.token;
-        dataRef.current = next;
-        setState((s) => ({ ...s, data: next }));
-        if (undoTouched) await refreshUndo();
-        return { ok: true };
-      }
-      if (r.conflict) await reload();
-      return { ok: false, error: r.error };
-    },
-    [reload, refreshUndo],
-  );
-
-  /** 保存を順番に並べる（同時に2つの保存が、同じ古いデータから計算しないように） */
-  const enqueue = useCallback(<T,>(job: () => Promise<T>): Promise<T> => {
-    const run = queueRef.current.then(job, job);
-    queueRef.current = run.catch(() => undefined);
-    return run;
-  }, []);
-
-  // 先に保存し、保存が完了したときだけ画面の状態を更新する
-  const commit = useCallback(
-    (fn: (d: AppData) => AppData, undoReason?: string): Promise<SaveResult> =>
-      enqueue(async () => {
-        const cur = dataRef.current;
-        if (!cur) return { ok: false, error: NOT_LOADED };
-        const next = fn(cur);
-        try {
-          return await finish(next, await repo.save(next, tokenRef.current, undoReason), !!undoReason);
-        } catch (e) {
-          return { ok: false, error: `保存できませんでした（${(e as Error)?.message ?? "不明"}）。今までの記録は消えていません` };
-        }
-      }),
-    [enqueue, finish, repo],
-  );
+    // 他のタブでの変更を反映（読み込み直しも列に並ぶ）
+    return core.repo.subscribe(() => void core.reload());
+  }, [core]);
 
   const store = useMemo<Store>(() => {
     const now = () => new Date().toISOString();
-    /** 編集を始めたときから、その記録が変わっていないか（変わっていれば保存しない理由を返す） */
-    const guarded = (list: readonly { id: string }[] | undefined, id: string, snapshot: string | undefined, go: () => Promise<SaveResult>): Promise<SaveResult> => {
-      const error = staleRecordError(list, id, snapshot); // recordMatchesSnapshot(current, snapshot) で今の記録と比べる
-      return error ? Promise.resolve({ ok: false, error }) : go();
-    };
+    const commit = (fn: (d: AppData) => AppData, opts?: CommitOptions) => core.commit(fn, opts);
+    /** 編集を始めたときから、その記録が変わっていないか。列の中で、最新のデータに対して確かめる（点検 中-2） */
+    const guarded = (pick: (d: AppData) => readonly { id: string }[] | undefined, id: string, snapshot: string | undefined, fn: (d: AppData) => AppData): Promise<SaveResult> =>
+      commit(fn, { check: (cur) => staleRecordError(pick(cur), id, snapshot) }); // recordMatchesSnapshot(current, snapshot) で今の記録と比べる
     const withId = async (id: string, r: Promise<SaveResult>) => {
       const x = await r;
       return x.ok ? { ...x, id } : x;
@@ -198,7 +117,7 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
       error: state.error,
       data: state.data,
       corruptRaw: state.raw,
-      storageKind: repo.kind,
+      storageKind: core.repo.kind,
       commit: (fn) => commit(fn),
       addTx: (t) => {
         const id = newId("tx");
@@ -216,7 +135,7 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
           }),
         );
       },
-      updateTx: (id, t, snapshot) => guarded(dataRef.current?.transactions, id, snapshot, () => commit((d) => applyTxUpdate(d, id, t, now()))),
+      updateTx: (id, t, snapshot) => guarded((d) => d.transactions, id, snapshot, (d) => applyTxUpdate(d, id, t, now())),
       deleteTx: (id) =>
         commit((d) => {
           const tx = d.transactions.find((x) => x.id === id);
@@ -232,12 +151,10 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
         return withId(id, commit((d) => ({ ...d, events: [...d.events, { ...e, id, createdAt: ts, updatedAt: ts }] })));
       },
       updateEvent: (id, e, snapshot) =>
-        guarded(dataRef.current?.events, id, snapshot, () =>
-          commit((d) => ({
-            ...d,
-            events: d.events.map((x) => (x.id === id ? replaceEventEditableFields(x, e, now()) : x)),
-          })),
-        ),
+        guarded((d) => d.events, id, snapshot, (d) => ({
+          ...d,
+          events: d.events.map((x) => (x.id === id ? replaceEventEditableFields(x, e, now()) : x)),
+        })),
       deleteEvent: (id) => commit((d) => ({ ...d, events: d.events.filter((x) => x.id !== id) })),
       toggleEventItem: (eventId, itemId) =>
         commit((d) => ({
@@ -252,9 +169,7 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
         return withId(id, commit((d) => ({ ...d, trips: [...(d.trips ?? []), { ...t, id, createdAt: ts, updatedAt: ts }] })));
       },
       updateTrip: (id, t, snapshot) =>
-        guarded(dataRef.current?.trips, id, snapshot, () =>
-          commit((d) => ({ ...d, trips: (d.trips ?? []).map((x) => (x.id === id ? { ...x, ...t, id, updatedAt: now() } : x)) })),
-        ),
+        guarded((d) => d.trips, id, snapshot, (d) => ({ ...d, trips: (d.trips ?? []).map((x) => (x.id === id ? { ...x, ...t, id, updatedAt: now() } : x)) })),
       deleteTrip: (id) =>
         commit((d) => ({
           ...d,
@@ -273,9 +188,7 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
         return commit((d) => ({ ...d, recurring: [...d.recurring, { ...rc, id: newId("rc"), createdAt: ts, updatedAt: ts }] }));
       },
       updateRecurring: (id, rc, snapshot) =>
-        guarded(dataRef.current?.recurring, id, snapshot, () =>
-          commit((d) => ({ ...d, recurring: d.recurring.map((x) => (x.id === id ? { ...x, ...rc, id, updatedAt: now() } : x)) })),
-        ),
+        guarded((d) => d.recurring, id, snapshot, (d) => ({ ...d, recurring: d.recurring.map((x) => (x.id === id ? { ...x, ...rc, id, updatedAt: now() } : x)) })),
       deleteRecurring: (id) => commit((d) => ({ ...d, recurring: d.recurring.filter((x) => x.id !== id) })),
       setBudget: (monthly) => commit((d) => ({ ...d, budget: { monthly } })),
       setHomePref: (key, v) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, [key]: v } } })),
@@ -291,23 +204,22 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
           }),
         })),
       mergeCategory: async (fromId, toId) => {
-        if (!dataRef.current) return { ok: false, error: NOT_LOADED };
         const ts = now();
-        // 移した件数とラベルは、保存の時点のデータで決める（並んだ保存のあとでも正しい件数を返す）
+        // 移した件数とラベルは、保存の時点（列の中）のデータで決める
         let moved = 0;
-        let fail: string | null = null;
-        const r = await enqueue(async () => {
-          const cur = dataRef.current;
-          if (!cur) return { ok: false as const, error: NOT_LOADED };
-          const m = mergeCategoryData(cur, fromId, toId, ts);
-          if (!m.ok) {
-            fail = m.error;
-            return { ok: false as const, error: m.error };
-          }
-          moved = m.moved;
-          return finish(m.next, await repo.save(m.next, tokenRef.current, m.label), true);
+        let label = "";
+        let next: AppData | null = null;
+        const r = await commit((d) => next ?? d, {
+          check: (cur) => {
+            const m = mergeCategoryData(cur, fromId, toId, ts);
+            if (!m.ok) return m.error;
+            moved = m.moved;
+            label = m.label;
+            next = m.next;
+            return null;
+          },
+          undoReason: () => label,
         });
-        if (fail) return { ok: false, error: fail };
         return r.ok ? { ...r, moved } : r;
       },
       addCategory: (c) =>
@@ -319,49 +231,33 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
           ],
         })),
       renameCategory: (id, name) => {
-        const r = renameCategoryIn(dataRef.current?.categories ?? [], id, name);
+        const r = renameCategoryIn(state.data?.categories ?? [], id, name);
         if (!r.ok) return Promise.resolve(r);
         return commit((d) => ({ ...d, categories: d.categories.map((c) => (c.id === id ? { ...c, name: name.trim() } : c)) }));
       },
       setCategoryArchived: (id, archived) =>
         commit((d) => ({ ...d, categories: d.categories.map((c) => (c.id === id ? { ...c, archived } : c)) })),
-      replaceAll: (next, reason) => {
-        if (!dataRef.current) return Promise.resolve({ ok: false, error: NOT_LOADED });
-        return commit(() => next, reason);
-      },
-      wipeAll: (empty) =>
-        // 本体・取り消しの控え・壊れたデータの退避分を消し、残っていないことを確かめる。
-        // 消しきれなければ成功と言わず、戻せるものは戻す（ほかのアプリのキーには触れない）
-        enqueue(async () => {
-          const r = await repo.wipe(tokenRef.current);
-          return finish(empty, r, true);
-        }),
-      undoInfo: () => undoRef.current,
-      undoLast: () =>
-        enqueue(async () => {
-          const r = await repo.undo(tokenRef.current);
-          if (r.ok && r.data) return finish(r.data, r, true);
-          if (!r.ok && r.conflict) await reload();
-          return r.ok ? { ok: true as const } : { ok: false as const, error: r.error };
-        }),
+      // base：置き換える内容を作るときに使ったデータ。今の最新と違えば保存しない（点検 中-1：古い内容で別タブ・別の保存を上書きしない）
+      replaceAll: (next, reason, base) => commit(() => next, { undoReason: reason, base }),
+      // 本体・取り消しの控え・壊れたデータの退避分を消し、残っていないことを確かめる（repo.wipe → localStorage の版は wipeAllAppData）。
+      // 消しきれなければ成功と言わず、戻せるものは戻す（ほかのアプリのキーには触れない）
+      wipeAll: (empty) => core.wipe(empty),
+      undoInfo: () => state.undo,
+      undoLast: () => core.undoLast(),
       addItem: (k, item) => {
         const ts = now();
         return commit((d) => ({ ...d, [k]: [...d[k], { ...item, id: newId(ID_PREFIX[k]), createdAt: ts, updatedAt: ts }] }));
       },
       updateItem: (k, id, patch, snapshot) =>
-        guarded(dataRef.current?.[k] as { id: string }[] | undefined, id, snapshot, () =>
-          commit((d) => ({
-            ...d,
-            [k]: (d[k] as { id: string }[]).map((x) => (x.id === id ? { ...x, ...patch, id, updatedAt: now() } : x)),
-          })),
-        ),
+        guarded((d) => d[k] as { id: string }[], id, snapshot, (d) => ({
+          ...d,
+          [k]: (d[k] as { id: string }[]).map((x) => (x.id === id ? { ...x, ...patch, id, updatedAt: now() } : x)),
+        })),
       replaceItem: (k, id, item, snapshot) =>
-        guarded(dataRef.current?.[k] as { id: string }[] | undefined, id, snapshot, () =>
-          commit((d) => ({
-            ...d,
-            [k]: (d[k] as { id: string; createdAt: string }[]).map((x) => (x.id === id ? { ...item, id, createdAt: x.createdAt, updatedAt: now() } : x)),
-          })),
-        ),
+        guarded((d) => d[k] as { id: string }[], id, snapshot, (d) => ({
+          ...d,
+          [k]: (d[k] as { id: string; createdAt: string }[]).map((x) => (x.id === id ? { ...item, id, createdAt: x.createdAt, updatedAt: now() } : x)),
+        })),
       removeItem: (k, id) => commit((d) => ({ ...d, [k]: (d[k] as { id: string }[]).filter((x) => x.id !== id) })),
       // 資格・科目を消すときは、その勉強記録も一緒に消す（どこにも属さない記録を残さない）
       removeStudySubject: (id) =>
@@ -370,14 +266,9 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
           studySubjects: d.studySubjects.filter((x) => x.id !== id),
           studyLogs: d.studyLogs.filter((l) => l.subjectId !== id),
         })),
-      resetCorrupt: async () => {
-        if (!state.raw) return { ok: false, error: "対象のデータがありません" };
-        const r = await repo.quarantine(state.raw);
-        if (r.ok) await reload();
-        return r;
-      },
+      resetCorrupt: () => core.resetCorrupt(),
     };
-  }, [state, commit, enqueue, finish, reload, repo]);
+  }, [state, core]);
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;
 }

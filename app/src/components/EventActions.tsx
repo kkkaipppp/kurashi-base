@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Button } from "./ui";
 import { useUI } from "./UIContext";
 import { useStore } from "@/lib/store";
@@ -21,7 +22,18 @@ export function EventActions({ ev, day, onClose }: { ev: CalendarEvent; day?: st
   const date = occurrenceKey(ev, day ?? (occursOn(ev, today) ? today : ev.startDate));
   const done = isDoneOn(ev, date);
   const repeating = !canShift(ev);
+  // 二重押しで2日分ずれないように（保存の完了を待つ間は押せない。o11 A06 点検 低-1）
+  const lockRef = useRef(false);
   const apply = async (fn: (e: CalendarEvent, ts: string) => CalendarEvent | null, msg: string) => {
+    if (lockRef.current) return false;
+    lockRef.current = true;
+    try {
+      return await applyOnce(fn, msg);
+    } finally {
+      lockRef.current = false;
+    }
+  };
+  const applyOnce = async (fn: (e: CalendarEvent, ts: string) => CalendarEvent | null, msg: string) => {
     const ts = new Date().toISOString();
     const r = await store.commit((d) => ({ ...d, events: d.events.map((e) => (e.id === ev.id ? (fn(e, ts) ?? e) : e)) }));
     ui.toast(r.ok ? msg : r.error, r.ok ? "ok" : "error");

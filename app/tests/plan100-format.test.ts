@@ -163,7 +163,8 @@ describe("E カテゴリをまとめる（消さない・取り消しの控え�
     expect(mergeCategoryData(d, "cafe", "cafe", now).ok).toBe(false);
     expect(mergeCategoryData(d, "cafe", "inc-1", now).ok).toBe(false);
     // o11 A06：取り消しの控えを残す保存は、Repository の save に理由（label）を渡す。localStorage の版は saveWithUndo を使う
-    expect(src("lib/store.tsx")).toContain("repo.save(m.next, tokenRef.current, m.label)");
+    expect(src("lib/store.tsx")).toContain("undoReason: () => label"); // 控えの理由は、列の中で計算したラベル（o11 A06 点検 中-1・中-2）
+    expect(src("lib/storeCore.ts")).toContain("this.repo.save(next, this.token, reason)");
     expect(src("lib/repository.ts")).toContain("saveWithUndo(next, base, undoReason");
   });
 });

@@ -17,7 +17,9 @@ export function ImportHistoryCard() {
   const list = undoableBatches(data).slice(0, 5);
   if (list.length === 0) return null;
   const undo = async (id: string, label: string) => {
-    const r = undoBatch(store.data ?? data, id, new Date().toISOString());
+    // 作るときに使ったデータ（base）を保存に渡す（o11 A06 点検 中-1）
+    const base = store.data ?? data;
+    const r = undoBatch(base, id, new Date().toISOString());
     if (!r.ok) return ui.toast(r.error, "error");
     const ok = await ui.confirm({
       title: `「${label}」の取り込みを取り消しますか？`,
@@ -26,7 +28,7 @@ export function ImportHistoryCard() {
       danger: true,
     });
     if (!ok) return;
-    const s = await store.replaceAll(r.result.next, `「${label}」の取り込みを取り消す`);
+    const s = await store.replaceAll(r.result.next, `「${label}」の取り込みを取り消す`, base);
     ui.toast(s.ok ? `${r.result.removed}件を取り消しました${r.result.kept ? `（${r.result.kept}件は残しました）` : ""}` : s.error, s.ok ? "ok" : "error");
   };
   return (

@@ -37,9 +37,11 @@ export default function InboxPage() {
       ok: "変える",
     });
     if (!ok) return;
-    const r = recategorize(data, ids, toId, new Date().toISOString());
+    // 作るときに使ったデータ（base）を保存に渡す（o11 A06 点検 中-1）
+    const base = store.data ?? data;
+    const r = recategorize(base, ids, toId, new Date().toISOString());
     if (!r.ok) return ui.toast(r.error, "error");
-    const s = await store.replaceAll(r.next, `「${merchant}」の${ids.length}件のカテゴリを「${to.name}」に変える`);
+    const s = await store.replaceAll(r.next, `「${merchant}」の${ids.length}件のカテゴリを「${to.name}」に変える`, base);
     ui.toast(s.ok ? `${r.changed}件を「${to.name}」にしました` : s.error, s.ok ? "ok" : "error");
   };
   const cats = (type: "expense" | "income") => data.categories.filter((c) => c.kind === type && !c.archived);

@@ -628,6 +628,8 @@ function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const left = (tx.refundGross ?? tx.amount) - refundedTotal(data, tx.id); // 返金できる残り（元の金額 − これまでの返金）
   const [amt, setAmt] = useState(String(left > 0 ? left : tx.amount));
+  // 二重押しで返金が2件にならないように（保存の完了を待つ間は押せない。o11 A06 点検 低-1）
+  const lockRef = useRef(false);
   const [date, setDate] = useState(todayStr());
   const already = refundedTotal(data, tx.id);
   if (tx.countAs === "transfer") return already > 0 ? <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">全額が返金されています（{formatYen(already)}）。</p> : null;
@@ -642,6 +644,15 @@ function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
     );
   const parsed = parseAmount(amt);
   const submit = async () => {
+    if (lockRef.current) return;
+    lockRef.current = true;
+    try {
+      await submitOnce();
+    } finally {
+      lockRef.current = false;
+    }
+  };
+  const submitOnce = async () => {
     const n = parsed.ok ? parsed.value : NaN;
     const r = applyRefund(data, tx.id, n, date, newId("tx"), new Date().toISOString());
     if (!r.ok) return ui.toast(r.error, "error");

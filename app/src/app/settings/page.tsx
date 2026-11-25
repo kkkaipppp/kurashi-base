@@ -176,7 +176,9 @@ export default function SettingsPage() {
     // 自分用は、この取り込みで足した記録に取り込みの ID を付け、履歴に残す（あとで取り消せる。NEXT v21 CSV:C08）
     const batchId = newBatchId(new Date().toISOString());
     const incoming = IS_PERSONAL && csv.result.kind === "transactions" ? { ...csv.result.incoming, transactions: stampBatch(csv.result.incoming.transactions, batchId) } : csv.result.incoming;
-    const res = applyRestore(store.data ?? data, incoming, "merge");
+    // 作るときに使ったデータ（base）を保存に渡す（o11 A06 点検 中-1）
+    const base = store.data ?? data;
+    const res = applyRestore(base, incoming, "merge");
     if (!res.ok) return ui.toast(res.error, "error");
     let next = res.data;
     if (IS_PERSONAL && csv.result.kind === "transactions") {
@@ -184,7 +186,7 @@ export default function SettingsPage() {
       // 足した記録が0件の取り込みは、履歴に残さない（取り消すものがないため）
       if (rec.added > 0) next = rec.data;
     }
-    const r = await store.replaceAll(next, "家計簿の CSV から追加");
+    const r = await store.replaceAll(next, "家計簿の CSV から追加", base);
     if (!r.ok) return ui.toast(`${r.error}（今のデータは変更していません）`, "error");
     ui.toast(`${res.added}件を追加しました`);
     closeCsv();
@@ -232,10 +234,12 @@ export default function SettingsPage() {
     });
     if (!ok) return;
     // 確定の直前にもう一度、今のデータから計算し直す（確認中に別のタブで変わった場合に備える）
-    const res = applyRestore(store.data ?? data, preview.data, mode);
+    // 作るときに使ったデータ（base）を保存に渡す。確認中にほかのタブ・ほかの保存で変わっていたら、保存しない（o11 A06 点検 中-1）
+    const base = store.data ?? data;
+    const res = applyRestore(base, preview.data, mode);
     if (!res.ok) return ui.toast(res.error, "error");
     // 1回の保存で反映（失敗時は元のまま）。前の状態は控えておく
-    const r = await store.replaceAll(res.data, mode === "replace" ? "バックアップから置き換え" : "バックアップから追加");
+    const r = await store.replaceAll(res.data, mode === "replace" ? "バックアップから置き換え" : "バックアップから追加", base);
     if (!r.ok) return ui.toast(`${r.error.replace("保存できませんでした", "復元できませんでした")}（今のデータは変更していません）`, "error");
     ui.toast(mode === "replace" ? "バックアップから復元しました" : `${res.added}件を追加しました`);
     setPreview(null);
