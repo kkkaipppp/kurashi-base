@@ -82,11 +82,11 @@ describe("記録0件のとき・書き込み中の変更（中-1・中-2）", ()
     expect(shouldSyncCalendar(d)).toBe(true);
   });
   it("決め方：通知の結果（拒否・一部の失敗・オフ）", () => {
-    expect(reminderOutcome({ denied: true }, true)).toEqual({ done: false, ok: false, detail: expect.stringContaining("許可されていません") });
-    expect(reminderOutcome({ failed: 2 }, true)).toEqual({ done: false, ok: false, detail: "2件の通知を登録できませんでした" });
-    expect(reminderOutcome({}, true)).toEqual({ done: true, ok: true });
+    expect(reminderOutcome({ denied: true }, true, 1)).toEqual({ done: false, ok: false, detail: expect.stringContaining("許可されていません") });
+    expect(reminderOutcome({ failed: 2 }, true, 1)).toEqual({ done: false, ok: false, detail: "2件の通知を登録できませんでした" });
+    expect(reminderOutcome({}, true, 1)).toEqual({ done: true, ok: true });
     // オフのときは、拒否されていても警告を残さない（点検2回目 低-1）
-    expect(reminderOutcome({ denied: true }, false)).toEqual({ done: true, ok: true });
+    expect(reminderOutcome({ denied: true }, false, 0)).toEqual({ done: true, ok: true });
     expect(calendarOutcome({ skipped: 3 })).toEqual({ ok: false, detail: "日時を読めなかった予定が3件あり、書いていません" });
     expect(calendarOutcome({})).toEqual({ ok: true });
   });
