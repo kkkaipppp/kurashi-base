@@ -379,3 +379,55 @@ describe("o11 A07 点検 高-1（2回目の中-B・中-C）：一度移したあ
     expect(lostStoreMessage("壊れた日時", false)).toContain("以前に保存先を移したあと");
   });
 });
+
+describe("o11 A07 点検3回目：移した印・始め直したあと", () => {
+  it("中-1：移したときに旧データ側の印が書けなくても、次の起動で書き直す。そのあと IndexedDB が消えたら、止めて知らせる", async () => {
+    const old = { ...emptyData(now), transactions: [tx("old")] };
+    const legacy = memKV({ [STORAGE_KEY]: JSON.stringify(old) });
+    const set = legacy.setItem;
+    // 1回目の起動：印だけ書けない（容量不足）
+    legacy.setItem = (k: string, v: string) => {
+      if (k === MOVED_MARK_KEY) throw new DOMException("full", "QuotaExceededError");
+      set(k, v);
+    };
+    const factory = new IDBFactory();
+    const a = new StoreCore(new IdbRepositoryAdapter({ factory, legacy }));
+    await a.reload();
+    expect(a.snapshot.status).toBe("ready");
+    expect(legacy.getItem(MOVED_MARK_KEY)).toBeNull();
+    expect((await a.commit(addTx("after-move"))).ok).toBe(true);
+    // 2回目の起動：書けるようになっていれば、印を書き直す
+    legacy.setItem = set;
+    const b = new StoreCore(new IdbRepositoryAdapter({ factory, legacy }));
+    await b.reload();
+    expect(b.snapshot.data?.transactions.map((t) => t.id)).toEqual(["old", "after-move"]);
+    expect(legacy.getItem(MOVED_MARK_KEY)).toBeTruthy();
+    // IndexedDB だけが消えた：古い記録を黙って開かない
+    const lost = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
+    await lost.reload();
+    expect(lost.snapshot.status).toBe("corrupt");
+    expect(lost.snapshot.error?.startsWith(LOST_STORE_PREFIX)).toBe(true);
+  });
+  it("始め直したあと、もう一度 IndexedDB が消えても、また止めて知らせる（古い記録は残ったまま）。すべて削除で古い記録も消える", async () => {
+    const old = { ...emptyData(now), transactions: [tx("old")] };
+    const legacy = memKV({ [STORAGE_KEY]: JSON.stringify(old) });
+    const a = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
+    await a.reload();
+    const f2 = new IDBFactory();
+    const b = new StoreCore(new IdbRepositoryAdapter({ factory: f2, legacy }));
+    await b.reload();
+    expect((await b.resetCorrupt()).ok).toBe(true);
+    expect((await b.commit(addTx("new"))).ok).toBe(true);
+    const c = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
+    await c.reload();
+    expect(c.snapshot.status).toBe("corrupt");
+    expect(legacy.getItem(STORAGE_KEY)).toBe(JSON.stringify(old));
+    // 始め直した側で、すべて削除：古い記録も消え、再起動しても止まらない
+    expect((await b.wipe(emptyData(now))).ok).toBe(true);
+    expect(legacy.getItem(STORAGE_KEY)).toBeNull();
+    const d = new StoreCore(new IdbRepositoryAdapter({ factory: f2, legacy }));
+    await d.reload();
+    expect(d.snapshot.status).toBe("ready");
+    expect(d.snapshot.data?.transactions).toEqual([]);
+  });
+});
