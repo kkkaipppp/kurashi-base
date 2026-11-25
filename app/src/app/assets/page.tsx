@@ -20,6 +20,9 @@ const ASSET_KINDS: { value: AssetKind; label: string }[] = [
 ];
 const kindLabel = (k: string) => ASSET_KINDS.find((x) => x.value === k)?.label ?? "その他";
 
+// 版の値を直接比べる（公開版の組み立てから、自分用の入力を外すため）
+const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+
 const config: CollectionConfig<"assets"> = {
   key: "assets",
   title: "資産・NISA",
@@ -31,11 +34,13 @@ const config: CollectionConfig<"assets"> = {
     { name: "kind", label: "種類", type: "select", options: ASSET_KINDS },
     { name: "value", label: "評価額（円）", optional: true, type: "number", half: true, hint: "分からなければ空欄のままで大丈夫です" },
     { name: "asOf", label: "評価日", optional: true, type: "date", half: true },
+    // 種類が「現金・預金」のとき、評価日の時点のカードの未払い（自分用。残高の目安で「引き落とし前のカード払い」に足す）
+    ...(PERSONAL_BUILD ? [{ name: "cardDebt", label: "評価日のカード未払い（円）", optional: true, type: "number" as const, hint: "現金・預金の残高の目安に使います。分からなければ空欄（0として計算します）" }] : []),
     { name: "note", label: "メモ", optional: true, type: "textarea" },
   ],
   initial: ({ today }) => ({ name: "", kind: "cash", value: "", asOf: today, note: "" }),
-  toDraft: (a) => ({ name: a.name, kind: a.kind, value: numStr(a.value), asOf: a.asOf, note: a.note }),
-  fromDraft: (d) => ({ name: str(d, "name"), kind: str(d, "kind") as AssetKind, value: numberFromDraft(str(d, "value")), asOf: str(d, "asOf"), note: str(d, "note") }),
+  toDraft: (a) => ({ name: a.name, kind: a.kind, value: numStr(a.value), asOf: a.asOf, cardDebt: a.cardDebt === undefined ? "" : String(a.cardDebt), note: a.note }),
+  fromDraft: (d) => ({ name: str(d, "name"), kind: str(d, "kind") as AssetKind, value: numberFromDraft(str(d, "value")), asOf: str(d, "asOf"), note: str(d, "note"), ...(PERSONAL_BUILD ? { cardDebt: numberFromDraft(str(d, "cardDebt")) ?? undefined } : {}) }),
   sort: (a, b) => (b.value ?? -1) - (a.value ?? -1),
   row: (a) => ({
     title: a.name,

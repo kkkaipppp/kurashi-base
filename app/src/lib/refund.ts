@@ -3,11 +3,14 @@ import { isMoveOnly } from "./classify";
 import type { AppData, Transaction } from "./types";
 
 /**
- * 返金（NEXT v21 X02：取消・返金。元の支出を、返金の分だけ減らす）。
- * - 一部の返金：元の支出の金額を、返金の額だけ減らす。全額の返金：元の支出を、収支に数えない（countAs=transfer。金額は残す）
- * - 返金の記録（refundOf つき）は、収入にも支出にも数えない（countAs=transfer）。元の支出が減るので、二重に数えない
- * - 返金の記録を消す（取り消す）と、元の金額・数え方が元に戻る
- * どの集計も、今までどおり「金額」と「数え方」だけを見る（返金のための分岐を、あちこちに入れない）
+ * 返金（NEXT v21 X02・v22 G0：取消・返金）。
+ * 元の支出は、最初の返金のときに「元の金額（refundGross）」と「元の数え方（refundWas）」を控える。
+ * そのあと、返金の記録が増えても減っても、毎回、控えと返金の記録の合計から、元の支出を計算し直す（順番に依存しない）：
+ *   返金の合計 0       → 元の金額・元の数え方に戻す（控えも消す）
+ *   返金の合計 < 元の金額 → 金額＝元の金額 − 返金の合計（数え方は元のまま）
+ *   返金の合計 ＝ 元の金額 → 金額は元のまま、収支に数えない（countAs=transfer）
+ * 返金の記録（refundOf つき）は、収入にも支出にも数えない（countAs=transfer）。返金の日は、購入の日と別に持つ。
+ * どの集計も、今までどおり「金額」と「数え方」だけを見る（返金のための分岐を、あちこちに入れない）。
  */
 export type RefundResult = { ok: true; next: AppData } | { ok: false; error: string };
 
@@ -15,16 +18,37 @@ export function refundedTotal(d: Pick<AppData, "transactions">, txId: string): n
   return d.transactions.filter((t) => t.refundOf === txId).reduce((a, t) => a + t.amount, 0);
 }
 
+/** 元の支出を、返金の記録の合計から計算し直す */
+function settle(d: AppData, origId: string, ts: string): AppData {
+  const orig = d.transactions.find((t) => t.id === origId);
+  if (!orig) return d;
+  const sum = refundedTotal(d, origId);
+  const gross = orig.refundGross ?? orig.amount;
+  const { refundGross: _g, refundWas: _w, ...plain } = orig; // eslint-disable-line @typescript-eslint/no-unused-vars
+  const was = orig.refundGross !== undefined ? orig.refundWas : orig.countAs === "transfer" ? undefined : orig.countAs; // 元の数え方（最初の返金のときに控える）
+  // 元の数え方を戻した形（transfer は、返金が付けたものなので外す）
+  const { countAs: _c, ...base } = plain; // eslint-disable-line @typescript-eslint/no-unused-vars
+  const keepWas = was === "life" || was === "invest" ? { countAs: was } : {};
+  let next: Transaction;
+  if (sum === 0) next = { ...base, ...keepWas, amount: gross, updatedAt: ts };
+  else if (sum < gross) next = { ...base, ...keepWas, amount: gross - sum, refundGross: gross, ...(was ? { refundWas: was } : {}), updatedAt: ts };
+  else next = { ...base, countAs: "transfer", amount: gross, refundGross: gross, ...(was ? { refundWas: was } : {}), updatedAt: ts };
+  return { ...d, transactions: d.transactions.map((t) => (t.id === origId ? next : t)) };
+}
+
 export function applyRefund(d: AppData, txId: string, amount: number, date: string, refundId: string, ts: string): RefundResult {
   const orig = d.transactions.find((t) => t.id === txId);
   if (!orig) return { ok: false, error: "元の記録が見つかりません" };
   if (orig.type !== "expense") return { ok: false, error: "返金にできるのは、支出の記録だけです" };
   if (orig.refundOf) return { ok: false, error: "返金の記録を、さらに返金にはできません" };
-  if (isMoveOnly(orig)) return { ok: false, error: "収支に数えない記録（すでに全額返金したもの・引落など）は、返金にできません" };
+  // 収支に数えない記録は返金にできない（すでに全額返金したものは、取り消してから）
+  if (isMoveOnly(orig) && orig.refundGross === undefined) return { ok: false, error: "収支に数えない記録（引落・口座間の移動など）は、返金にできません" };
+  const gross = orig.refundGross ?? orig.amount;
+  const left = gross - refundedTotal(d, txId);
   if (!Number.isInteger(amount) || amount < 1) return { ok: false, error: "返金の額は、1円以上の整数で入れてください" };
-  if (amount > orig.amount) return { ok: false, error: `返金の額が、元の支出（残り ${orig.amount.toLocaleString("ja-JP")}円）より大きいです` };
+  if (left <= 0) return { ok: false, error: "すでに全額が返金されています" };
+  if (amount > left) return { ok: false, error: `返金の額が、返金できる残り（${left.toLocaleString("ja-JP")}円）より大きいです` };
   if (!isValidDateStr(date)) return { ok: false, error: "日付が正しくありません" };
-  const full = amount === orig.amount;
   const incomeCat = d.categories.find((c) => c.kind === "income" && c.name === "その他の収入") ?? d.categories.find((c) => c.kind === "income");
   const refund: Transaction = {
     id: refundId,
@@ -39,26 +63,18 @@ export function applyRefund(d: AppData, txId: string, amount: number, date: stri
     source: "manual",
     countAs: "transfer",
     refundOf: orig.id,
-    ...(full && orig.countAs && orig.countAs !== "transfer" ? { refundWas: orig.countAs } : {}),
     createdAt: ts,
     updatedAt: ts,
   };
-  const next = d.transactions.map((t) => (t.id === orig.id ? (full ? { ...t, countAs: "transfer" as const, updatedAt: ts } : { ...t, amount: t.amount - amount, updatedAt: ts }) : t));
-  return { ok: true, next: { ...d, transactions: [...next, refund] } };
+  // 最初の返金のときに、元の金額・数え方を控える（settle が、控えを使って計算し直す）
+  const withGross = d.transactions.map((t) => (t.id === orig.id && t.refundGross === undefined ? { ...t, refundGross: t.amount, ...(t.countAs && t.countAs !== "transfer" ? { refundWas: t.countAs } : {}) } : t));
+  return { ok: true, next: settle({ ...d, transactions: [...withGross, refund] }, orig.id, ts) };
 }
 
-/** 返金の記録を取り消す：元の金額（一部）か、元の数え方（全額）を戻して、返金の記録を消す。元の記録がもうなければ、返金の記録だけ消す */
+/** 返金の記録を取り消す：その記録を消して、元の支出を計算し直す（ほかの返金は、そのまま残る）。元の記録がもうなければ、返金の記録だけ消す */
 export function undoRefund(d: AppData, refundId: string, ts: string): AppData {
   const r = d.transactions.find((t) => t.id === refundId);
   if (!r || !r.refundOf) return d;
-  const orig = d.transactions.find((t) => t.id === r.refundOf);
-  const partialLeft = orig && orig.countAs !== "transfer";
-  const rest = d.transactions.filter((t) => t.id !== refundId);
-  const restored = rest.map((t) => {
-    if (!orig || t.id !== orig.id) return t;
-    if (partialLeft) return { ...t, amount: t.amount + r.amount, updatedAt: ts };
-    const { countAs: _drop, ...others } = t; // eslint-disable-line @typescript-eslint/no-unused-vars
-    return { ...others, ...(r.refundWas ? { countAs: r.refundWas } : {}), updatedAt: ts };
-  });
-  return { ...d, transactions: restored };
+  const rest: AppData = { ...d, transactions: d.transactions.filter((t) => t.id !== refundId) };
+  return settle(rest, r.refundOf, ts);
 }

@@ -81,7 +81,7 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
   nisa: { label: "NISA", fields: { date: isDate, kind: oneOf("buy", "sell"), frame: oneOf("tsumitate", "growth"), amount: (v) => isAmt(v), name: isStr, note: isStr } },
   notes: { label: "生活記録・メモ", fields: { title: isStr, body: isStr, date: okDateOrBlank, pinned: isBool } },
   tasks: { label: "タスク", fields: { title: isStr, due: okDateOrBlank, done: isBool, note: isStr, eventId: optional(isStr) } },
-  assets: { label: "資産", fields: { name: isStr, kind: oneOf("cash", "investment", "nisa", "pension", "insurance", "property", "other"), value: numOrNull, asOf: okDateOrBlank, note: isStr } },
+  assets: { label: "資産", fields: { name: isStr, kind: oneOf("cash", "investment", "nisa", "pension", "insurance", "property", "other"), value: numOrNull, asOf: okDateOrBlank, note: isStr, cardDebt: optional(isAmt) } },
   contracts: { label: "契約", fields: { name: isStr, provider: isStr, amount: numOrNull, cycle: oneOf("monthly", "yearly", "none"), renewalDate: okDateOrBlank, status: oneOf("active", "cancelled"), note: isStr } },
   health: { label: "健康記録", fields: { date: isDate, item: isStr, value: numOrNull, unit: isStr, note: isStr } },
   documents: { label: "書類", fields: { title: isStr, category: isStr, expiry: okDateOrBlank, place: isStr, note: isStr } },
@@ -113,7 +113,7 @@ export function validateAppData(input: unknown): R {
       !isStr(t.date) || !isValidDateStr(t.date) || !isAmt(t.amount) || !isStr(t.categoryId) ||
       !isStr(t.merchant) || !isStr(t.paymentMethod) || !isStr(t.note) || !isStr(t.createdAt) ||
       // 100点化で足した任意の項目（無くてもよい。あれば形を確かめる）
-      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas)
+      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross)
     )
       return { ok: false, error: "取引のデータが壊れています" };
     if (ids.has(t.id)) return { ok: false, error: "取引IDが重複しています" };

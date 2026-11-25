@@ -15,11 +15,11 @@ import type { AppData } from "./types";
 export type BalanceResult =
   | {
       ok: true;
-      base: { name: string; value: number; asOf: string };
+      base: { name: string; value: number; asOf: string; cardDebt: number };
       income: number;
       spend: number;
       cardSettled: number;
-      /** 基準の日より後のカード払いのうち、引き落としの記録がまだない分（マイナスにならない） */
+      /** 引き落とし前のカード払い＝基準の日のカード未払い＋基準の日より後のカード払い−引き落とし（マイナスにならない） */
       cardPending: number;
       /** 今の残高の目安 */
       balance: number;
@@ -46,7 +46,8 @@ export function cashBalance(d: AppData, today: string): BalanceResult {
     else spend += t.amount;
   }
   const value = b.value as number;
-  const cardPending = Math.max(0, cardBought - cardSettled);
+  const debt0 = typeof b.cardDebt === "number" ? b.cardDebt : 0; // 基準の日の時点のカード未払い（入れていなければ 0）
+  const cardPending = Math.max(0, debt0 + cardBought - cardSettled);
   const balance = value + income - spend - cardSettled;
-  return { ok: true, base: { name: b.name, value, asOf: b.asOf }, income, spend, cardSettled, cardPending, balance, afterCard: balance - cardPending };
+  return { ok: true, base: { name: b.name, value, asOf: b.asOf, cardDebt: debt0 }, income, spend, cardSettled, cardPending, balance, afterCard: balance - cardPending };
 }
