@@ -45,24 +45,23 @@ describe("色のコントラスト比（実測）", () => {
     console.log(`${_n}: ${r.toFixed(2)}:1`);
     expect(r).toBeGreaterThanOrEqual(4.5);
   });
-  // 既知：薄い地（expense-soft・event-soft）の上の支出・予定の文字は、4.5:1 に届かない（3:1 以上）。太字・大きい文字・符号と一緒に使う条件。実際に小さい文字で使っている場所の確認が残っている
-  it('既知：薄い地の上の支出・予定の文字は 4.5:1 に届かない（3:1 は超える）', () => {
-    const a = ratio(color('expense'), color('expense-soft'));
-    const b = ratio(color('event'), color('event-soft'));
-    console.log('支出 × 支出の薄い地: ' + a.toFixed(2) + ':1 ／ 予定 × 予定の薄い地: ' + b.toFixed(2) + ':1');
-    expect(a).toBeGreaterThanOrEqual(3);
-    expect(a).toBeLessThan(4.5);
-    expect(b).toBeGreaterThanOrEqual(3);
-    expect(b).toBeLessThan(4.5);
+  // Q28（2026-11-25 平尾さんの決定「濃くする」）：薄い補足（ink-3）と、薄い地の上の支出・予定の文字も、4.5:1 を満たす
+  it.each([
+    ["薄い補足（ink-3）× カード", color("ink-3"), surface],
+    ["薄い補足（ink-3）× 背景", color("ink-3"), bg],
+    ["支出 × 支出の薄い地", color("expense"), color("expense-soft")],
+    ["予定 × 予定の薄い地", color("event"), color("event-soft")],
+    ["収入 × 収入の薄い地", color("income"), color("income-soft")],
+    ["ブランド × ブランドの薄い地", color("brand"), color("brand-soft")],
+    ["警告 × 警告の薄い地", color("warn"), color("warn-soft")],
+  ])("4.5:1 以上（Q28 で濃くした）：%s", (_n, fg, back) => {
+    const r = ratio(fg, back);
+    console.log(_n + ": " + r.toFixed(2) + ":1");
+    expect(r).toBeGreaterThanOrEqual(4.5);
   });
-  // 既知：薄い補足の色（ink-3）は、通常の文字の 4.5:1 に届かない。大きい文字・装飾・使えない状態の表示だけに使うのが条件。
-  // 本当の文字（12px の補足など）に使っているかは、画面ごとに実測が要る（未実施）。ここでは、届かない事実を記録する
-  it("既知：薄い補足（ink-3）は 4.5:1 に届かない（3:1 は超える）。補足の文字に使う場所の確認が残っている", () => {
-    const r1 = ratio(color("ink-3"), surface);
-    const r2 = ratio(color("ink-3"), bg);
-    console.log(`薄い補足（ink-3）× カード: ${r1.toFixed(2)}:1 ／ × 背景: ${r2.toFixed(2)}:1`);
-    expect(r1).toBeGreaterThanOrEqual(3);
-    expect(r1).toBeLessThan(4.5);
+  it("補足の階層：本文（ink）＞ 補足（ink-2）＞ 薄い補足（ink-3）の順に、濃さが違う", () => {
+    expect(ratio(color("ink"), surface)).toBeGreaterThan(ratio(color("ink-2"), surface));
+    expect(ratio(color("ink-2"), surface)).toBeGreaterThan(ratio(color("ink-3"), surface));
   });
   it("UI の境界（線）は、背景とのコントラストが低い（装飾の線。入力欄の境界などは別に確認が要る）", () => {
     const r = ratio(color("line"), surface);

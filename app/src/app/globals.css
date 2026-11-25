@@ -7,18 +7,18 @@
   --surface-2: #f1eee7;
   --ink: #1f2421;
   --ink-2: #5b625d;
-  --ink-3: #8a908b;
+  --ink-3: #6b706c; /* 薄い補足の文字。2026-11-25 平尾さんの決定（Q28）：#8a908b だと 4.5:1 に届かなかったため濃くした */
   --line: #e4e0d6;
   --brand: #2f6f5e;
   --brand-ink: #ffffff;
   --brand-soft: #e3efe9;
-  --expense: #b4503c;
+  --expense: #a74a37; /* 2026-11-25 Q28：薄い地の上でも 4.5:1 になるよう少し濃くした（元 #b4503c） */
   --expense-soft: #f8e6e1;
   --income: #2f6f9e;
   --income-soft: #e2edf6;
-  --event: #7a5ab3;
+  --event: #7153a6; /* 2026-11-25 Q28：同上（元 #7a5ab3） */
   --event-soft: #eee8f7;
-  --warn: #9a6a00;
+  --warn: #926400; /* 2026-11-25 Q28：薄い黄の地の上で 4.5:1 になるよう少し濃くした（元 #9a6a00） */
   --warn-soft: #fbf1d6;
   --danger: #b3261e;
 }
