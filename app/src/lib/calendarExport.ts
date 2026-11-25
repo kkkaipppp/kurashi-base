@@ -2,6 +2,7 @@ import { addDays, daysBetween } from "./date";
 import { occursOn } from "./aggregate";
 import { advanceDueDate } from "./recurring";
 import { formatYen } from "./money";
+import { clipText } from "./clip";
 import type { AppData } from "./types";
 
 /**
@@ -22,6 +23,8 @@ export interface CalendarItem {
 
 export const CAL_PAST_DAYS = 30;
 export const CAL_FUTURE_DAYS = 180;
+/** カレンダーに書く名前・場所の長さ（アプリが受け取る一覧は 5MB まで。超えると1件も書けない。o11 A07） */
+export const CAL_TEXT_MAX = 200;
 export const CAL_MAX_ITEMS = 1500;
 
 export function calendarWindow(today: string): { from: string; to: string } {
@@ -33,9 +36,9 @@ export function buildCalendarItems(data: AppData, today: string): CalendarItem[]
   const items: CalendarItem[] = [];
 
   for (const e of data.events) {
-    const title = e.title.trim() || "（名前なし）";
+    const title = clipText(e.title.trim(), CAL_TEXT_MAX) || "（名前なし）";
     // メモ（説明）は渡さない（iCloud に同期され、ロック画面などにも出るため）
-    const base = { title, allDay: e.allDay, location: e.location ?? "", notes: "" };
+    const base = { title, allDay: e.allDay, location: clipText(e.location ?? "", CAL_TEXT_MAX), notes: "" };
     const rep = e.repeat ?? "none";
     if (rep === "none" || e.startDate !== e.endDate) {
       // 1回だけの予定・何日も続く予定：期間に少しでもかかれば、そのまま1件
@@ -56,7 +59,7 @@ export function buildCalendarItems(data: AppData, today: string): CalendarItem[]
     for (let guard = 0; d <= to && guard < 3620; guard++) {
       if (d >= from) {
         items.push({
-          title: `固定費 ${r.name} ${formatYen(r.amount)}`,
+          title: `固定費 ${clipText(r.name, CAL_TEXT_MAX)} ${formatYen(r.amount)}`,
           startDate: d,
           endDate: d,
           allDay: true,
