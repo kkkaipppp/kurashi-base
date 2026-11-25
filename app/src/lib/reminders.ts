@@ -2,6 +2,7 @@ import { eventsOnDay } from "./aggregate";
 import { addDays, formatDateJa } from "./date";
 import { departureTime, occurrenceKey } from "./eventOps";
 import { formatYen } from "./money";
+import { clipText } from "./clip";
 import type { AppData } from "./types";
 
 /**
@@ -15,6 +16,8 @@ import type { AppData } from "./types";
  */
 export const MAX_REMINDERS = 50;
 export const HORIZON_DAYS = 14;
+/** 通知の題名・本文の長さ（iPhone の通知に出せるのは数行） */
+export const REMINDER_TEXT_MAX = 120;
 
 export interface ReminderSettings {
   on: boolean;
@@ -90,7 +93,8 @@ export function buildReminders(d: AppData, now: string, s: ReminderSettings): Re
     // すでに過ぎた時刻は登録しない
     if (sh.date < nowDate || (sh.date === nowDate && sh.min <= nowMin)) return;
     if (notBefore && (sh.date > notBefore.date || (sh.date === notBefore.date && sh.min >= notBefore.min))) return;
-    out.push({ id, title: s.hideDetail ? "くらしベース" : title, body: s.hideDetail ? "お知らせがあります" : body, at: `${sh.date}T${hhmm(sh.min)}` });
+    // 名前がとても長いときは切る（アプリが受け取る一覧は 200,000 バイトまで。超えると全部を入れ替えられない。o11 A07）
+    out.push({ id, title: s.hideDetail ? "くらしベース" : clipText(title, REMINDER_TEXT_MAX), body: s.hideDetail ? "お知らせがあります" : clipText(body, REMINDER_TEXT_MAX), at: `${sh.date}T${hhmm(sh.min)}` });
   };
   const morning = toMin(s.morning);
   for (let i = 0; i < HORIZON_DAYS; i++) {
