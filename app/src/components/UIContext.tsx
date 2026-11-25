@@ -14,6 +14,7 @@ import { Button } from "./ui";
 import { TxSheet, type TxSheetRequest } from "./TxSheet";
 import { EventSheet, type EventSheetRequest } from "./EventSheet";
 import { AddChooser } from "./AddChooser";
+import { todayStr } from "@/lib/date";
 import { usePathname, useRouter } from "next/navigation";
 
 interface ConfirmOpts {
@@ -156,7 +157,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
               setTx({ mode: "new", type: kind, date, key: ++seq.current });
             else if (kind === "event")
               setEv({ mode: "new", date, key: ++seq.current });
-            else router.push("/tasks?open=new");
+            // 今日以外の日を選んでいたら、その日を期限の初めの値にする（磨き込み 2026-11-26）
+            else router.push(date && date !== todayStr() ? `/tasks?open=new&date=${date}` : "/tasks?open=new");
           }}
         />
       )}

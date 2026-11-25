@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { OpenFromQuery } from "./OpenFromQuery";
 import { Sheet } from "./Sheet";
-import { Button, Card, Empty, Field, PageHeader, inputCls } from "./ui";
+import { Button, Card, Empty, Field, PageHeader, focusFirstInvalid, inputCls } from "./ui";
 import { useUI } from "./UIContext";
 import { useData, useStore, type ItemInput } from "@/lib/store";
 import { isValidDateStr, todayStr } from "@/lib/date";
@@ -47,6 +47,8 @@ export interface CollectionConfig<K extends CollectionKey> {
   noun: string; // 「タスク」「資産」など。ボタン・確認文に使う
   /** 追加ボタンの文言（既定：「○○を追加」） */
   addLabel?: string;
+  /** ＋から日を選んで新しく作るとき、その日を入れる日付の項目（タスクの期限など） */
+  newDateField?: string;
   intro?: ReactNode;
   emptyText: string;
   fields: FieldDef[] | ((ctx: { data: AppData }) => FieldDef[]);
@@ -120,7 +122,7 @@ export function CollectionPage<K extends CollectionKey>({ config }: { config: Co
 export function CollectionSection<K extends CollectionKey>({ config, heading }: { config: CollectionConfig<K>; heading?: string }) {
   const data = useData();
   const today = todayStr();
-  const [editing, setEditing] = useState<{ id?: string; key: number } | null>(null);
+  const [editing, setEditing] = useState<{ id?: string; key: number; date?: string } | null>(null);
   const list = useMemo(() => {
     const l = [...(data[config.key] as ItemOf<K>[])];
     return config.sort ? l.sort(config.sort) : l;
@@ -139,7 +141,7 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
   const blocked = config.addBlocked?.(data) ?? null;
   const add = () => setEditing({ key: Date.now() });
   const ids = useMemo(() => list.map((x) => (x as { id: string }).id), [list]);
-  const openById = useCallback((id: string) => setEditing(id === "new" ? { key: Date.now() } : { id, key: Date.now() }), [setEditing]);
+  const openById = useCallback((id: string, date?: string) => setEditing(id === "new" ? { key: Date.now(), date } : { id, key: Date.now() }), [setEditing]);
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -196,12 +198,12 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
         ))
       )}
       <OpenFromQuery ids={ids} onOpen={openById} />
-      {editing && <ItemSheet key={editing.key} config={config} id={editing.id} onClose={() => setEditing(null)} />}
+      {editing && <ItemSheet key={editing.key} config={config} id={editing.id} date={editing.date} onClose={() => setEditing(null)} />}
     </section>
   );
 }
 
-function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: CollectionConfig<K>; id?: string; onClose: () => void }) {
+function ItemSheet<K extends CollectionKey>({ config, id, date, onClose }: { config: CollectionConfig<K>; id?: string; date?: string; onClose: () => void }) {
   const data = useData();
   const store = useStore();
   const ui = useUI();
@@ -210,7 +212,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
   // 編集中に別のタブで消されても入力を消さない。保存すると「削除されています」で止まる（作り直さない）
   const [originalCur] = useState(liveCur);
   const cur = liveCur ?? originalCur;
-  const initial = useMemo(() => (cur ? config.toDraft(cur) : config.initial({ today, data })), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const initial = useMemo(() => (cur ? config.toDraft(cur) : { ...config.initial({ today, data }), ...(date && config.newDateField ? { [config.newDateField]: date } : {}) }), []); // eslint-disable-line react-hooks/exhaustive-deps
   const fields = typeof config.fields === "function" ? config.fields({ data }) : config.fields;
   const [draft, setDraft] = useState<Draft>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -234,7 +236,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
     const e = { ...validateFields(fields, draft), ...(config.validate?.(draft) ?? {}) };
     const real = Object.fromEntries(Object.entries(e).filter(([, v]) => v));
     setErrors(real);
-    if (Object.keys(real).length) return;
+    if (Object.keys(real).length) return focusFirstInvalid();
     lock.current = true;
     const item = config.fromDraft(draft);
     const r = await (cur ? store.updateItem(config.key, (cur as { id: string }).id, item, editSnapshot.current) : store.addItem(config.key, item));

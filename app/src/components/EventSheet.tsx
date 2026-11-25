@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet } from "./Sheet";
-import { Button, Field, inputCls } from "./ui";
+import { Button, Field, focusFirstInvalid, inputCls } from "./ui";
 import { useUI } from "./UIContext";
 import { eventTimeLabel } from "./Rows";
 import { useData, useStore } from "@/lib/store";
@@ -342,8 +342,9 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
   const set = <K extends keyof EventDraft>(k: K, v: EventDraft[K]) => {
     setDraft((d) => {
       const n = { ...d, [k]: v };
-      // 開始日を終了日より後にしたら終了日を合わせる
-      if (k === "startDate" && typeof v === "string" && n.endDate < v) n.endDate = v;
+      // 1日だけの予定は、開始日を変えたら終了日も一緒に動かす（前にずらしたとき、知らないうちに何日もの予定にならない。磨き込み 2026-11-26）。
+      // 何日も続く予定は、開始日を終了日より後にしたときだけ終了日を合わせる
+      if (k === "startDate" && typeof v === "string" && (d.startDate === d.endDate || n.endDate < v)) n.endDate = v;
       // 開始時刻を終わりと同じか後にしたら、終わりを開始の1時間後にする（レビュー o1 の P13）
       if (k === "startTime" && typeof v === "string" && /^\d{2}:\d{2}$/.test(v) && n.startDate === n.endDate && n.endTime <= v) {
         const [h, mi] = v.split(":").map(Number);
@@ -398,6 +399,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       if (Object.keys(errs).length) {
         setErrors(errs);
         if (errs.url || errs.cost || errs.travel || errs.note || errs.repeat || errs.repeatUntil) setShowMore(true);
+        focusFirstInvalid();
         return;
       }
       const pending = newItem.trim() ? [...extra.items, { id: newId("it"), text: newItem.trim().slice(0, 60), done: false }] : extra.items;

@@ -36,3 +36,24 @@ describe("磨き込み：高", () => {
     expect(s).toContain("今月の生活費（投資を除く）");
   });
 });
+
+describe("磨き込み：中（入力）", () => {
+  it("1日だけの予定・旅行は、開始日を変えると終了日も一緒に動く（前にずらして、知らないうちに何日もの予定にならない）", () => {
+    expect(code("components/EventSheet.tsx")).toMatch(/if \(k === "startDate" && typeof v === "string" && \(d\.startDate === d\.endDate \|\| n\.endDate < v\)\) n\.endDate = v;/);
+    expect(code("app/trips/page.tsx")).toMatch(/if \(k === "startDate" && \(x\.startDate === x\.endDate \|\| n\.endDate < v\)\) n\.endDate = v;/);
+  });
+  it("＋からタスクを選ぶと、今日以外を選んでいたらその日を期限の初めの値にする", () => {
+    expect(code("components/UIContext.tsx")).toContain('router.push(date && date !== todayStr() ? `/tasks?open=new&date=${date}` : "/tasks?open=new")');
+    expect(code("components/OpenFromQuery.tsx")).toContain('onOpen(id, id === "new" && date && ');
+    expect(code("components/OpenFromQuery.tsx")).toContain('params.delete("date")');
+    expect(code("app/tasks/page.tsx")).toContain('newDateField: "due"');
+    expect(code("components/CollectionPage.tsx")).toContain("...(date && config.newDateField ? { [config.newDateField]: date } : {})");
+  });
+  it("保存できなかったときは最初の間違いの欄へ移り、間違い・ヒントの文は入力欄の説明としてつながる", () => {
+    const ui = code("components/ui.tsx");
+    expect(ui).toContain("export function focusFirstInvalid()");
+    expect(ui).toMatch(/cloneElement\(children[\s\S]*?"aria-describedby"/);
+    expect(ui).toContain('<p id={`${htmlFor}-hint`}');
+    for (const f of ["components/CollectionPage.tsx", "components/EventSheet.tsx", "app/recurring/page.tsx", "app/trips/page.tsx"]) expect(code(f), f).toContain("focusFirstInvalid()");
+  });
+});

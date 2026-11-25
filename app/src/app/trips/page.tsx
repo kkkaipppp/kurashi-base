@@ -12,7 +12,7 @@ import { useUI } from "@/components/UIContext";
 import { EventRow, TxRow } from "@/components/Rows";
 import { OpenFromQuery } from "@/components/OpenFromQuery";
 import { Sheet } from "@/components/Sheet";
-import { Button, Card, Empty, Field, IconChevronL, IconChevronR, PageHeader, inputCls } from "@/components/ui";
+import { Button, Card, Empty, Field, IconChevronL, IconChevronR, PageHeader, focusFirstInvalid, inputCls } from "@/components/ui";
 import { IS_PERSONAL } from "@/lib/edition";
 import { tripMemoCandidates } from "@/lib/tripMemo";
 import type { Trip } from "@/lib/types";
@@ -304,7 +304,8 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
   const set = (k: keyof typeof f, v: string) => {
     setF((x) => {
       const n = { ...x, [k]: v };
-      if (k === "startDate" && n.endDate < v) n.endDate = v;
+      // 1日だけの旅行は、開始日を変えたら終了日も一緒に動かす（磨き込み 2026-11-26）
+      if (k === "startDate" && (x.startDate === x.endDate || n.endDate < v)) n.endDate = v;
       return n;
     });
     if (errors[k]) setErrors((e) => ({ ...e, [k]: "" }));
@@ -326,7 +327,10 @@ function TripForm({ editing, onClose, onSaved, onDeleted }: { editing?: Trip; on
     const b = f.budget.replace(/[,，円\s]/g, "").normalize("NFKC");
     const budget = b === "" ? null : Number(b);
     if (budget !== null && (!Number.isInteger(budget) || budget < 0 || budget > 100_000_000)) e.budget = "予算は0以上の整数（円）で入力してください";
-    if (Object.keys(e).length) return setErrors(e);
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return focusFirstInvalid();
+    }
     lock.current = true;
     const input: TripInput = { title: f.title.trim(), startDate: f.startDate, endDate: f.endDate, destination: f.destination.trim(), budget, note: f.note.trim() };
     const r = await (editId.current ? store.updateTrip(editId.current, input, editSnapshot.current) : store.addTrip(input));

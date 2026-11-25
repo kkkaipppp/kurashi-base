@@ -9,7 +9,7 @@ import { cycleLabel } from "@/lib/recurring";
 import { PAYMENT_METHODS, type RecurringCycle, type RecurringExpense } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { Sheet } from "@/components/Sheet";
-import { Button, Card, Empty, Field, PageHeader, inputCls } from "@/components/ui";
+import { Button, Card, Empty, Field, PageHeader, focusFirstInvalid, inputCls } from "@/components/ui";
 
 export default function RecurringPage() {
   const data = useData();
@@ -133,7 +133,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
     if (!isValidDateStr(nextDue)) e.nextDue = "正しい日付を入力してください";
     if (!expenseCats.some((c) => c.id === categoryId)) e.categoryId = "カテゴリを選んでください";
     setErrors(e);
-    if (Object.keys(e).length || !a.ok) return;
+    if (Object.keys(e).length || !a.ok) return focusFirstInvalid();
     lock.current = true;
     const { y, m, d } = parseDateStr(nextDue);
     const input: RecurringInput = {
