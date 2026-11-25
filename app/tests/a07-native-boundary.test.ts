@@ -252,7 +252,8 @@ describe("A07：保存の正本は1つ（画面の中の記録だけ）", () => 
   it("自動バックアップは、記録が0件のときは書かない・いちばん多かったときの控えを残す（空で上書きしない）", () => {
     expect(read("src/components/WidgetSync.tsx")).toContain("if (records === 0) return;");
     expect(PLUGIN).toContain("guard records > 0 else");
-    expect(PLUGIN).toContain("if records >= largest && largestDay != day {"); // いちばん多かったときの控えは、1日1回まで書き直す（A08 中-6）
+    expect(PLUGIN).toContain("if records >= largest {"); // 件数が最多と同じか多いときは、いつも書き直す（1日1回にしない。A08 点検2回目 中-1）
+    expect(PLUGIN).not.toMatch(/largestDay/);
     expect(PLUGIN).toContain("options: [.atomic]");
   });
 });
