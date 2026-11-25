@@ -21,6 +21,7 @@ function longData(): AppData {
   for (let i = 0; i < 70; i++)
     evs.push({ id: `e${i}`, title: `${LONG}${i}`, startDate: `2026-01-0${1 + (i % 7)}`, endDate: `2026-01-0${1 + (i % 7)}`, allDay: false, startTime: `1${i % 10}:00`, endTime: `1${i % 10}:30`, location: LONG, note: "", repeat: "weekly", createdAt: now, updatedAt: now });
   d.events = evs;
+  d.recurring = [{ id: "r", name: LONG, amount: 99_999_999, cycle: "monthly", anchorDay: 1, nextDueDate: "2026-12-01", categoryId: "exp-1", paymentMethod: "", active: true, createdAt: now, updatedAt: now }];
   d.tasks = Array.from({ length: 80 }, (_, i) => ({ id: `k${i}`, title: LONG, due: "2026-11-27", done: false, note: "", createdAt: now, updatedAt: now }));
   return d;
 }
@@ -49,6 +50,7 @@ describe("o11 A07：iPhone アプリに渡す中身の大きさ", () => {
     const items = buildCalendarItems(longData(), "2026-11-25");
     expect(items.length).toBe(CAL_MAX_ITEMS); // 211 日 × 10 件のうち、上限まで
     expect(bytes(items)).toBeLessThan(SWIFT_CALENDAR_LIMIT);
+    expect(items.some((i) => i.title.startsWith("固定費 ") && i.title.endsWith("¥99,999,999"))).toBe(true); // 名前の長い固定費も、金額は残る
     for (const it of items) {
       expect(Array.from(it.title).length).toBeLessThanOrEqual(CAL_TEXT_MAX);
       expect(Array.from(it.location).length).toBeLessThanOrEqual(CAL_TEXT_MAX);

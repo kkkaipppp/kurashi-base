@@ -265,3 +265,59 @@ describe("再点検（7b7f83b）の中-G", () => {
     expect(b.snapshot.status).toBe("unavailable");
   });
 });
+
+describe("o11 A07 点検 高-1：一度移したあとで IndexedDB が空になった端末", () => {
+  const moved = async () => {
+    // 1回目の起動で移し、そのあと IndexedDB に新しい記録を足す
+    const old = { ...emptyData(now), transactions: [tx("old")] };
+    const legacy = memKV({ [STORAGE_KEY]: JSON.stringify(old) });
+    const a = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
+    await a.reload();
+    expect((await a.commit(addTx("after-move"))).ok).toBe(true);
+    expect(legacy.store.get(MOVED_MARK_KEY)).toBeDefined();
+    // IndexedDB だけが消えた（新しい IDBFactory。旧データ側の本体と印は残る）
+    const factory = new IDBFactory();
+    return { legacy, old, factory, core: new StoreCore(new IdbRepositoryAdapter({ factory, legacy, now: () => now })) };
+  };
+  it("旧データの古い中身を、黙って今の記録にしない（読み込めない画面で、理由と戻し方を出す）。旧データは消さない", async () => {
+    const { legacy, old, core } = await moved();
+    await core.reload();
+    expect(core.snapshot.status).toBe("corrupt");
+    expect(core.snapshot.data).toBeNull();
+    expect(core.snapshot.error).toContain("保存先が空になっていました");
+    expect(core.snapshot.error).toContain("自動バックアップ");
+    expect(core.snapshot.raw).toBe(JSON.stringify(old)); // 「ファイルに保存」で古い中身も持ち出せる
+    expect(legacy.store.get(STORAGE_KEY)).toBe(JSON.stringify(old));
+    // 保存もしない（古い中身で上書きしない）
+    expect((await core.commit(addTx("x"))).ok).toBe(false);
+  });
+  it("「別の場所に移して最初から始める」で、古い中身は退避して残り、空から始まる。そのあと復元できる。次の起動でも止まらない", async () => {
+    const { legacy, old, core, factory } = await moved();
+    await core.reload();
+    expect((await core.resetCorrupt()).ok).toBe(true);
+    expect(core.snapshot.status).toBe("ready");
+    expect(core.snapshot.data?.transactions).toEqual([]);
+    const kept = [...legacy.store.entries()].filter(([k]) => k.startsWith("kurashi-base:corrupt:")).map(([, v]) => v);
+    expect(kept).toContain(JSON.stringify(old));
+    // バックアップから復元（置き換え）
+    const backup = { ...emptyData(now), transactions: [tx("old"), tx("after-move")] };
+    expect((await core.commit(() => backup, { undoReason: "復元" })).ok).toBe(true);
+    const again = new StoreCore(new IdbRepositoryAdapter({ factory, legacy }));
+    await again.reload();
+    expect(again.snapshot.status).toBe("ready");
+    expect(again.snapshot.data?.transactions.map((t) => t.id)).toEqual(["old", "after-move"]);
+  });
+  it("旧データに記録がない（カテゴリだけ）なら、止めずに空から始める", async () => {
+    const legacy = memKV({ [STORAGE_KEY]: JSON.stringify(emptyData(now)), [MOVED_MARK_KEY]: now });
+    const core = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
+    await core.reload();
+    expect(core.snapshot.status).toBe("ready");
+  });
+  it("まだ一度も移していない端末は、今までどおり移す（印がなければ止めない）", async () => {
+    const legacy = memKV({ [STORAGE_KEY]: JSON.stringify({ ...emptyData(now), transactions: [tx("old")] }) });
+    const core = new StoreCore(new IdbRepositoryAdapter({ factory: new IDBFactory(), legacy }));
+    await core.reload();
+    expect(core.snapshot.status).toBe("ready");
+    expect(core.snapshot.data?.transactions.map((t) => t.id)).toEqual(["old"]);
+  });
+});
