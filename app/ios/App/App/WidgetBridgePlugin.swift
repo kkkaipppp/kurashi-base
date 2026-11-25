@@ -57,6 +57,8 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     /// これまでで記録がいちばん多かったときのバックアップ（日ごとの14個とは別に、消さずに残す）
     static let largestName = "kurashi-base_largest_backup.json"
     static let largestKey = "kbLargestBackupRecords"
+    /// いちばん多かったときの控えを最後に書いた日（YYYYMMDD）
+    static let largestDayKey = "kbLargestBackupDay"
 
     /// その日のバックアップを、書類フォルダの「自動バックアップ」に書く（同じ日は上書き）。古いものは14日分を残して消す。
     /// 書類フォルダは「ファイル」アプリ → このiPhone内 → くらしベース から見える（Info.plist の UIFileSharingEnabled）。
@@ -94,10 +96,13 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
             try bytes.write(to: dir.appendingPathComponent(name), options: [.atomic])
             // 記録の件数がこれまでで最多（同じも含む）なら、消さない控えも更新する。
             // その日のファイルを大量削除や誤った復元のあとの中身で上書きしても、いちばん多かったときの控えは残る
+            // ただし書き直すのは1日に1回まで（記録はふつう増えていくので、毎回書くと、裏に回すたびに同じ大きさをもう1つ書くことになる。o11 A08 点検 中-6）
             let largest = UserDefaults.standard.integer(forKey: Self.largestKey)
-            if records >= largest {
+            let largestDay = UserDefaults.standard.string(forKey: Self.largestDayKey)
+            if records >= largest && largestDay != day {
                 try bytes.write(to: dir.appendingPathComponent(Self.largestName), options: [.atomic])
                 UserDefaults.standard.set(records, forKey: Self.largestKey)
+                UserDefaults.standard.set(day, forKey: Self.largestDayKey)
             }
             // 古いものを消す（名前の日付の新しい順に14個を残す。自分で置いたほかのファイルには触らない）
             let files = try fm.contentsOfDirectory(atPath: dir.path)

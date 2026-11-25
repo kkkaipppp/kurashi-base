@@ -22,6 +22,15 @@ export const shouldSyncCalendar = (d: AppData) => hasRecords(d);
  */
 export const shouldSyncReminders = (): boolean => true;
 
+/**
+ * 自動バックアップを書くか：記録が1件以上あり、前に書いたときから中身（データの版）か日付が変わったときだけ。
+ * 中身が同じなら、アプリを裏に回すたび・前に戻すたびに全体（30年分で約17MB）を JSON にして渡さない（o11 A08 点検 中-6）
+ */
+export function shouldWriteBackup(last: { data: AppData; day: string } | null, data: AppData, day: string): boolean {
+  if (!hasRecords(data)) return false;
+  return !last || last.data !== data || last.day !== day;
+}
+
 /** 通知の入れ替えの結果から、「登録した」とするか（次に同じ中身なら呼ばない）と、残す結果を決める */
 export function reminderOutcome(r: { denied?: boolean; failed?: number }, settingsOn: boolean, count: number): { done: boolean; ok: boolean; detail?: string } {
   // オフのときは、許可がなくても困らない（警告を残さない。点検2回目 低-1）

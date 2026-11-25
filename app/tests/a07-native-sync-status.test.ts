@@ -5,7 +5,7 @@ import { errorText, loadSyncStatus, NATIVE_SYNC_KEY, recordSync, SYNC_EVENT, syn
 import { wipeAllAppData } from "@/lib/storage";
 import { emptyData } from "@/lib/defaults";
 import { buildReminders, DEFAULT_REMINDERS } from "@/lib/reminders";
-import { calendarOutcome, hasRecords, reminderOutcome, shouldSyncCalendar, shouldSyncReminders } from "@/lib/nativeSyncPlan";
+import { calendarOutcome, hasRecords, reminderOutcome, shouldSyncCalendar, shouldSyncReminders, shouldWriteBackup } from "@/lib/nativeSyncPlan";
 
 // o11 A07 点検 中-1〜中-3：iPhone アプリへの受け渡しの失敗を黙って捨てない・記録0件で写しを消さない・書き込み中の変更を取りこぼさない
 const kv = () => {
@@ -135,5 +135,21 @@ describe("o11 A07 点検3回目の足りない試験", () => {
   it("2回目 低-3（Swift）：読めなかった予定があったときは、書いた印を保存せず、次も書き直す", () => {
     expect(plugin).toMatch(/if skipped == 0 \{ UserDefaults\.standard\.set\(stamp, forKey: Self\.lastSyncKey\) \} else \{ UserDefaults\.standard\.removeObject\(forKey: Self\.lastSyncKey\) \}/);
     expect(plugin).toMatch(/call\.resolve\(\["written": written, "skipped": skipped\]\)/);
+  });
+});
+
+describe("o11 A08 点検 中-6：自動バックアップを書く回数", () => {
+  it("中身も日付も前に書いたときと同じなら書かない。中身か日付が変わったら書く。記録0件なら書かない", () => {
+    const d = emptyData("2026-11-25T00:00:00.000Z");
+    expect(shouldWriteBackup(null, d, "20261125")).toBe(false);
+    const d1 = { ...d, tasks: [{ id: "k", title: "t", due: "", done: false, note: "", createdAt: "x", updatedAt: "x" }] };
+    expect(shouldWriteBackup(null, d1, "20261125")).toBe(true);
+    expect(shouldWriteBackup({ data: d1, day: "20261125" }, d1, "20261125")).toBe(false);
+    expect(shouldWriteBackup({ data: d1, day: "20261125" }, d1, "20261126")).toBe(true);
+    const d2 = { ...d1 };
+    expect(shouldWriteBackup({ data: d1, day: "20261125" }, d2, "20261125")).toBe(true);
+    expect(src).toMatch(/if \(!shouldWriteBackup\(last, data, day\)\) return;/);
+    // 書けたときだけ「書いた」とする（失敗したら、次の機会にもう一度）
+    expect(src).toMatch(/\.then\(\(\) => \{\s*last = \{ data, day \};/);
   });
 });

@@ -11,7 +11,7 @@ import { autoBackupDay, backupRecordCount, NativeBridge } from "@/lib/nativeBrid
 import { buildReminders } from "@/lib/reminders";
 import { loadReminderSettings } from "@/lib/reminderStore";
 import { errorText, recordSync } from "@/lib/nativeSyncStatus";
-import { calendarOutcome, reminderOutcome, shouldSyncCalendar, shouldSyncReminders } from "@/lib/nativeSyncPlan";
+import { calendarOutcome, reminderOutcome, shouldSyncCalendar, shouldSyncReminders, shouldWriteBackup } from "@/lib/nativeSyncPlan";
 
 /**
  * iPhone アプリの中だけで動く部品（Web 版では何もしない）。
@@ -151,14 +151,23 @@ export function WidgetSync() {
   // 自動バックアップと、日付が変わったときの要約の更新
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
+    // 前に書いたときのデータと日付（同じなら、もう一度書かない）
+    let last: { data: typeof latest.current; day: string } | null = null;
     const backup = () => {
       const now = new Date();
-      const file = buildBackup(latest.current, now.toISOString());
+      const data = latest.current;
+      const day = autoBackupDay(todayStr(now));
+      // 記録が空のとき（iOS に記録を消された・すべて削除した直後など）は書かない。良いバックアップを空で上書きしないため。
+      // 前に書いたときから中身も日付も変わっていなければ、書かない（lib/nativeSyncPlan.ts）
+      if (!shouldWriteBackup(last, data, day)) return;
+      const file = buildBackup(data, now.toISOString());
       const records = backupRecordCount(file.counts);
-      // 記録が空のとき（iOS に記録を消された・すべて削除した直後など）は書かない。良いバックアップを空で上書きしないため
       if (records === 0) return;
-      NativeBridge.writeBackup({ day: autoBackupDay(todayStr(now)), json: JSON.stringify(file), records })
-        .then(() => recordSync("backup", true))
+      NativeBridge.writeBackup({ day, json: JSON.stringify(file), records })
+        .then(() => {
+          last = { data, day };
+          recordSync("backup", true);
+        })
         .catch((e) => {
           // 書けなくても記録には影響しない（設定の「バックアップを書き出す」は今までどおり使える。失敗は設定に出す）
           recordSync("backup", false, errorText(e));
