@@ -82,6 +82,8 @@ describe("A08：計算の時間（手元の PC）", () => {
       console.log(benchText(`${y}年分`, r, "手元の PC・node"));
       // 上限は、手元の PC の実測の数倍。遅い端末でも、操作が止まりきらない目安
       for (const row of r.rows) expect(row.ms, row.name).toBeLessThan(5000);
+      // 速くした所が遅く戻っていないかの見張り（30年分の関係の検査：直す前 約830ms・直したあと 約5ms。点検2回目 低-3）
+      if (y === 30) expect(r.rows.find((x) => x.name === "復元：関係の検査")!.ms).toBeLessThan(200);
     }, 180_000);
   }
   // 30年分と10年分の時間の比べは、試験の中ではメモリの片づけの揺れが大きく（JSON を読むだけでも10倍以上ばらつく）、比べ方として成り立たないので置かない。
@@ -136,8 +138,8 @@ describe("A08：大きさと容量", () => {
     const ok = new Map<number, boolean>();
     for (const y of [1, 2, 3, 4, 5]) ok.set(y, await tryYears(y));
     console.log(`[A08] 公開版で控えを書く操作が入るか：${[...ok].map(([y, v]) => `${y}年分 ${v ? "入る" : "入らない"}`).join("・")}`);
-    expect(ok.get(1)).toBe(true);
-    expect(ok.get(5)).toBe(false); // 5年分では入らない（docs/integration/A08_PERF.md・RAID R-06）
+    for (const y of [1, 2, 3, 4]) expect(ok.get(y), `${y}年分`).toBe(true);
+    expect(ok.get(5)).toBe(false); // 5年分では入らない（字数で数えた場合。docs/integration/A08_PERF.md・RAID R-06）
   }, 300_000);
   it("自分用（IndexedDB）：30年分を保存して読み直すと、同じ中身。容量がいっぱいの失敗では、前の記録がそのまま。1回の保存の時間を出す", async () => {
     const factory = new IDBFactory();
@@ -153,6 +155,8 @@ describe("A08：大きさと容量", () => {
     console.log(`[A08] 30年分・1回の保存（StoreCore を通す。IndexedDB は試験用の作り物なので、実機とは違う）：ふつう ${plain.toFixed(0)}ms・控えつき ${withUndo.toFixed(0)}ms`);
     const again = new StoreCore(new IdbRepositoryAdapter({ factory, legacy: null }));
     await again.reload();
+    // 読み直した中身が、保存したものと全部同じ（件数だけでなく。点検2回目 中-2）
+    expect(JSON.stringify(again.snapshot.data)).toBe(JSON.stringify({ ...data(30), transactions: data(30).transactions.slice(1) }));
     expect(countData(again.snapshot.data!).transactions).toBe(data(30).transactions.length - 1);
     // 容量がいっぱい（書き込みの失敗を注入）：失敗と言い、前の記録はそのまま
     const full = new StoreCore(new IdbRepositoryAdapter({ factory, legacy: null, fault: () => true }));
