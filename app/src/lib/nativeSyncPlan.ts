@@ -23,9 +23,11 @@ export const shouldSyncCalendar = (d: AppData) => hasRecords(d);
 export const shouldSyncReminders = (): boolean => true;
 
 /** 通知の入れ替えの結果から、「登録した」とするか（次に同じ中身なら呼ばない）と、残す結果を決める */
-export function reminderOutcome(r: { denied?: boolean; failed?: number }, settingsOn: boolean): { done: boolean; ok: boolean; detail?: string } {
+export function reminderOutcome(r: { denied?: boolean; failed?: number }, settingsOn: boolean, count = 1): { done: boolean; ok: boolean; detail?: string } {
   // オフのときは、許可がなくても困らない（警告を残さない。点検2回目 低-1）
   if (!settingsOn) return { done: true, ok: true }; // 空の一覧を渡したので、くらしベースの通知は消えている（拒否でも同じ）
+  // 登録するものが無いときは、拒否されていても困らない（記録0件など。点検3回目 低-4）
+  if (r.denied && count === 0) return { done: true, ok: true };
   if (r.denied) return { done: false, ok: false, detail: "通知が許可されていません（iPhone の設定 → くらしベース → 通知）" };
   const failed = Number(r.failed ?? 0);
   // 一部を登録できなかったときは、次の機会にもう一度入れ替える

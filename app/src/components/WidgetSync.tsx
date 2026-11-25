@@ -136,7 +136,7 @@ export function WidgetSync() {
       NativeBridge.scheduleReminders({ json })
         .then((r) => {
           // 拒否・一部の失敗のときは「登録した」とせず、次の機会（許可されたあと・前面に戻ったとき）にもう一度入れ替える
-          const o = reminderOutcome(r, settings.on);
+          const o = reminderOutcome(r, settings.on, list.length);
           if (o.done) lastReminders.current = settings.on ? json : "off";
           recordSync("reminders", o.ok, o.detail);
         })

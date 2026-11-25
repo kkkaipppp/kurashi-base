@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { errorText, loadSyncStatus, NATIVE_SYNC_KEY, recordSync, syncProblems } from "@/lib/nativeSyncStatus";
+import { errorText, loadSyncStatus, NATIVE_SYNC_KEY, recordSync, SYNC_EVENT, syncProblems } from "@/lib/nativeSyncStatus";
 import { wipeAllAppData } from "@/lib/storage";
 import { emptyData } from "@/lib/defaults";
 import { buildReminders, DEFAULT_REMINDERS } from "@/lib/reminders";
@@ -60,7 +60,7 @@ describe("受け渡しの結果を残す（中-3）", () => {
     expect(src).not.toMatch(/\.catch\(\(\) => \{\}\)/);
   });
   it("通知を一部しか登録できなかったときは、次の機会にもう一度入れ替える（登録したことにしない）", () => {
-    expect(src).toMatch(/const o = reminderOutcome\(r, settings\.on\);\s*if \(o\.done\) lastReminders\.current = /);
+    expect(src).toMatch(/const o = reminderOutcome\(r, settings\.on, list\.length\);\s*if \(o\.done\) lastReminders\.current = /);
     expect(src).toMatch(/recordSync\("reminders", o\.ok, o\.detail\)/);
   });
 });
@@ -95,5 +95,45 @@ describe("記録0件のとき・書き込み中の変更（中-1・中-2）", ()
     expect(src).toMatch(/if \(calendarAgain\.current\) \{\s*calendarAgain\.current = false;\s*setResync/);
     const onVis = src.slice(src.indexOf("const onVisibility"), src.indexOf("document.addEventListener(\"visibilitychange\", onVisibility)"));
     expect(onVis).toContain("setResync((n) => n + 1)");
+  });
+});
+
+describe("o11 A07 点検3回目の足りない試験", () => {
+  const card = stripComments(fs.readFileSync(path.resolve(import.meta.dirname, "../src/components/NativeStatusCard.tsx"), "utf8"));
+  const plugin = stripComments(fs.readFileSync(path.resolve(import.meta.dirname, "../ios/App/App/WidgetBridgePlugin.swift"), "utf8"));
+  it("低-4：登録するものが無いとき（記録0件など）は、拒否されていても警告を残さない。1件以上なら残す", () => {
+    expect(reminderOutcome({ denied: true }, true, 0)).toEqual({ done: true, ok: true });
+    expect(reminderOutcome({ denied: true }, true, 1).ok).toBe(false);
+    expect(src).toMatch(/const list = buildReminders\(/);
+  });
+  it("低-7：結果が変わったら合図を出し、設定の「iPhone の連携」はそれを受けて出し直す。同じ成功が続くときは出さない", () => {
+    const g = globalThis as unknown as { window?: EventTarget };
+    const had = g.window;
+    g.window = new EventTarget();
+    try {
+      let n = 0;
+      g.window.addEventListener(SYNC_EVENT, () => n++);
+      const s = kv();
+      recordSync("calendar", false, "x", s);
+      expect(n).toBe(1);
+      recordSync("calendar", true, undefined, s);
+      expect(n).toBe(2);
+      recordSync("calendar", true, undefined, s);
+      expect(n).toBe(2);
+    } finally {
+      g.window = had;
+    }
+    expect(card).toMatch(/window\.addEventListener\(SYNC_EVENT, on\)/);
+    expect(card).toMatch(/const on = \(\) => setProblems\(syncProblems\(loadSyncStatus\(\)\)\)/);
+  });
+  it("低-2：記録0件のときは「反映し直す」で書き直さないと知らせ、「入れた予定を消す」を出す。記録は読むだけ", () => {
+    expect(card).toMatch(/const empty = !hasRecords\(data\);/);
+    expect(card).toMatch(/if \(empty\) \{\s*ui\.toast\("記録がないので、カレンダーは書き直しません/);
+    expect(card).toMatch(/\{\(!calOn \|\| empty\) && \(/);
+    expect(card).not.toMatch(/\buseStore\b/);
+  });
+  it("2回目 低-3（Swift）：読めなかった予定があったときは、書いた印を保存せず、次も書き直す", () => {
+    expect(plugin).toMatch(/if skipped == 0 \{ UserDefaults\.standard\.set\(stamp, forKey: Self\.lastSyncKey\) \} else \{ UserDefaults\.standard\.removeObject\(forKey: Self\.lastSyncKey\) \}/);
+    expect(plugin).toMatch(/call\.resolve\(\["written": written, "skipped": skipped\]\)/);
   });
 });
