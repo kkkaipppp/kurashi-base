@@ -14,6 +14,7 @@ import { Button } from "./ui";
 import { TxSheet, type TxSheetRequest } from "./TxSheet";
 import { EventSheet, type EventSheetRequest } from "./EventSheet";
 import { AddChooser } from "./AddChooser";
+import { todayStr } from "@/lib/date";
 import { usePathname, useRouter } from "next/navigation";
 
 interface ConfirmOpts {
@@ -88,6 +89,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
       const kind = (e as CustomEvent<string>).detail;
       if (!["expense", "income", "event", "choose"].includes(kind)) return;
       if (openSheets.current.tx || openSheets.current.ev) {
+        cfBefore.current = document.activeElement as HTMLElement | null;
         const ok = await new Promise<boolean>((resolve) =>
           setCf((current) => {
             // ほかの確認が開いていたら、その答えは「いいえ」にしてから聞く（答えが返らないままにしない）
@@ -115,10 +117,17 @@ export function UIProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("kb-open-add", onAdd);
   }, []);
 
+  // 確認の窓を開く前に focus があった所（閉じたら、そこへ戻す）。窓の「キャンセル」が autoFocus で先に focus を取るので、開く前に覚えておく（点検 中-1）
+  const cfBefore = useRef<HTMLElement | null>(null);
   const confirm = useCallback(
     (o: ConfirmOpts) =>
       new Promise<boolean>((resolve) => {
-        setCf({ ...o, resolve });
+        cfBefore.current = document.activeElement as HTMLElement | null;
+        // ほかの確認が開いていたら、その答えは「いいえ」にしてから聞く（答えが返らないまま重ならないように。磨き込み 2026-11-26）
+        setCf((current) => {
+          current?.resolve(false);
+          return { ...o, resolve };
+        });
       }),
     [],
   );
@@ -136,10 +145,46 @@ export function UIProvider({ children }: { children: ReactNode }) {
     [confirm, toast, calendarDate],
   );
 
-  const closeCf = (v: boolean) => {
-    cf?.resolve(v);
-    setCf(null);
-  };
+  const closeCf = useCallback((v: boolean) => {
+    setCf((current) => {
+      current?.resolve(v);
+      return null;
+    });
+  }, []);
+
+  // 確認の窓：Esc で「いいえ」。Tab は窓の中だけを回る。閉じたら、開く前の場所へ戻る。
+  // Esc は下のシートへ届けない（シートの「閉じる」の確認が、もう1つ重ならないように。磨き込み 2026-11-26）
+  const cfBox = useRef<HTMLDivElement>(null);
+  const cfOpen = !!cf;
+  useEffect(() => {
+    if (!cfOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closeCf(false);
+        return;
+      }
+      if (e.key !== "Tab" || !cfBox.current) return;
+      const items = [...cfBox.current.querySelectorAll<HTMLElement>("button")];
+      if (!items.length) return;
+      const i = items.indexOf(document.activeElement as HTMLElement);
+      if (e.shiftKey && i <= 0) {
+        e.preventDefault();
+        items[items.length - 1].focus();
+      } else if (!e.shiftKey && (i === -1 || i === items.length - 1)) {
+        e.preventDefault();
+        items[0].focus();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      const before = cfBefore.current;
+      cfBefore.current = null;
+      if (before && document.contains(before)) before.focus();
+    };
+  }, [cfOpen, closeCf]);
 
   return (
     <Ctx.Provider value={ui}>
@@ -156,7 +201,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
               setTx({ mode: "new", type: kind, date, key: ++seq.current });
             else if (kind === "event")
               setEv({ mode: "new", date, key: ++seq.current });
-            else router.push("/tasks?open=new");
+            // 今日以外の日を選んでいたら、その日を期限の初めの値にする（磨き込み 2026-11-26）
+            else router.push(date && date !== todayStr() ? `/tasks?open=new&date=${date}` : "/tasks?open=new");
           }}
         />
       )}
@@ -168,18 +214,19 @@ export function UIProvider({ children }: { children: ReactNode }) {
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="cf-title"
+          aria-describedby={cf.body ? "cf-body" : undefined}
         >
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => closeCf(false)}
             aria-hidden="true"
           />
-          <div className="relative w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
+          <div ref={cfBox} className="relative w-full max-w-sm rounded-2xl bg-surface p-5 shadow-xl">
             <h2 id="cf-title" className="text-[17px] font-bold">
               {cf.title}
             </h2>
             {cf.body && (
-              <p className="mt-2 text-[14px] whitespace-pre-line text-ink-2">
+              <p id="cf-body" className="mt-2 text-[14px] whitespace-pre-line text-ink-2">
                 {cf.body}
               </p>
             )}

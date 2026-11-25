@@ -77,9 +77,17 @@ function CurveChart({ curve, budget }: { curve: NonNullable<ReturnType<typeof fo
         <polyline points={dashed} fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray="6 4" className="text-ink-2" />
       </svg>
       <figcaption className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-ink-3">
-        <span>━ 実績（今日まで）</span>
-        <span>┅ 見込み（確定ではありません）</span>
-        {budget !== null && <span>··· 予算</span>}
+        <span>
+          <span aria-hidden="true">━ </span>実績（今日まで）
+        </span>
+        <span>
+          <span aria-hidden="true">┅ </span>見込み（確定ではありません）
+        </span>
+        {budget !== null && (
+          <span>
+            <span aria-hidden="true">··· </span>予算
+          </span>
+        )}
       </figcaption>
     </figure>
   );

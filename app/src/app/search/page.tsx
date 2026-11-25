@@ -95,13 +95,13 @@ function SearchInner() {
                 type="button"
                 aria-pressed={kind === c.kind}
                 onClick={() => setKind(c.kind)}
-                className={`min-h-9 rounded-full border px-3 text-[13px] font-semibold ${kind === c.kind ? "border-brand bg-brand-soft text-brand" : "border-line text-ink-2"}`}
+                className={`min-h-11 rounded-full border px-3 text-[13px] font-semibold ${kind === c.kind ? "border-brand bg-brand-soft text-brand" : "border-line text-ink-2"}`}
               >
                 {c.label}
               </button>
             ))}
           </div>
-          <p className="num px-1 text-[13px] font-semibold text-ink-2">{total}件</p>
+          <p role="status" className="num px-1 text-[13px] font-semibold text-ink-2">{total}件</p>
           {groups.map((g) => {
             const showAll = open[g.kind];
             const hits = showAll ? g.hits : g.hits.slice(0, SEARCH_PER_KIND);

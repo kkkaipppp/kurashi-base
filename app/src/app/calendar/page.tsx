@@ -156,7 +156,7 @@ function CalendarInner() {
             </button>
           ))}
         </div>
-        <table className="w-full table-fixed border-separate border-spacing-0.5" role="grid" aria-label={`${formatMonthJa(month)}のカレンダー`}>
+        <table className="w-full table-fixed border-separate border-spacing-0.5" aria-label={`${formatMonthJa(month)}のカレンダー`}>
           <thead>
             <tr>
               {WEEK.map((w) => (
@@ -177,7 +177,7 @@ function CalendarInner() {
                   const hol = holidayName(d);
                   const rest = i === 0 || !!hol; // 日曜と祝日は、薄い色（赤は支出、青は収入だけに使う）
                   const future = d > today; // 今日より後の日の金額は、薄い斜めの字（実際に使った額と区別する）
-                  const label = `${formatDateJa(d)}${hol ? ` ${hol}` : ""}${showEv && info.ev ? ` 予定${info.ev}件（${info.titles.join("、")}${info.ev > info.titles.length ? "ほか" : ""}）` : ""}${showMoney && info.exp ? ` 支出${formatYen(info.exp)}` : ""}${showMoney && info.inc ? ` 収入${formatYen(info.inc)}` : ""}${dlDays.has(d) ? " 期限あり" : ""}`;
+                  const label = `${isToday ? "今日 " : ""}${formatDateJa(d)}${hol ? ` ${hol}` : ""}${showEv && info.ev ? ` 予定${info.ev}件（${info.titles.join("、")}${info.ev > info.titles.length ? "ほか" : ""}）` : ""}${showMoney && info.exp ? ` 支出${formatYen(info.exp)}` : ""}${showMoney && info.inc ? ` 収入${formatYen(info.inc)}` : ""}${dlDays.has(d) ? " 期限あり" : ""}`;
                   return (
                     <td key={d} className="h-px p-0 align-top">
                       <button
@@ -210,12 +210,12 @@ function CalendarInner() {
                           </span>
                         )}
                         {showMoney && info.exp > 0 && (
-                          <span className={`num mt-0.5 max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-expense"} ${future ? "italic opacity-60" : ""}`} aria-hidden="true">
+                          <span className={`num mt-0.5 max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-expense"} ${future ? "italic" : ""}`} aria-hidden="true">
                             −{shortYen(info.exp)}
                           </span>
                         )}
                         {showMoney && info.inc > 0 && (
-                          <span className={`num max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-income"} ${future ? "italic opacity-60" : ""}`} aria-hidden="true">
+                          <span className={`num max-w-full truncate px-0.5 text-[10px] leading-tight font-semibold ${isSel ? "text-white" : "text-income"} ${future ? "italic" : ""}`} aria-hidden="true">
                             +{shortYen(info.inc)}
                           </span>
                         )}
@@ -244,7 +244,7 @@ function CalendarInner() {
             <span className="font-semibold text-income">青</span>：収入
           </li>
           <li className="whitespace-nowrap">
-            <span className="font-semibold italic opacity-60">斜めの金額</span>：今日より後の日の分
+            <span className="font-semibold italic">斜めの金額</span>：今日より後の日の分
           </li>
           <li className="whitespace-nowrap">
             <span className="font-semibold">灰色の日付</span>：日曜・祝日
@@ -256,7 +256,7 @@ function CalendarInner() {
         <div className="space-y-2">
           <h2 className="text-[17px] font-bold">
             {formatDateJa(selected, true)}
-            {holidayName(selected) && <span className="ml-2 text-[14px] font-semibold text-expense">{holidayName(selected)}</span>}
+            {holidayName(selected) && <span className="ml-2 text-[14px] font-semibold text-ink-2">{holidayName(selected)}</span>}
           </h2>
           <p className="num text-[13px] text-ink-2">
             予定 {dayEvents.length}件・<span className="text-expense">支出 {formatYen(day.expense)}</span>・<span className="text-income">収入 {formatYen(day.income)}</span>
@@ -318,7 +318,7 @@ function CalendarInner() {
             <ul className="space-y-1 text-[14px]">
               {dayDeadlines.map((x) => (
                 <li key={x.key}>
-                  <Link href={x.href} className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
+                  <Link href={x.href} className="flex min-h-11 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
                     <span className="w-12 shrink-0 text-[12px] text-warn">{x.kind}</span>
                     <span className={`min-w-0 flex-1 truncate ${x.done ? "text-ink-3 line-through" : "font-semibold"}`}>{x.title}</span>
                     {x.sub && <span className="num shrink-0 text-[13px]">{x.sub}</span>}
@@ -327,7 +327,7 @@ function CalendarInner() {
               ))}
               {dayNotes.map((n) => (
                 <li key={n.id}>
-                  <Link href={`/notes?open=${n.id}`} className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
+                  <Link href={`/notes?open=${n.id}`} className="flex min-h-11 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
                     <span className="w-12 shrink-0 text-[12px] text-ink-3">メモ</span>
                     <span className="truncate">{n.title || n.body.slice(0, 30)}</span>
                   </Link>
@@ -335,7 +335,7 @@ function CalendarInner() {
               ))}
               {dayStudy > 0 && (
                 <li>
-                  <Link href="/study" className="flex min-h-10 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
+                  <Link href="/study" className="flex min-h-11 items-center gap-2 rounded-lg px-1 hover:bg-surface-2">
                     <span className="w-12 shrink-0 text-[12px] text-ink-3">勉強</span>
                     <span>{formatMinutes(dayStudy)}</span>
                   </Link>

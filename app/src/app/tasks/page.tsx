@@ -75,6 +75,7 @@ const config: CollectionConfig<"tasks"> = {
     { name: "done", label: "完了", type: "checkbox" },
   ],
   initial: () => ({ title: "", due: "", note: "", done: false }),
+  newDateField: "due",
   toDraft: (t) => ({ title: t.title, due: t.due, note: t.note, done: t.done }),
   fromDraft: (d) => ({ title: str(d, "title"), due: str(d, "due"), note: str(d, "note"), done: bool(d, "done") }),
   // 未完了を先に。期限が近い順、期限なしは後ろ

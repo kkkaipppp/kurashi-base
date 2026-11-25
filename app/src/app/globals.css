@@ -54,6 +54,8 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
+  /* 空白のない長い名前（英数字・URL など）でも、画面の幅で折り返す（横にはみ出さない。N03・N15 の画面幅の点検） */
+  overflow-wrap: break-word;
 }
 
 .num {

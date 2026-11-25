@@ -9,7 +9,7 @@ import { cycleLabel } from "@/lib/recurring";
 import { PAYMENT_METHODS, type RecurringCycle, type RecurringExpense } from "@/lib/types";
 import { useUI } from "@/components/UIContext";
 import { Sheet } from "@/components/Sheet";
-import { Button, Card, Empty, Field, PageHeader, inputCls } from "@/components/ui";
+import { Button, Card, Empty, Field, PageHeader, focusFirstInvalid, inputCls } from "@/components/ui";
 
 export default function RecurringPage() {
   const data = useData();
@@ -40,7 +40,7 @@ export default function RecurringPage() {
       <PageHeader
         title="固定費"
         right={
-          <Button onClick={() => setEditing({ key: Date.now() })} className="min-h-10 px-3 text-[14px]">
+          <Button onClick={() => setEditing({ key: Date.now() })} className="min-h-11 px-3 text-[14px]">
             ＋ 追加
           </Button>
         }
@@ -62,11 +62,11 @@ export default function RecurringPage() {
             const overdue = r.active && r.nextDueDate < today;
             return (
               <li key={r.id}>
-                <Card className={`py-3 ${r.active ? "" : "opacity-60"}`}>
+                <Card className={`py-3 ${r.active ? "" : "bg-surface-2"}`}>
                   <div className="flex items-start justify-between gap-2">
                     <button type="button" onClick={() => setEditing({ id: r.id, key: Date.now() })} className="min-w-0 flex-1 text-left">
                       <p className="truncate text-[15px] font-bold">{r.name}</p>
-                      <p className="text-[12px] text-ink-3">
+                      <p className={`text-[12px] ${r.active ? "text-ink-3" : "text-ink-2"}`}>
                         {cycleLabel(r.cycle)}{r.cycle === "weekly" ? "" : ` ${r.anchorDay}日`} ・ {data.categories.find((c) => c.id === r.categoryId)?.name ?? "（不明）"}
                         {!r.active && "・停止中"}
                       </p>
@@ -80,7 +80,7 @@ export default function RecurringPage() {
                     <p className="num shrink-0 text-[16px] font-bold">{formatYen(r.amount)}</p>
                   </div>
                   {r.active && (
-                    <Button variant="secondary" onClick={() => record(r)} className="mt-2 w-full min-h-10 text-[14px]">
+                    <Button variant="secondary" onClick={() => record(r)} className="mt-2 w-full min-h-11 text-[14px]">
                       支払いを記録
                     </Button>
                   )}
@@ -116,6 +116,13 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
   const editId = useRef(cur?.id);
   const [wasEditing] = useState(Boolean(cur)); // 見出し用（消されても「編集」のまま）
   const lock = useRef(false);
+  // 書きかけで閉じるときは確かめる（ほかの入力シートと同じ。磨き込み 2026-11-26）
+  const [initial] = useState(() => JSON.stringify([name, amount, cycle, nextDue, categoryId, pay, active]));
+  const dirty = JSON.stringify([name, amount, cycle, nextDue, categoryId, pay, active]) !== initial;
+  const requestClose = async () => {
+    if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true }))) return;
+    onClose();
+  };
 
   const save = async () => {
     if (lock.current) return;
@@ -126,7 +133,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
     if (!isValidDateStr(nextDue)) e.nextDue = "正しい日付を入力してください";
     if (!expenseCats.some((c) => c.id === categoryId)) e.categoryId = "カテゴリを選んでください";
     setErrors(e);
-    if (Object.keys(e).length || !a.ok) return;
+    if (Object.keys(e).length || !a.ok) return focusFirstInvalid();
     lock.current = true;
     const { y, m, d } = parseDateStr(nextDue);
     const input: RecurringInput = {
@@ -161,7 +168,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
     <Sheet
       title={wasEditing ? "固定費を編集" : "固定費を追加"}
       open
-      onRequestClose={onClose}
+      onRequestClose={requestClose}
       footer={
         <div className="flex gap-2">
           {cur && (

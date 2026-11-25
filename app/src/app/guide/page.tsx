@@ -5,6 +5,7 @@ import { useUI } from "@/components/UIContext";
 import { Button, Card, IconChevronR, PageHeader } from "@/components/ui";
 import { BRAND, LogoMark } from "@/components/Logo";
 import { useIsNativeApp } from "@/lib/platform";
+import { IS_PERSONAL } from "@/lib/edition";
 
 const linkCls =
   "flex min-h-11 items-center justify-between rounded-xl px-1 text-[14px] font-semibold text-brand hover:bg-brand-soft";
@@ -122,16 +123,25 @@ export default function GuidePage() {
 
       <Card>
         <h2 className="text-[17px] font-bold">まだできないこと</h2>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-[14px]">
-          <li>
-            レシートの文字の自動読み取り（OCR。「レシートを見て入力」で、画像を見ながら手で入力できます）
-          </li>
-          <li>
-            Googleカレンダーとの同期（予定を Google の画面に渡すだけです）
-          </li>
-          <li>友達や家族とのデータの共有、端末どうしの同期</li>
-          <li>通知、iPhone のホーム画面のウィジェット</li>
-        </ul>
+        {IS_PERSONAL ? (
+          // 自分用：iPhone アプリでは文字の読み取り・通知・ウィジェットが使える（磨き込み 2026-11-26。公開版の文は変えない）
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-[14px]">
+            <li>Googleカレンダーとの同期（予定は .ics のファイルで渡す・取り込む）</li>
+            <li>友達や家族とのデータの共有、端末どうしの同期</li>
+            <li>文字の読み取り・通知・ウィジェットは、iPhone アプリの中だけ（パソコンのブラウザでは使えません）</li>
+          </ul>
+        ) : (
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-[14px]">
+            <li>
+              レシートの文字の自動読み取り（OCR。「レシートを見て入力」で、画像を見ながら手で入力できます）
+            </li>
+            <li>
+              Googleカレンダーとの同期（予定を Google の画面に渡すだけです）
+            </li>
+            <li>友達や家族とのデータの共有、端末どうしの同期</li>
+            <li>通知、iPhone のホーム画面のウィジェット</li>
+          </ul>
+        )}
         <p className="mt-2 text-[13px] text-ink-3">
           このアプリは試用版（β版）です。使い勝手や表示は、これから変わることがあります。
         </p>

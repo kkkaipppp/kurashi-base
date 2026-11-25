@@ -60,9 +60,10 @@ describe("カレンダーの色の使い分け（赤は支出、青は収入だ�
     expect(s).not.toContain('i === 6 ? "text-income"');
     expect(s).toContain('!isSel && rest ? "text-ink-3"');
   });
-  it("今日より後の日の金額は、薄い斜めの字（実際に使った額と区別する）", () => {
+  it("今日より後の日の金額は、斜めの字（実際に使った額と区別する）。半透明にはしない（文字の濃さが 4.5:1 を下回るため。磨き込み 2026-11-26）", () => {
     expect(s).toContain("const future = d > today");
-    expect(s).toContain('future ? "italic opacity-60"');
+    expect(s).toContain('future ? "italic" : ""');
+    expect(s).not.toContain("opacity-60");
     expect(s).toContain("：今日より後の日");
   });
 });

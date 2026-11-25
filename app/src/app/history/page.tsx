@@ -113,7 +113,7 @@ export default function HistoryPage() {
         </dl>
         {sum.byCategory.length > 0 && (
           <details className="mt-3">
-            <summary className="min-h-9 cursor-pointer py-1 text-[13px] font-semibold text-ink-2">支出の内訳</summary>
+            <summary className="flex min-h-11 cursor-pointer items-center text-[13px] font-semibold text-ink-2">支出の内訳</summary>
             <ul className="mt-1 space-y-1.5">
               {sum.byCategory.map((c) => (
                 <li key={c.categoryId} className="text-[13px]">

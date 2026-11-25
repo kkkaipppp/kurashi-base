@@ -67,7 +67,7 @@ export function suggestions(d: AppData, today: string, opt: SuggestionOptions): 
 
   const f = forecastMonthEnd(d, today);
   if (f.ok && f.vsBudget !== null && f.vsBudget < 0) {
-    all.push({ key: "forecast", title: "今月は予算を超える見込みです", why: `約 ${formatYen(-f.vsBudget)} 超える見込み（確定ではありません）`, href: "/#forecast", score: 500 });
+    all.push({ key: "forecast", title: "今月は予算を超える見込みです", why: `約 ${formatYen(-f.vsBudget)} 超える見込み（確定ではありません）`, href: "/report", score: 500 });
   }
 
   // 生活変化の適用日が来ている計画（自動では適用しない。本人が押す）

@@ -127,7 +127,8 @@ describe("P10・P13〜P17・P19 画面と言葉", () => {
   it("設定の目次、空の月の振り返りは「支出を追加」、旅行の支出を追加、言葉の直し", () => {
     expect(src("app/settings/page.tsx")).toContain('aria-label="設定の目次"');
     expect(src("app/report/page.tsx")).toContain("<SectionTitle>支出の内訳</SectionTitle>");
-    expect(src("app/report/page.tsx")).toContain('href="/?add=expense"');
+    // 2026-11-26 から、その場で入力を開く（ホームへ移らない。今月以外はその月の1日から。tests/brushup-20261126）
+    expect(src("app/report/page.tsx")).toContain('ui.openTx({ mode: "new", type: "expense"');
     expect(src("app/trips/page.tsx")).toContain("＋ この旅行の支出を追加");
     expect(src("components/AddChooser.tsx")).toContain("何を記録しますか？");
   });

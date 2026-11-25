@@ -38,9 +38,10 @@ const CategoryTools = PERSONAL_BUILD ? dynamic(() => import("@/components/Catego
 function GroupLabel({ id, children }: { id: string; children: string }) {
   if (!GROUPS) return null;
   return (
-    <p id={id} className="scroll-mt-20 px-1 pt-2 text-[12px] font-bold tracking-wide text-ink-3">
+    // 区切りは見出しにする（読み上げで区切りへ飛べるように。磨き込み 2026-11-26）
+    <h2 id={id} className="scroll-mt-20 px-1 pt-2 text-[12px] font-bold tracking-wide text-ink-3">
       {children}
-    </p>
+    </h2>
   );
 }
 
@@ -69,11 +70,14 @@ export default function SettingsPage() {
   };
 
   // --- ホーム表示 ---
-  const toggles: { key: HomeToggle; label: string }[] = [
-    { key: "todaySpent", label: "今日の支出（今月の残り予算の横）" },
-    { key: "nextRecurring", label: "次の固定費" },
-    { key: "needsReview", label: "確認したいこと（支払日・試験日・更新日など）" },
-  ];
+  // 自分用のホームは「次の固定費」「確認したいこと」をいつも出し、並びと表示はホームの「編集」で決める（ここの切り替えは効かないので出さない。磨き込み 2026-11-26）
+  const toggles: { key: HomeToggle; label: string }[] = PERSONAL_BUILD
+    ? [{ key: "todaySpent", label: "今日の支出（今月の残り予算の横）" }]
+    : [
+        { key: "todaySpent", label: "今日の支出（今月の残り予算の横）" },
+        { key: "nextRecurring", label: "次の固定費" },
+        { key: "needsReview", label: "確認したいこと（支払日・試験日・更新日など）" },
+      ];
 
   // --- カテゴリ ---
   const [catKind, setCatKind] = useState<TxType>("expense");
@@ -311,7 +315,7 @@ export default function SettingsPage() {
       <Card>
         <div id="budget" className="scroll-mt-20" />
         <SectionTitle>毎月の予算</SectionTitle>
-        <p className="mb-3 text-[13px] text-ink-3">残り予算＝この予算−今月の支出。空欄なら未設定。</p>
+        <p className="mb-3 text-[13px] text-ink-3">{PERSONAL_BUILD ? "残り予算＝この予算−今月の生活費（投資を除く）。空欄なら未設定。" : "残り予算＝この予算−今月の支出。空欄なら未設定。"}</p>
         <div className="flex items-start gap-2">
           <div className="flex-1">
             <Field label="予算（円）" htmlFor="budget-input" error={budgetErr}>
@@ -326,7 +330,11 @@ export default function SettingsPage() {
 
       <Card>
         <SectionTitle>ホームに表示する項目</SectionTitle>
-        <p className="mb-2 text-[13px] text-ink-3">今月の残り予算（予算がなければ今月の支出）と今日の予定は、いつも表示します。下の3つは、オンにすると、内容があるときだけ表示します。</p>
+        <p className="mb-2 text-[13px] text-ink-3">
+          {PERSONAL_BUILD
+            ? "今月の残り予算と今日の予定・次の固定費・確認したいことは、いつも表示します。カードの並びと表示は、ホームの「編集」で変えられます。"
+            : "今月の残り予算（予算がなければ今月の支出）と今日の予定は、いつも表示します。下の3つは、オンにすると、内容があるときだけ表示します。"}
+        </p>
         <ul className="divide-y divide-line">
           {toggles.map((t) => (
             <li key={t.key}>
@@ -355,7 +363,7 @@ export default function SettingsPage() {
         <SectionTitle>カテゴリ</SectionTitle>
         <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="カテゴリの種別">
           {(["expense", "income"] as const).map((k) => (
-            <button key={k} type="button" role="radio" aria-checked={catKind === k} onClick={() => { setCatKind(k); setEditingCatId(null); }} className={`min-h-10 rounded-lg text-[14px] font-semibold ${catKind === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
+            <button key={k} type="button" role="radio" aria-checked={catKind === k} onClick={() => { setCatKind(k); setEditingCatId(null); }} className={`min-h-11 rounded-lg text-[14px] font-semibold ${catKind === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
               {k === "expense" ? "支出" : "収入"}
             </button>
           ))}
@@ -393,7 +401,7 @@ export default function SettingsPage() {
                       {!c.archived && (
                         <button
                           type="button"
-                          className="min-h-10 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
+                          className="min-h-11 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
                           onClick={() => {
                             setEditingCatId(c.id);
                             setEditingCatName(c.name);
@@ -411,7 +419,7 @@ export default function SettingsPage() {
                           const r = await store.setCategoryArchived(c.id, !c.archived);
                           if (!r.ok) ui.toast(r.error, "error");
                         }}
-                        className="min-h-10 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
+                        className="min-h-11 rounded-lg px-3 text-[13px] font-semibold text-ink-2 hover:bg-surface-2"
                       >
                         {c.archived ? "再表示" : "非表示"}
                       </button>
@@ -766,12 +774,22 @@ export default function SettingsPage() {
         <SectionTitle>このアプリについて</SectionTitle>
         <p className="text-[13px] text-ink-2">くらしベース（KURASHI BASE）β版（試用版）</p>
         <p className="mt-2 text-[13px] font-semibold text-ink-2">まだ対応していないこと</p>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
-          <li>レシートの文字の自動読み取り（OCR）— レシートの画像を見ながら手で入力します</li>
-          <li>繰り返し予定の1回分だけの変更、振替・分割払いの記録</li>
-          <li>通知、ホーム画面のウィジェット、iPhone のショートカット</li>
-          <li>端末どうしの同期・共有・AI・ほかのサービスとのつながり（メニューの「準備中」に説明があります）</li>
-        </ul>
+        {PERSONAL_BUILD ? (
+          // 自分用：iPhone アプリでは文字の読み取り・通知・ウィジェットが使えるので、「まだ対応していない」に入れない（磨き込み 2026-11-26）
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
+            <li>繰り返し予定の1回分だけの変更、分割払いの記録</li>
+            <li>端末どうしの同期・共有・AI・ほかのサービスとのつながり（メニューの「準備中」に説明があります）</li>
+            <li>iPhone のショートカット</li>
+            <li>文字の読み取り・通知・ウィジェットは iPhone アプリの中だけ（パソコンのブラウザでは使えません）</li>
+          </ul>
+        ) : (
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
+            <li>レシートの文字の自動読み取り（OCR）— レシートの画像を見ながら手で入力します</li>
+            <li>繰り返し予定の1回分だけの変更、振替・分割払いの記録</li>
+            <li>通知、ホーム画面のウィジェット、iPhone のショートカット</li>
+            <li>端末どうしの同期・共有・AI・ほかのサービスとのつながり（メニューの「準備中」に説明があります）</li>
+          </ul>
+        )}
       </Card>
     </main>
   );

@@ -29,13 +29,14 @@ iPhone（feat のみ）：WidgetSync → NativeBridge（setSummary・writeBackup
 summarizeMonth（calendar・history・home・widget）、daySummary（calendar・home・widget）、monthBreakdown（MonthBreakdownCard・PeriodReport）、monthLedger（home）、budgetSpent（report）、forecastMonthEnd（ForecastCard）、cashBalance（CashBalanceCard）、weeklyReview、summarizePeriod、assessPurchase・compareScenarios（decide）。
 → 共通の台帳（A03）を作ったら、まず「並行比較」の試験で、これらの答えと台帳の答えが一致することを確かめてから、画面を順に台帳へつなぐ。
 
-## 4. 要修正（依存の向き）
-- `lib/draft.ts` が `@/components/CollectionPage` の型（Draft）を import している（lib → components の逆向き）。型だけなので動作には影響しないが、A06 で型を lib 側へ移す。
-- 循環 import は見つかっていない（lib → components は上の型1件のみ）。
+## 4. 依存の向き（2026-11-25 夜に直した）
+- `lib/draft.ts` が `@/components/CollectionPage` の型（Draft）を読んでいた → 型を `lib/draft.ts` に移し、CollectionPage はそれを読み直すようにした（lib → components は0件）。
+- 型だけの読み込みの輪が1つあった（`types.ts` ⇄ `lifeChange.ts`）→ LifeChange・LifeItem の型を `types.ts` に移した（保存の形は変えていない）。
+- 見張り：`app/tests/a01-deps.test.ts`（lib が components・app を読まない・lib の中に読み込みの輪がない）。
 
 ## 5. 保存の限界（実測済み。RAID R-06）
 - 1つの localStorage キーに全データ。10年相当（1.5万件）で 4.1MB、取り消し用の控えを書く操作はデータの約3.2倍を使う。
-- iPhone アプリも WKWebView の localStorage（推測：Capacitor の既定。ネイティブの保存は writeBackup のファイルだけ）。A04 で、実際の Swift 構成を確認してから保存方式を決める。
+- iPhone アプリ（自分用）は WKWebView の IndexedDB に保存する（A05。前は localStorage）。Swift は記録を持たず、写し（ウィジェット・自動バックアップ・カレンダー・通知）だけを持つことを、Swift のソースを読む試験で固定した（A07。docs/integration/A07_NATIVE_BOUNDARY.md）。
 
 ## 6. 未確認
 - iPhone の WKWebView で localStorage が消える条件（OS の容量不足時）は、実機で未確認。

@@ -69,3 +69,15 @@ describe("色のコントラスト比（実測）", () => {
     expect(r).toBeLessThan(3);
   });
 });
+
+describe("磨き込み 2026-11-26（独立点検 中-2）：止めた・終わったものの行（背景 surface-2）の補足の文字", () => {
+  it("surface-2 の上の補足は ink-2（4.5:1 以上）。ink-3 は届かないので使わない", () => {
+    const s2 = color("surface-2");
+    expect(ratio(color("ink-2"), s2)).toBeGreaterThanOrEqual(4.5);
+    expect(ratio(color("ink-3"), s2)).toBeLessThan(4.5); // だから ink-2 にした
+    const src = (p: string) => readFileSync(join(__dirname, "..", "src", p), "utf8");
+    expect(src("components/CollectionPage.tsx")).toContain('${v.muted ? "text-ink-2" : "text-ink-3"}');
+    expect(src("app/recurring/page.tsx")).toContain('${r.active ? "text-ink-3" : "text-ink-2"}');
+    expect(src("app/trips/page.tsx")).toContain('${t.endDate < today ? "text-ink-2" : "text-ink-3"}');
+  });
+});

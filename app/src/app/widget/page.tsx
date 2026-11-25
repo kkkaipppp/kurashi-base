@@ -7,6 +7,7 @@ import { formatDateJa, monthKey, todayStr } from "@/lib/date";
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { useData } from "@/lib/store";
 import { eventTimeLabel } from "@/components/Rows";
+import { IS_PERSONAL } from "@/lib/edition";
 
 export default function WidgetPreviewPage() {
   const data = useData();
@@ -19,10 +20,18 @@ export default function WidgetPreviewPage() {
   return (
     <main className="space-y-3">
       <PageHeader title="ウィジェット" />
-      <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3 text-[13px] text-ink-2">
-        <p className="font-bold text-warn">アプリの中で見るだけのプレビューです</p>
-        iPhoneのホーム画面に置くウィジェットは、Webアプリでは作れません。ネイティブアプリとして作る必要があり、まだ対応していません。
-      </section>
+      {IS_PERSONAL ? (
+        // 自分用の iPhone アプリでは、ホーム画面にウィジェットを置ける（磨き込み 2026-11-26）
+        <section className="rounded-2xl border border-line bg-surface-2 px-4 py-3 text-[13px] text-ink-2">
+          <p className="font-bold">ウィジェットの中身のプレビューです</p>
+          iPhone アプリでは、ホーム画面を長押し →「＋」→「くらしベース」で、ウィジェットを置けます。パソコンのブラウザでは置けません。
+        </section>
+      ) : (
+        <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3 text-[13px] text-ink-2">
+          <p className="font-bold text-warn">アプリの中で見るだけのプレビューです</p>
+          iPhoneのホーム画面に置くウィジェットは、Webアプリでは作れません。ネイティブアプリとして作る必要があり、まだ対応していません。
+        </section>
+      )}
 
       <p className="text-[13px] text-ink-3">ウィジェットにしたときに出す予定の内容です（今のデータで表示しています）。</p>
       <div className="grid grid-cols-2 gap-3">

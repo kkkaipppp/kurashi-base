@@ -136,14 +136,14 @@ export default function HomePage() {
             )
           ) : (
             <>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/20" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="予算の使用率">
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/20" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-valuetext={data.budget.monthly ? `予算の${Math.round((spentForBudget / data.budget.monthly) * 100)}%${spentForBudget > data.budget.monthly ? "（超過）" : ""}` : undefined} aria-label="予算の使用率">
                 <div className={`h-full rounded-full ${remaining < 0 ? "bg-[#ffb4a6]" : "bg-white"}`} style={{ width: `${pct}%` }} />
               </div>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <p className="num text-[12px] opacity-90">
                   予算 {formatYen(data.budget.monthly ?? 0)}・使った額{ledger ? "（投資を除く）" : ""} {formatYen(spentForBudget)}
                 </p>
-                <Link href="/report" className="inline-flex min-h-9 shrink-0 items-center rounded-lg bg-white/15 px-3 text-[12px] font-semibold hover:bg-white/25">
+                <Link href="/report" className="inline-flex min-h-11 shrink-0 items-center rounded-lg bg-white/15 px-3 text-[12px] font-semibold hover:bg-white/25">
                   振り返り
                 </Link>
               </div>
@@ -175,7 +175,7 @@ export default function HomePage() {
         <Card>
           <SectionTitle
             action={
-              <Link href="/calendar" className="min-h-9 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+              <Link href="/calendar" className="inline-flex min-h-11 items-center rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
                 カレンダー
               </Link>
             }
@@ -191,7 +191,7 @@ export default function HomePage() {
                 ))}
               </ul>
               {todayEvents.length > EVENTS_SHOWN && (
-                <Link href="/calendar" className="mt-1 flex min-h-10 items-center justify-center rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft">
+                <Link href="/calendar" className="mt-1 flex min-h-11 items-center justify-center rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft">
                   ほか{todayEvents.length - EVENTS_SHOWN}件をカレンダーで見る
                 </Link>
               )}
@@ -208,7 +208,7 @@ export default function HomePage() {
           ) : (
             <div className="flex items-center justify-between gap-2 py-1">
               <p className="text-[14px] text-ink-3">予定はありません</p>
-              <button type="button" onClick={() => ui.openEvent({ mode: "new", date: today })} className="min-h-10 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+              <button type="button" onClick={() => ui.openEvent({ mode: "new", date: today })} className="min-h-11 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
                 ＋ 予定を追加
               </button>
             </div>
@@ -221,14 +221,15 @@ export default function HomePage() {
         {/* 次の固定費（今日の予定の近くに。レビュー o1 の P09） */}
         {(PERSONAL || prefs.nextRecurring) && next && (
           <Link href={`/recurring?open=${next.id}`} className="block">
-            <Card className="flex items-center justify-between py-3 hover:bg-surface-2">
-              <div>
+            <Card className="flex items-center justify-between gap-3 py-3 hover:bg-surface-2">
+              {/* 長い名前・大きい金額でも、横にはみ出さない（N03・N15 の画面幅の点検） */}
+              <div className="min-w-0 flex-1">
                 <h2 className="text-[14px] font-semibold text-ink-2">次の固定費</h2>
-                <p className="text-[13px] text-ink-3">
+                <p className="text-[13px] text-ink-3 [overflow-wrap:anywhere]">
                   {formatDateJa(next.nextDueDate)} {next.name}
                 </p>
               </div>
-              <p className="num text-lg font-bold">{formatYen(next.amount)}</p>
+              <p className="num shrink-0 text-lg font-bold">{formatYen(next.amount)}</p>
             </Card>
           </Link>
         )}
@@ -262,7 +263,7 @@ export default function HomePage() {
               })}
             </ul>
             {todo.length > TASKS_SHOWN && (
-              <Link href="/tasks" className="mt-1 flex min-h-10 items-center justify-center rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft">
+              <Link href="/tasks" className="mt-1 flex min-h-11 items-center justify-center rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft">
                 ほか{todo.length - TASKS_SHOWN}件を見る
               </Link>
             )}
@@ -336,7 +337,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => setNaviOpen(!naviOpen)}
                 aria-expanded={naviOpen}
-                className="mt-1 flex min-h-10 w-full items-center justify-center rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft"
+                className="mt-1 flex min-h-11 w-full items-center justify-center rounded-lg text-[13px] font-semibold text-brand hover:bg-brand-soft"
               >
                 {naviOpen ? "閉じる" : `すべて見る（ほか${navi.length - NAVI_SHOWN}件）`}
               </button>
@@ -368,7 +369,7 @@ export default function HomePage() {
           <Card>
             <SectionTitle
               action={
-                <Link href="/history" className="min-h-9 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+                <Link href="/history" className="inline-flex min-h-11 items-center rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
                   すべて見る
                 </Link>
               }
@@ -396,6 +397,8 @@ export default function HomePage() {
   return (
     <main className="space-y-4 pt-3">
       <AddFromQuery />
+      {/* 見出しの一覧の先頭（読み上げ）。画面には出さない */}
+      <h1 className="sr-only">ホーム</h1>
       <header className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <LogoLockup size={30} />

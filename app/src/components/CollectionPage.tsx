@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { OpenFromQuery } from "./OpenFromQuery";
 import { Sheet } from "./Sheet";
-import { Button, Card, Empty, Field, PageHeader, inputCls } from "./ui";
+import { Button, Card, Empty, Field, PageHeader, focusFirstInvalid, inputCls } from "./ui";
 import { useUI } from "./UIContext";
 import { useData, useStore, type ItemInput } from "@/lib/store";
 import { isValidDateStr, todayStr } from "@/lib/date";
@@ -12,7 +12,8 @@ import type { SaveResult } from "@/lib/storage";
 
 // タスク・資産・契約・健康・書類・生活記録などで共通に使う「一覧＋入力シート」
 
-export type Draft = Record<string, string | boolean>;
+import type { Draft } from "@/lib/draft";
+export type { Draft };
 
 export interface FieldDef {
   name: string;
@@ -46,6 +47,8 @@ export interface CollectionConfig<K extends CollectionKey> {
   noun: string; // 「タスク」「資産」など。ボタン・確認文に使う
   /** 追加ボタンの文言（既定：「○○を追加」） */
   addLabel?: string;
+  /** ＋から日を選んで新しく作るとき、その日を入れる日付の項目（タスクの期限など） */
+  newDateField?: string;
   intro?: ReactNode;
   emptyText: string;
   fields: FieldDef[] | ((ctx: { data: AppData }) => FieldDef[]);
@@ -119,7 +122,7 @@ export function CollectionPage<K extends CollectionKey>({ config }: { config: Co
 export function CollectionSection<K extends CollectionKey>({ config, heading }: { config: CollectionConfig<K>; heading?: string }) {
   const data = useData();
   const today = todayStr();
-  const [editing, setEditing] = useState<{ id?: string; key: number } | null>(null);
+  const [editing, setEditing] = useState<{ id?: string; key: number; date?: string } | null>(null);
   const list = useMemo(() => {
     const l = [...(data[config.key] as ItemOf<K>[])];
     return config.sort ? l.sort(config.sort) : l;
@@ -138,12 +141,12 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
   const blocked = config.addBlocked?.(data) ?? null;
   const add = () => setEditing({ key: Date.now() });
   const ids = useMemo(() => list.map((x) => (x as { id: string }).id), [list]);
-  const openById = useCallback((id: string) => setEditing(id === "new" ? { key: Date.now() } : { id, key: Date.now() }), [setEditing]);
+  const openById = useCallback((id: string, date?: string) => setEditing(id === "new" ? { key: Date.now(), date } : { id, key: Date.now() }), [setEditing]);
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         {heading ? <h2 className="text-[17px] font-bold">{heading}</h2> : <span />}
-        <Button onClick={add} disabled={!!blocked} className="min-h-10 px-3 text-[14px]">
+        <Button onClick={add} disabled={!!blocked} className="min-h-11 px-3 text-[14px]">
           ＋ {config.addLabel ?? `${config.noun}を追加`}
         </Button>
       </div>
@@ -166,16 +169,16 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
                     <button
                       type="button"
                       onClick={() => setEditing({ id, key: Date.now() })}
-                      className={`flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2 ${v.muted ? "opacity-60" : ""}`}
+                      className={`flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-surface-2 ${v.muted ? "bg-surface-2" : ""}`}
                     >
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-semibold">{v.title}</span>
                         {(v.sub || v.badge) && (
-                          <span className="flex items-center gap-1.5 text-[12px] text-ink-3">
+                          <span className={`flex items-center gap-1.5 text-[12px] ${v.muted ? "text-ink-2" : "text-ink-3"}`}>
                             {v.badge && (
                               <span
                                 className={`shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
-                                  v.badge.tone === "warn" ? "bg-warn-soft text-warn" : v.badge.tone === "ok" ? "bg-brand-soft text-brand" : "bg-surface-2 text-ink-2"
+                                  v.badge.tone === "warn" ? "bg-warn-soft text-warn" : v.badge.tone === "ok" ? "bg-brand-soft text-brand" : "bg-surface-2 text-ink-2 ring-1 ring-line"
                                 }`}
                               >
                                 {v.badge.text}
@@ -195,12 +198,12 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
         ))
       )}
       <OpenFromQuery ids={ids} onOpen={openById} />
-      {editing && <ItemSheet key={editing.key} config={config} id={editing.id} onClose={() => setEditing(null)} />}
+      {editing && <ItemSheet key={editing.key} config={config} id={editing.id} date={editing.date} onClose={() => setEditing(null)} />}
     </section>
   );
 }
 
-function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: CollectionConfig<K>; id?: string; onClose: () => void }) {
+function ItemSheet<K extends CollectionKey>({ config, id, date, onClose }: { config: CollectionConfig<K>; id?: string; date?: string; onClose: () => void }) {
   const data = useData();
   const store = useStore();
   const ui = useUI();
@@ -209,7 +212,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
   // 編集中に別のタブで消されても入力を消さない。保存すると「削除されています」で止まる（作り直さない）
   const [originalCur] = useState(liveCur);
   const cur = liveCur ?? originalCur;
-  const initial = useMemo(() => (cur ? config.toDraft(cur) : config.initial({ today, data })), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const initial = useMemo(() => (cur ? config.toDraft(cur) : { ...config.initial({ today, data }), ...(date && config.newDateField ? { [config.newDateField]: date } : {}) }), []); // eslint-disable-line react-hooks/exhaustive-deps
   const fields = typeof config.fields === "function" ? config.fields({ data }) : config.fields;
   const [draft, setDraft] = useState<Draft>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -233,7 +236,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, onClose }: { config: C
     const e = { ...validateFields(fields, draft), ...(config.validate?.(draft) ?? {}) };
     const real = Object.fromEntries(Object.entries(e).filter(([, v]) => v));
     setErrors(real);
-    if (Object.keys(real).length) return;
+    if (Object.keys(real).length) return focusFirstInvalid();
     lock.current = true;
     const item = config.fromDraft(draft);
     const r = await (cur ? store.updateItem(config.key, (cur as { id: string }).id, item, editSnapshot.current) : store.addItem(config.key, item));

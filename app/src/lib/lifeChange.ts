@@ -1,26 +1,12 @@
-import type { AppData, RecurringCycle } from "./types";
+import type { AppData, LifeChange, LifeItem, RecurringCycle } from "./types";
 
 /**
  * 生活変化（NEXT v21 VALUE_DEPTH B03：引っ越し・転職など。適用日・変更前後・影響・項目別に確認・履歴を残す・取り消せる）。
  * 変えるのは「これからの設定」（固定費の金額・やめる・月の予算）だけ。過去の記録は書き換えない。
  * 適用は、本人が押したときだけ（適用日が来ても、自動では変えない）。変更前の値が今と違う項目は、ずれているので変えない。
  */
-export type LifeItem =
-  | { kind: "recurringAmount"; recurringId: string; name: string; before: number; after: number; applied?: boolean }
-  | { kind: "recurringStop"; recurringId: string; name: string; applied?: boolean }
-  | { kind: "budget"; before: number | null; after: number | null; applied?: boolean };
-
-export interface LifeChange {
-  id: string;
-  title: string;
-  /** 適用日（この日から変える予定の日） */
-  date: string;
-  items: LifeItem[];
-  status: "planned" | "applied" | "undone";
-  createdAt: string;
-  appliedAt?: string;
-  undoneAt?: string;
-}
+// 型は types.ts に置く（types.ts と、この部品の読み込みの輪をなくす。o11 A01）
+export type { LifeChange, LifeItem } from "./types";
 
 const PER_MONTH: Record<RecurringCycle, number> = { monthly: 1, weekly: 52 / 12, yearly: 1 / 12 };
 

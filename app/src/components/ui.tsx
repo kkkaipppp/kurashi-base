@@ -1,6 +1,6 @@
 "use client";
 
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { cloneElement, isValidElement, type ButtonHTMLAttributes, type ReactElement, type ReactNode } from "react";
 import { IS_PERSONAL } from "@/lib/edition";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -56,22 +56,45 @@ export function Field({
   optional?: boolean;
   children: ReactNode;
 }) {
+  // 間違い・ヒントの文を、入力欄の説明としてつなぐ（欄に戻ったとき、読み上げが間違いの文も読む。磨き込み 2026-11-26）
+  const describedBy = error ? `${htmlFor}-error` : hint ? `${htmlFor}-hint` : undefined;
+  const own = isValidElement(children) ? (children.props as { id?: string; "aria-describedby"?: string }) : null;
+  const child =
+    describedBy && own && own.id === htmlFor
+      ? cloneElement(children as ReactElement<{ "aria-describedby"?: string }>, {
+          "aria-describedby": [...new Set([own["aria-describedby"], describedBy].filter(Boolean))].join(" "),
+        })
+      : children;
   return (
     <div className="min-w-0 space-y-1">
       <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[14px] font-semibold text-ink-2">
         {label}
         {optional && <span className="rounded bg-surface-2 px-1 py-px text-[12px] font-medium text-ink-3">任意</span>}
       </label>
-      {children}
+      {child}
       {error ? (
         <p id={`${htmlFor}-error`} role="alert" className="text-[14px] font-medium text-danger">
           {error}
         </p>
       ) : hint ? (
-        <p className="text-[13px] text-ink-3">{hint}</p>
+        <p id={`${htmlFor}-hint`} className="text-[13px] text-ink-3">
+          {hint}
+        </p>
       ) : null}
     </div>
   );
+}
+
+/** 保存できなかったとき、開いている入力の画面の、最初の間違いの欄へ移る（キーボードで隠れた欄の間違いも見えるように。磨き込み 2026-11-26） */
+export function focusFirstInvalid() {
+  requestAnimationFrame(() => {
+    const dialogs = document.querySelectorAll('[role="dialog"]');
+    const scope = dialogs.length ? dialogs[dialogs.length - 1] : document;
+    const el = scope.querySelector<HTMLElement>('[aria-invalid="true"]');
+    if (!el) return;
+    el.scrollIntoView({ block: "center" });
+    el.focus({ preventScroll: true });
+  });
 }
 
 export const inputCls =

@@ -9,6 +9,7 @@ import { buildInsights, monthReport, weeklyBuckets } from "@/lib/report";
 import { budgetSpent } from "@/lib/ledger";
 import { cycleLabel } from "@/lib/recurring";
 import { useData } from "@/lib/store";
+import { useUI } from "@/components/UIContext";
 import dynamic from "next/dynamic";
 import { FEATURES } from "@/lib/edition";
 
@@ -25,6 +26,8 @@ const YearReport = PERIOD_REPORT ? dynamic(() => import("@/components/PeriodRepo
 const MONTH_BREAKDOWN = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // 月末の見込み：2026-11-25 から公開版でも出す（FEATURE_EDITIONS.forecast）
 const ForecastCard = FEATURES.forecast ? dynamic(() => import("@/components/ForecastCard").then((m) => m.ForecastCard)) : () => null;
+// 続けて使えているか（自分用だけ。公開版の組み立てには入れない）
+const UsageCard = FEATURES.usageDays && process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(() => import("@/components/UsageCard").then((m) => m.UsageCard)) : () => null;
 const CashBalanceCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/CashBalanceCard").then((m) => m.CashBalanceCard)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
 
@@ -83,7 +86,7 @@ export default function ReportPage() {
             role="radio"
             aria-checked={span === s.key}
             onClick={() => setSpan(s.key)}
-            className={`min-h-10 rounded-lg text-[14px] font-semibold ${span === s.key ? "bg-surface shadow-sm" : "text-ink-2"}`}
+            className={`min-h-11 rounded-lg text-[14px] font-semibold ${span === s.key ? "bg-surface shadow-sm" : "text-ink-2"}`}
           >
             {s.label}
           </button>
@@ -99,6 +102,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
   const data = useData();
   const today = todayStr();
   const [month, setMonth] = useState(monthKey(today));
+  const ui = useUI();
   const r = monthReport(data, month);
   const weeks = weeklyBuckets(data.transactions, month);
   const insights = buildInsights(data, month, today);
@@ -137,9 +141,14 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
         <Empty
           action={
             // 空の月は、まず記録できるように（レビュー o1 の P16）
-            <Link href="/?add=expense" className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink">
+            // その場で入力を開く。今月以外を見ているときは、その月の1日から始める（ホームへ移らない。磨き込み 2026-11-26）
+            <button
+              type="button"
+              onClick={() => ui.openTx({ mode: "new", type: "expense", date: month === monthKey(today) ? undefined : `${month}-01` })}
+              className="inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink"
+            >
               支出を追加
-            </Link>
+            </button>
           }
         >
           {formatMonthJa(month)}は、まだ支出・収入の記録がありません。「＋」から記録すると、ここに使い方の内訳が出ます。
@@ -154,7 +163,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
             </p>
             {pct !== null && (
               <div className="mt-2">
-                <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-label="予算の使用率">
+                <div className="h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={Math.min(pct, 100)} aria-valuemin={0} aria-valuemax={100} aria-valuetext={`予算の${pct}%${pct > 100 ? "（超過）" : ""}`} aria-label="予算の使用率">
                   <div className={`h-full rounded-full ${pct > 100 ? "bg-expense" : "bg-brand"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                 </div>
                 <p className="num mt-1 text-right text-[12px] text-ink-3">予算の{pct}%{LIFE_BUDGET ? "（投資を除く）" : ""}</p>
@@ -177,6 +186,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
           </Card>
 
           <ForecastCard month={month} />
+          {month === monthKey(today) && <UsageCard />}
           <CashBalanceCard month={month} />
           <MonthBreakdownCard month={month} />
 
@@ -187,7 +197,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
                 {insights.map((i) => (
                   <li key={i.key} className="text-[14px]">
                     {i.href ? (
-                      <Link href={i.href} className="flex min-h-10 items-center justify-between gap-2 underline-offset-2 hover:underline">
+                      <Link href={i.href} className="flex min-h-11 items-center justify-between gap-2 underline-offset-2 hover:underline">
                         <span>{i.text}</span>
                         <IconChevronR className="size-4 shrink-0 text-ink-3" />
                       </Link>
@@ -206,14 +216,15 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
             {r.expense === 0 ? (
               <p className="text-[14px] text-ink-3">この月の支出はありません。</p>
             ) : (
-              <div className="flex items-center gap-4">
+              // 狭いとき（文字を大きくしたときなど）は、円グラフの下に一覧を並べる（N03・N15 の画面幅の点検）
+              <div className="flex flex-wrap items-center gap-4">
                 <Donut parts={parts} total={r.expense} />
-                <ul className="min-w-0 flex-1 space-y-0.5">
+                <ul className="min-w-0 flex-1 basis-48 space-y-0.5">
                   {parts.map((p) => (
                     <li key={p.id || "rest"}>
                       <Link
                         href={p.id ? `/history?m=${month}&cat=${p.id}` : `/history?m=${month}`}
-                        className="flex min-h-9 items-center gap-2 rounded-lg px-1 text-[13px] hover:bg-surface-2"
+                        className="flex min-h-11 flex-wrap items-center gap-x-2 rounded-lg px-1 text-[13px] hover:bg-surface-2"
                       >
                         <span className="size-2.5 shrink-0 rounded-full" style={{ background: p.color }} aria-hidden="true" />
                         <span className="min-w-0 flex-1 truncate">{p.name}</span>
@@ -247,7 +258,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
       <Card>
         <SectionTitle
           action={
-            <Link href="/recurring" className="min-h-9 rounded-lg px-2 py-1.5 text-[13px] font-semibold text-brand hover:bg-brand-soft">
+            <Link href="/recurring" className="inline-flex min-h-11 items-center rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
               固定費を見る
             </Link>
           }
