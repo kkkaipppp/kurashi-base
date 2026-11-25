@@ -49,7 +49,7 @@ export function CashBalanceCard({ month }: { month: string }) {
             </div>
             <div className="flex justify-between">
               <dt>それからの収入</dt>
-              <dd>＋{formatYen(r.income)}</dd>
+              <dd>+{formatYen(r.income)}</dd>
             </div>
             <div className="flex justify-between">
               <dt>現金・口座などで払った支出</dt>
@@ -58,7 +58,7 @@ export function CashBalanceCard({ month }: { month: string }) {
             {r.refunded > 0 && (
               <div className="flex justify-between">
                 <dt>返金で戻った額</dt>
-                <dd>＋{formatYen(r.refunded)}</dd>
+                <dd>+{formatYen(r.refunded)}</dd>
               </div>
             )}
             <div className="flex justify-between">

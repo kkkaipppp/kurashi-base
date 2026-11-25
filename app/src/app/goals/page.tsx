@@ -12,6 +12,8 @@ import { Card } from "@/components/ui";
 
 // 版の値を、このファイルの中で直接比べる（公開版の組み立てから、自分用の入力を外すため）
 const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+/** 数値目標か（数の欄を出すかどうか） */
+const isNumberGoal = (d: Parameters<typeof str>[0]) => str(d, "kind") === "number";
 
 const config: CollectionConfig<"goals"> = {
   key: "goals",
@@ -22,9 +24,10 @@ const config: CollectionConfig<"goals"> = {
   fields: [
     { name: "title", label: "内容", type: "text", required: true, placeholder: "例：旅行のために30万円ためる" },
     { name: "kind", label: "種類", type: "select", options: [{ value: "number", label: "数値目標（例：30万円ためる）" }, { value: "check", label: "達成目標（例：引っ越す）" }] },
-    { name: "current", label: "今の数", type: "number", decimal: true, half: true, hint: "数値目標のとき（例：12万円ためるなら 120000）" },
-    { name: "target", label: "目標の数", type: "number", decimal: true, half: true },
-    { name: "unit", label: "単位", optional: true, type: "text", half: true, placeholder: "例：円、冊、kg" },
+    // 数の欄は、数値目標のときだけ出す（2026-11-26 承認5の8）
+    { name: "current", label: "今の数", type: "number", decimal: true, half: true, hint: "例：30万円のうち12万円ためたなら 120000", showWhen: isNumberGoal },
+    { name: "target", label: "目標の数", type: "number", decimal: true, half: true, hint: "例：30万円なら 300000", showWhen: isNumberGoal },
+    { name: "unit", label: "単位", optional: true, type: "text", half: true, placeholder: "例：円、冊、kg", showWhen: isNumberGoal },
     { name: "deadline", label: "期限", optional: true, type: "date", half: true },
     { name: "note", label: "メモ", optional: true, type: "textarea" },
     // やること（自分用）。1行に1つ。終わったものは、行の先頭に ✓
@@ -59,7 +62,7 @@ const config: CollectionConfig<"goals"> = {
     if (items.length === 0) return null;
     return (
       <Card className="py-3">
-        <h2 className="mb-1 text-[15px] font-bold">必要なペース</h2>
+        <h2 className="mb-1 text-[17px] font-bold">必要なペース</h2>
         <ul className="space-y-1.5">
           {items.map(({ g, text }) => (
             <li key={g.id} className="text-[13px]">

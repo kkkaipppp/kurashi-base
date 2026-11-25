@@ -2,6 +2,7 @@ import { dailyAllowance } from "./allowance";
 import { summarizeMonth } from "./aggregate";
 import { categoryIsInvest, categoryMap } from "./classify";
 import { IS_PERSONAL } from "./edition";
+import { BUDGET_EXCLUDES_INVEST } from "./ledgerCore";
 import { monthBreakdown } from "./monthBreakdown";
 import type { AppData } from "./types";
 
@@ -16,6 +17,8 @@ import type { AppData } from "./types";
  */
 export interface MonthLedger {
   budget: number | null;
+  /** 予算と比べる使った額（自分用は lifeExpense、公開版はすべての支出＝lifeExpense ＋ investMove） */
+  spent: number;
   lifeExpense: number;
   investMove: number;
   income: number;
@@ -26,18 +29,21 @@ export interface MonthLedger {
   daysLeft: number;
 }
 
-export function monthLedger(data: AppData, month: string, today: string): MonthLedger {
+export function monthLedger(data: AppData, month: string, today: string, excludeInvest: boolean = BUDGET_EXCLUDES_INVEST): MonthLedger {
   const b = monthBreakdown(data, month, today);
   const budget = data.budget.monthly ?? null;
-  // 投資の固定費（積立など）は、自由に使える残りから引かない（生活費の予算と比べる額に入れていないため）
+  // 投資を除くとき：投資の固定費（積立など）も、自由に使える残りから引かない（生活費の予算と比べる額に入れていないため）
   const cats = categoryMap(data);
-  const a = month === today.slice(0, 7) ? dailyAllowance(budget, b.lifeExpense, data.recurring.filter((r) => !categoryIsInvest(cats.get(r.categoryId))), today) : null;
+  const spent = excludeInvest ? b.lifeExpense : b.lifeExpense + b.invest;
+  const rec = excludeInvest ? data.recurring.filter((r) => !categoryIsInvest(cats.get(r.categoryId))) : data.recurring;
+  const a = month === today.slice(0, 7) ? dailyAllowance(budget, spent, rec, today) : null;
   return {
     budget,
+    spent,
     lifeExpense: b.lifeExpense,
     investMove: b.invest,
     income: b.income,
-    lifeBudgetLeft: budget === null ? null : budget - b.lifeExpense,
+    lifeBudgetLeft: budget === null ? null : budget - spent,
     unpaidFixed: a?.unpaidFixed ?? 0,
     freeLeft: a ? a.left : null,
     perDay: a ? a.perDay : null,

@@ -92,7 +92,7 @@ export function CsvGenericPanel({ table, cfg, encoding, onChange }: { table: Tab
       <div>
         <p className="mb-1 text-[12px] font-semibold text-ink-2">はじめの3行（そのまま）</p>
         <div className="overflow-x-auto rounded-lg border border-line bg-surface">
-          <table className="num w-max min-w-full text-[11px]">
+          <table className="num w-max min-w-full text-[12px]">
             <thead>
               <tr className="text-ink-3">
                 {table.header.map((h, i) => (

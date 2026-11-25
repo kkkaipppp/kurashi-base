@@ -5,11 +5,12 @@ import { weeklyReview } from "@/lib/weeklyReview";
 import { formatDateJa } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 import { useData } from "@/lib/store";
+import { BUDGET_EXCLUDES_INVEST } from "@/lib/ledgerCore";
 
 /** 週の見直し（自分用。NEXT v21 Phase 4）：記録されたことだけを並べる。原因は推測しない */
 export function WeeklyReviewCard({ from, today, isThisWeek }: { from: string; today: string; isThisWeek: boolean }) {
   const data = useData();
-  const r = weeklyReview(data, from, today);
+  const r = weeklyReview(data, from, today, BUDGET_EXCLUDES_INVEST);
   const cat = r.topCategory ? data.categories.find((c) => c.id === r.topCategory!.categoryId)?.name ?? "（不明なカテゴリ）" : null;
   const diff = r.prevSpent === null ? null : r.spent - r.prevSpent;
   const hasNext = r.next.events + r.next.fixed.length + r.next.tasks + r.next.renewals > 0;
@@ -19,7 +20,7 @@ export function WeeklyReviewCard({ from, today, isThisWeek }: { from: string; to
         <SectionTitle>この週のふりかえり</SectionTitle>
         <dl className="num space-y-1 text-[14px]">
           <div className="flex justify-between gap-2">
-            <dt className="text-ink-2">使ったお金（生活費・投資を除く）</dt>
+            <dt className="text-ink-2">{BUDGET_EXCLUDES_INVEST ? "使ったお金（生活費・投資を除く）" : "使ったお金"}</dt>
             <dd className="font-semibold">{formatYen(r.spent)}</dd>
           </div>
           {r.topCategory && (

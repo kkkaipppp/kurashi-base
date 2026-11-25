@@ -154,7 +154,7 @@ export default function SettingsPage() {
         text = new TextDecoder("shift_jis").decode(buf);
         encoding = "Shift_JIS";
       } catch {
-        return ui.toast("この文字コードは読めません。UTF-8 で保存し直してください", "error");
+        return ui.toast("この文字の形式は読めません。UTF-8 か Shift_JIS で保存し直してください", "error");
       }
     }
     const std = csvToIncoming(text, data, new Date().toISOString());
@@ -323,7 +323,7 @@ export default function SettingsPage() {
             </Field>
           </div>
           <Button onClick={saveBudget} className="mt-6">
-            保存
+            保存する
           </Button>
         </div>
       </Card>
@@ -473,7 +473,7 @@ export default function SettingsPage() {
             ほかの家計簿アプリの記録を、表計算などで決まった形の CSV にして、今の記録に追加します。同じ記録は二重に入りません。
           </p>
           <p className="mt-1 mb-3 text-[12px] text-ink-3">
-            決まった形：1行目が「日付,種類,金額,カテゴリ,内容,支払い方法,メモ,元ID」（支出・収入）か「名前,金額,周期,支払日,次の支払日,カテゴリ,支払い方法」（固定費）。保存するときの文字の形式は「UTF-8」にしてください。
+            決まった形：1行目が「日付,種類,金額,カテゴリ,内容,支払い方法,メモ,元ID」（支出・収入）か「名前,金額,周期,支払日,次の支払日,カテゴリ,支払い方法」（固定費）。文字の形式は「UTF-8」と「Shift_JIS」（銀行・カードの CSV に多い形式）のどちらでも読めます。
           </p>
           <Button variant="secondary" onClick={() => csvRef.current?.click()}>
             CSV ファイルを選ぶ…

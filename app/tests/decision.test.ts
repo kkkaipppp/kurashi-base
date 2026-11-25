@@ -24,14 +24,14 @@ const base = (): AppData => {
 
 describe("買い物の判断", () => {
   it("今月に買ったら：自由に使える残り・1日あたりが、ホームと同じ計算で減る（指示書の例：残り7日）", () => {
-    const a = assessPurchase(base(), 10000, "2026-11-24");
+    const a = assessPurchase(base(), 10000, "2026-11-24", true);
     expect(a.freeLeft).toEqual({ before: 15580, after: 5580 });
     expect(a.daysLeft).toBe(7);
     expect(a.perDay).toEqual({ before: 2225, after: 797 });
     expect(a.overFree).toBe(false);
   });
   it("予算を超える買い物は、自由に使える残りがマイナスになり、overFree。1日あたりは0円", () => {
-    const a = assessPurchase(base(), 20000, "2026-11-24");
+    const a = assessPurchase(base(), 20000, "2026-11-24", true);
     expect(a.freeLeft.after).toBe(-4420);
     expect(a.overFree).toBe(true);
     expect(a.perDay.after).toBe(0);
@@ -45,11 +45,11 @@ describe("買い物の判断", () => {
     expect(a.nextMonth.amountShareOfBudget).toBeNull();
   });
   it("来月に回したら：予算に対する割合と、来月に来る固定費（登録されている予定額。投資の積立は入れない）。年またぎも", () => {
-    const a = assessPurchase(base(), 30000, "2026-11-24");
+    const a = assessPurchase(base(), 30000, "2026-11-24", true);
     expect(a.nextMonth).toEqual({ budget: 120000, fixed: 8000, amountShareOfBudget: 25 }); // スマホ 8000 は来月も来る。積立 30000 は入れない
     const e = base();
     e.recurring[0].nextDueDate = "2027-01-28";
-    expect(assessPurchase(e, 1000, "2026-12-20").nextMonth.fixed).toBe(8000); // 12月 → 1月
+    expect(assessPurchase(e, 1000, "2026-12-20", true).nextMonth.fixed).toBe(8000); // 12月 → 1月
   });
   it("月末の見込みがあれば、予算との差も出す。記録が少ないときは出さない", () => {
     const d = base();

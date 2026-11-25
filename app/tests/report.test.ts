@@ -52,6 +52,10 @@ describe("くらしの気づき（B10：データがないときは出さない�
     expect(buildInsights(d, "2026-11", "2026-11-10").some((i) => i.key === "pace")).toBe(false);
     d.budget.monthly = 50000;
     expect(buildInsights(d, "2026-11", "2026-11-06").some((i) => i.key === "pace")).toBe(false);
-    expect(buildInsights(d, "2026-11", "2026-11-10").find((i) => i.key === "pace")?.text).toBe("月末の見込み：約¥9,000（予算 ¥50,000）");
+    // 記録が少ない（変動費3件未満）と、月末の見込みが出せないので、この一文も出さない（2026-11-26：公開版も月末の見込みと同じ数字にそろえた）
+    expect(buildInsights(d, "2026-11", "2026-11-10").some((i) => i.key === "pace")).toBe(false);
+    d.transactions.push(tx("2026-11-03", 3000), tx("2026-11-04", 3000));
+    // 窓は 11/2〜11/9 の8日、変動費 9000 ÷ 8 = 1125/日。月末の見込み＝9000 ＋ 1125 × 20日 ＝ 31500
+    expect(buildInsights(d, "2026-11", "2026-11-10").find((i) => i.key === "pace")?.text).toBe("月末の見込み：約¥31,500（予算 ¥50,000）");
   });
 });

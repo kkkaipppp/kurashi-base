@@ -56,9 +56,12 @@ describe("A06：切り替えの前と後で、すべての集計が同じ答え�
         expect(nPer.dailyInWeek(T, w.from)).toEqual(oPer.dailyInWeek(T, w.from));
         expect(nPer.weeklyTrend(T, w.from)).toEqual(oPer.weeklyTrend(T, w.from));
         expect(nWr.weeklyReview(d, w.from, today)).toEqual(oWr.weeklyReview(d, w.from, today));
-        expect(nRep.buildInsights(d, mo, today)).toEqual(oRep.buildInsights(d, mo, today));
-        expect(nFc.forecastMonthEnd(d, today)).toEqual(oFc.forecastMonthEnd(d, today));
-        expect(nFc.forecastCurve(d, today)).toEqual(oFc.forecastCurve(d, today));
+        // 「月末の見込み」の一文は 2026-11-26 に公開版も月末の見込みの計算にそろえた（旧実装は公開版で単純なペース）ので、比べるのはそれ以外
+        const noPace = (xs: { key: string }[]) => xs.filter((x) => x.key !== "pace");
+        expect(noPace(nRep.buildInsights(d, mo, today))).toEqual(noPace(oRep.buildInsights(d, mo, today)));
+        // 旧実装は投資を除く数え方だけ（公開版の「すべての支出」は tests/budget-basis-public.test.ts）
+        expect(nFc.forecastMonthEnd(d, today, undefined, true)).toEqual(oFc.forecastMonthEnd(d, today));
+        expect(nFc.forecastCurve(d, today, true)).toEqual(oFc.forecastCurve(d, today));
       }
       for (const y of [2026, 2027, 2028]) {
         expect(nPer.monthlyInYear(T, y)).toEqual(oPer.monthlyInYear(T, y));
@@ -135,10 +138,10 @@ describe("A06：同じ条件の金額は、画面どうしで一致する（200�
       for (const mo of MONTHS) {
         const [y, m] = mo.split("-").map(Number);
         const end = `${mo}-${String(daysInMonth(y, m)).padStart(2, "0")}`;
-        const fc = nFc.forecastMonthEnd(d, end);
+        const fc = nFc.forecastMonthEnd(d, end, undefined, true);
         if (fc.ok) expect(fc.spent).toBe(nMb.monthBreakdown(d, mo, end).lifeExpense);
         // 月末のグラフの実線の終わり＝今月これまで
-        const curve = nFc.forecastCurve(d, end);
+        const curve = nFc.forecastCurve(d, end, true);
         if (curve && fc.ok) expect(curve.actual[curve.actual.length - 1]).toBe(fc.spent);
       }
       // 週の見直しの「今週これまで」＝ その週の毎日の支出から投資を除いたもの（日曜を今日として）

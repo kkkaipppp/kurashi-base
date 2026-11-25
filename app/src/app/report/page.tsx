@@ -171,15 +171,15 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
             )}
             <dl className="num mt-3 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl bg-income-soft py-2">
-                <dt className="text-[11px] font-semibold text-income">収入</dt>
+                <dt className="text-[12px] font-semibold text-income">収入</dt>
                 <dd className="text-[14px] font-bold">{formatYen(r.income)}</dd>
               </div>
               <div className="rounded-xl bg-surface-2 py-2">
-                <dt className="text-[11px] font-semibold text-ink-2">収支</dt>
+                <dt className="text-[12px] font-semibold text-ink-2">収支</dt>
                 <dd className={`text-[14px] font-bold ${r.balance < 0 ? "text-expense" : ""}`}>{formatSignedYen(r.balance)}</dd>
               </div>
               <div className="rounded-xl bg-surface-2 py-2">
-                <dt className="text-[11px] font-semibold text-ink-2">{month === monthKey(today) ? "先月の支出" : "前月の支出"}</dt>
+                <dt className="text-[12px] font-semibold text-ink-2">{month === monthKey(today) ? "先月の支出" : "前月の支出"}</dt>
                 <dd className="text-[14px] font-bold">{r.hasPrev ? formatYen(r.prevExpense) : "記録なし"}</dd>
               </div>
             </dl>
@@ -207,7 +207,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
                   </li>
                 ))}
               </ul>
-              <p className="mt-1 text-[11px] text-ink-3">記録した金額からの計算です。</p>
+              <p className="mt-1 text-[12px] text-ink-3">記録した金額からの計算です。</p>
             </Card>
           )}
 
@@ -229,7 +229,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
                         <span className="size-2.5 shrink-0 rounded-full" style={{ background: p.color }} aria-hidden="true" />
                         <span className="min-w-0 flex-1 truncate">{p.name}</span>
                         <span className="num font-semibold">{formatYen(p.value)}</span>
-                        <span className="num w-9 text-right text-[11px] text-ink-3">{Math.round((p.value / r.expense) * 100)}%</span>
+                        <span className="num w-9 text-right text-[12px] text-ink-3">{Math.round((p.value / r.expense) * 100)}%</span>
                       </Link>
                     </li>
                   ))}

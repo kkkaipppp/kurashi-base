@@ -77,7 +77,7 @@ export function buildNavi(data: AppData, today: string): NaviItem[] {
   // 予算と比べるのは、ホームの予算カードと同じ額（自分用は投資を除いた生活費）
   const remaining = remainingBudget(data.budget.monthly, budgetSpent(data, monthKey(today), today));
   if (remaining !== null && remaining < 0)
-    items.push({ key: "budget", tone: "warn", title: "今月の予算を超えています", sub: `${formatYen(-remaining)}オーバー${IS_PERSONAL ? "（投資を除く）" : ""}`, href: "/history" });
+    items.push({ key: "budget", tone: "warn", title: "今月の予算を超えています", sub: `${formatYen(-remaining)}超過${IS_PERSONAL ? "（投資を除く）" : ""}`, href: "/history" });
 
   // 何か1つでも記録があれば対象（取引・予定だけでなく、タスクや資格だけ使う人も）
   const hasData =

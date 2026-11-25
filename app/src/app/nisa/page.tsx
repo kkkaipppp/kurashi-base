@@ -45,7 +45,7 @@ function Summary({ data }: { data: AppData }) {
       <Meter label="つみたて投資枠" used={s.annualUsed.tsumitate} limit={NISA_LIMITS.annual.tsumitate} left={s.annualLeft.tsumitate} />
       <Meter label="成長投資枠" used={s.annualUsed.growth} limit={NISA_LIMITS.annual.growth} left={s.annualLeft.growth} />
       <div className="space-y-4 border-t border-line pt-4">
-        <h2 className="text-[15px] font-bold">生涯の投資枠（{year}年時点）</h2>
+        <h2 className="text-[17px] font-bold">生涯の投資枠（{year}年時点）</h2>
         <Meter label="合計" used={s.lifetimeUsed} limit={NISA_LIMITS.lifetime} left={s.lifetimeLeft} />
         <Meter label="うち成長投資枠" used={s.lifetimeGrowthUsed} limit={NISA_LIMITS.lifetimeGrowth} left={s.lifetimeGrowthLeft} />
         <p className="text-[12px] text-ink-3">
@@ -106,7 +106,7 @@ const config: CollectionConfig<"nisa"> = {
       title: e.name || FRAME_LABEL[e.frame],
       sub: `${formatDateJa(e.date, true)}・${FRAME_LABEL[e.frame]}${warn.length ? `・${warn[0]}` : ""}`,
       badge: e.kind === "buy" ? { text: "買付", tone: "info" } : { text: "売却", tone: "ok" },
-      right: `${e.kind === "sell" ? "-" : ""}${formatYen(e.amount)}`,
+      right: `${e.kind === "sell" ? "−" : ""}${formatYen(e.amount)}`,
     };
   },
   header: ({ data }) => <Summary data={data} />,

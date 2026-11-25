@@ -39,7 +39,7 @@ export function TxRow({ tx, showDate = false }: { tx: Transaction; showDate?: bo
         </span>
         <span className={`num max-w-[48%] break-all text-right text-base font-bold ${exp ? "text-ink" : "text-income"}`}>
           <span className="sr-only">{exp ? "支出" : "収入"}</span>
-          {exp ? "-" : "+"}
+          {exp ? "−" : "+"}
           {formatYen(tx.amount)}
         </span>
       </button>

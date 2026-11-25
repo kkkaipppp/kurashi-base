@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatSignedYen, formatYen } from "@/lib/money";
+import { BUDGET_EXCLUDES_INVEST } from "@/lib/ledgerCore";
 
 /**
  * 縦の棒グラフ（支出＝赤・収入＝青）。収支の累計は、折れ線ではなく「数字で見る」の表に出す（2026-11-25 平尾さんの指示）。
@@ -24,7 +25,7 @@ const PAD_B = 22;
 /** 目盛りの金額を短く（12万、3.5万、8,000） */
 export function shortAmount(n: number): string {
   const a = Math.abs(n);
-  const sign = n < 0 ? "-" : "";
+  const sign = n < 0 ? "−" : "";
   if (a >= 100_000_000) return `${sign}${Math.round(a / 100_000_000)}億`;
   if (a >= 100_000) return `${sign}${Math.round(a / 10_000)}万`;
   if (a >= 10_000) return `${sign}${(a / 10_000).toFixed(1).replace(/\.0$/, "")}万`;
@@ -95,7 +96,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
           </g>
         ))}
       </svg>
-      <figcaption className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-ink-3">
+      <figcaption className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[12px] text-ink-3">
         <span className="flex items-center gap-1">
           <span className="inline-block size-2.5 rounded-sm bg-expense" />支出（棒）
         </span>
@@ -137,7 +138,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
           </tfoot>
         </table>
         {/* 数字の根拠（何を数えているか。NEXT v21 CH:G01） */}
-        <p className="mb-2 text-[12px] text-ink-3">支出・収入はこの期間に記録したものの合計です（投資として数えた支出も含みます。予算と比べる「生活費」とは別の数字です）。今日より後の日・月は数えません。</p>
+        <p className="mb-2 text-[12px] text-ink-3">支出・収入はこの期間に記録したものの合計です{BUDGET_EXCLUDES_INVEST ? "（投資として数えた支出も含みます。予算と比べる「生活費」とは別の数字です）" : ""}。今日より後の日・月は数えません。</p>
       </details>
     </figure>
   );

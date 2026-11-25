@@ -64,7 +64,7 @@ describe("金額の入力検証", () => {
   });
   it("表示は桁区切りの日本円", () => {
     expect(formatYen(82450)).toBe("¥82,450");
-    expect(formatSignedYen(-500)).toBe("-¥500");
+    expect(formatSignedYen(-500)).toBe("−¥500");
   });
 });
 

@@ -48,7 +48,7 @@ describe("週・年の収支（2026-11-24 平尾さん：年間と週の収支�
   });
   it("推移の折れ線は収支の累計。目盛りの金額は短く", () => {
     expect(cumulativeBalance([{ label: "a", expense: 100, income: 0 }, { label: "b", expense: 0, income: 300 }, { label: "c", expense: 50, income: 0 }])).toEqual([-100, 200, 150]);
-    expect([shortAmount(8000), shortAmount(35000), shortAmount(120000), shortAmount(-250000)]).toEqual(["8,000", "3.5万", "12万", "-25万"]);
+    expect([shortAmount(8000), shortAmount(35000), shortAmount(120000), shortAmount(-250000)]).toEqual(["8,000", "3.5万", "12万", "−25万"]);
   });
   it("自分用と公開版の両方で出す（2026-11-25 平尾さんの決定）。投資を除いて予算と比べる表示は自分用だけ", () => {
     expect(FEATURE_EDITIONS.periodReport).toEqual({ personal: true, public: true }); // 2026-11-25 平尾さん：友達用にも出す

@@ -159,7 +159,7 @@ export default function HomePage() {
                       月末まで（{allowance.daysLeft}日）<strong className="text-[16px]">1日あたり {formatYen(allowance.perDay)}</strong> 使えます
                     </>
                   )}
-                  <span className="block text-[11px] opacity-90">
+                  <span className="block text-[12px] opacity-90">
                     {allowance.unpaidFixed > 0 ? `まだ記録していない今月の固定費 ${formatYen(allowance.unpaidFixed)} を引いた額です` : "今月の固定費は記録済みです"}
                   </span>
                 </p>
@@ -240,7 +240,7 @@ export default function HomePage() {
         {/* 3. 今日やること（あるときだけ） */}
         {todo.length > 0 && (
           <Card className="py-3">
-            <h2 className="mb-1 text-[15px] font-bold">
+            <h2 className="mb-1 text-[17px] font-bold">
               今日やること<span className="ml-1 text-[13px] font-medium text-ink-3">{todo.length}件</span>
             </h2>
             <ul className="-mx-2">
@@ -276,7 +276,7 @@ export default function HomePage() {
         {/* はじめにやること（記録が1件もない間だけ） */}
         {firstUse && (
           <Card>
-            <h2 className="text-[15px] font-bold">はじめにやること</h2>
+            <h2 className="text-[17px] font-bold">はじめにやること</h2>
             <ol className="mt-2 space-y-1">
 
               <li>
@@ -315,7 +315,7 @@ export default function HomePage() {
         {/* ここから下は補足（あるときだけ） */}
         {(PERSONAL || prefs.needsReview) && navi.length > 0 && (
           <Card className="py-3">
-            <h2 className="mb-1 text-[15px] font-bold">
+            <h2 className="mb-1 text-[17px] font-bold">
               確認したいこと<span className="ml-1 text-[13px] font-medium text-ink-3">{navi.length}件</span>
             </h2>
             <ul className="-mx-2">

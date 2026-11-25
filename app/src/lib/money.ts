@@ -22,7 +22,15 @@ export function formatYen(n: number): string {
   return `¥${fmt.format(n)}`;
 }
 
-/** 符号付き表示（残りがマイナスの場合など） */
+/**
+ * 符号付き表示（残りがマイナスの場合など）。マイナスは「−」（U+2212）、プラスの印は付けない。
+ * 符号の書き方は画面全体で「−」と半角の「+」にそろえる（2026-11-26 承認5の1）
+ */
 export function formatSignedYen(n: number): string {
-  return n < 0 ? `-¥${fmt.format(-n)}` : `¥${fmt.format(n)}`;
+  return n < 0 ? `−¥${fmt.format(-n)}` : `¥${fmt.format(n)}`;
+}
+
+/** 差の表示：増えたら「+¥」、減ったら「−¥」、同じなら「¥0」 */
+export function formatDiffYen(n: number): string {
+  return n > 0 ? `+¥${fmt.format(n)}` : formatSignedYen(n);
 }
