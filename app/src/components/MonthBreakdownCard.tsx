@@ -2,7 +2,7 @@
 
 import { Card, SectionTitle } from "./ui";
 import { todayStr } from "@/lib/date";
-import { formatSignedYen, formatYen } from "@/lib/money";
+import { formatDiffYen, formatSignedYen, formatYen } from "@/lib/money";
 import { monthBreakdown } from "@/lib/monthBreakdown";
 import { investCategoryNames } from "@/lib/ledger";
 import { useData } from "@/lib/store";
@@ -22,7 +22,7 @@ export function MonthBreakdownCard({ month }: { month: string }) {
         <SectionTitle>生活と投資</SectionTitle>
         <dl className="num grid grid-cols-2 gap-2 text-center">
           <div className="rounded-xl bg-surface-2 py-2">
-            <dt className="text-[11px] font-semibold text-ink-2">生活の収支</dt>
+            <dt className="text-[12px] font-semibold text-ink-2">生活の収支</dt>
             <dd
               className={`text-[15px] font-bold ${b.lifeBalance < 0 ? "text-expense" : ""}`}
             >
@@ -30,7 +30,7 @@ export function MonthBreakdownCard({ month }: { month: string }) {
             </dd>
           </div>
           <div className="rounded-xl bg-event/10 py-2">
-            <dt className="text-[11px] font-semibold text-event">
+            <dt className="text-[12px] font-semibold text-event">
               投資に回した額
             </dt>
             <dd className="text-[15px] font-bold">{formatYen(b.invest)}</dd>
@@ -92,8 +92,7 @@ export function MonthBreakdownCard({ month }: { month: string }) {
               <strong
                 className={b.diffTotal > 0 ? "text-expense" : "text-brand"}
               >
-                {b.diffTotal > 0 ? "+" : ""}
-                {formatYen(b.diffTotal).replace("¥-", "−¥")}
+                {formatDiffYen(b.diffTotal)}
               </strong>
               （投資を除く）
             </p>
@@ -117,7 +116,7 @@ export function MonthBreakdownCard({ month }: { month: string }) {
                         ? `+${formatYen(x.diff)}`
                         : `−${formatYen(-x.diff)}`}
                     </strong>
-                    <span className="block text-[11px] text-ink-3">
+                    <span className="block text-[12px] text-ink-3">
                       {formatYen(x.prev)} → {formatYen(x.now)}
                     </span>
                   </span>

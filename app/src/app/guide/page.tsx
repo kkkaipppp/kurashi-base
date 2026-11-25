@@ -5,7 +5,7 @@ import { useUI } from "@/components/UIContext";
 import { Button, Card, IconChevronR, PageHeader } from "@/components/ui";
 import { BRAND, LogoMark } from "@/components/Logo";
 import { useIsNativeApp } from "@/lib/platform";
-import { IS_PERSONAL } from "@/lib/edition";
+import { FEATURES, IS_PERSONAL } from "@/lib/edition";
 
 const linkCls =
   "flex min-h-11 items-center justify-between rounded-xl px-1 text-[14px] font-semibold text-brand hover:bg-brand-soft";
@@ -78,6 +78,16 @@ export default function GuidePage() {
           <li>メニュー → 旅行：日ごとの行程と持ち物</li>
           <li>メニュー → 資格の学習：1日の勉強時間の目安</li>
         </ul>
+        {/* 新しく使えるようになった機能（2026-11-26 承認5の3） */}
+        <h3 className="mt-3 text-[14px] font-bold">お金の見通しと整理</h3>
+        <ul className="mt-1 list-disc space-y-2 pl-5 text-[14px]">
+          {FEATURES.forecast && <li>振り返り → 月末の見込み：今のペースだと月末にいくらになるか（確定ではありません）</li>}
+          {FEATURES.periodReport && <li>振り返り → 週・年：週ごと・月ごとの支出と収入の推移</li>}
+          {FEATURES.decide && <li>メニュー → 買い物の判断：買う前に、今月と来月の予算への影響を見る</li>}
+          {FEATURES.inbox && <li>メニュー → 未整理の記録：「その他」の記録を、店名ごとにまとめてカテゴリを付ける</li>}
+          {FEATURES.search && <li>メニュー → さがす：記録・予定・メモなどを、1つの言葉で全部の月から探す</li>}
+          {(FEATURES.csvImport || FEATURES.icsImport) && <li>設定 → 家計簿の CSV・カレンダーのファイル（.ics）を取り込む（端末の中だけで読み込みます）</li>}
+        </ul>
         <div className="mt-3 grid gap-1">
           <Link href="/trips" className={linkCls}>
             旅行を開く
@@ -136,7 +146,7 @@ export default function GuidePage() {
               レシートの文字の自動読み取り（OCR。「レシートを見て入力」で、画像を見ながら手で入力できます）
             </li>
             <li>
-              Googleカレンダーとの同期（予定を Google の画面に渡すだけです）
+              Googleカレンダーとの自動の同期（予定を Google の画面に渡すことと、.ics のファイルでの取り込み・書き出しはできます）
             </li>
             <li>友達や家族とのデータの共有、端末どうしの同期</li>
             <li>通知、iPhone のホーム画面のウィジェット</li>

@@ -94,7 +94,7 @@ export default function MenuPage() {
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-1.5 text-[15px] font-semibold">
                           {i.label}
-                          {i.soon && <span className="rounded-full bg-warn-soft px-1.5 py-0.5 text-[10px] font-semibold text-warn">準備中</span>}
+                          {i.soon && <span className="rounded-full bg-warn-soft px-1.5 py-0.5 text-[12px] font-semibold text-warn">準備中</span>}
                         </span>
                         <span className="block truncate text-[12px] text-ink-3">{i.desc}</span>
                       </span>
@@ -107,8 +107,8 @@ export default function MenuPage() {
             </ul>
           </Card>
         );
-        // 自分用は、まだ使えないもの（準備中）をふだんのメニューに出さない（100点化の指示 F。開けば見られる）
-        if (IS_PERSONAL && soon)
+        // まだ使えないもの（準備中）は、ふだんのメニューに出さない（100点化の指示 F。開けば見られる。2026-11-26 公開版も同じにした＝承認5の4）
+        if (soon)
           return (
             <details key={g.title} className="rounded-xl">
               <summary className="flex min-h-11 cursor-pointer items-center px-1 text-[13px] font-semibold text-ink-3">準備中のもの（{items.length}件）を見る</summary>

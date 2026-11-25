@@ -25,7 +25,7 @@ const PAD_B = 22;
 /** 目盛りの金額を短く（12万、3.5万、8,000） */
 export function shortAmount(n: number): string {
   const a = Math.abs(n);
-  const sign = n < 0 ? "-" : "";
+  const sign = n < 0 ? "−" : "";
   if (a >= 100_000_000) return `${sign}${Math.round(a / 100_000_000)}億`;
   if (a >= 100_000) return `${sign}${Math.round(a / 10_000)}万`;
   if (a >= 10_000) return `${sign}${(a / 10_000).toFixed(1).replace(/\.0$/, "")}万`;
@@ -96,7 +96,7 @@ export function TrendChart({ rows, title, lineLabel = "収支の累計" }: { row
           </g>
         ))}
       </svg>
-      <figcaption className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-ink-3">
+      <figcaption className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[12px] text-ink-3">
         <span className="flex items-center gap-1">
           <span className="inline-block size-2.5 rounded-sm bg-expense" />支出（棒）
         </span>

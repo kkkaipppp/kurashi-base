@@ -60,7 +60,7 @@ export default function InboxPage() {
           return (
             <Card key={g.key} className="space-y-2 py-3">
               <div className="min-w-0">
-                <h2 className="truncate text-[15px] font-bold">{g.merchant}</h2>
+                <h2 className="truncate text-[17px] font-bold">{g.merchant}</h2>
                 <p className="num text-[12px] text-ink-3">
                   {g.type === "expense" ? "支出" : "収入"} {g.ids.length}件・{formatYen(g.total)}・{formatDateJa(g.firstDate, true)}
                   {g.firstDate !== g.lastDate ? `〜${formatDateJa(g.lastDate, true)}` : ""}

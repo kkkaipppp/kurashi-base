@@ -230,7 +230,7 @@ function TripDetail({ trip, onBack, onEdit, onOpenTrip }: { trip: Trip; onBack: 
 
       {IS_PERSONAL && (linkedTx.length > 0 || memoCands.length > 0) && <TripSpending trip={trip} linked={linkedTx} cands={memoCands} />}
 
-      <h2 className="px-1 pt-1 text-[15px] font-bold">日ごとの行程</h2>
+      <h2 className="px-1 pt-1 text-[17px] font-bold">日ごとの行程</h2>
       {days.map((d, i) => {
         const list = eventsOnDay(evs, d);
         return (
@@ -437,7 +437,7 @@ function TripSpending({ trip, linked, cands }: { trip: Trip; linked: import("@/l
   };
   return (
     <Card>
-      <h2 className="text-[15px] font-bold">
+      <h2 className="text-[17px] font-bold">
         この旅行の支出<span className="ml-1 text-[13px] font-medium text-ink-3">{linked.length}件</span>
       </h2>
       {cands.length > 0 && (

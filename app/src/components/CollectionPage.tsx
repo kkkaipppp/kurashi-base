@@ -31,6 +31,8 @@ export interface FieldDef {
   /** number：0 未満を許すか */
   allowNegative?: boolean;
   half?: boolean; // 2列のうち1列分
+  /** 入力中の内容で、この欄を出すか（出さない欄は確かめず、値はそのまま。例：目標の種類が数値のときだけ数の欄） */
+  showWhen?: (d: Draft) => boolean;
 }
 
 export interface RowView {
@@ -90,6 +92,7 @@ function validateFields(fields: FieldDef[], d: Draft): Record<string, string> {
   for (const f of fields) {
     const v = d[f.name];
     if (f.type === "checkbox") continue;
+    if (f.showWhen && !f.showWhen(d)) continue;
     const s = typeof v === "string" ? v.trim() : "";
     if (f.required && s === "") {
       e[f.name] = `${f.label.replace(/（.*）/, "")}を入力してください`;
@@ -177,7 +180,7 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
                           <span className={`flex items-center gap-1.5 text-[12px] ${v.muted ? "text-ink-2" : "text-ink-3"}`}>
                             {v.badge && (
                               <span
-                                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
+                                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[12px] font-semibold ${
                                   v.badge.tone === "warn" ? "bg-warn-soft text-warn" : v.badge.tone === "ok" ? "bg-brand-soft text-brand" : "bg-surface-2 text-ink-2 ring-1 ring-line"
                                 }`}
                               >
@@ -295,6 +298,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, date, onClose }: { con
         }}
       >
         {fields.map((f) => {
+          if (f.showWhen && !f.showWhen(draft)) return null;
           const fid = `f-${config.key}-${f.name}`;
           const v = draft[f.name];
           const err = errors[f.name];

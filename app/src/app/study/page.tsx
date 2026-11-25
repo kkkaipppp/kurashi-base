@@ -121,7 +121,7 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
           <div className="min-w-0">
             <h2 className="text-[17px] leading-snug font-bold break-words">
               {s.name}
-              {s.archived && <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 align-middle text-[11px] font-semibold text-ink-3">終了</span>}
+              {s.archived && <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 align-middle text-[12px] font-semibold text-ink-3">終了</span>}
             </h2>
             <p className="text-[13px] text-ink-2">
               {exam}

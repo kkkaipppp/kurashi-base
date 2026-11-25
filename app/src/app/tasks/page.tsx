@@ -46,7 +46,7 @@ function ToEventButton({ task }: { task: Task }) {
   const store = useStore();
   const data = useData();
   const ui = useUI();
-  if (taskIsEvent(data, task)) return <span className="px-1 text-[11px] font-semibold text-brand">カレンダーに入っています</span>;
+  if (taskIsEvent(data, task)) return <span className="px-1 text-[12px] font-semibold text-brand">カレンダーに入っています</span>;
   return (
     <button
       type="button"

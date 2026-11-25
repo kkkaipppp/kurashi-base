@@ -44,11 +44,11 @@ export function ForecastCard({ month }: { month: string }) {
             </div>
             <div className="flex justify-between">
               <dt>今月、これから払う固定費</dt>
-              <dd>＋{formatYen(f.unpaidFixed)}</dd>
+              <dd>+{formatYen(f.unpaidFixed)}</dd>
             </div>
             <div className="flex justify-between">
               <dt>ふだんの出費 1日{formatYen(f.dailyVariable)} × 残り{f.daysAhead}日</dt>
-              <dd>＋{formatYen(f.dailyVariable * f.daysAhead)}</dd>
+              <dd>+{formatYen(f.dailyVariable * f.daysAhead)}</dd>
             </div>
           </dl>
           <p className="mt-2 text-[12px] text-ink-3">
@@ -80,7 +80,7 @@ function CurveChart({ curve, budget }: { curve: NonNullable<ReturnType<typeof fo
         <polyline points={solid} fill="none" stroke="currentColor" strokeWidth="2.5" className="text-brand" />
         <polyline points={dashed} fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray="6 4" className="text-ink-2" />
       </svg>
-      <figcaption className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-ink-3">
+      <figcaption className="mt-1 flex flex-wrap gap-x-3 text-[12px] text-ink-3">
         <span>
           <span aria-hidden="true">━ </span>実績（今日まで）
         </span>
