@@ -2,7 +2,7 @@
 
 **このファイルが現在地の正本。** セッションの終わりに必ず更新する。（`docs/NEXT_SESSION_HANDOFF.md` は作りの要点、`docs/progress/STATUS.md` は WBS の集計用）
 
-- 更新：2026-11-26
+- 更新：2026-11-27
 - ブランチ：公開版は `master`、自分用（iPhone アプリ）は `feat/ios-widget`。マージは master→feat の向きだけ（LESSONS L-15）。**GitHub `kkkaipppp/kurashi-base`（Private）への push は git の記録（reflog）で：11-23 22:40、11-24 は 12:17・12:37・14:00・21:13・22:35・23:03 の6回、11-25 09:09（origin/master は c3f5b4f）。それ以降の master のコミットは未 push（push は平尾さんの OK 後）。feat/ios-widget は 53578c9 まで push 済み、それ以降は未 push**
 - **公開 URL：https://kurashi-base-tau.vercel.app/**（Vercel、master を自動でデプロイ）
 - 段階：NEXT v21 の開発（ロードマップ `docs/progress/ROADMAP.md` の M9〜M15 ＝ Phase 0〜6。自分用を先に）。公開版（友人β）は M5〜M8 の状態のまま
@@ -19,6 +19,13 @@
 - 進捗の画面：`docs/progress/PROGRESS.html`。論点は `docs/progress/ISSUES.csv`
 - iPhone 用サーバー（開発用の 3211）：11-23 に止めた。友人用は公開 URL だけ
 - 機能を足すのは 2026-11-25 まで。その後は不具合直しと言葉の直しだけ
+
+## o31 改革（2026-11-27、作業中）
+- 平尾さんの依頼で o31（最終統合改革仕様）を採用。作業ブランチ **`o31/reform`**（master 4958f28 から。5b50c09 まで）。**master・feat/ios-widget には入れていない・push していない**
+- 再開：`docs/integration/O31_PROGRESS.md`。報告：`docs/integration/O31_REPORT.md`（判定：公開不可・完成ではない）
+- 自分用でできたもの：下のメニュー1〜4＋右端の「追加」・上の検索とメニュー・メニュー（お気に入り・最近）・設定の6区切り・家計簿（数字と明細/集計）・カレンダーの月/週/一覧・勉強のタイマーと本棚と受験の回・目標の達成条件。言葉の直し約150か所（両方の版）
+- 試験：891件合格・build 成功（両方の版の組み立て）。独立点検2回の指摘を直した（再点検はまだ）。実機・200%・VoiceOver は未確認
+- 承認待ち：o31/reform を master に入れるか（公開版の言葉が変わる）・push
 
 ## 次の3手
 1. 友人に渡した（11-23、平尾さん）。1日目＝11-23 夜・3日目＝11-25・7日目＝11-30 に聞く
