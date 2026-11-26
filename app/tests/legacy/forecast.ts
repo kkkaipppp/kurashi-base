@@ -42,7 +42,8 @@ export function forecastMonthEnd(data: AppData, today: string): Forecast {
   const expenses = data.transactions.filter((t) => t.type === "expense" && !isMoveOnly(t) && !txIsInvest(t, cats));
   if (expenses.length === 0) return { ok: false, reason: "noData" };
 
-  const spent = expenses.filter((t) => t.date.slice(0, 7) === month && t.date <= today).reduce((a, t) => a + t.amount, 0);
+  // 2026-11-26 平尾さん「全部おすすめで」（承認待ち⑤）で意図して変えた：今日より後の日付の記録も数える（本体の lib/forecast.ts と同じ変更。この比べの元も合わせる）
+  const spent = expenses.filter((t) => t.date.slice(0, 7) === month).reduce((a, t) => a + t.amount, 0);
   // 投資の固定費（積立など）は、生活費の見込みに入れない
   const unpaidFixed = unpaidRecurringThisMonth(data.recurring, today, (r) => categoryIsInvest(cats.get(r.categoryId)));
 
@@ -88,10 +89,12 @@ export function forecastCurve(data: AppData, today: string): ForecastCurve | nul
   const month = today.slice(0, 7);
   const cats = categoryMap(data);
   const perDay = new Array<number>(dim).fill(0);
+  const laterOn = new Array<number>(dim + 1).fill(0); // 承認待ち⑤で意図して変えた（上と同じ）
   for (const t of data.transactions) {
     if (t.type !== "expense" || isMoveOnly(t) || txIsInvest(t, cats)) continue;
-    if (t.date.slice(0, 7) !== month || t.date > today) continue;
-    perDay[Number(t.date.slice(8, 10)) - 1] += t.amount;
+    if (t.date.slice(0, 7) !== month) continue;
+    if (t.date > today) laterOn[Number(t.date.slice(8, 10))] += t.amount;
+    else perDay[Number(t.date.slice(8, 10)) - 1] += t.amount;
   }
   const actual: number[] = [];
   let acc = 0;
@@ -106,7 +109,7 @@ export function forecastCurve(data: AppData, today: string): ForecastCurve | nul
   const projected: number[] = [actual[d - 1]];
   let cur = actual[d - 1];
   for (let day = d + 1; day <= dim; day++) {
-    cur += f.dailyVariable + fixedOn[day];
+    cur += f.dailyVariable + fixedOn[day] + laterOn[day];
     projected.push(cur);
   }
   // 月末の日が今日なら、固定費の残りを今日に足す

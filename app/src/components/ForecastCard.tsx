@@ -39,7 +39,7 @@ export function ForecastCard({ month }: { month: string }) {
           {curve && <CurveChart curve={curve} budget={data.budget.monthly} />}
           <dl className="num mt-2 space-y-0.5 rounded-xl border border-dashed border-line px-3 py-2 text-[12px] text-ink-2">
             <div className="flex justify-between">
-              <dt>{LIFE ? "今月これまでの生活費" : "今月これまでの支出"}</dt>
+              <dt>{LIFE ? "今月記録した生活費" : "今月記録した支出"}</dt>
               <dd>{formatYen(f.spent)}</dd>
             </div>
             <div className="flex justify-between">
