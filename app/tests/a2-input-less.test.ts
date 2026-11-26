@@ -56,3 +56,12 @@ describe("A2 店名の候補", () => {
     expect(s).toContain('onClick={() => set("categoryId", merchantCat)}');
   });
 });
+
+describe("A4 機種変更・入れ直しの手順（自分用アプリの中だけ）", () => {
+  it("書き出し → 新しい iPhone に入れる → 復元 → 件数を確かめてから古い方を消す", () => {
+    const g = src("app/guide/page.tsx");
+    expect(g).toContain("{nativeApp && (");
+    for (const w of ["機種変更・入れ直しのときの手順", "バックアップを書き出す", "バックアップから復元…", "件数（記録・予定など）が古い iPhone と同じかを確かめてから"]) expect(g, w).toContain(w);
+    expect(src("app/settings/page.tsx")).toContain("バックアップから復元…");
+  });
+});

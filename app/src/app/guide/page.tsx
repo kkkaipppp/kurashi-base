@@ -123,6 +123,18 @@ export default function GuidePage() {
             </>
           )}
         </ul>
+        {/* A4（自分用アプリ。2026-11-26）：機種変更・入れ直しで記録をなくさない手順 */}
+        {nativeApp && (
+          <details className="mt-2 text-[14px]">
+            <summary className="flex min-h-11 cursor-pointer items-center font-semibold">機種変更・入れ直しのときの手順</summary>
+            <ol className="list-decimal space-y-1.5 pb-1 pl-5">
+              <li>古い iPhone で、設定の「バックアップを書き出す」を押し、「ファイル」の iCloud Drive に保存する（自動バックアップは古い iPhone の中だけにあり、新しい iPhone には移りません）</li>
+              <li>新しい iPhone に、Mac からアプリを入れる</li>
+              <li>新しい iPhone でアプリを開き、設定の「バックアップから復元…」で、1 で保存したファイルを選ぶ</li>
+              <li>件数（記録・予定など）が古い iPhone と同じかを確かめてから、古い iPhone のアプリを消す</li>
+            </ol>
+          </details>
+        )}
         <Link
           href="/settings#backup"
           className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-[14px] font-semibold text-brand-ink"
