@@ -6,15 +6,18 @@ import { useUI } from "./UIContext";
 import { Button, Field, inputCls } from "./ui";
 import { useData, useStore } from "@/lib/store";
 import { newId } from "@/lib/defaults";
-import { OP_LABEL, combine, judge, snapshotAchievement, wouldCycle, type Op, type Verdict } from "@/lib/goalCond";
+import { OP_LABEL, combine, judge, periodOpen, snapshotAchievement, toNumber, wouldCycle, type Op, type Verdict } from "@/lib/goalCond";
+import { todayStr } from "@/lib/date";
 import type { Goal, GoalConditionData } from "@/lib/types";
 
-export const VERDICT_LABEL: Record<Verdict, string> = { met: "達成", unmet: "未達", unknown: "未判定" };
+// 目標そのものの「達成」（done）と区別するため、条件は「満たす・満たさない」と言う（点検 指摘9）
+export const VERDICT_LABEL: Record<Verdict, string> = { met: "満たす", unmet: "満たさない", unknown: "未判定" };
 
 /** 目標の条件のまとめた結果（条件が無ければ null） */
-export function goalVerdict(g: Goal): Verdict | null {
+export function goalVerdict(g: Goal, today = todayStr()): Verdict | null {
   if (!g.conditions || g.conditions.length === 0) return null;
-  return combine(g.condMode ?? "and", g.conditions.map(judge));
+  const open = periodOpen(g.deadline, today);
+  return combine(g.condMode ?? "and", g.conditions.map((c) => judge(c, { periodOpen: open })));
 }
 
 /** 一覧の行の「条件」ボタン（自分用。o31 F018・F019） */
@@ -23,7 +26,7 @@ export function GoalConditionsButton({ goal }: { goal: Goal }) {
   const v = goalVerdict(goal);
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} aria-label={`「${goal.title}」の達成条件`} className="min-h-11 shrink-0 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-surface-2">
+      <button type="button" onClick={() => setOpen(true)} aria-label={`「${goal.title}」の達成条件`} className="min-h-11 shrink-0 rounded-lg px-2 text-[14px] font-semibold text-brand hover:bg-surface-2">
         {v ? `条件：${VERDICT_LABEL[v]}` : "条件"}
       </button>
       {open && <GoalConditionsSheet goal={goal} onClose={() => setOpen(false)} />}
@@ -41,11 +44,17 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
   const [mode, setMode] = useState<"and" | "or">(goal.condMode ?? "and");
   const [parentId, setParentId] = useState(goal.parentId ?? "");
   const [error, setError] = useState<string | null>(null);
-  const verdict = conds.length ? combine(mode, conds.map(judge)) : null;
+  const open = periodOpen(goal.deadline, todayStr());
+  const verdict = conds.length ? combine(mode, conds.map((c) => judge(c, { periodOpen: open }))) : null;
+  const dirty = JSON.stringify([conds, mode, parentId]) !== JSON.stringify([goal.conditions ?? [], goal.condMode ?? "and", goal.parentId ?? ""]);
+  const requestClose = async () => {
+    if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true }))) return;
+    onClose();
+  };
   const others = data.goals.filter((g) => g.id !== goal.id);
 
   const set = (i: number, patch: Partial<GoalConditionData>) => setConds((c) => c.map((x, j) => (j === i ? { ...x, ...patch } : x)));
-  const num = (s: string): number | null => (s.trim() === "" ? null : Number.isFinite(Number(s)) ? Number(s) : null);
+  const num = toNumber;
 
   const save = async () => {
     for (const c of conds) {
@@ -56,14 +65,14 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
     const parentOf = new Map(data.goals.map((g) => [g.id, g.parentId] as [string, string | undefined]));
     if (parentId && wouldCycle(parentOf, goal.id, parentId)) return setError("その目標を親にすると、つながりが輪になります");
     const ts = new Date().toISOString();
-    const next = combine(mode, conds.map(judge));
+    const next = combine(mode, conds.map((c) => judge(c, { periodOpen: open })));
     const r = await store.commit((d) => ({
       ...d,
       goals: d.goals.map((g) => {
         if (g.id !== goal.id) return g;
         // 達成になったときだけ、そのときの条件を写して残す（前の達成の記録は消さない）
         const prev = goalVerdict(g);
-        const achievements = next === "met" && prev !== "met" ? [...(g.achievements ?? []), snapshotAchievement(ts, mode, conds)] : g.achievements;
+        const achievements = next === "met" && prev !== "met" ? [...(g.achievements ?? []), snapshotAchievement(ts, mode, conds, { periodOpen: open })] : g.achievements;
         const { parentId: _p, ...rest } = g; // eslint-disable-line @typescript-eslint/no-unused-vars
         return { ...rest, ...(parentId ? { parentId } : {}), conditions: conds, condMode: mode, ...(achievements ? { achievements } : {}), updatedAt: ts };
       }),
@@ -74,7 +83,7 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
   };
 
   return (
-    <Sheet title="達成条件" open onRequestClose={onClose}>
+    <Sheet title="達成条件" open onRequestClose={requestClose}>
       <div className="space-y-3">
         <p className="text-[14px] text-ink-2">
           {goal.title}
@@ -97,7 +106,7 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
             <li key={c.id} className="space-y-2 border-b border-line pb-3">
               <div className="flex items-center gap-2">
                 <input aria-label="条件の名前" value={c.label} onChange={(e) => set(i, { label: e.target.value })} placeholder="例：売上" className={inputCls} />
-                <span className="shrink-0 text-[14px] font-semibold">{VERDICT_LABEL[judge(c)]}</span>
+                <span className="shrink-0 text-[14px] font-semibold">{VERDICT_LABEL[judge(c, { periodOpen: open })]}</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <input aria-label="目標の値" inputMode="decimal" defaultValue={String(c.target)} onChange={(e) => set(i, { target: num(e.target.value) ?? NaN })} className={`${inputCls} w-28`} />
@@ -121,7 +130,7 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
                   今の値
                 </label>
                 <input id={`act-${c.id}`} inputMode="decimal" defaultValue={c.actual === null ? "" : String(c.actual)} onChange={(e) => set(i, { actual: num(e.target.value) })} placeholder="分からなければ空欄" className={`${inputCls} w-36`} />
-                <button type="button" onClick={() => setConds((x) => x.filter((_, j) => j !== i))} className="ml-auto min-h-11 px-2 text-[14px] font-semibold text-danger">
+                <button type="button" aria-label={`条件「${c.label || "名前なし"}」を削除`} onClick={() => setConds((x) => x.filter((_, j) => j !== i))} className="ml-auto min-h-11 px-2 text-[14px] font-semibold text-danger">
                   削除
                 </button>
               </div>
@@ -132,7 +141,7 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
           ＋ 条件を追加
         </Button>
         <Field label="親の目標" htmlFor="goal-parent" optional>
-          <select id="goal-parent" value={parentId} onChange={(e) => setParentId(e.target.value)} className={inputCls}>
+          <select id="goal-parent" value={others.some((g) => g.id === parentId) ? parentId : ""} onChange={(e) => setParentId(e.target.value)} className={inputCls}>
             <option value="">なし</option>
             {others.map((g) => (
               <option key={g.id} value={g.id}>
@@ -141,7 +150,8 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
             ))}
           </select>
         </Field>
-        {(goal.achievements?.length ?? 0) > 0 && <p className="text-[13px] text-ink-3">達成の記録：{goal.achievements!.length}回（そのときの条件のまま残ります）</p>}
+        {open && conds.some((c) => c.op === "<=") && <p className="text-[14px] text-ink-3">「以下」の条件は、期限が来るまで未判定です。</p>}
+        {(goal.achievements?.length ?? 0) > 0 && <p className="text-[14px] text-ink-3">達成の記録：{goal.achievements!.length}回（そのときの条件のまま残ります）</p>}
         {error && (
           <p role="alert" className="text-[14px] font-medium text-danger">
             {error}

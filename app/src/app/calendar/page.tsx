@@ -30,6 +30,17 @@ const FreeTimeCard = PERSONAL_BUILD ? dynamic(() => import("@/components/FreeTim
 
 const SHOW_KEY = "kurashi-base:ui:calendar-show:v1";
 
+/** 色と印の見方。自分用は畳む（開けば見える）。公開版は今までどおり、いつも出す（点検 中-1：公開版の見た目を変えない） */
+function Legend({ personal, children }: { personal: boolean; children: React.ReactNode }) {
+  if (!personal) return <>{children}</>;
+  return (
+    <details className="mt-1">
+      <summary className="flex min-h-11 cursor-pointer items-center justify-center text-[14px] font-semibold text-ink-3">色と印の見方</summary>
+      {children}
+    </details>
+  );
+}
+
 function shortYen(n: number): string {
   if (n >= 100_000) return `${Math.round(n / 10_000)}万`;
   if (n >= 10_000) return `${(n / 10_000).toFixed(1)}万`;
@@ -269,8 +280,7 @@ function CalendarInner() {
         </table>
         )}
         {view === "month" && (
-        <details className="mt-1" open={!PERSONAL_BUILD}>
-          {PERSONAL_BUILD && <summary className="flex min-h-11 cursor-pointer items-center justify-center text-[13px] font-semibold text-ink-3">色と印の見方</summary>}
+        <Legend personal={PERSONAL_BUILD}>
         <div className="mt-2 flex justify-center gap-4 text-[11px] text-ink-3" aria-hidden="true">
           <span className="flex items-center gap-1">
             <span className="rounded bg-event-soft px-1 text-event">名前</span>予定
@@ -294,7 +304,7 @@ function CalendarInner() {
             <span className="font-semibold">灰色の日付</span>：日曜・祝日
           </li>
         </ul>
-        </details>
+        </Legend>
         )}
       </Card>
 

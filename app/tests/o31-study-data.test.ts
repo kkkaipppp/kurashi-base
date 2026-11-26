@@ -50,3 +50,14 @@ describe("o31 勉強のデータの形（足すだけ）", () => {
     expect(back.preview.data.studySubjects).toEqual(d.studySubjects);
   });
 });
+
+describe("o31 点検 高-1：資格の編集で受験の回などを消さない", () => {
+  it("資格の編集の保存は、画面にない任意の項目（exams など）を今の記録から残す", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const page = readFileSync(join(__dirname, "..", "src", "app", "study", "page.tsx"), "utf8");
+    const save = page.slice(page.indexOf("const save = async () => {", page.indexOf("function SubjectForm")));
+    expect(save).toMatch(/books: _b, createdAt: _ca, updatedAt: _ua, \.\.\.keep \} = editing/);
+    expect(save).toMatch(/const item = \{\s*\.\.\.keep,/);
+  });
+});

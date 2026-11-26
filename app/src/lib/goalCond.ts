@@ -26,13 +26,18 @@ export interface GoalCondition {
 
 export const OP_LABEL: Record<Op, string> = { ">=": "以上", "<=": "以下", "==": "ちょうど", range: "の範囲" };
 
-export function judge(c: GoalCondition): Verdict {
+/**
+ * 1つの条件の結果。opts.periodOpen（期限の前）なら、「以下」の条件で今は下回っていても、期限までに超えるかもしれないので未判定にする
+ * （上回っていれば、もう未達）。「範囲」の下限側も同じ考えで、期間の途中は上限を超えたときだけ未達
+ */
+export function judge(c: GoalCondition, opts: { periodOpen?: boolean } = {}): Verdict {
   if (c.actual === null || !Number.isFinite(c.actual)) return "unknown";
   switch (c.op) {
     case ">=":
       return c.actual >= c.target ? "met" : "unmet";
     case "<=":
-      return c.actual <= c.target ? "met" : "unmet";
+      if (c.actual > c.target) return "unmet";
+      return opts.periodOpen ? "unknown" : "met";
     case "==":
       return c.actual === c.target ? "met" : "unmet";
     case "range":
@@ -105,6 +110,19 @@ export interface Achievement {
   conditions: GoalCondition[];
 }
 
-export function snapshotAchievement(at: string, mode: "and" | "or", conditions: GoalCondition[]): Achievement {
-  return { at, verdict: combine(mode, conditions.map(judge)), conditions: conditions.map((c) => ({ ...c })) };
+export function snapshotAchievement(at: string, mode: "and" | "or", conditions: GoalCondition[], opts: { periodOpen?: boolean } = {}): Achievement {
+  return { at, verdict: combine(mode, conditions.map((c) => judge(c, opts))), conditions: conditions.map((c) => ({ ...c })) };
+}
+
+/** 期限の前か（期限なしは、いつまでも途中として扱う） */
+export function periodOpen(deadline: string, today: string): boolean {
+  return !deadline || today <= deadline;
+}
+
+/** 全角の数字・記号も受け付けて数にする。空・数でないときは null（0 にしない） */
+export function toNumber(s: string): number | null {
+  const t = s.normalize("NFKC").replace(/,/g, "").trim();
+  if (t === "") return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
 }

@@ -9,6 +9,7 @@ import { monthLedger } from "@/lib/ledger";
 import { daySummary, txInMonth, sortTxDesc } from "@/lib/aggregate";
 import { BUDGET_EXCLUDES_INVEST } from "@/lib/ledgerCore";
 import { useData } from "@/lib/store";
+import { useUI } from "./UIContext";
 
 /**
  * 家計簿のタブの上（o29 D 案の中身を A のタブに入れる）：月の支出・収入・収支・予算の残りと、日ごとの明細。
@@ -64,6 +65,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 /** その月の明細を、日ごと（新しい日が上）に並べる。押すと編集 */
 export function MonthTxList({ month }: { month: string }) {
   const data = useData();
+  const ui = useUI();
   const days = useMemo(() => {
     const m = new Map<string, typeof data.transactions>();
     for (const t of sortTxDesc(txInMonth(data.transactions, month))) {
@@ -73,7 +75,15 @@ export function MonthTxList({ month }: { month: string }) {
     }
     return [...m.entries()];
   }, [data, month]);
-  if (days.length === 0) return <p className="py-6 text-center text-[14px] text-ink-3">この月の記録はまだありません。</p>;
+  if (days.length === 0)
+    return (
+      <div className="py-6 text-center">
+        <p className="text-[14px] text-ink-3">この月の記録はまだありません。</p>
+        <button type="button" onClick={() => ui.openTx({ mode: "new", type: "expense", date: month === todayStr().slice(0, 7) ? undefined : `${month}-01` })} className="mt-2 min-h-11 text-[15px] font-semibold text-brand">
+          支出を追加
+        </button>
+      </div>
+    );
   return (
     <div className="space-y-3">
       {days.map(([day, txs]) => {

@@ -70,23 +70,34 @@ describe("o31 T002・T007 右端の「追加」", () => {
     expect(parseAddFav("[")).toEqual(["expense", "event", "task", "income"]);
   });
   it("「追加」は下のメニューの最後の子要素で、文字「追加」と 48px 以上の高さ（D003）。公開版の下のメニューは変えない（C025）", () => {
+    // 点検 中-2 で、自分用の下のメニューは components/PersonalShell.tsx に移し、AppShell から遅れて読む形にした（中身は同じ）
     const shell = src("components/AppShell.tsx");
-    const tab = shell.slice(shell.indexOf("function TabBar()"));
+    const personal = src("components/PersonalShell.tsx");
+    const tab = personal.slice(personal.indexOf("function TabBar()"));
     const nav = tab.slice(tab.indexOf("<nav"), tab.indexOf("</nav>"));
     const lastLink = nav.lastIndexOf("</Link>");
     const addBtn = nav.indexOf('data-testid="nav-add"');
     expect(addBtn).toBeGreaterThan(lastLink);
     expect(nav).toMatch(/min-h-12[^"]*"[\s\S]*?追加\s*<\/button>/);
-    expect(shell).toMatch(/IS_PERSONAL \? \([\s\S]*<TabBar \/>[\s\S]*\) : \([\s\S]*<BottomNav \/>/);
+    expect(shell).toContain('const PERSONAL_SHELL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";');
+    expect(shell).toContain("{PersonalShell ? <PersonalShell /> : <BottomNav />}");
+    expect(shell).not.toMatch(/from "\.\/(AddSheet|useNavPrefs|PersonalShell)"/);
     // 公開版の下のメニュー（中央の＋・ホーム/カレンダー/家計簿/メニュー）は残す。「振り返り」→「家計簿」は言葉の直し（両方の版。o31 07）
     expect(shell).toContain('{ href: "/report", label: "家計簿", Icon: IconChart }');
     expect(shell).toContain("function BottomNav()");
   });
-  it("選んだ種類だけ開く（選ぶまで保存しない）。日付はカレンダーの選んだ日を引き継ぐ", () => {
-    const tab = src("components/AppShell.tsx");
-    expect(tab).toContain('ui.openTx({ mode: "new", type: k, date })');
-    expect(tab).toContain('ui.openEvent({ mode: "new", date })');
-    expect(tab).not.toMatch(/onPick[\s\S]{0,400}(addTx|saveTx|store\.)/);
+  it("選んだ種類だけ開く（選ぶまで保存しない）。日付はカレンダーの選んだ日を引き継ぐ。どの入口からも同じ一覧（点検 指摘6）", () => {
+    const add = src("components/AddSheet.tsx");
+    const pick = add.slice(add.indexOf("const pick = "), add.indexOf("return <AddSheet"));
+    expect(pick).toContain("openTx(k, date)");
+    expect(pick).toContain("openEvent(date)");
+    expect(pick).toContain("&date=${date}");
+    expect(pick).not.toMatch(/addTx|saveTx|store\.|commit/);
+    // 右端の「追加」は ui.openAdd を呼び、UIContext が自分用では PersonalAddSheet を出す（公開版は AddChooser のまま、遅れて読む）
+    expect(src("components/PersonalShell.tsx")).toContain("ui.openAdd({ date:");
+    const ctx = src("components/UIContext.tsx");
+    expect(ctx).toContain('const PersonalAddSheet = process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(');
+    expect(ctx).toContain("{add && !PersonalAddSheet && (");
   });
 });
 

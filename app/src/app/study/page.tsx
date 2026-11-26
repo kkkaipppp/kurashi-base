@@ -165,7 +165,7 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
                 <p>
                   1日あたり <b className="num">{formatMinutes(target.minutes)}</b> 勉強すると、試験日までに目標に届きます
                 </p>
-                {target.tooMuch && <p className="mt-1 text-[13px] text-warn">1日4時間を超えています。目標の勉強時間か試験日を調整してみましょう。</p>}
+                {target.tooMuch && <p className="mt-1 text-[14px] text-warn">1日4時間を超えています。目標の勉強時間か試験日を見直してください。</p>}
               </>
             )}
             {target.kind === "done" && <p>目標の勉強時間に届きました。</p>}
@@ -301,7 +301,10 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
     if (book.title.trim()) e.book = "入力中の参考書を「追加」するか、消してください";
     if (Object.keys(e).length) return setErrors(e);
     lock.current = true;
+    // 編集の画面に出していない任意の項目（受験の回など。o31 F012）は、今の記録のまま残す（点検 高-1）
+    const { id: _id, name: _n, examDate: _e, targetHours: _t, archived: _a, catalogId: _c, books: _b, createdAt: _ca, updatedAt: _ua, ...keep } = editing ?? ({} as Partial<StudySubject>); // eslint-disable-line @typescript-eslint/no-unused-vars
     const item = {
+      ...keep,
       name: f.name.trim(),
       examDate: f.examDate,
       targetHours: h,

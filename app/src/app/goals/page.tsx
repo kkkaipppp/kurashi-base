@@ -92,8 +92,8 @@ const config: CollectionConfig<"goals"> = {
         (stepProgress(g).total > 0 && IS_PERSONAL ? `・やること${stepProgress(g).done}/${stepProgress(g).total}` : "") +
         (act && act.events > 0 ? `・予定${act.events}件（完了${act.doneCount}回）` : "") +
         // 自分用：達成条件のまとめた結果（o31 F018。条件が無ければ出さない）
-        (PERSONAL_BUILD && goalVerdict(g) ? `・条件${VERDICT_LABEL[goalVerdict(g)!]}` : "") +
-        (PERSONAL_BUILD && g.parentId ? `・親：${data.goals.find((x) => x.id === g.parentId)?.title ?? "（なし）"}` : ""),
+        (PERSONAL_BUILD && goalVerdict(g, today) ? `・条件を${VERDICT_LABEL[goalVerdict(g, today)!]}` : "") +
+        (PERSONAL_BUILD && g.parentId && data.goals.some((x) => x.id === g.parentId) ? `・親：${data.goals.find((x) => x.id === g.parentId)!.title}` : ""),
       muted: g.done,
       badge: g.done ? { text: "達成", tone: "ok" } : d !== null && d < 0 ? { text: dueLabel(d), tone: "warn" } : undefined,
       right: (

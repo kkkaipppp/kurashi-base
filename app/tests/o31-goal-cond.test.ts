@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { combine, judge, linkedTotals, snapshotAchievement, sumSameUnit, wouldCycle, type GoalCondition } from "@/lib/goalCond";
+import { combine, judge, linkedTotals, periodOpen, snapshotAchievement, sumSameUnit, toNumber, wouldCycle, type GoalCondition } from "@/lib/goalCond";
 
 // o31 P4（T018・T019・T020、o30 T029〜T031、X004）。期待値は o31 04・05 から手で作った
 const c = (o: Partial<GoalCondition>): GoalCondition => ({ id: "c", label: "", unit: "円", op: ">=", target: 0, actual: 0, ...o });
@@ -9,7 +9,7 @@ describe("o31 T018 達成条件（AND・OR・未判定）", () => {
   const profit = c({ id: "profit", unit: "円", op: ">=", target: 300_000, actual: 250_000 }); // 未達
   const hours = c({ id: "hours", unit: "時間", op: ">=", target: 100, actual: 120 }); // 達成
   it("売上達成・利益未達・時間達成 → AND は未達、OR は達成", () => {
-    const v = [sales, profit, hours].map(judge);
+    const v = [sales, profit, hours].map((x) => judge(x));
     expect(v).toEqual(["met", "unmet", "met"]);
     expect(combine("and", v)).toBe("unmet");
     expect(combine("or", v)).toBe("met");
@@ -62,5 +62,22 @@ describe("o31 T020 実績の参照（同じ記録は全体で1回）", () => {
   it("消えた記録は数えずに、欠けとして返す（0 にしない）", () => {
     const r = linkedTotals({ g1: ["gone"] }, () => null);
     expect(r).toEqual({ perGoal: { g1: 0 }, overall: 0, missing: ["gone"] });
+  });
+});
+
+describe("o31 点検の直し（中-5・低-3）", () => {
+  it("期限の前の「以下」は未判定（上回っていれば未達）。期限のあとは確定。期限なしはずっと途中", () => {
+    const food = c({ op: "<=", target: 50000, actual: 48000 });
+    expect(judge(food, { periodOpen: true })).toBe("unknown");
+    expect(judge(c({ op: "<=", target: 50000, actual: 52000 }), { periodOpen: true })).toBe("unmet");
+    expect(judge(food, { periodOpen: false })).toBe("met");
+    expect(periodOpen("2026-12-31", "2026-11-27")).toBe(true);
+    expect(periodOpen("2026-11-26", "2026-11-27")).toBe(false);
+    expect(periodOpen("", "2026-11-27")).toBe(true);
+    // 期間の途中に「以下」だけで達成の記録を作らない
+    expect(snapshotAchievement("t", "and", [food], { periodOpen: true }).verdict).toBe("unknown");
+  });
+  it("全角の数字・桁区切りを受け付ける。空・数でないものは null（0 にしない）", () => {
+    expect([toNumber("３０"), toNumber("1,200"), toNumber(" 12.5 "), toNumber(""), toNumber("abc")]).toEqual([30, 1200, 12.5, null, null]);
   });
 });

@@ -5,12 +5,15 @@ import { Card, IconChevronR, PageHeader } from "@/components/ui";
 import { useData } from "@/lib/store";
 import { IS_PERSONAL } from "@/lib/edition";
 import { GROUPS } from "@/lib/menuGroups";
-import { PersonalMenu } from "@/components/PersonalMenu";
+import dynamic from "next/dynamic";
+
+// 自分用の「メニュー」（o31 F003）は遅れて読む。版をこのファイルで直接比べるので、公開版の組み立てに入らない（点検 中-2）
+const PersonalMenu = process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(() => import("@/components/PersonalMenu").then((m) => m.PersonalMenu)) : null;
 
 export default function MenuPage() {
   const data = useData();
   // 自分用：お気に入り・最近・検索・すべての機能（o31 F003）。公開版は今までどおり
-  if (IS_PERSONAL) return <PersonalMenu />;
+  if (PersonalMenu) return <PersonalMenu />;
   return (
     <main className="space-y-4">
       <PageHeader title="すべての機能" />

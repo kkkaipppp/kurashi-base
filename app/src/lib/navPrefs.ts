@@ -29,7 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "search", label: "検索", href: "/search", paths: ["/search"] },
   { id: "notes", label: "メモ", href: "/notes", paths: ["/notes"] },
   { id: "home", label: "ホーム", href: "/", paths: [] },
-  { id: "recurring", label: "定期支払い", href: "/recurring", paths: ["/recurring"] },
+  { id: "recurring", label: "固定費", href: "/recurring", paths: ["/recurring"] },
   { id: "assets", label: "資産", href: "/assets", paths: ["/assets", "/nisa"] },
 ];
 

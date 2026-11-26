@@ -8,6 +8,7 @@ import { useData, useStore } from "@/lib/store";
 import { todayStr } from "@/lib/date";
 import { formatMinutes } from "@/lib/study";
 import { newId } from "@/lib/defaults";
+import { toNumber } from "@/lib/goalCond";
 import {
   TIMER_KEY,
   TIMER_MAX_MIN,
@@ -169,14 +170,23 @@ function FinishSheet({ timer, onClose }: { timer: TimerState; onClose: () => voi
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const dirty = [from, to, questions, correct, note].some((x) => x.trim() !== "") || review;
+  // 閉じても、タイマーは残る（記録はまだ）。入れた範囲・問題数・メモは消えるので、確かめる（点検 指摘5）
+  const requestClose = async () => {
+    if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "タイマーは残ります。入れた範囲・問題数・メモは消えます。", ok: "破棄する", danger: true }))) return;
+    onClose();
+  };
   const save = async () => {
-    const m = Number(minutes);
+    const m = toNumber(minutes) ?? NaN;
     if (!Number.isInteger(m) || m < 1 || m > TIMER_MAX_MIN) return setError(`時間は1〜${TIMER_MAX_MIN}分の整数で入れてください`);
     const hasRange = from.trim() !== "" || to.trim() !== "";
-    const range = hasRange ? { from: Number(from), to: Number(to), unit } : undefined;
+    const range = hasRange ? { from: toNumber(from) ?? NaN, to: toNumber(to) ?? NaN, unit } : undefined;
     if (hasRange && !validRange(range)) return setError("範囲は「はじめ ≦ おわり」の1以上の整数で入れてください");
     const hasScore = questions.trim() !== "" || correct.trim() !== "";
-    const score = hasScore ? { questions: Number(questions), correct: Number(correct) } : {};
+    // 片方だけは保存しない（空欄を 0 にしない。点検 中-4）
+    if (hasScore && (questions.trim() === "" || correct.trim() === "")) return setError("問題数と正解数は、両方入れるか、両方空にしてください");
+    const score = hasScore ? { questions: toNumber(questions) ?? NaN, correct: toNumber(correct) ?? NaN } : {};
+    if (!data.studySubjects.some((s) => s.id === timer.subjectId)) return setError("この資格は削除されています。「記録せずに止める」でタイマーを止めてください");
     if (hasScore && !validScore(score)) return setError("問題数と正解数は、正解 ≦ 問題 の0以上の整数で入れてください");
     setBusy(true);
     const ts = new Date().toISOString();
@@ -204,7 +214,7 @@ function FinishSheet({ timer, onClose }: { timer: TimerState; onClose: () => voi
   };
 
   return (
-    <Sheet title="勉強を記録" open onRequestClose={onClose}>
+    <Sheet title="勉強を記録" open onRequestClose={requestClose}>
       <div className="space-y-3">
         {measured.needsConfirm === "clock" && <p className="text-[14px] text-warn">端末の時刻が開始より前になっています。勉強した時間を入れてください。</p>}
         {measured.needsConfirm === "tooLong" && <p className="text-[14px] text-warn">1日より長くなっています。終わらせ忘れかもしれません。時間を確かめてください。</p>}
@@ -242,10 +252,14 @@ function FinishSheet({ timer, onClose }: { timer: TimerState; onClose: () => voi
         <fieldset>
           <legend className="text-[14px] font-semibold text-ink-2">演習</legend>
           <div className="flex items-center gap-2">
-            <input aria-label="正解数" inputMode="numeric" value={correct} onChange={(e) => setCorrect(e.target.value)} className={`${inputCls} w-24`} />
-            <span>／</span>
-            <input aria-label="問題数" inputMode="numeric" value={questions} onChange={(e) => setQuestions(e.target.value)} className={`${inputCls} w-24`} />
-            <span className="text-[14px] text-ink-2">問</span>
+            <label className="flex items-center gap-1 text-[14px]">
+              正解
+              <input inputMode="numeric" value={correct} onChange={(e) => setCorrect(e.target.value)} className={`${inputCls} w-20`} />
+            </label>
+            <label className="flex items-center gap-1 text-[14px]">
+              ／ 問題数
+              <input inputMode="numeric" value={questions} onChange={(e) => setQuestions(e.target.value)} className={`${inputCls} w-20`} />
+            </label>
           </div>
         </fieldset>
         <label className="flex min-h-11 items-center gap-2">

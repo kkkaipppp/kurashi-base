@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   createContext,
   useCallback,
@@ -16,6 +17,9 @@ import { EventSheet, type EventSheetRequest } from "./EventSheet";
 import { AddChooser } from "./AddChooser";
 import { todayStr } from "@/lib/date";
 import { usePathname, useRouter } from "next/navigation";
+
+// 自分用の「追加」の一覧（o31 F002。遅れて読む。公開版は AddChooser のまま）
+const PersonalAddSheet = process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(() => import("./AddSheet").then((m) => m.PersonalAddSheet), { ssr: false }) : null;
 
 interface ConfirmOpts {
   title: string;
@@ -190,7 +194,16 @@ export function UIProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={ui}>
       {children}
-      {add && (
+      {add && PersonalAddSheet && (
+        <PersonalAddSheet
+          key={add.key}
+          date={add.date}
+          onClose={() => setAdd(null)}
+          openTx={(type, date) => setTx({ mode: "new", type, date, key: ++seq.current })}
+          openEvent={(date) => setEv({ mode: "new", date, key: ++seq.current })}
+        />
+      )}
+      {add && !PersonalAddSheet && (
         <AddChooser
           key={add.key}
           date={add.date}

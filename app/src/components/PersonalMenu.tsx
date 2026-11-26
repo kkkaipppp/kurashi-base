@@ -7,6 +7,7 @@ import { IconChevronR, PageHeader } from "./ui";
 import { useData } from "@/lib/store";
 import { GROUPS, type MenuItem } from "@/lib/menuGroups";
 import { MENU_FAV_KEY, MENU_RECENT_KEY, parseMenuFav, parseMenuRecent, toggleMenuFav } from "@/lib/menuPrefs";
+import { cleanMenuHidden } from "@/lib/menuHidden";
 
 const EVENT = "kb-menu-prefs";
 const read = (k: string) => {
@@ -33,7 +34,8 @@ export function PersonalMenu() {
   const data = useData();
   const router = useRouter();
   const [q, setQ] = useState("");
-  const hidden = new Set(data.prefs.menuHidden ?? []);
+  // 隠せる機能だけを隠す（設定・使い方・バックアップは、保存の中身に関わらず隠さない。点検 指摘11）
+  const hidden = new Set(cleanMenuHidden(data.prefs.menuHidden));
   const groups = GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !hidden.has(i.href)) })).filter((g) => g.items.length > 0);
   const usable = groups.flatMap((g) => g.items).filter((i) => !i.soon);
   const known = usable.map((i) => i.href);
@@ -59,15 +61,15 @@ export function PersonalMenu() {
           <span className="min-w-0 flex-1">
             <span className="block text-[16px] font-semibold">
               {i.label}
-              {i.soon && <span className="ml-1.5 text-[13px] font-normal text-ink-3">準備中</span>}
+              {i.soon && <span className="ml-1.5 text-[14px] font-normal text-ink-3">準備中</span>}
             </span>
-            <span className="block truncate text-[13px] text-ink-3">{i.desc}</span>
+            <span className="block truncate text-[14px] text-ink-3">{i.desc}</span>
           </span>
           {n !== undefined && n > 0 && <span className="num text-[14px] text-ink-3">{n}件</span>}
           <IconChevronR className="size-4 shrink-0 text-ink-3" />
         </Link>
         {star && !i.soon && (
-          <button type="button" onClick={() => toggle(i.href)} aria-pressed={on} aria-label={`${i.label}をお気に入りに${on ? "入れない" : "入れる"}`} className={`inline-flex size-11 shrink-0 items-center justify-center text-[20px] ${on ? "text-brand" : "text-ink-3"}`}>
+          <button type="button" onClick={() => toggle(i.href)} aria-pressed={on} aria-label={on ? `${i.label}をお気に入りから外す` : `${i.label}をお気に入りに入れる`} className={`inline-flex size-11 shrink-0 items-center justify-center text-[20px] ${on ? "text-brand" : "text-ink-3"}`}>
             {on ? "★" : "☆"}
           </button>
         )}
@@ -76,7 +78,7 @@ export function PersonalMenu() {
   };
   return (
     <main className="space-y-5">
-      <PageHeader title="すべての機能" />
+      <PageHeader title="メニュー" />
       <form
         role="search"
         onSubmit={(e) => {

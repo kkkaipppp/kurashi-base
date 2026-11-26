@@ -43,7 +43,7 @@ const SETTING_GROUPS: [string, string, string][] = [
   ["set-general", "一般", "起動時の画面"],
   ["set-display", "表示", "下のメニュー・メニューに出す機能・ホーム"],
   ["set-money", "家計簿", "予算・カテゴリ"],
-  ["set-connect", "外部連携", "カレンダー・CSV の取り込み・iPhone の連携"],
+  ["set-connect", "外部連携", "カレンダー・CSV の取り込み"],
   ["set-data", "データ管理", "バックアップ・復元・取り込みの履歴・点検・削除"],
   ["set-about", "アプリ情報", "このアプリについて"],
 ];

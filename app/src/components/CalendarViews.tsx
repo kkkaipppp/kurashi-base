@@ -51,8 +51,11 @@ function DayRow({ d, selected, today, showEv, showMoney, onPick }: { d: string; 
     <li>
       <button type="button" onClick={() => onPick(d)} aria-pressed={isSel} className={`flex min-h-14 w-full items-start gap-3 px-1 py-2 text-left ${isSel ? "bg-brand-soft" : "hover:bg-surface-2"}`}>
         <span className="w-20 shrink-0">
-          <span className={`block text-[15px] font-semibold ${d === today ? "text-brand" : ""}`}>{formatDateJa(d)}</span>
-          {hol && <span className="block text-[12px] text-ink-3">{hol}</span>}
+          <span className={`block text-[15px] font-semibold ${d === today ? "text-brand" : ""}`}>
+            {formatDateJa(d)}
+            {d === today && <span className="ml-1 text-[14px]">今日</span>}
+          </span>
+          {hol && <span className="block text-[14px] text-ink-3">{hol}</span>}
         </span>
         <span className="min-w-0 flex-1 space-y-0.5">
           {evs.map((e) => (

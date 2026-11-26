@@ -31,7 +31,7 @@ export function NavSettingsCard() {
       <div id="nav" className="scroll-mt-20" />
       <SectionTitle>下のメニュー</SectionTitle>
       <p className="mb-2 text-[14px] text-ink-2">
-        {NAV_MIN}〜{NAV_MAX}個まで選べます。右端の「追加」はいつも出ます。上の「すべての機能」から、どの画面にも行けます。
+        {NAV_MIN}〜{NAV_MAX}個まで選べます。右端の「追加」はいつも出ます。外した画面にも、上のメニュー（四角が4つのアイコン）から行けます。
       </p>
       <ol className="divide-y divide-line border-y border-line" aria-label="今の下のメニュー（左から順）">
         {nav.map((id, i) => (
@@ -44,7 +44,7 @@ export function NavSettingsCard() {
             <button type="button" aria-label={`${navItem(id).label}を右へ`} disabled={i === nav.length - 1} onClick={() => apply(moveNav(nav, i, 1))} className="inline-flex size-11 items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2 disabled:opacity-30">
               ↓
             </button>
-            <button type="button" disabled={nav.length <= NAV_MIN} onClick={() => apply(nav.filter((x) => x !== id))} className="min-h-11 rounded-lg px-2 text-[14px] font-semibold text-danger hover:bg-surface-2 disabled:opacity-30">
+            <button type="button" aria-label={`${navItem(id).label}をメニューから外す`} disabled={nav.length <= NAV_MIN} onClick={() => apply(nav.filter((x) => x !== id))} className="min-h-11 rounded-lg px-2 text-[14px] font-semibold text-ink-2 hover:bg-surface-2 disabled:opacity-30">
               外す
             </button>
           </li>
@@ -83,7 +83,7 @@ export function NavSettingsCard() {
         <Button
           variant="secondary"
           onClick={async () => {
-            if (!(await ui.confirm({ title: "下のメニューを初期に戻しますか？", body: "カレンダー・家計簿・やること・その他に戻します。記録は変わりません。", ok: "初期に戻す" }))) return;
+            if (!(await ui.confirm({ title: "下のメニューを初期に戻しますか？", body: "カレンダー・家計簿・やること・その他と、「追加」でよく使う種類を初めの状態に戻します。記録は変わりません。", ok: "初期に戻す" }))) return;
             setError(resetNav() ? null : "保存できませんでした。ブラウザの保存の設定を確かめてください");
           }}
         >

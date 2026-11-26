@@ -206,7 +206,7 @@ export function GlobalActions() {
       <Link href="/search" aria-label="検索" className="inline-flex size-11 items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2">
         <IconSearch className="size-5" />
       </Link>
-      <Link href="/menu" aria-label="すべての機能" className="inline-flex size-11 items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2">
+      <Link href="/menu" aria-label="メニュー（すべての機能）" className="inline-flex size-11 items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2">
         <IconGrid className="size-5" />
       </Link>
     </>

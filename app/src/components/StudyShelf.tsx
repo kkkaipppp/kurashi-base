@@ -9,6 +9,7 @@ import { formatDateJa, isValidDateStr } from "@/lib/date";
 import { formatMinutes } from "@/lib/study";
 import { EXAM_RESULT_LABEL, UNIT_LABEL, accuracy, coveredUnits, validAttempt, type ExamResult, type RangeUnit } from "@/lib/studyCore";
 import { safeExternalLink } from "@/lib/externalLinks";
+import { toNumber } from "@/lib/goalCond";
 import type { StudyBook, StudyExamAttempt, StudySubject } from "@/lib/types";
 
 const STATUS: [NonNullable<StudyBook["status"]>, string][] = [
@@ -30,6 +31,7 @@ export function StudyShelf({ s }: { s: StudySubject }) {
   const ui = useUI();
   const [examForm, setExamForm] = useState<{ date: string; result: ExamResult; score: string; max: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const books = s.books ?? [];
   const logs = data.studyLogs.filter((l) => l.subjectId === s.id);
   const acc = accuracy(logs);
@@ -43,12 +45,15 @@ export function StudyShelf({ s }: { s: StudySubject }) {
   const setBook = (id: string, p: Partial<StudyBook>) => updateSubject((x) => ({ ...x, books: (x.books ?? []).map((b) => (b.id === id ? { ...b, ...p } : b)) }));
 
   const addExam = async () => {
-    if (!examForm) return;
+    if (!examForm || busy) return; // 2回押しても1件（点検 低-1）
     if (examForm.date && !isValidDateStr(examForm.date)) return setError("受験日を正しく入れてください");
-    const num = (v: string) => (v.trim() === "" ? null : Number(v));
+    const num = toNumber;
     const a: StudyExamAttempt = { id: newId("ex"), date: examForm.date, result: examForm.result, score: num(examForm.score), maxScore: num(examForm.max) };
     if (!validAttempt({ ...a, note: "" })) return setError("点数は0以上・満点以下で入れてください");
-    if (await updateSubject((x) => ({ ...x, exams: [...(x.exams ?? []), a] }))) {
+    setBusy(true);
+    const ok = await updateSubject((x) => ({ ...x, exams: [...(x.exams ?? []), a] }));
+    setBusy(false);
+    if (ok) {
       setExamForm(null);
       setError(null);
     }
@@ -67,9 +72,12 @@ export function StudyShelf({ s }: { s: StudySubject }) {
           <ul className="divide-y divide-line border-y border-line">
             {books.map((b) => {
               const bl = logs.filter((l) => l.bookId === b.id);
-              const ranges = bl.filter((l) => l.range && !l.review).map((l) => l.range!);
+              const all = bl.filter((l) => l.range && !l.review).map((l) => l.range!);
+              const unit = b.unit ?? all[0]?.unit ?? "page";
+              // 教材の単位と同じ範囲だけを数える（違う単位は足さない。o31 C018・点検 中-3）
+              const ranges = all.filter((r) => r.unit === unit);
+              const otherUnits = all.length - ranges.length;
               const done = coveredUnits(ranges);
-              const unit = b.unit ?? ranges[0]?.unit ?? "page";
               const min = bl.reduce((t, l) => t + l.minutes, 0);
               const href = b.url ? safeExternalLink(b.url) : null;
               return (
@@ -82,15 +90,17 @@ export function StudyShelf({ s }: { s: StudySubject }) {
                     ) : (
                       b.title
                     )}
-                    {b.edition && <span className="ml-1 text-[13px] font-normal text-ink-3">{b.edition}</span>}
+                    {b.edition && <span className="ml-1 text-[14px] font-normal text-ink-3">{b.edition}</span>}
                   </p>
-                  <p className="num text-[13px] text-ink-2">
+                  <p className="num text-[14px] text-ink-2">
                     {min > 0 ? `勉強時間 ${formatMinutes(min)}` : "まだ記録なし"}
                     {done > 0 && `・進んだ量 ${done}${UNIT_LABEL[unit as RangeUnit]}`}
                     {b.total ? `／全体 ${b.total}${UNIT_LABEL[unit as RangeUnit]}（残り ${Math.max(0, b.total - done)}）` : ""}
+                    {otherUnits > 0 && `（ほかの単位の記録 ${otherUnits}件は数えていません）`}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <select aria-label={`${b.title}の状態`} value={b.status ?? "owned"} onChange={(e) => setBook(b.id, { status: e.target.value as StudyBook["status"] })} className={`${inputCls} w-32`}>
+                    <select aria-label={`${b.title}の状態`} value={b.status ?? ""} onChange={(e) => setBook(b.id, { status: (e.target.value || undefined) as StudyBook["status"] })} className={`${inputCls} w-32`}>
+                      {!b.status && <option value="">未設定</option>}
                       {STATUS.map(([k, label]) => (
                         <option key={k} value={k}>
                           {label}
@@ -98,9 +108,12 @@ export function StudyShelf({ s }: { s: StudySubject }) {
                       ))}
                     </select>
                     <input aria-label={`${b.title}の全体の量`} inputMode="numeric" defaultValue={b.total ? String(b.total) : ""} placeholder="全体の量" onBlur={(e) => {
-                      const v = e.target.value.trim();
-                      const n = v === "" ? null : Number(v);
-                      if (n !== null && (!Number.isInteger(n) || n < 1 || n > 100000)) return ui.toast("全体の量は1以上の整数で入れてください", "error");
+                      const n = toNumber(e.target.value);
+                      if (e.target.value.trim() !== "" && (n === null || !Number.isInteger(n) || n < 1 || n > 100000)) {
+                        // 保存しない値は欄に残さず、保存してある値に戻す（入力の保持の状態を正しく見せる。点検 指摘5）
+                        e.target.value = b.total ? String(b.total) : "";
+                        return ui.toast("全体の量は1以上の整数で入れてください", "error");
+                      }
                       if (n !== (b.total ?? null)) setBook(b.id, { total: n });
                     }} className={`${inputCls} w-24`} />
                     <select aria-label={`${b.title}の単位`} value={b.unit ?? "page"} onChange={(e) => setBook(b.id, { unit: e.target.value as RangeUnit })} className={`${inputCls} w-24`}>
@@ -111,7 +124,7 @@ export function StudyShelf({ s }: { s: StudySubject }) {
                       ))}
                     </select>
                   </div>
-                  {b.status === "candidate" && <p className="text-[12px] text-ink-3">購入候補は家計簿に入りません。買ったら支出を記録してください。</p>}
+                  {b.status === "candidate" && <p className="text-[14px] text-ink-3">購入候補は家計簿に入りません。買ったら支出を記録してください。</p>}
                 </li>
               );
             })}
@@ -128,7 +141,12 @@ export function StudyShelf({ s }: { s: StudySubject }) {
                 <span>{a.date ? formatDateJa(a.date, true) : "日付未定"}</span>
                 <span className="num">
                   {a.score != null && `${a.score}${a.maxScore ? `／${a.maxScore}点` : "点"}　`}
-                  <select aria-label="結果" value={a.result} onChange={(e) => updateSubject((x) => ({ ...x, exams: (x.exams ?? []).map((y) => (y.id === a.id ? { ...y, result: e.target.value as ExamResult } : y)) }))} className="min-h-11 rounded border border-line bg-surface px-1">
+                  <select aria-label={`${a.date ? formatDateJa(a.date, true) : "日付未定"}の受験の結果`} value={a.result} onChange={async (e) => {
+                    const next = e.target.value as ExamResult;
+                    // 結果は記録の確定なので、変える前に確かめる（選んだだけで保存しない。点検 指摘5）
+                    if (!(await ui.confirm({ title: `結果を「${EXAM_RESULT_LABEL[next]}」にしますか？`, ok: "変える" }))) return;
+                    updateSubject((x) => ({ ...x, exams: (x.exams ?? []).map((y) => (y.id === a.id ? { ...y, result: next } : y)) }));
+                  }} className="min-h-11 rounded border border-line bg-surface px-1">
                     {(Object.keys(EXAM_RESULT_LABEL) as ExamResult[]).map((k) => (
                       <option key={k} value={k}>
                         {EXAM_RESULT_LABEL[k]}
@@ -163,7 +181,9 @@ export function StudyShelf({ s }: { s: StudySubject }) {
               <Button variant="secondary" onClick={() => setExamForm(null)}>
                 やめる
               </Button>
-              <Button onClick={addExam}>保存</Button>
+              <Button onClick={addExam} disabled={busy}>
+                保存
+              </Button>
             </div>
           </div>
         ) : (

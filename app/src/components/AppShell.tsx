@@ -1,22 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { useState, type ReactNode } from "react";
 import { StoreProvider, useStore } from "@/lib/store";
 import { LOST_STORE_PREFIX, NO_OLD_RECORDS } from "@/lib/lostStore";
 import { UIProvider, useUI } from "./UIContext";
-import { Button, IconBook, IconCalendar, IconChart, IconFlag, IconGrid, IconHome, IconList, IconMap, IconNote, IconPlus, IconRepeat, IconSearch, IconWallet } from "./ui";
-import { AddSheet } from "./AddSheet";
-import { useNavPrefs } from "./useNavPrefs";
-import { activeNav, navItem, type AddKindId, type NavId } from "@/lib/navPrefs";
-import { MENU_RECENT_KEY, parseMenuRecent, pushRecent } from "@/lib/menuPrefs";
-import { GROUPS } from "@/lib/menuGroups";
+import { Button, IconCalendar, IconChart, IconGrid, IconHome, IconPlus } from "./ui";
+import dynamic from "next/dynamic";
 
-const MENU_HREFS = GROUPS.flatMap((g) => g.items.filter((i) => !i.soon).map((i) => i.href.split("#")[0]));
-import { IS_PERSONAL } from "@/lib/edition";
-import { LAUNCHED_KEY, START_KEY, parseStart, startRedirect } from "@/lib/startScreen";
-import { todayStr } from "@/lib/date";
+// 自分用の下のメニュー・起動時の画面・最近開いた機能（o31 F001〜F003）は、別のファイルにして遅れて読む。
+// 版をこのファイルの中で直接比べるので、公開版の組み立てには入らない（点検 中-2）
+const PERSONAL_SHELL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+const PersonalShell = PERSONAL_SHELL ? dynamic(() => import("./PersonalShell").then((m) => m.PersonalShell), { ssr: false }) : null;
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -40,15 +36,7 @@ function Gate({ children }: { children: ReactNode }) {
   return (
     <UIProvider>
       <div className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pb-28">{children}</div>
-      {IS_PERSONAL ? (
-        <>
-          <StartRedirect />
-          <RecentTracker />
-          <TabBar />
-        </>
-      ) : (
-        <BottomNav />
-      )}
+      {PersonalShell ? <PersonalShell /> : <BottomNav />}
     </UIProvider>
   );
 }
@@ -161,121 +149,3 @@ function BottomNav() {
     </nav>
   );
 }
-
-/** 自分用：開いた機能を「最近開いた機能」に控える（端末の表示の設定。メニューに無い画面は控えない。o31 F003） */
-function RecentTracker() {
-  const path = usePathname();
-  useEffect(() => {
-    const seg = "/" + (path.split("/")[1] ?? "");
-    if (seg === "/" || seg === "/menu" || seg === "/settings") return;
-    try {
-      const next = pushRecent(parseMenuRecent(localStorage.getItem(MENU_RECENT_KEY), [seg, ...MENU_HREFS]), path, MENU_HREFS);
-      localStorage.setItem(MENU_RECENT_KEY, JSON.stringify(next));
-    } catch {
-      /* 控えられない端末では「最近」を出さないだけ */
-    }
-  }, [path]);
-  return null;
-}
-
-/** 自分用：起動したとき、設定で選んだ画面へ移る（o29 起動設定。このタブで最初に "/" を開いたときだけ） */
-function StartRedirect() {
-  const router = useRouter();
-  const path = usePathname();
-  useEffect(() => {
-    let launched = true;
-    let start = parseStart(null);
-    try {
-      launched = sessionStorage.getItem(LAUNCHED_KEY) === "1";
-      sessionStorage.setItem(LAUNCHED_KEY, "1");
-      start = parseStart(localStorage.getItem(START_KEY));
-    } catch {
-      /* 読めないときは移らない（ホームのまま） */
-      return;
-    }
-    const to = startRedirect(path, location.search, start, launched);
-    if (to) router.replace(to);
-    // 起動のときの1回だけ見る
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return null;
-}
-
-const NAV_ICON: Record<NavId, typeof IconHome> = {
-  calendar: IconCalendar,
-  money: IconChart,
-  tasks: IconList,
-  more: IconGrid,
-  study: IconBook,
-  goals: IconFlag,
-  trips: IconMap,
-  search: IconSearch,
-  notes: IconNote,
-  home: IconHome,
-  recurring: IconRepeat,
-  assets: IconWallet,
-};
-
-/**
- * 自分用の下のメニュー（o31 F001・F002）：利用者が選んだ 1〜4 個の画面と、右端に固定の「追加」。
- * 「追加」は種類の一覧を開く（今の画面の種類とお気に入りが先頭）。画面の中の直接の追加（「この日に追加」など）は今までどおり
- */
-function TabBar() {
-  const path = usePathname();
-  const router = useRouter();
-  const ui = useUI();
-  const { nav, fav } = useNavPrefs();
-  const [adding, setAdding] = useState<{ date?: string; key: number } | null>(null);
-  const current = activeNav(path, nav);
-  const onPick = (k: AddKindId) => {
-    const date = adding?.date;
-    setAdding(null);
-    if (k === "expense" || k === "income") ui.openTx({ mode: "new", type: k, date });
-    else if (k === "event") ui.openEvent({ mode: "new", date });
-    else if (k === "task") router.push(date && date !== todayStr() ? `/tasks?open=new&date=${date}` : "/tasks?open=new");
-    else router.push(`${ADD_ROUTE[k]}?open=new`);
-  };
-  return (
-    <>
-      <nav aria-label="メイン" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto flex max-w-[480px] items-stretch px-1">
-          {nav.map((id) => {
-            const n = navItem(id);
-            const Icon = NAV_ICON[id];
-            const active = current === id;
-            return (
-              <Link
-                key={id}
-                href={n.href}
-                aria-current={active ? "page" : undefined}
-                className={`flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-semibold ${active ? "text-brand" : "text-ink-3"}`}
-              >
-                <Icon className="size-6" />
-                <span className="max-w-full truncate">{n.label}</span>
-              </Link>
-            );
-          })}
-          {/* 右端に固定の「追加」（o31 C001。いつも最後の子要素） */}
-          <button
-            type="button"
-            onClick={() => setAdding({ date: path.startsWith("/calendar") ? (ui.calendarDate ?? undefined) : undefined, key: Date.now() })}
-            className="my-1 ml-1 flex min-h-12 min-w-16 flex-col items-center justify-center gap-0.5 rounded-lg bg-brand px-2 text-[12px] font-semibold text-brand-ink"
-            data-testid="nav-add"
-          >
-            <IconPlus className="size-6" />
-            追加
-          </button>
-        </div>
-      </nav>
-      {adding && <AddSheet key={adding.key} path={path} date={adding.date} fav={fav} onClose={() => setAdding(null)} onPick={onPick} />}
-    </>
-  );
-}
-
-/** 一覧の種類のうち、各画面の新規入力（?open=new）で開くもの */
-const ADD_ROUTE: Record<Exclude<AddKindId, "expense" | "income" | "event" | "task">, string> = {
-  study: "/study",
-  goal: "/goals",
-  note: "/notes",
-  trip: "/trips",
-};

@@ -42,7 +42,10 @@ describe("o31 T003 お気に入りと最近", () => {
   });
   it("自分用は PersonalMenu、公開版は今までの一覧（C025）。言葉はやること・勉強・検索", () => {
     const page = readFileSync(join(__dirname, "..", "src", "app", "menu", "page.tsx"), "utf8");
-    expect(page).toContain("if (IS_PERSONAL) return <PersonalMenu />;");
+    // 点検 中-2：自分用のメニューは遅れて読む（公開版の組み立てに入れない）
+    expect(page).toContain('const PersonalMenu = process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(');
+    expect(page).toContain("if (PersonalMenu) return <PersonalMenu />;");
+    expect(page).not.toContain('from "@/components/PersonalMenu"');
     const labels = GROUPS.flatMap((g) => g.items.map((i) => i.label));
     expect(labels).toEqual(expect.arrayContaining(["やること", "勉強", "検索"]));
     expect(labels).not.toEqual(expect.arrayContaining(["タスク"]));
