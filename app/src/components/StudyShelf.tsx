@@ -90,8 +90,11 @@ export function StudyShelf({ s }: { s: StudySubject }) {
                   e.target.value = review ? String(review) : "";
                   return ui.toast("復習の日数は0〜365の整数で入れてください", "error");
                 }
-                e.target.value = n ? String(n) : "";
-                if (n !== review) updateSubject((x) => ({ ...x, reviewDays: n }));
+                const input = e.target;
+                input.value = n ? String(n) : "";
+                if (n !== review) void updateSubject((x) => ({ ...x, reviewDays: n })).then((ok) => {
+                  if (!ok) input.value = review ? String(review) : ""; // 保存できなかった値を欄に残さない（3回目の点検 低-4）
+                });
               }} className={`${inputCls} w-20`} />
               <span aria-hidden="true">日</span>
             </div>
@@ -143,8 +146,11 @@ export function StudyShelf({ s }: { s: StudySubject }) {
                         e.target.value = b.total ? String(b.total) : "";
                         return ui.toast("全体の量は1以上の整数で入れてください", "error");
                       }
-                      if (n !== null) e.target.value = String(n); // 全角で入れても、保存した形（半角）で見せる
-                      if (n !== (b.total ?? null)) setBook(b.id, { total: n });
+                      const input = e.target;
+                      if (n !== null) input.value = String(n); // 全角で入れても、保存した形（半角）で見せる
+                      if (n !== (b.total ?? null)) void setBook(b.id, { total: n }).then((ok) => {
+                        if (!ok) input.value = b.total ? String(b.total) : ""; // 保存できなかった値を欄に残さない（3回目の点検 低-4）
+                      });
                     }} className={`${inputCls} w-24`} />
                     <select aria-label={`${b.title}の単位`} value={b.unit ?? "page"} onChange={(e) => setBook(b.id, { unit: e.target.value as RangeUnit })} className={`${inputCls} w-24`}>
                       {(Object.keys(UNIT_LABEL) as RangeUnit[]).map((u) => (

@@ -15,6 +15,7 @@ import {
   UNIT_LABEL,
   addStudyLogOnce,
   studyLogExistsError,
+  STUDY_LOG_EXISTS,
   subjectExistsError,
   liveBookId,
   bookUnit,
@@ -220,6 +221,12 @@ function FinishSheet({ timer, onClose }: { timer: TimerState; onClose: () => voi
     };
     const r = await store.commit((d) => addStudyLogOnce(d, log), { check: (cur) => subjectExistsError(cur, timer.subjectId) ?? studyLogExistsError(cur, log.id) });
     setBusy(false);
+    if (!r.ok && r.error === STUDY_LOG_EXISTS) {
+      // 先に記録した画面がタイマーを消している。ここで入れた値は保存していないことを、そのまま伝えて閉じる（3回目の点検 低-3）
+      writeTimer(null);
+      ui.toast(STUDY_LOG_EXISTS, "error");
+      return onClose();
+    }
     if (!r.ok) return setError(`保存できませんでした（${r.error}）。タイマーは残しています。止めるときは「記録せずに止める」を押してください`);
     writeTimer(null);
     ui.toast(`${formatMinutes(m)}を記録しました`);
