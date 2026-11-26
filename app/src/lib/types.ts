@@ -270,6 +270,8 @@ export interface StudySubject {
   books?: StudyBook[];
   /** o31 F012（任意）：受験の回 */
   exams?: StudyExamAttempt[];
+  /** o31 F017（任意）：試験の前に、新しい所を進めずに復習に使う日数（0〜365）。教材の1日の量の計算から除く */
+  reviewDays?: number;
   createdAt: string;
   updatedAt: string;
 }

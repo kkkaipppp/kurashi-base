@@ -41,7 +41,11 @@ export function judge(c: GoalCondition, opts: { periodOpen?: boolean } = {}): Ve
     case "==":
       return c.actual === c.target ? "met" : "unmet";
     case "range":
-      return c.targetMax === undefined ? "unknown" : c.actual >= c.target && c.actual <= c.targetMax ? "met" : "unmet";
+      if (c.targetMax === undefined) return "unknown";
+      // 上限を超えたら、もう未達。期限の前は、下限に届いていても・いなくても未判定（再点検 M-1）
+      if (c.actual > c.targetMax) return "unmet";
+      if (opts.periodOpen) return "unknown";
+      return c.actual >= c.target ? "met" : "unmet";
   }
 }
 
@@ -114,15 +118,39 @@ export function snapshotAchievement(at: string, mode: "and" | "or", conditions: 
   return { at, verdict: combine(mode, conditions.map((c) => judge(c, opts))), conditions: conditions.map((c) => ({ ...c })) };
 }
 
-/** 期限の前か（期限なしは、いつまでも途中として扱う） */
+/**
+ * 目標の条件を保存してよいか（反証 2）：保存の列の中で、最新のデータに対して確かめる。
+ * - 目標が消えていたら保存しない（「保存しました」と言わない）
+ * - シートを開いたあとに、ほかのタブで目標が変わっていたら保存しない（向こうの変更を黙って消さない）
+ * - 親のつながりが輪になるかは、最新のデータで確かめる
+ */
+export function goalSaveError(goals: { id: string; parentId?: string; updatedAt: string }[], id: string, openedAt: string, parentId: string): string | null {
+  const g = goals.find((x) => x.id === id);
+  if (!g) return "この目標は、ほかのタブなどで削除されています。入力した内容を控えてから、画面を閉じてください";
+  if (g.updatedAt !== openedAt) return "ほかのタブ（または別の画面）でこの目標が変わっていたため、保存をやめました。入力した内容を控えてから、いったん閉じて開き直してください";
+  if (parentId && wouldCycle(new Map(goals.map((x) => [x.id, x.parentId] as [string, string | undefined])), id, parentId)) return "その目標を親にすると、つながりが輪になります";
+  return null;
+}
+
+/** 今もある親の ID（消えた目標・自分自身は「なし」） */
+export function liveParentId(goals: { id: string }[], self: string, parentId: string | undefined): string {
+  return parentId && parentId !== self && goals.some((g) => g.id === parentId) ? parentId : "";
+}
+
+/**
+ * 期限の前か。期限の当日までは途中。
+ * 期限なしは「途中」にしない（終わりが来ないので、いつまでも未判定になり達成できなくなる。再点検 L-5・反証 5）。今の値で判定する
+ */
 export function periodOpen(deadline: string, today: string): boolean {
-  return !deadline || today <= deadline;
+  return !!deadline && today <= deadline;
 }
 
 /** 全角の数字・記号も受け付けて数にする。空・数でないときは null（0 にしない） */
 export function toNumber(s: string): number | null {
-  const t = s.normalize("NFKC").replace(/,/g, "").trim();
+  // 数の形（符号・3桁ごとのカンマ・小数）だけを受け付ける。16進・指数・崩れたカンマは数にしない（再点検 L-4）
+  const t = s.normalize("NFKC").replace(/[\u2212\u2012\u2013\uFE63]/g, "-").trim();
   if (t === "") return null;
-  const n = Number(t);
+  if (!/^-?(\d+|\d{1,3}(,\d{3})+)(\.\d+)?$/.test(t)) return null;
+  const n = Number(t.replace(/,/g, ""));
   return Number.isFinite(n) ? n : null;
 }

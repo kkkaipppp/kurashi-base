@@ -6,7 +6,7 @@ import { useUI } from "./UIContext";
 import { Button, Field, inputCls } from "./ui";
 import { useData, useStore } from "@/lib/store";
 import { newId } from "@/lib/defaults";
-import { OP_LABEL, combine, judge, periodOpen, snapshotAchievement, toNumber, wouldCycle, type Op, type Verdict } from "@/lib/goalCond";
+import { OP_LABEL, combine, goalSaveError, judge, liveParentId, periodOpen, snapshotAchievement, toNumber, wouldCycle, type Op, type Verdict } from "@/lib/goalCond";
 import { todayStr } from "@/lib/date";
 import type { Goal, GoalConditionData } from "@/lib/types";
 
@@ -42,11 +42,15 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
   const ui = useUI();
   const [conds, setConds] = useState<GoalConditionData[]>(goal.conditions ?? []);
   const [mode, setMode] = useState<"and" | "or">(goal.condMode ?? "and");
-  const [parentId, setParentId] = useState(goal.parentId ?? "");
+  // 消えた親は「なし」として始める（保存し直したときに、消えた目標へのつながりを残さない。再点検 L-2）
+  const liveParent = liveParentId(data.goals, goal.id, goal.parentId);
+  const [parentId, setParentId] = useState(liveParent);
+  // 開いたときの目標の更新時刻。保存のときに、ほかのタブで変わっていないかを比べる（反証 2）
+  const [openedAt] = useState(goal.updatedAt);
   const [error, setError] = useState<string | null>(null);
   const open = periodOpen(goal.deadline, todayStr());
   const verdict = conds.length ? combine(mode, conds.map((c) => judge(c, { periodOpen: open }))) : null;
-  const dirty = JSON.stringify([conds, mode, parentId]) !== JSON.stringify([goal.conditions ?? [], goal.condMode ?? "and", goal.parentId ?? ""]);
+  const dirty = JSON.stringify([conds, mode, parentId]) !== JSON.stringify([goal.conditions ?? [], goal.condMode ?? "and", liveParent]);
   const requestClose = async () => {
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true }))) return;
     onClose();
@@ -66,7 +70,8 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
     if (parentId && wouldCycle(parentOf, goal.id, parentId)) return setError("その目標を親にすると、つながりが輪になります");
     const ts = new Date().toISOString();
     const next = combine(mode, conds.map((c) => judge(c, { periodOpen: open })));
-    const r = await store.commit((d) => ({
+    const r = await store.commit(
+      (d) => ({
       ...d,
       goals: d.goals.map((g) => {
         if (g.id !== goal.id) return g;
@@ -76,7 +81,9 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
         const { parentId: _p, ...rest } = g; // eslint-disable-line @typescript-eslint/no-unused-vars
         return { ...rest, ...(parentId ? { parentId } : {}), conditions: conds, condMode: mode, ...(achievements ? { achievements } : {}), updatedAt: ts };
       }),
-    }));
+      }),
+      { check: (cur) => goalSaveError(cur.goals, goal.id, openedAt, parentId) },
+    );
     if (!r.ok) return setError(`保存できませんでした（${r.error}）`);
     ui.toast("保存しました");
     onClose();
@@ -150,7 +157,7 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
             ))}
           </select>
         </Field>
-        {open && conds.some((c) => c.op === "<=") && <p className="text-[14px] text-ink-3">「以下」の条件は、期限が来るまで未判定です。</p>}
+        {open && conds.some((c) => c.op === "<=" || c.op === "range") && <p className="text-[14px] text-ink-3">「以下」と「範囲」の条件は、期限の日が終わるまで未判定です（上限を超えたときは、その時点で満たしません）。</p>}
         {(goal.achievements?.length ?? 0) > 0 && <p className="text-[14px] text-ink-3">達成の記録：{goal.achievements!.length}回（そのときの条件のまま残ります）</p>}
         {error && (
           <p role="alert" className="text-[14px] font-medium text-danger">

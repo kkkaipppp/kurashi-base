@@ -17,6 +17,8 @@ const config: CollectionConfig<"notes"> = {
     { name: "pinned", label: "上に固定", type: "checkbox", half: true },
   ],
   initial: ({ today }) => ({ title: "", body: "", date: today, pinned: false }),
+  // 「追加」・カレンダーから選んだ日で始める（o31 F002。再点検 L-1）
+  newDateField: "date",
   toDraft: (n) => ({ title: n.title, body: n.body, date: n.date, pinned: n.pinned }),
   fromDraft: (d) => ({ title: str(d, "title"), body: str(d, "body"), date: str(d, "date"), pinned: bool(d, "pinned") }),
   validate: (d) => (!str(d, "title") && !str(d, "body") ? { body: "タイトルか本文を入力してください" } : ({} as Record<string, string>)),

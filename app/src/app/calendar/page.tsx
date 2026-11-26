@@ -16,7 +16,7 @@ import { holidayName } from "@/lib/holidays";
 import { useUI } from "@/components/UIContext";
 import { EventRow, TxRow } from "@/components/Rows";
 import { Card, IconChevronL, IconChevronR, PageHeader, SectionTitle } from "@/components/ui";
-import { CAL_VIEWS, CAL_VIEW_KEY, ListView, WeekView, parseCalView, type CalendarView } from "@/components/CalendarViews";
+import { CAL_VIEWS, CAL_VIEW_KEY, parseCalView, type CalendarView } from "@/components/CalendarViews";
 import { addDays } from "@/lib/date";
 
 const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
@@ -25,6 +25,9 @@ const EVENT_TITLES_IN_CELL = 2;
 
 // 組み立てのときに決まる値を、このファイルの中で直接比べる（別ファイルの定数だと、公開版のビルドから自分用の部品の塊が取り除かれない）
 const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+// 週・一覧の表示は自分用だけ。公開版の組み立てに入れないよう、遅れて読む（反証 4）
+const WeekView = PERSONAL_BUILD ? dynamic(() => import("@/components/CalendarViews").then((m) => m.WeekView)) : () => null;
+const ListView = PERSONAL_BUILD ? dynamic(() => import("@/components/CalendarViews").then((m) => m.ListView)) : () => null;
 // 予定のない時間帯（自分用。NEXT v21 X10）
 const FreeTimeCard = PERSONAL_BUILD ? dynamic(() => import("@/components/FreeTimeCard").then((m) => m.FreeTimeCard)) : null;
 
