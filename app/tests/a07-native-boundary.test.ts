@@ -253,7 +253,14 @@ describe("A07：保存の正本は1つ（画面の中の記録だけ）", () => 
     const nc = read("src/components/NativeCalendarImportCard.tsx");
     expect(nc).toContain('cap.nativePromise("WidgetBridge", "readCalendarEvents", { from, to })');
     expect(nc).toMatch(/const run = async \(\) => \{[\s\S]*?applyIcsImport\(base, p\.add,[\s\S]*?store\.replaceAll\(next, `iPhone のカレンダーから予定を\$\{p\.add\.length\}件取り込む`, base\)/);
-    expect(nc.match(/store\.(replaceAll|commit|update|set)\w*\(/g)).toEqual(["store.replaceAll("]);
+    // 記録を変える呼び方は replaceAll の1回だけ（addItem・replaceItem・removeItem・wipeAll・undoLast も含めて、store. の呼び出しを全部数える。別の名前に入れて呼ばない。点検 中-3）
+    expect(nc.match(/\bstore\.\w+\(/g)).toEqual(["store.replaceAll("]);
+    expect(nc).not.toMatch(/=\s*store\b(?!\.)|\{[^}]*\}\s*=\s*store\b(?!\.)|useStore\(\)\.\w+/);
+    // 読むのも取り込むのも、本人がボタンを押したときだけ（開いたときに自動で読まない・取り込まない）
+    expect(nc).not.toMatch(/useEffect|useLayoutEffect|setTimeout|setInterval/);
+    expect(nc.match(/\b(read|run)\b(?!\s*=)/g)?.sort()).toEqual(["read", "run"]);
+    expect(nc).toContain("onClick={read}");
+    expect(nc).toContain("onClick={run}");
   });
   it("自動バックアップは、記録が0件のときは書かない・いちばん多かったときの控えを残す（空で上書きしない）", () => {
     expect(read("src/components/WidgetSync.tsx")).toContain("if (records === 0) return;");

@@ -100,7 +100,11 @@ export function NativeCalendarImportCard() {
       <label htmlFor="native-cal-range" className="block text-[13px] font-semibold text-ink-2">
         読む期間
       </label>
-      <select id="native-cal-range" value={range} onChange={(e) => setRange(e.target.value as NativeRangeKey)} className="block min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-[14px]">
+      <select id="native-cal-range" value={range} onChange={(e) => {
+          // 期間を変えたら、前に読んだ結果は消す（前の期間のまま取り込まないように。点検 低-5）
+          setRange(e.target.value as NativeRangeKey);
+          setLoaded(null);
+        }} className="block min-h-11 w-full rounded-xl border border-line bg-surface px-3 text-[14px]">
         {NATIVE_RANGES.map((r) => (
           <option key={r.key} value={r.key}>
             {r.label}
