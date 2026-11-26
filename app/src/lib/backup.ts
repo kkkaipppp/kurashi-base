@@ -29,14 +29,14 @@ export function countData(d: AppData): Counts {
 
 /** 復元プレビューで見せる件数の名前 */
 export const COUNT_LABELS: Record<keyof Counts, string> = {
-  transactions: "取引",
+  transactions: "支出・収入",
   events: "予定",
   recurring: "固定費",
   categories: "カテゴリ",
   trips: "旅行",
   nisa: "NISAの記録",
   notes: "生活記録・メモ",
-  tasks: "タスク",
+  tasks: "やること",
   assets: "資産",
   contracts: "契約",
   health: "健康記録",
@@ -72,16 +72,16 @@ export function parseBackup(text: string): { ok: true; preview: RestorePreview }
   try {
     raw = JSON.parse(text);
   } catch {
-    return { ok: false, error: "JSONとして読み込めません。ファイルが壊れている可能性があります" };
+    return { ok: false, error: "バックアップファイルとして読み込めません。ファイルが壊れている可能性があります" };
   }
   if (typeof raw !== "object" || raw === null) return { ok: false, error: "バックアップ形式ではありません" };
   const f = raw as Partial<BackupFile>;
-  if (f.format !== BACKUP_FORMAT) return { ok: false, error: "くらしベース（暮らしベース）のバックアップファイルではありません" };
+  if (f.format !== BACKUP_FORMAT) return { ok: false, error: "くらしベースのバックアップファイルではありません" };
   if (f.schemaVersion !== 1 && f.schemaVersion !== CURRENT_SCHEMA) return { ok: false, error: "対応していないバックアップのバージョンです" };
   if (!f.data || typeof f.data !== "object" || Array.isArray(f.data) || typeof f.checksum !== "string")
-    return { ok: false, error: "バックアップのデータまたはチェックサムがありません" };
+    return { ok: false, error: "バックアップの中身が足りません。ファイルが壊れている可能性があります" };
   // チェックサムはファイルに書かれたままの中身で確かめてから、今の形式に移行する
-  if (f.checksum !== checksum(JSON.stringify(f.data))) return { ok: false, error: "チェックサムが一致しません。ファイルが壊れているか、変更されています" };
+  if (f.checksum !== checksum(JSON.stringify(f.data))) return { ok: false, error: "ファイルが壊れているか、書き出したあとに変更されています" };
   const v = validateAppData(f.data);
   if (!v.ok) return { ok: false, error: v.error };
   const references = validateRelationships(v.data);

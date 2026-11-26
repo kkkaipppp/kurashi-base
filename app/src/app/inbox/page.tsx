@@ -20,7 +20,7 @@ export default function InboxPage() {
   if (!FEATURES.inbox) {
     return (
       <main>
-        <PageHeader title="未整理の記録" />
+        <PageHeader title="未分類の記録" />
         <Empty>この版では、まだ使えません</Empty>
       </main>
     );
@@ -47,7 +47,7 @@ export default function InboxPage() {
   const cats = (type: "expense" | "income") => data.categories.filter((c) => c.kind === type && !c.archived);
   return (
     <main className="space-y-3">
-      <PageHeader title="未整理の記録" />
+      <PageHeader title="未分類の記録" />
       <p className="px-1 text-[13px] text-ink-3">
         「その他」に入っている記録を、店名ごとにまとめています。同じ店名が、ほかのカテゴリに入っているときは、候補を出します（押したときだけ変わります）。
       </p>

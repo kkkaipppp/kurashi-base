@@ -204,8 +204,10 @@ describe("X03 カードで買った支出は一度だけ。翌月の引落は収
     expect(validateAppData(bad).ok).toBe(false);
   });
   it("入力で「収支に数えない」を選べる。一覧に印が出る", () => {
-    expect(src("components/TxSheet.tsx")).toContain("収支に数えない（口座間の移動など。残高は変わらない）"); // カード引き落としは専用の選択肢に分けた（X05。2026-11-25）
-    expect(src("components/TxSheet.tsx")).toContain("カードの引き落とし（収支に数えない。残高は減る）");
+    expect(src("components/TxSheet.tsx")).toContain("収支に数えない（口座間の移動など）");
+    expect(src("components/TxSheet.tsx")).toContain("収支に数えません。残高は変わりません"); // カード引き落としは専用の選択肢に分けた（X05。2026-11-25）
+    expect(src("components/TxSheet.tsx")).toContain("カードの引き落とし（収支に数えない）");
+    expect(src("components/TxSheet.tsx")).toContain("収支に数えません。口座の残高は減ります");
     expect(src("components/Rows.tsx")).toContain("収支に数えない");
   });
 });

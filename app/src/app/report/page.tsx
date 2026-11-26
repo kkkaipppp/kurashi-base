@@ -29,6 +29,11 @@ const ForecastCard = FEATURES.forecast ? dynamic(() => import("@/components/Fore
 // 続けて使えているか（自分用だけ。公開版の組み立てには入れない）
 const UsageCard = FEATURES.usageDays && process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(() => import("@/components/UsageCard").then((m) => m.UsageCard)) : () => null;
 const CashBalanceCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/CashBalanceCard").then((m) => m.CashBalanceCard)) : () => null;
+// 自分用の家計簿（o31 D011・o29 D 案の中身）：月の数字と日ごとの明細。公開版は今までの画面
+const PERSONAL_MONEY = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+const TITLE = "家計簿";
+const MoneySummary = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.MoneySummary)) : () => null;
+const MonthTxList = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.MonthTxList)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
 
 // 円グラフの色（カテゴリの順に使う。意味は持たせず、凡例と金額で読めるようにする）
@@ -77,8 +82,8 @@ export default function ReportPage() {
   if (!PERIOD_REPORT) return <MonthReportPage />;
   return (
     <main className="space-y-4">
-      <PageHeader title="振り返り" />
-      <div className="grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="振り返る期間">
+      <PageHeader title={TITLE} />
+      <div className="grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="期間">
         {SPANS.map((s) => (
           <button
             key={s.key}
@@ -102,6 +107,8 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
   const data = useData();
   const today = todayStr();
   const [month, setMonth] = useState(monthKey(today));
+  // 自分用：「明細」と「集計」を切り替える（初めは明細。o31 07：家計簿は金額と明細）
+  const [view, setView] = useState<"list" | "stats">("list");
   const ui = useUI();
   const r = monthReport(data, month);
   const weeks = weeklyBuckets(data.transactions, month);
@@ -123,7 +130,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
   const Wrap = embedded ? "div" : "main";
   return (
     <Wrap className="space-y-4">
-      {!embedded && <PageHeader title="振り返り" />}
+      {!embedded && <PageHeader title={TITLE} />}
 
       <Card className="py-2">
         <div className="flex items-center justify-between">
@@ -137,7 +144,33 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
         </div>
       </Card>
 
-      {r.count === 0 ? (
+      {PERSONAL_MONEY && (
+        <>
+          <MoneySummary month={month} />
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-surface-2 p-1" role="radiogroup" aria-label="表示">
+            {(
+              [
+                ["list", "明細"],
+                ["stats", "集計"],
+              ] as const
+            ).map(([k, label]) => (
+              <button key={k} type="button" role="radio" aria-checked={view === k} onClick={() => setView(k)} className={`min-h-11 rounded-md text-[15px] font-semibold ${view === k ? "bg-surface text-ink shadow-sm" : "text-ink-2"}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {view === "list" && (
+            <>
+              <MonthTxList month={month} />
+              <Link href={`/history?m=${month}`} className="flex min-h-12 items-center justify-between border-t border-line text-[15px] font-semibold text-brand">
+                絞り込み・検索
+                <IconChevronR className="size-5" />
+              </Link>
+            </>
+          )}
+        </>
+      )}
+      {PERSONAL_MONEY && view === "list" ? null : r.count === 0 ? (
         <Empty
           action={
             // 空の月は、まず記録できるように（レビュー o1 の P16）
@@ -155,6 +188,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
         </Empty>
       ) : (
         <>
+          {!PERSONAL_MONEY && (
           <Card>
             <p className="text-[13px] font-semibold text-ink-2">この月の支出</p>
             <p className="num text-[30px] leading-tight font-bold">
@@ -179,11 +213,12 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
                 <dd className={`text-[14px] font-bold ${r.balance < 0 ? "text-expense" : ""}`}>{formatSignedYen(r.balance)}</dd>
               </div>
               <div className="rounded-xl bg-surface-2 py-2">
-                <dt className="text-[12px] font-semibold text-ink-2">{month === monthKey(today) ? "先月の支出" : "前月の支出"}</dt>
+                <dt className="text-[12px] font-semibold text-ink-2">{month === monthKey(today) ? "先月の支出" : "前の月の支出"}</dt>
                 <dd className="text-[14px] font-bold">{r.hasPrev ? formatYen(r.prevExpense) : "記録なし"}</dd>
               </div>
             </dl>
           </Card>
+          )}
 
           <ForecastCard month={month} />
           {month === monthKey(today) && <UsageCard />}
@@ -255,6 +290,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
         </>
       )}
 
+      {!(PERSONAL_MONEY && view === "list") && (
       <Card>
         <SectionTitle
           action={
@@ -266,7 +302,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
           固定費
         </SectionTitle>
         {fixed.length === 0 ? (
-          <p className="text-[14px] text-ink-3">登録されている固定費はありません。</p>
+          <p className="text-[14px] text-ink-3">固定費はありません。</p>
         ) : (
           <>
             <p className="num text-[13px] text-ink-2">
@@ -286,13 +322,16 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
           </>
         )}
       </Card>
+      )}
 
+      {!PERSONAL_MONEY && (
       <Link href={`/history?m=${month}`} className="block">
         <Card className="flex items-center justify-between py-3 hover:bg-surface-2">
           <span className="text-[15px] font-semibold">{formatMonthJa(month)}の明細を見る</span>
           <IconChevronR className="size-5 text-ink-3" />
         </Card>
       </Link>
+      )}
     </Wrap>
   );
 }

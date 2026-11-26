@@ -9,7 +9,7 @@ const config: CollectionConfig<"notes"> = {
   title: "生活記録・メモ",
   noun: "メモ",
   intro: "日記のような日々の記録も、日付のないメモも残せます。日付を入れると、日付ごとにまとまります。",
-  emptyText: "まだメモがありません。今日あったことや、覚えておきたいことを書いてみましょう。",
+  emptyText: "メモはまだありません。",
   fields: [
     { name: "title", label: "タイトル", optional: true, type: "text", placeholder: "例：今日のふりかえり" },
     { name: "body", label: "本文", type: "textarea" },

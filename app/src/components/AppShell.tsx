@@ -10,6 +10,10 @@ import { Button, IconBook, IconCalendar, IconChart, IconFlag, IconGrid, IconHome
 import { AddSheet } from "./AddSheet";
 import { useNavPrefs } from "./useNavPrefs";
 import { activeNav, navItem, type AddKindId, type NavId } from "@/lib/navPrefs";
+import { MENU_RECENT_KEY, parseMenuRecent, pushRecent } from "@/lib/menuPrefs";
+import { GROUPS } from "@/lib/menuGroups";
+
+const MENU_HREFS = GROUPS.flatMap((g) => g.items.filter((i) => !i.soon).map((i) => i.href.split("#")[0]));
 import { IS_PERSONAL } from "@/lib/edition";
 import { LAUNCHED_KEY, START_KEY, parseStart, startRedirect } from "@/lib/startScreen";
 import { todayStr } from "@/lib/date";
@@ -39,6 +43,7 @@ function Gate({ children }: { children: ReactNode }) {
       {IS_PERSONAL ? (
         <>
           <StartRedirect />
+          <RecentTracker />
           <TabBar />
         </>
       ) : (
@@ -94,7 +99,7 @@ function CorruptScreen() {
         onClick={async () => {
           const ask = lost
             ? "記録がない状態から始めます（古い記録は元の場所に残します）。このあと、設定の「バックアップから復元」で最新の記録を戻してください。実行しますか？"
-            : "読み込めないデータを退避し、記録がない状態から始めます。実行しますか？";
+            : "読み込めないデータを別の場所に移して、記録がない状態から始めます。よろしいですか？";
           if (!confirm(ask)) return;
           const r = await s.resetCorrupt();
           if (!r.ok) setMsg(r.error);
@@ -114,7 +119,7 @@ function CorruptScreen() {
 const NAV = [
   { href: "/", label: "ホーム", Icon: IconHome },
   { href: "/calendar", label: "カレンダー", Icon: IconCalendar },
-  { href: "/report", label: "振り返り", Icon: IconChart },
+  { href: "/report", label: "家計簿", Icon: IconChart },
   { href: "/menu", label: "メニュー", Icon: IconGrid },
 ];
 const MAIN = ["/", "/calendar", "/report"];
@@ -146,7 +151,7 @@ function BottomNav() {
             type="button"
             onClick={() => ui.openAdd({ date: path.startsWith("/calendar") ? (ui.calendarDate ?? undefined) : undefined })}
             className="-mt-6 inline-flex size-14 items-center justify-center rounded-full bg-brand text-brand-ink shadow-lg ring-4 ring-bg"
-            aria-label="追加する（支出・収入・予定・タスク）"
+            aria-label="追加する（支出・収入・予定・やること）"
           >
             <IconPlus className="size-7" />
           </button>
@@ -155,6 +160,22 @@ function BottomNav() {
       </div>
     </nav>
   );
+}
+
+/** 自分用：開いた機能を「最近開いた機能」に控える（端末の表示の設定。メニューに無い画面は控えない。o31 F003） */
+function RecentTracker() {
+  const path = usePathname();
+  useEffect(() => {
+    const seg = "/" + (path.split("/")[1] ?? "");
+    if (seg === "/" || seg === "/menu" || seg === "/settings") return;
+    try {
+      const next = pushRecent(parseMenuRecent(localStorage.getItem(MENU_RECENT_KEY), [seg, ...MENU_HREFS]), path, MENU_HREFS);
+      localStorage.setItem(MENU_RECENT_KEY, JSON.stringify(next));
+    } catch {
+      /* 控えられない端末では「最近」を出さないだけ */
+    }
+  }, [path]);
+  return null;
 }
 
 /** 自分用：起動したとき、設定で選んだ画面へ移る（o29 起動設定。このタブで最初に "/" を開いたときだけ） */

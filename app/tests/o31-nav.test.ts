@@ -78,8 +78,9 @@ describe("o31 T002・T007 右端の「追加」", () => {
     expect(addBtn).toBeGreaterThan(lastLink);
     expect(nav).toMatch(/min-h-12[^"]*"[\s\S]*?追加\s*<\/button>/);
     expect(shell).toMatch(/IS_PERSONAL \? \([\s\S]*<TabBar \/>[\s\S]*\) : \([\s\S]*<BottomNav \/>/);
-    // 公開版の下のメニュー（中央の＋・ホーム/カレンダー/振り返り/メニュー）は残す
-    expect(shell).toContain('{ href: "/report", label: "振り返り", Icon: IconChart }');
+    // 公開版の下のメニュー（中央の＋・ホーム/カレンダー/家計簿/メニュー）は残す。「振り返り」→「家計簿」は言葉の直し（両方の版。o31 07）
+    expect(shell).toContain('{ href: "/report", label: "家計簿", Icon: IconChart }');
+    expect(shell).toContain("function BottomNav()");
   });
   it("選んだ種類だけ開く（選ぶまで保存しない）。日付はカレンダーの選んだ日を引き継ぐ", () => {
     const tab = src("components/AppShell.tsx");

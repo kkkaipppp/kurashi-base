@@ -9,7 +9,7 @@ const CHOICES: { kind: AddKind; label: string; desc: string; cls: string; mark: 
   { kind: "expense", label: "支出", desc: "使ったお金", cls: "bg-expense-soft text-expense", mark: "¥" },
   { kind: "income", label: "収入", desc: "入ったお金", cls: "bg-income-soft text-income", mark: "¥" },
   { kind: "event", label: "予定", desc: "日時の決まった用事", cls: "bg-event-soft text-event", mark: "◷" },
-  { kind: "task", label: "タスク", desc: "期限までにやること", cls: "bg-brand-soft text-brand", mark: "✓" },
+  { kind: "task", label: "やること", desc: "期限のある用事", cls: "bg-brand-soft text-brand", mark: "✓" },
 ];
 
 /** ＋ボタンから「何を追加するか」を選ぶ。支出・収入・予定・タスクを同じ並びで出す */

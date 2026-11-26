@@ -44,7 +44,7 @@ describe("UI・UX の直し（友人β）", () => {
 
   it("予算がないときのホームは「未設定」ではなく今月の支出を大きく出す", () => {
     const s = src("app/page.tsx");
-    expect(s).toContain('remaining === null ? "今月の支出" : "今月の残り予算"');
+    expect(s).toContain('remaining === null ? "今月の支出" : "今月の予算の残り"');
     expect(s).not.toContain(">未設定<");
   });
 

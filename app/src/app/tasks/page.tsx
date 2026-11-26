@@ -65,9 +65,9 @@ function ToEventButton({ task }: { task: Task }) {
 
 const config: CollectionConfig<"tasks"> = {
   key: "tasks",
-  title: "タスク",
-  noun: "タスク",
-  emptyText: "まだタスクがありません。やることを追加しましょう。",
+  title: "やること",
+  noun: "やること",
+  emptyText: "やることはまだありません。",
   fields: [
     { name: "title", label: "内容", type: "text", required: true, placeholder: "例：住民票を取りに行く" },
     { name: "due", label: "期限", optional: true, type: "date" },

@@ -117,7 +117,7 @@ export function buildReminders(d: AppData, now: string, s: ReminderSettings): Re
         add(`kb|rc|${r.id}|${date}|due`, `固定費の支払日：${r.name}`, `${formatYen(left)}（今日）`, date, morning);
       }
     if (s.taskMorning)
-      for (const t of d.tasks) if (!t.done && t.due === date) add(`kb|task|${t.id}|${date}|due`, `今日が期限：${t.title}`, "タスクの期限です", date, morning);
+      for (const t of d.tasks) if (!t.done && t.due === date) add(`kb|task|${t.id}|${date}|due`, `今日が期限：${t.title}`, "やることの期限です", date, morning);
     if (s.contractDays > 0)
       for (const c of d.contracts) {
         if (c.status !== "active" || !c.renewalDate) continue;

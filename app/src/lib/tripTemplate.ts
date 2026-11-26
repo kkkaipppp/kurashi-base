@@ -24,7 +24,7 @@ export function cloneTrip(
   const trip: Trip = {
     ...src,
     id,
-    title: `${src.title}（コピー）`,
+    title: `${src.title}（複製）`,
     startDate: newStart,
     endDate: addDays(src.endDate, shift),
     createdAt: ts,

@@ -16,7 +16,7 @@ export const KIND_LABEL: Record<SearchKind, string> = {
   event: "予定",
   recurring: "固定費",
   trip: "旅行",
-  task: "タスク",
+  task: "やること",
   note: "メモ",
   contract: "契約",
   document: "書類",

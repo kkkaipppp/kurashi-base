@@ -23,7 +23,7 @@ describe("診断情報", () => {
   it("記録がないときも作れる。読めない保存の大きさは「読めません」", () => {
     const t = buildDiagnostics({ data: emptyData(now), edition: "public", native: false, storedChars: null, hasUndo: false, userAgent: "x", nowIso: now });
     expect(t).toContain("公開・ブラウザ（Web）");
-    expect(t).toContain("取引の期間：なし");
+    expect(t).toContain("支出・収入の期間：なし");
     expect(t).toContain("読めません");
   });
   it("自動では送らない（通信しない）。設定に自分用だけで出る", () => {

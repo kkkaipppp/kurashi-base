@@ -33,7 +33,7 @@ export function findDuplicates(input: DupInput, txs: Transaction[]): DupCandidat
   for (const t of txs) {
     if (t.id === input.excludeId) continue;
     if (input.sourceFingerprint && t.sourceFingerprint === input.sourceFingerprint) {
-      out.push({ tx: t, reason: "同じ画像から登録した記録があります", strength: "exact" });
+      out.push({ tx: t, reason: "同じ画像から追加した記録があります", strength: "exact" });
       continue;
     }
     if (t.type !== input.type || t.amount !== input.amount) continue;

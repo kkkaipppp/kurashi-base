@@ -39,7 +39,7 @@ function SearchInner() {
   if (!FEATURES.search) {
     return (
       <main>
-        <PageHeader title="さがす" />
+        <PageHeader title="検索" />
         <Empty>この版では、まだ使えません</Empty>
       </main>
     );
@@ -70,7 +70,7 @@ function SearchInner() {
   };
   return (
     <main className="space-y-3">
-      <PageHeader title="さがす" />
+      <PageHeader title="検索" />
       <div className="relative">
         <IconSearch className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-ink-3" />
         <input

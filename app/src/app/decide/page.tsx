@@ -64,7 +64,7 @@ export default function DecidePage() {
             </tbody>
           </table>
           </div>
-          <p className="mt-2 text-[12px] text-ink-3">どれも、今月の月末までの見込みです（確定ではありません）。+は増える、−は減ります。今月の記録の合計（{formatYen(sc.basis.spent)}。先の日付の分も）と、これから払う固定費（{formatYen(sc.basis.unpaidFixed)}）は、どの行でも同じです。変えているのは、残り{sc.basis.daysAhead}日の日々の出費（約{formatYen(sc.basis.variableAhead)}。食費・日用品など、月ごとに変わる出費）だけです。</p>
+          <p className="mt-2 text-[12px] text-ink-3">どれも、今月の月末までの見込みです（確定ではありません）。+は増える、−は減ります。今月の記録の合計（{formatYen(sc.basis.spent)}。先の日付の分も）と、これから払う固定費（{formatYen(sc.basis.unpaidFixed)}）は、どの行でも同じです。変えているのは、残り{sc.basis.daysAhead}日の日々の出費（約{formatYen(sc.basis.variableAhead)}。食費・日用品などの変動費）だけです。</p>
         </Card>
       )}
       {a && (
@@ -118,11 +118,11 @@ export default function DecidePage() {
               ) : (
                 <li className="text-ink-3">予算が決まっていないので、割合は出せません</li>
               )}
-              <li>来月に払う固定費は、登録済みの分で合計 {formatYen(a.nextMonth.fixed)} です</li>
+              <li>来月に払う固定費は、今ある分の合計で {formatYen(a.nextMonth.fixed)} です</li>
             </ul>
             <p className="mt-2 text-[12px] text-ink-3">来月の収入・ほかの支出は、まだ分からないので、入れていません。</p>
           </Card>
-          <p className="px-1 text-[12px] text-ink-3">{IS_PERSONAL ? "今月の数字は、ホームと同じ計算です（予算から、使った額と、これから払う固定費を引いた残り。投資は含めません）。" : "今月の数字は、予算から、使った額（すべての支出）と、これから払う固定費を引いた残りです（ホームの「残り予算」は、これから払う固定費を引いていないので、少し違います）。"}見込みは確定ではありません。</p>
+          <p className="px-1 text-[12px] text-ink-3">{IS_PERSONAL ? "今月の数字は、ホームと同じ計算です（予算から、使った額と、これから払う固定費を引いた残り。投資は含めません）。" : "今月の数字は、予算から、使った額（すべての支出）と、これから払う固定費を引いた残りです（ホームの「予算の残り」は、これから払う固定費を引いていないので、少し違います）。"}見込みは確定ではありません。</p>
         </>
       )}
     </main>

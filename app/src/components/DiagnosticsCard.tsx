@@ -43,7 +43,7 @@ export function DiagnosticsCard() {
         </Button>
         {FEATURES.perfLab && (
           <Link href="/perf" className="text-center text-[13px] font-semibold text-brand underline">
-            性能を測る（作り物のデータで。記録には触れません）
+            性能を測る（記録には触れません）
           </Link>
         )}
       </div>

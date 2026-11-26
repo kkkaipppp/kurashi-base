@@ -42,7 +42,7 @@ export function AllowanceDetails({ today }: { today: string }) {
           </ul>
         )}
         <div className="flex justify-between gap-2 border-t border-white/30 pt-1 font-semibold">
-          <dt>自由に使える残り</dt>
+          <dt>予算の残り（固定費を引いたあと）</dt>
           <dd>{formatSignedYen(b.freeLeft)}</dd>
         </div>
         <div className="flex justify-between gap-2">

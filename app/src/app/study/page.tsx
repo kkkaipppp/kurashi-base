@@ -14,6 +14,13 @@ import { useData, useStore } from "@/lib/store";
 import { bookSearch, isSavableUrl, noteSearch, safeExternalLink } from "@/lib/externalLinks";
 import { dailyTarget, findCertification, formatMinutes, groupedCertifications, searchCertifications, sourceLabel, type Certification } from "@/lib/study";
 import type { StudyBook, StudySubject } from "@/lib/types";
+import dynamic from "next/dynamic";
+
+// 自分用：今日の勉強時間・前回の続き・タイマー（o31 F015・D017）。公開版の組み立てには入れない
+const StudyTop = process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(() => import("@/components/StudyTimer").then((m) => m.StudyTop)) : () => null;
+// 自分用：本棚（教材の状態・量）と受験の回（o31 F012・F013）
+const SHELF = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+const StudyShelf = SHELF ? dynamic(() => import("@/components/StudyShelf").then((m) => m.StudyShelf)) : () => null;
 
 /* ---------------- 勉強の記録（一覧は共通の部品を使う） ---------------- */
 
@@ -68,13 +75,14 @@ export default function StudyPage() {
     <main className="space-y-4">
       <OpenFromQuery ids={[...data.studySubjects.map((s) => s.id), "new"]} onOpen={onOpen} />
       <PageHeader
-        title="資格の学習"
+        title="勉強"
         right={
           <Button onClick={() => setForm({ key: Date.now() })} className="min-h-11 px-3 text-[14px]">
             ＋ 資格を追加
           </Button>
         }
       />
+      <StudyTop />
       {subjects.length === 0 ? (
         <Card>
           <Empty action={<Button onClick={() => setForm({ key: Date.now() })}>資格を追加する</Button>}>
@@ -191,9 +199,10 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
           </p>
         )}
 
-        {(s.books?.length ?? 0) > 0 && (
+        {SHELF && <StudyShelf s={s} />}
+        {!SHELF && (s.books?.length ?? 0) > 0 && (
           <div className="mt-3">
-            <p className="mb-1 text-[12px] font-semibold text-ink-3">登録した参考書</p>
+            <p className="mb-1 text-[12px] font-semibold text-ink-3">参考書</p>
             <ul className="space-y-1">
               {s.books!.map((b) => {
                 const href = b.url ? safeExternalLink(b.url) : null;
@@ -368,7 +377,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
                     }}
                     className="flex min-h-11 w-full items-center rounded-xl border border-dashed border-line px-3 text-left text-[14px] text-brand"
                   >
-                    「{q.trim()}」を自分で登録する
+                    「{q.trim()}」を追加する
                   </button>
                 </li>
               </ul>
@@ -429,7 +438,7 @@ function SubjectForm({ editing, onClose }: { editing?: StudySubject; onClose: ()
 
             <div>
               <p className="mb-1 text-[14px] font-semibold">
-                参考書<span className="ml-1 text-[12px] font-normal text-ink-3">任意・使っている本をメモ</span>
+                参考書<span className="ml-1 rounded bg-surface-2 px-1 py-px text-[12px] font-medium text-ink-3">任意</span>
               </p>
               {f.books.length > 0 && (
                 <ul className="mb-2 space-y-1">

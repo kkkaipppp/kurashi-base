@@ -3,13 +3,13 @@
  * 家計と予定の基本（取引履歴・固定費・設定・使い方・バックアップ）は、隠せない。
  */
 export const HIDEABLE_MENU: { href: string; label: string }[] = [
-  { href: "/tasks", label: "タスク" },
+  { href: "/tasks", label: "やること" },
   { href: "/trips", label: "旅行" },
   { href: "/import", label: "レシートを見て入力" },
   { href: "/assets", label: "資産・NISA" },
   { href: "/contracts", label: "契約" },
   { href: "/goals", label: "目標" },
-  { href: "/study", label: "資格の学習" },
+  { href: "/study", label: "勉強" },
   { href: "/notes", label: "生活記録・メモ" },
   { href: "/health", label: "健康記録" },
   { href: "/documents", label: "生活書類" },

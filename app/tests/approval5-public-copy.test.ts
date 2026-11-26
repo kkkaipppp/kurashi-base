@@ -23,7 +23,7 @@ describe("承認5：公開版の文言・見た目", () => {
   });
   it("3 使い方：新しい機能を書き足す", () => {
     const g = src("app/guide/page.tsx");
-    for (const w of ["月末の見込み", "週・年", "買い物の判断", "未整理の記録", "さがす", ".ics"]) expect(g, w).toContain(w);
+    for (const w of ["月末の見込み", "週・年", "買い物の判断", "未分類の記録", "検索", ".ics"]) expect(g, w).toContain(w);
   });
   it("4 メニュー：準備中は、どちらの版でもたたむ", () => {
     expect(src("app/menu/page.tsx")).toMatch(/\n\s*if \(soon\)\n/);

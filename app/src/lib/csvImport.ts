@@ -177,7 +177,7 @@ export function rowsToIncoming(rows: string[][], rowLines: number[], current: Ap
         continue;
       }
       if (!(pay in PAY)) {
-        errs.push(`${line}行目の支払い方法「${pay}」は使えません`);
+        errs.push(`${line}行目の支払方法「${pay}」は使えません`);
         continue;
       }
       const noIdKey = (k: string) => {
@@ -228,7 +228,7 @@ export function rowsToIncoming(rows: string[][], rowLines: number[], current: Ap
         continue;
       }
     if (!(pay in PAY)) {
-        errs.push(`${line}行目の支払い方法「${pay}」は使えません`);
+        errs.push(`${line}行目の支払方法「${pay}」は使えません`);
         continue;
       }
     // すでに同じ名前・金額の固定費があれば足さない（例：「家賃」と「家賃（全保連）」）

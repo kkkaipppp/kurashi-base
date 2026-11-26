@@ -47,14 +47,14 @@ export function TripCopy({ trip, onClose, onCreated }: { trip: Trip; onClose: ()
       }
     >
       <p className="mb-3 text-[13px] text-ink-2">
-        「{trip.title}」の行き先・予算・メモと、行程の予定{n}件を、新しい旅行にコピーします。日付は、出発日に合わせて同じだけずらします。
+        「{trip.title}」の行き先・予算・メモと、行程の予定{n}件を、新しい旅行に複製します。日付は、出発日に合わせて同じだけずらします。
       </p>
       <Field label="新しい出発日" htmlFor="trip-copy-start">
         <input id="trip-copy-start" type="date" value={start} onChange={(e) => setStart(e.target.value)} className={inputCls} />
       </Field>
       <ul className="mt-3 list-disc space-y-0.5 pl-5 text-[12px] text-ink-3">
         <li>元の旅行と行程は変わりません</li>
-        <li>つないだ支出・持ち物のチェック・完了は、コピーしません（持ち物は未チェックに戻します）</li>
+        <li>つないだ支出・持ち物のチェック・完了は、複製しません（持ち物は未チェックに戻します）</li>
         {start && <li>{formatDateJa(start, true)}出発の旅行になります</li>}
       </ul>
     </Sheet>

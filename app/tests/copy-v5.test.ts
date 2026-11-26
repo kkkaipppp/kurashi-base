@@ -58,8 +58,8 @@ describe("v5 の文言", () => {
     const ev = ALL.find((f) => f.p.endsWith("EventSheet.tsx"))!.s;
     expect(ev).toContain("Googleカレンダーで予定を作る");
     expect(ev).not.toContain("Googleカレンダーに追加する");
-    expect(ev).toContain("予定名・日時・場所だけ渡します");
-    expect(ev).toContain("「保存」すると登録されます");
+    expect(ev).toContain("タイトル・日時・場所だけ渡します");
+    expect(ev).toContain("「保存」すると、Google カレンダーに入ります");
     expect(ev).toContain("行き方を調べる");
   });
 });

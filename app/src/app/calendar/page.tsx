@@ -16,6 +16,8 @@ import { holidayName } from "@/lib/holidays";
 import { useUI } from "@/components/UIContext";
 import { EventRow, TxRow } from "@/components/Rows";
 import { Card, IconChevronL, IconChevronR, PageHeader, SectionTitle } from "@/components/ui";
+import { CAL_VIEWS, CAL_VIEW_KEY, ListView, WeekView, parseCalView, type CalendarView } from "@/components/CalendarViews";
+import { addDays } from "@/lib/date";
 
 const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 /** マスに名前を出す予定の数（それより多い日は「+n」） */
@@ -68,6 +70,25 @@ function CalendarInner() {
       /* 覚えられなくても使える */
     }
   }, []);
+  // 表示の形（自分用：月・週・一覧。o31 F008）。表示だけの設定で、記録・集計は変わらない
+  const [view, setView] = useState<CalendarView>("month");
+  useEffect(() => {
+    if (!PERSONAL_BUILD) return;
+    try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 開いたあとに、前回の表示の形を読む
+      setView(parseCalView(localStorage.getItem(CAL_VIEW_KEY)));
+    } catch {
+      /* 覚えられなくても使える */
+    }
+  }, []);
+  const pickView = (v: CalendarView) => {
+    setView(v);
+    try {
+      localStorage.setItem(CAL_VIEW_KEY, v);
+    } catch {
+      /* 覚えられなくても使える */
+    }
+  };
   const pickShow = (k: "all" | "event" | "money") => {
     setShow(k);
     try {
@@ -108,6 +129,13 @@ function CalendarInner() {
   const dayStudy = data.studyLogs.filter((l) => l.date === selected).reduce((s, l) => s + l.minutes, 0);
 
   const move = (delta: number) => {
+    // 週の表示では、前後の週へ（選んだ日を7日ずらす）
+    if (view === "week") {
+      const d = addDays(selected, 7 * delta);
+      setSelected(d);
+      setMonth(monthKey(d));
+      return;
+    }
     const next = addMonthsToKey(month, delta);
     setMonth(next);
     setSelected(monthKey(today) === next ? today : `${next}-01`);
@@ -130,13 +158,13 @@ function CalendarInner() {
 
       <Card className="px-2 pt-2 pb-3">
         <div className="flex items-center justify-between px-1">
-          <button type="button" onClick={() => move(-1)} aria-label="前の月" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
+          <button type="button" onClick={() => move(-1)} aria-label={view === "week" ? "前の週" : "前の月"} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
             <IconChevronL />
           </button>
           <h2 className="text-[17px] font-bold" aria-live="polite">
             {formatMonthJa(month)}
           </h2>
-          <button type="button" onClick={() => move(1)} aria-label="次の月" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
+          <button type="button" onClick={() => move(1)} aria-label={view === "week" ? "次の週" : "次の月"} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
             <IconChevronR />
           </button>
         </div>
@@ -156,6 +184,18 @@ function CalendarInner() {
             </button>
           ))}
         </div>
+        {PERSONAL_BUILD && (
+          <div className="mb-2 grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="表示の形">
+            {CAL_VIEWS.map(([k, label]) => (
+              <button key={k} type="button" role="radio" aria-checked={view === k} onClick={() => pickView(k)} className={`min-h-11 rounded-lg text-[13px] font-semibold ${view === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {view === "week" && <WeekView selected={selected} today={today} showEv={showEv} showMoney={showMoney} onPick={setSelected} />}
+        {view === "list" && <ListView month={month} selected={selected} today={today} showEv={showEv} showMoney={showMoney} onPick={setSelected} />}
+        {view === "month" && (
         <table className="w-full table-fixed border-separate border-spacing-0.5" aria-label={`${formatMonthJa(month)}のカレンダー`}>
           <thead>
             <tr>
@@ -227,6 +267,10 @@ function CalendarInner() {
             ))}
           </tbody>
         </table>
+        )}
+        {view === "month" && (
+        <details className="mt-1" open={!PERSONAL_BUILD}>
+          {PERSONAL_BUILD && <summary className="flex min-h-11 cursor-pointer items-center justify-center text-[13px] font-semibold text-ink-3">色と印の見方</summary>}
         <div className="mt-2 flex justify-center gap-4 text-[11px] text-ink-3" aria-hidden="true">
           <span className="flex items-center gap-1">
             <span className="rounded bg-event-soft px-1 text-event">名前</span>予定
@@ -250,6 +294,8 @@ function CalendarInner() {
             <span className="font-semibold">灰色の日付</span>：日曜・祝日
           </li>
         </ul>
+        </details>
+        )}
       </Card>
 
       <section className="mt-4 space-y-3" aria-label="選んだ日の予定とお金">

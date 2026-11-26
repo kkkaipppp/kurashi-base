@@ -72,7 +72,7 @@ export default function ImportPage() {
       <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3">
         <p className="text-[13px] text-ink-2">
           <span className="font-bold text-warn">文字の自動読み取り（OCR）は、まだありません。</span>
-          画像を見ながら金額・日付・店名を入力して登録します。入力した内容を確認するまで、取引は登録されません。
+          画像を見ながら金額・日付・店名を入力します。保存するまで、記録は追加されません。
         </p>
       </section>
 
@@ -109,7 +109,7 @@ export default function ImportPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-1 text-ink-2">別の支出として登録するときだけ、先に進んでください。</p>
+                <p className="mt-1 text-ink-2">別の支出として追加するときだけ、先に進んでください。</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">
@@ -124,7 +124,7 @@ export default function ImportPage() {
           <div role="alert" className="mt-3 space-y-2 rounded-xl bg-expense-soft px-3 py-2">
             <p className="text-[14px] font-medium text-danger">{error}</p>
             <Button variant="secondary" onClick={() => ui.openTx({ mode: "new", type: "expense" })} className="w-full">
-              画像なしで手入力する
+              画像なしで入力する
             </Button>
           </div>
         )}

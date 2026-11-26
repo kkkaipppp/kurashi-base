@@ -229,8 +229,8 @@ export class IndexedDbRepository {
           tx.abort();
         }
       };
-      tx.oncomplete = () => resolve(ok ? { ok: true } : { ok: false, error: "退避するデータがありません" });
-      tx.onabort = () => resolve({ ok: false, error: "退避できませんでした。データはそのままです" });
+      tx.oncomplete = () => resolve(ok ? { ok: true } : { ok: false, error: "移すデータがありません" });
+      tx.onabort = () => resolve({ ok: false, error: "別の場所に移せませんでした。データはそのままです" });
     });
   }
 
@@ -392,8 +392,8 @@ export async function migrateFromLocalStorage(kv: KV, repo: IndexedDbRepository,
   let raw: string | null;
   try {
     raw = kv.getItem(STORAGE_KEY);
-  } catch (e) {
-    return { status: "failed", error: `旧データを読めませんでした（${(e as Error)?.message ?? "不明"}）` };
+  } catch {
+    return { status: "failed", error: "今までの記録を読めず、新しい保存場所に切り替えませんでした" };
   }
   if (raw === null) {
     // 旧データがない端末：印だけ書く（あとから旧データが現れても、IndexedDB の記録を上書きしない。点検 高-1）
@@ -410,23 +410,23 @@ export async function migrateFromLocalStorage(kv: KV, repo: IndexedDbRepository,
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return { status: "invalid", error: "旧データが壊れているため、移しません（旧データはそのまま）" };
+    return { status: "invalid", error: "今までの記録が壊れているため、新しい保存場所に移しません（今までの記録はそのままです）" };
   }
   const v = validateAppData(parsed);
   if (!v.ok) return { status: "invalid", error: v.error };
   const before = integrity(v.data, raw);
   // 1. 仮置き
-  if (!(await repo.putStaging(raw))) return { status: "failed", error: "仮置きに失敗しました（旧データはそのまま）" };
+  if (!(await repo.putStaging(raw))) return { status: "failed", error: "新しい保存場所に書き込めず、切り替えませんでした" };
   // 2. 読み直して比べる
   const staged = await repo.readStaging();
-  if (staged === null) return { status: "failed", error: "仮置きを読み直せませんでした（旧データはそのまま）" };
+  if (staged === null) return { status: "failed", error: "新しい保存場所に書いた中身を読み直せず、切り替えませんでした" };
   const v2 = validateAppData(JSON.parse(staged));
-  if (!v2.ok) return { status: "failed", error: `仮置きの検査に失敗しました（${v2.error}）` };
+  if (!v2.ok) return { status: "failed", error: `新しい保存場所に書いた中身を確かめられず、切り替えませんでした（${v2.error}）` };
   const after = integrity(v2.data, staged);
   if (JSON.stringify(before) !== JSON.stringify(after)) return { status: "mismatch", before, after };
   // 3. 一致したときだけ、正本に切り替える（本体・印・仮置きの削除を同時に）
   const pr = await repo.promote(staged, { migratedAt: now, source: "localStorage", integrity: after }, now);
-  if (pr === "failed") return { status: "failed", error: "切り替えに失敗しました（旧データはそのまま）" };
+  if (pr === "failed") return { status: "failed", error: "新しい保存場所への切り替えに失敗しました" };
   // すでに本体か印がある（別のタブが先に移した・IndexedDB で先に記録した）：上書きしない
   if (pr === "exists") return { status: "already" };
   // 4. 旧データ側に、小さな印だけ残す（旧データ本体は消さない。印が書けなくても、移行は成立している）

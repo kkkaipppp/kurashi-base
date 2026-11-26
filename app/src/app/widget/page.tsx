@@ -29,14 +29,14 @@ export default function WidgetPreviewPage() {
       ) : (
         <section className="rounded-2xl border border-warn/30 bg-warn-soft px-4 py-3 text-[13px] text-ink-2">
           <p className="font-bold text-warn">アプリの中で見るだけのプレビューです</p>
-          iPhoneのホーム画面に置くウィジェットは、Webアプリでは作れません。ネイティブアプリとして作る必要があり、まだ対応していません。
+          iPhone のホーム画面のウィジェットは、Web 版では使えません。iPhone アプリが必要で、まだ対応していません。
         </section>
       )}
 
       <p className="text-[13px] text-ink-3">ウィジェットにしたときに出す予定の内容です（今のデータで表示しています）。</p>
       <div className="grid grid-cols-2 gap-3">
         <div className="aspect-square rounded-[22px] bg-brand p-3 text-brand-ink shadow-md">
-          <p className="text-[11px] font-semibold opacity-80">今月の残り予算</p>
+          <p className="text-[11px] font-semibold opacity-80">今月の予算の残り</p>
           <p className="num mt-1 text-xl leading-tight font-bold">{remaining === null ? "未設定" : formatSignedYen(remaining)}</p>
           <p className="mt-3 text-[11px] font-semibold opacity-80">今日の支出</p>
           <p className="num text-lg font-bold">{formatYen(spent)}</p>
@@ -60,7 +60,7 @@ export default function WidgetPreviewPage() {
       </div>
       <Card>
         <p className="text-[13px] text-ink-2">
-          今すぐできること：Safariの共有ボタンから「ホーム画面に追加」を選ぶと、アイコンからこのアプリを開けます（ウィジェットではありません）。
+          今すぐできること：Safari の共有ボタンから「ホーム画面に追加」を選ぶと、アイコンからこのアプリを開けます（ウィジェットではありません）。
         </p>
       </Card>
     </main>

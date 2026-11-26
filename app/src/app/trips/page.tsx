@@ -209,7 +209,7 @@ function TripDetail({ trip, onBack, onEdit, onOpenTrip }: { trip: Trip; onBack: 
         <div className="mt-3 grid gap-2">
           {directions && (
             <a href={directions} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-center rounded-xl border border-line text-[14px] font-semibold text-brand hover:bg-brand-soft">
-              行き先までの行き方を調べる（Googleマップ）
+              行き方を調べる（Googleマップ）
             </a>
           )}
           <div className="flex gap-2">

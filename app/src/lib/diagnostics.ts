@@ -27,7 +27,7 @@ export function buildDiagnostics(i: DiagnosticsInput): string {
     `版：${i.edition === "personal" ? "自分用" : "公開"}・${i.native ? "iPhone アプリ" : "ブラウザ（Web）"}`,
     `保存の形式：schemaVersion ${i.data.schemaVersion}`,
     `保存の大きさ：${i.storedChars === null ? "読めません" : `${i.storedChars.toLocaleString("ja-JP")} 文字（約${Math.round((i.storedChars * 2) / 1024).toLocaleString("ja-JP")} KB）`}`,
-    `取引の期間：${dates.length ? `${dates[0]}〜${dates[dates.length - 1]}` : "なし"}`,
+    `支出・収入の期間：${dates.length ? `${dates[0]}〜${dates[dates.length - 1]}` : "なし"}`,
     `最後のバックアップ：${i.data.meta.lastBackupAt ? i.data.meta.lastBackupAt.slice(0, 10) : "まだ"}`,
     `直前の操作の取り消し：${i.hasUndo ? "あり" : "なし"}`,
     "件数：" + (Object.entries(c) as [keyof typeof c, number][]).filter(([, n]) => n > 0).map(([k, n]) => `${COUNT_LABELS[k as keyof typeof COUNT_LABELS] ?? k}${n}`).join("・"),

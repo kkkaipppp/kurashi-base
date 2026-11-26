@@ -149,7 +149,7 @@ export default function HistoryPage() {
         </p>
         <div className="grid grid-cols-3 gap-2">
           <label className="sr-only" htmlFor="f-type">種類</label>
-          <select id="f-type" value={type} onChange={(e) => setType(e.target.value as typeof type)} aria-label="種別で絞り込み" className={`${inputCls} px-2 text-[14px]`}>
+          <select id="f-type" value={type} onChange={(e) => setType(e.target.value as typeof type)} aria-label="種類で絞り込み" className={`${inputCls} px-2 text-[14px]`}>
             <option value="all">種類：すべて</option>
             <option value="expense">支出</option>
             <option value="income">収入</option>
@@ -204,7 +204,7 @@ export default function HistoryPage() {
               )
             }
           >
-            {filtered ? "条件に合う取引はありません" : `${formatMonthJa(month)}の取引はまだありません`}
+            {filtered ? "条件に合う記録はありません" : `${formatMonthJa(month)}の記録はまだありません`}
           </Empty>
         ) : (
           byDate.map(([date, txs]) => (
