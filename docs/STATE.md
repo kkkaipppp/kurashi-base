@@ -25,6 +25,14 @@
 2. 友人に渡す（RELEASE_PREP 5章の一言＋テストのシート1章）→ 1日目・3日目・7日目に聞く → 感想を FRIEND_FEEDBACK に記録
 3. 直しは master に push すると Vercel が自動で公開し直す（push は毎回 平尾さんの OK 後）
 
+## 承認待ち（2026-11-26 昼。平尾さんが戻ったら1回でまとめて聞く）
+① push（PC で2行）：`git -C "C:\Users\kamik\AI開発\暮らしベース" push origin master` と `… push origin feat/ios-widget`。master を push すると公開版（Vercel）が変わる（承認4・5の見た目と数え方）
+② push のあと Safari で3分の確認 → 友人βの GO を付け直す（N24/A10）
+③ iPhone に自分用の新しい版を入れる（Mac で組み立て済み 12b0a6d。iPhone を家の Wi-Fi・ロック解除で、Claude が入れる）→ 実機で A5（カレンダーの許可・読む）・A3 の内訳・A2 のボタンを確かめる
+④ A3：今日も続いている何日もの予定（今日より前に始まったもの）の費用を「これから」に数えるか（今は数える）
+⑤ 見込みと予算の使用率で、今日より後の日付の記録の数え方をそろえるか（公開版の数字が変わる。点検 低-5・低-7）
+⑥ A5：設定の .ics の書き出しを iPhone の別のカレンダーに入れている場合、読み戻す予定を除く工夫を足すか（点検 低-6）
+
 ## ユーザー待ち
 - 友人β の後：V21（ひも付け）・OCR・PWA を進めるか
 - ウィジェット（自分用、Q25）：docs/widget/WIDGET_PLAN.md。Mac に SSH でつながる（kurashi-mac）・Node.js 入れた。macOS 27.2.1 には更新済み（11-23）。Xcode は平尾さん待ち
