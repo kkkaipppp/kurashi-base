@@ -124,7 +124,7 @@ struct KurashiWidgetView: View {
             Spacer(minLength: 2)
             events(max: 2)
             // 小さいウィジェットは全体が「支出を記録」のボタン。そのことを書いておく
-            Text("押すと ＋支出")
+            Text("押して支出を追加")
                 .font(.caption2.bold())
                 .foregroundStyle(KB.expense)
         }
@@ -151,7 +151,7 @@ struct KurashiWidgetView: View {
         VStack(alignment: .leading, spacing: 1) {
             if let s = entry.summary, sameMonth {
                 if let r = s.remaining {
-                    Text("今月の残り予算").font(.caption2).foregroundStyle(KB.ink3)
+                    Text("予算の残り").font(.caption2).foregroundStyle(KB.ink3)
                     Text(yen(r)).font(.title3.bold()).foregroundStyle(r < 0 ? KB.expense : KB.brand)
                         .minimumScaleFactor(0.6).lineLimit(1)
                     // 残り予算の下は、予算から引いた額（生活費）を出す（支出の合計だと数字が合わない。点検役の指摘）
@@ -169,7 +169,7 @@ struct KurashiWidgetView: View {
                 }
             } else {
                 Text("今月の支出").font(.caption2).foregroundStyle(KB.ink3)
-                Text("アプリを開くと出ます").font(.caption).foregroundStyle(KB.ink3)
+                Text("アプリを開くと更新").font(.caption).foregroundStyle(KB.ink3)
             }
         }
     }
@@ -191,7 +191,7 @@ struct KurashiWidgetView: View {
                     if rest > 0 { Text("ほか\(rest)件").font(.caption2).foregroundStyle(KB.ink3) }
                 }
             } else {
-                Text("アプリを開くと出ます").font(.caption).foregroundStyle(KB.ink3)
+                Text("アプリを開くと更新").font(.caption).foregroundStyle(KB.ink3)
             }
         }
     }
@@ -214,7 +214,7 @@ struct KurashiWidget: Widget {
             KurashiWidgetView(entry: entry)
         }
         .configurationDisplayName("くらしベース")
-        .description("今日の予定と今月の支出。ボタンからすぐ記録できます")
+        .description("今日の予定と、今月の予算の残り・支出")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
