@@ -29,6 +29,8 @@ const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // カレンダーのファイル（.ics）から予定を取り込む（自分用。Q31＝①）
 // 2026-11-25 から公開版（友達用）にも出す（FEATURE_EDITIONS.icsImport）
 const IcsImportCard = FEATURES.icsImport ? dynamic(() => import("@/components/IcsImportCard").then((m) => m.IcsImportCard)) : null;
+// iPhone のカレンダーから予定を取り込む（A5。自分用アプリの中だけ。公開版の組み立てには入れない）
+const NativeCalendarImportCard = FEATURES.nativeCalendarRead && PERSONAL_BUILD ? dynamic(() => import("@/components/NativeCalendarImportCard").then((m) => m.NativeCalendarImportCard)) : null;
 const CsvGenericPanel = PERSONAL_BUILD ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
 const MenuVisibilityCard = PERSONAL_BUILD ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
 const ImportHistoryCard = PERSONAL_BUILD ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
@@ -457,6 +459,11 @@ export default function SettingsPage() {
           <Button variant="secondary" onClick={exportCalendar}>
             予定をカレンダー用ファイルに保存（.ics）
           </Button>
+          {NativeCalendarImportCard && (
+            <div className="mt-3">
+              <NativeCalendarImportCard />
+            </div>
+          )}
           {IcsImportCard && (
             <div className="mt-3">
               <IcsImportCard />

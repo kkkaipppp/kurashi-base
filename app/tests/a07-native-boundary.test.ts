@@ -130,7 +130,7 @@ describe("A07：Swift と TypeScript の約束", () => {
     const nb = read("src/lib/nativeBridge.ts");
     const tsReturns: Record<string, Set<string>> = {};
     for (const m of nb.matchAll(/^\s+(\w+)\(options: \{[^}]*\}\): Promise<(?:\{([^}]*)\}|void)>/gm)) tsReturns[m[1]] = new Set([...(m[2] ?? "").matchAll(/(\w+)\??:/g)].map((f) => f[1]));
-    expect(Object.keys(tsReturns).sort()).toEqual(["recognizeText", "scheduleReminders", "setSummary", "syncCalendar", "writeBackup"]);
+    expect(Object.keys(tsReturns).sort()).toEqual(["readCalendarEvents", "recognizeText", "scheduleReminders", "setSummary", "syncCalendar", "writeBackup"]);
     const parts = PLUGIN.split(/@objc func /).slice(1);
     let n = 0;
     for (const part of parts) {
@@ -229,7 +229,7 @@ describe("A07：保存の正本は1つ（画面の中の記録だけ）", () => 
     expect(js).toHaveLength(1);
     expect(MAINVC).toMatch(/evaluateJavaScript\("window\.dispatchEvent\(new CustomEvent\('kb-open-add'/);
   });
-  it("アプリが持つものは、記録から作った写しだけ（要約・自動バックアップ・カレンダー・通知）。アプリから画面へ記録を戻す道はない", () => {
+  it("アプリが持つものは、記録から作った写しだけ（要約・自動バックアップ・カレンダー・通知）。アプリから記録へ入る道は、本人が押す iPhone のカレンダーの取り込み（A5）だけ", () => {
     // アプリの部品が返すのは、状態と件数と、読み取った文字の行だけ
     const resolves = resolveArgs(PLUGIN);
     expect(resolves.length).toBeGreaterThanOrEqual(15);
@@ -245,9 +245,15 @@ describe("A07：保存の正本は1つ（画面の中の記録だけ）", () => 
     // 記録を書き換えられるのは useStore() だけ。アプリの部品とやり取りする画面は、どれも useStore を使わない（読むだけ。点検 中-4）
     for (const f of ["src/app/import/page.tsx", "src/components/WidgetSync.tsx", "src/components/NativeStatusCard.tsx", "src/components/NotifyCard.tsx"]) expect(read(f), f).not.toMatch(/\buseStore\b/);
     expect(read("src/lib/store.tsx")).toMatch(/export function useStore\(\): Store/);
-    // window.Capacitor から呼ぶ画面は、ここに挙げた2つだけ
+    // window.Capacitor から呼ぶ画面は、ここに挙げた3つだけ
     const caps = ts.filter((f) => /\.(ts|tsx)$/.test(f) && /nativePromise\(/.test(read(path.join("src", f))));
-    expect(caps.map((f) => f.replaceAll("\\", "/")).sort()).toEqual(["components/NativeStatusCard.tsx", "components/NotifyCard.tsx"]);
+    expect(caps.map((f) => f.replaceAll("\\", "/")).sort()).toEqual(["components/NativeCalendarImportCard.tsx", "components/NativeStatusCard.tsx", "components/NotifyCard.tsx"]);
+    // A5（2026-11-26 平尾さん「全部おすすめで」）：アプリから記録へ入る道は、iPhone のカレンダーの取り込みの1つだけ。
+    // 本人が「読む」「N件を取り込む」を押したときだけで、ファイルの取り込み（.ics）と同じく、件数を見せてから、取り消しの控えつきで足す（消さない・書き換えない）
+    const nc = read("src/components/NativeCalendarImportCard.tsx");
+    expect(nc).toContain('cap.nativePromise("WidgetBridge", "readCalendarEvents", { from, to })');
+    expect(nc).toMatch(/const run = async \(\) => \{[\s\S]*?applyIcsImport\(base, p\.add,[\s\S]*?store\.replaceAll\(next, `iPhone のカレンダーから予定を\$\{p\.add\.length\}件取り込む`, base\)/);
+    expect(nc.match(/store\.(replaceAll|commit|update|set)\w*\(/g)).toEqual(["store.replaceAll("]);
   });
   it("自動バックアップは、記録が0件のときは書かない・いちばん多かったときの控えを残す（空で上書きしない）", () => {
     expect(read("src/components/WidgetSync.tsx")).toContain("if (records === 0) return;");

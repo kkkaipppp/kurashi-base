@@ -26,7 +26,8 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "scheduleReminders", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "reminderStatus", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "requestReminderPermission", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "recognizeText", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "recognizeText", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readCalendarEvents", returnType: CAPPluginReturnPromise)
     ]
 
     static let appGroup = "group.jp.kurashibase.personal"
@@ -412,6 +413,83 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                 store.reset()
                 call.reject("カレンダーの予定を消せませんでした：\(error.localizedDescription)")
             }
+        }
+    }
+
+    // MARK: - iPhone のカレンダーの予定を読む（A5。2026-11-26 平尾さん「全部おすすめで」。端末の中だけで読み、外へは送らない）
+
+    /// from〜to（YYYY-MM-DD。両端を含む。2年まで）の予定を、ほかのカレンダーから読む。
+    /// 「くらしベース」カレンダーと、くらしベースが書いた予定（印つき）は読まない（自分で書いたものを読み戻さない）。
+    /// 繰り返しの予定は、期間の中の回が1つずつ返る。1回に5,000件まで（超えた数は overLimit）
+    @objc func readCalendarEvents(_ call: CAPPluginCall) {
+        guard let fromS = call.getString("from"), let toS = call.getString("to"),
+              let from = Self.date(fromS), let toDay = Self.date(toS),
+              let to = Calendar.current.date(byAdding: .day, value: 1, to: toDay),
+              to > from, to.timeIntervalSince(from) <= 2 * 366 * 86_400 else {
+            call.reject("読む期間が正しくありません（2年まで）")
+            return
+        }
+        let store = Self.eventStore
+        let work: (Bool) -> Void = { granted in
+            let full: Bool
+            if #available(iOS 17.0, *) {
+                full = EKEventStore.authorizationStatus(for: .event) == .fullAccess
+            } else {
+                full = EKEventStore.authorizationStatus(for: .event) == .authorized
+            }
+            guard granted, full else {
+                call.reject("カレンダーへのフルアクセスがないので、予定を読めません。設定アプリの「くらしベース」→「カレンダー」で「フルアクセス」にしてください")
+                return
+            }
+            Self.calendarQueue.async {
+                let own = UserDefaults.standard.string(forKey: Self.calendarIdKey)
+                let cals = store.calendars(for: .event).filter { $0.calendarIdentifier != own && $0.title != Self.calendarTitle }
+                guard !cals.isEmpty else {
+                    call.resolve(["items": [], "overLimit": 0])
+                    return
+                }
+                let f = DateFormatter()
+                f.calendar = Calendar(identifier: .gregorian)
+                f.locale = Locale(identifier: "en_US_POSIX")
+                f.timeZone = .current
+                f.dateFormat = "yyyy-MM-dd HH:mm"
+                var items: [[String: Any]] = []
+                var over = 0
+                let events = store.events(matching: store.predicateForEvents(withStart: from, end: to, calendars: cals))
+                    .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
+                for ev in events where ev.url != Self.ownedMark {
+                    guard let s = ev.startDate, let e = ev.endDate else { continue }
+                    if items.count >= 5_000 { over += 1; continue }
+                    // 終日の終わりは「次の日の0時」か「最後の日の終わり」で来るので、1秒前の日を最後の日にする
+                    let end = ev.isAllDay ? max(s, e.addingTimeInterval(-1)) : max(s, e)
+                    var type = "local"
+                    switch ev.calendar?.type {
+                    case .some(.calDAV): type = "calDAV"
+                    case .some(.exchange): type = "exchange"
+                    case .some(.subscription): type = "subscription"
+                    case .some(.birthday): type = "birthday"
+                    default: type = "local"
+                    }
+                    var item: [String: Any] = [
+                        "title": String((ev.title ?? "").prefix(200)),
+                        "start": f.string(from: s),
+                        "end": f.string(from: end),
+                        "allDay": ev.isAllDay,
+                        "calendar": ev.calendar?.title ?? "",
+                        "calendarType": type,
+                    ]
+                    if let l = ev.location, !l.isEmpty { item["location"] = String(l.prefix(300)) }
+                    if let n = ev.notes, !n.isEmpty { item["notes"] = String(n.prefix(600)) }
+                    items.append(item)
+                }
+                call.resolve(["items": items, "overLimit": over])
+            }
+        }
+        let status = EKEventStore.authorizationStatus(for: .event)
+        if #available(iOS 17.0, *) {
+            if status == .fullAccess { work(true) } else { store.requestFullAccessToEvents { granted, _ in work(granted) } }
+        } else {
+            if status == .authorized { work(true) } else { store.requestAccess(to: .event) { granted, _ in work(granted) } }
         }
     }
 

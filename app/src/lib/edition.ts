@@ -36,6 +36,8 @@ export const FEATURE_EDITIONS = {
   perfLab: { personal: true, public: false },
   /** 続けて使えているか（直近4週間の、記録した日の数。CHARTER の成功1・論点 Q15 は B。2026-11-26 まず自分用だけ） */
   usageDays: { personal: true, public: false },
+  /** iPhone のカレンダーの予定を、自分用アプリで直接読む（A5。2026-11-26 平尾さん「全部おすすめで」。自分用アプリの中だけ） */
+  nativeCalendarRead: { personal: true, public: false },
 } as const satisfies Record<string, Record<Edition, boolean>>;
 
 export type FeatureName = keyof typeof FEATURE_EDITIONS;

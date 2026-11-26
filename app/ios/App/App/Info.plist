@@ -38,7 +38,7 @@
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>くらしベースの予定と固定費の支払日を、iPhone のカレンダーの「くらしベース」カレンダーに書くために使います。ほかのカレンダーは変えません。</string>
+	<string>くらしベースの予定と固定費の支払日を、iPhone のカレンダーの「くらしベース」カレンダーに書くために使います。設定で「iPhone のカレンダーから取り込む」を押したときは、ほかのカレンダーの予定を読みます（読むだけで変えません。外へは送りません）。</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>くらしベースの予定と固定費の支払日を、iPhone のカレンダーの「くらしベース」カレンダーに書くために使います。</string>
 	<key>UIApplicationSceneManifest</key>
