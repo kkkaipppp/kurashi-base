@@ -14,6 +14,7 @@ import { clearSheetDraft, draftTimeLabel, loadSheetDraft, saveSheetDraft } from 
 import { OrphanDraft } from "./OrphanDraft";
 import { newId } from "@/lib/defaults";
 import { IS_PERSONAL } from "@/lib/edition";
+import { eventExpenseStart, similarExpenseOn } from "@/lib/eventExpense";
 import { departureTime } from "@/lib/eventOps";
 import { EventActions } from "./EventActions";
 import { calendarTemplate, isSavableUrl, mapsDirections, safeExternalLink } from "@/lib/externalLinks";
@@ -187,6 +188,25 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
           <div>
             <p className="text-[12px] font-semibold text-ink-3">費用の目安</p>
             <p className="num text-[15px]">{formatYen(ev.cost)}</p>
+            {/* A2（自分用）：この額で支出の入力を始める。保存は入力の画面で本人が押す */}
+            {IS_PERSONAL && eventExpenseStart(ev, day) && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const s = eventExpenseStart(ev, day)!;
+                    onClose();
+                    ui.openTx({ mode: "new", type: "expense", date: s.date, initial: { amount: s.amount, merchant: s.merchant } });
+                  }}
+                  className="mt-1 inline-flex min-h-11 items-center rounded-lg border border-line px-3 text-[13px] font-semibold text-brand hover:bg-brand-soft"
+                >
+                  この額で支出を記録する
+                </button>
+                {similarExpenseOn(data, eventExpenseStart(ev, day)!.date, ev.cost) && (
+                  <p className="mt-1 text-[12px] text-ink-3">同じ日に同じ額の支出が、もう記録されています（二重に記録しないよう気をつけてください）。</p>
+                )}
+              </>
+            )}
           </div>
         )}
 
