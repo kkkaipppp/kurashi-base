@@ -472,7 +472,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         <Field label={draft.type === "expense" ? "店名" : "相手先"} optional htmlFor="tx-merchant" error={errors.merchant}>
           <input id="tx-merchant" value={draft.merchant} onChange={(e) => set("merchant", e.target.value)} className={inputCls} maxLength={100} />
         </Field>
-        {!draft.merchant.trim() && merchants.length > 0 && (
+        {SUGGEST && !draft.merchant.trim() && merchants.length > 0 && (
           <div className="-mt-2 flex flex-wrap items-center gap-1.5" role="group" aria-label="よく使う店名">
             <span className="text-[12px] text-ink-3">よく使う：</span>
             {merchants.map((name) => (
@@ -482,7 +482,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
             ))}
           </div>
         )}
-        {merchantCat && (
+        {SUGGEST && merchantCat && (
           <button type="button" onClick={() => set("categoryId", merchantCat)} className="-mt-2 min-h-11 rounded-full border border-line bg-surface px-3 text-left text-[13px] font-semibold text-ink-2">
             この店はいつも：{catName(merchantCat)}
           </button>

@@ -2,6 +2,7 @@ import { unpaidRecurringOccurrences } from "./allowance";
 import { eventsOnDay } from "./aggregate";
 import { categoryIsInvest, categoryMap } from "./classify";
 import { addDays, daysInMonth, parseDateStr } from "./date";
+import { occurrenceKey } from "./eventOps";
 import { monthLedger } from "./ledger";
 import { BUDGET_EXCLUDES_INVEST } from "./ledgerCore";
 import type { AppData } from "./types";
@@ -41,12 +42,15 @@ export function allowanceBreakdown(d: AppData, today: string, excludeInvest: boo
   const { y, m } = parseDateStr(today);
   const end = `${month}-${String(daysInMonth(y, m)).padStart(2, "0")}`;
   const eventCosts: AllowanceBreakdown["eventCosts"] = [];
-  // 何日かにまたがる予定は1回だけ（繰り返しは回ごと）。終わった回は数えない
+  // 何日かにまたがる予定は1回だけ（繰り返しが付いていても、カレンダーと同じく1つの期間として扱う）。繰り返しは回ごと。
+  // 済みの印は、カレンダーと同じ日（1回きり・何日もの予定は開始日、繰り返しはその回の日）で見る（点検 中-1・低-3）
   const seen = new Set<string>();
   for (let day = today; day <= end; day = addDays(day, 1))
     for (const e of eventsOnDay(d.events, day)) {
-      if (typeof e.cost !== "number" || e.cost <= 0 || (e.doneDates ?? []).includes(day)) continue;
-      const k = (e.repeat ?? "none") === "none" ? e.id : `${e.id}|${day}`;
+      const oneSpan = (e.repeat ?? "none") === "none" || e.startDate !== e.endDate;
+      const doneKey = oneSpan ? e.startDate : occurrenceKey(e, day);
+      if (typeof e.cost !== "number" || e.cost <= 0 || (e.doneDates ?? []).includes(doneKey)) continue;
+      const k = oneSpan ? e.id : `${e.id}|${day}`;
       if (seen.has(k)) continue;
       seen.add(k);
       eventCosts.push({ title: e.title, date: day, cost: e.cost });

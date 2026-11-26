@@ -26,7 +26,7 @@ describe("A2 予定の費用から支出を記録", () => {
   it("保存は本人（入力の画面を開くだけ）・自分用だけ", () => {
     const s = src("components/EventSheet.tsx");
     expect(s).toContain('ui.openTx({ mode: "new", type: "expense", date: s.date, initial: { amount: s.amount, merchant: s.merchant } })');
-    expect(s).toContain("{IS_PERSONAL && eventExpenseStart(ev, day) && (");
+    expect(s).toContain("{PERSONAL_BUILD && eventExpenseStart(ev, day) && (");
   });
 });
 
@@ -60,8 +60,23 @@ describe("A2 店名の候補", () => {
 describe("A4 機種変更・入れ直しの手順（自分用アプリの中だけ）", () => {
   it("書き出し → 新しい iPhone に入れる → 復元 → 件数を確かめてから古い方を消す", () => {
     const g = src("app/guide/page.tsx");
-    expect(g).toContain("{nativeApp && (");
-    for (const w of ["機種変更・入れ直しのときの手順", "バックアップを書き出す", "バックアップから復元…", "件数（記録・予定など）が古い iPhone と同じかを確かめてから"]) expect(g, w).toContain(w);
+    expect(g).toContain("{PERSONAL_BUILD && nativeApp && (");
+    for (const w of ["機種変更・入れ直しのときの手順", "自動バックアップを、iCloud Drive にコピー", "バックアップから復元…", "すべて置き換える", "件数（記録・予定など）が古い iPhone と同じかを確かめてから"]) expect(g, w).toContain(w);
     expect(src("app/settings/page.tsx")).toContain("バックアップから復元…");
+  });
+});
+
+describe("A2 点検の直し（中-2）", () => {
+  it("繰り返しの予定で、どの回か分からないときは出さない。今日のまとめ・次の予定は、その回の日を渡す", () => {
+    expect(eventExpenseStart({ title: "ジム", startDate: "2026-11-03", cost: 1000, repeat: "weekly" })).toBeNull();
+    expect(eventExpenseStart({ title: "ジム", startDate: "2026-11-03", cost: 1000, repeat: "weekly" }, "2026-11-24")?.date).toBe("2026-11-24");
+    const h = src("components/HomeLayout.tsx");
+    expect(h).toContain('ui.openEvent({ mode: "view", id: it.eventId, day: today })');
+    expect(h).toContain('ui.openEvent({ mode: "view", id: next.id, day: next.day })');
+  });
+  it("自分用の部品は、このファイルの中の値で比べる（公開版の組み立てから取り除くため。低-1）", () => {
+    expect(src("components/EventSheet.tsx")).toContain("{PERSONAL_BUILD && eventExpenseStart(ev, day) && (");
+    expect(src("components/TxSheet.tsx")).toContain("{SUGGEST && merchantCat && (");
+    expect(src("app/guide/page.tsx")).toContain("{PERSONAL_BUILD && nativeApp && (");
   });
 });

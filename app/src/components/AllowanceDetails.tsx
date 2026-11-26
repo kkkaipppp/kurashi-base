@@ -31,8 +31,8 @@ export function AllowanceDetails({ today }: { today: string }) {
         </div>
         {b.fixed.length > 0 && (
           <ul className="space-y-0.5 pl-3 text-[12px] opacity-90">
-            {b.fixed.map((f) => (
-              <li key={`${f.name}-${f.date}`} className="flex justify-between gap-2">
+            {b.fixed.map((f, i) => (
+              <li key={`${i}-${f.name}-${f.date}`} className="flex justify-between gap-2">
                 <span className="min-w-0 break-words">
                   {formatDateJa(f.date)} {f.name}
                 </span>
@@ -58,8 +58,8 @@ export function AllowanceDetails({ today }: { today: string }) {
         <div className="border-t border-white/30 py-2">
           <p className="font-semibold">予定に入れた費用の目安（上では引いていません）</p>
           <ul className="num mt-1 space-y-0.5 pl-3 text-[12px] opacity-90">
-            {b.eventCosts.map((e) => (
-              <li key={`${e.title}-${e.date}`} className="flex justify-between gap-2">
+            {b.eventCosts.map((e, i) => (
+              <li key={`${i}-${e.title}-${e.date}`} className="flex justify-between gap-2">
                 <span className="min-w-0 break-words">
                   {formatDateJa(e.date)} {e.title}
                 </span>
