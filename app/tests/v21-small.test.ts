@@ -274,7 +274,7 @@ describe("点検の直し（第2回）", () => {
     const d = withInvest();
     d.events = [{ id: "e", title: "出張", startDate: "2026-11-23", endDate: "2026-11-27", allDay: true, startTime: "", endTime: "", note: "", createdAt: now, updatedAt: now }];
     d.transactions = [tx({ id: "a", date: "2026-11-24", amount: 100 }), tx({ id: "p", date: "2026-11-17", categoryId: "inv", amount: 50000 })];
-    const r = weeklyReview(d, "2026-11-23", "2026-11-25");
+    const r = weeklyReview(d, "2026-11-23", "2026-11-25", true);
     expect(r.events).toBe(1);
     expect(r.prevSpent).toBeNull();
   });

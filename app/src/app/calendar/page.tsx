@@ -160,7 +160,7 @@ function CalendarInner() {
           <thead>
             <tr>
               {WEEK.map((w) => (
-                <th key={w} scope="col" className="pb-1 text-[11px] font-semibold text-ink-3">
+                <th key={w} scope="col" className="pb-1 text-[12px] font-semibold text-ink-3">
                   {w}
                 </th>
               ))}

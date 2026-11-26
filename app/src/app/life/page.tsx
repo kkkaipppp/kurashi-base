@@ -7,7 +7,7 @@ import { Button, Card, Empty, Field, PageHeader, SectionTitle, inputCls } from "
 import { FEATURES } from "@/lib/edition";
 import { newId } from "@/lib/defaults";
 import { todayStr, formatDateJa } from "@/lib/date";
-import { formatSignedYen, formatYen, parseAmount } from "@/lib/money";
+import { formatDiffYen, formatSignedYen, formatYen, parseAmount } from "@/lib/money";
 import { addLifeChange, applyLifeChange, listChanges, removePlanned, totalMonthlyImpact, undoLifeChange, type LifeChange, type LifeItem } from "@/lib/lifeChange";
 
 /**
@@ -69,7 +69,7 @@ export default function LifePage() {
   };
 
   const apply = async (c: LifeChange) => {
-    const ok = await ui.confirm({ title: `「${c.title}」を反映しますか？`, body: `固定費・予算の設定が変わります（過去の記録は変わりません）。あとで取り消せます。\n固定費の合計が、毎月 ${formatSignedYen(totalMonthlyImpact(data, c))}（＋は増える、−は減る）`, ok: "この変更を反映する" });
+    const ok = await ui.confirm({ title: `「${c.title}」を反映しますか？`, body: `固定費・予算の設定が変わります（過去の記録は変わりません）。あとで取り消せます。\n固定費の合計が、毎月 ${formatDiffYen(totalMonthlyImpact(data, c))}（+は増える、−は減る）`, ok: "この変更を反映する" });
     if (!ok) return;
     const ts = new Date().toISOString();
     let applied = 0;
@@ -142,7 +142,7 @@ export default function LifePage() {
                   <li key={i}>{label(it)}</li>
                 ))}
               </ul>
-              <p className="num mt-1">固定費の合計が、毎月 {formatSignedYen(impact)}（＋は増える、−は減る。予算の変更は含みません）</p>
+              <p className="num mt-1">固定費の合計が、毎月 {formatDiffYen(impact)}（+は増える、−は減る。予算の変更は含みません）</p>
             </div>
           )}
           <Button className="w-full" onClick={save} disabled={!canSave}>
@@ -175,7 +175,7 @@ export default function LifePage() {
                   </li>
                 ))}
               </ul>
-              <p className="num mt-1 text-[12px] text-ink-3">固定費の合計が、毎月 {formatSignedYen(totalMonthlyImpact(data, c))}（＋は増える、−は減る）</p>
+              <p className="num mt-1 text-[12px] text-ink-3">固定費の合計が、毎月 {formatDiffYen(totalMonthlyImpact(data, c))}（+は増える、−は減る）</p>
               <div className="mt-2 flex gap-2">
                 {c.status === "planned" && (
                   <>

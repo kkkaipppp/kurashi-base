@@ -71,7 +71,8 @@ describe("公開版の予算の比べ方：すべての支出", () => {
     const d = data();
     // 11/2（月）〜11/8 の週：変動費 3,000（11/2〜11/4）＋ 投資 100,000
     expect(weeklyReview(d, "2026-11-02", "2026-11-08", false).spent).toBe(103000);
-    expect(weeklyReview(d, "2026-11-02", "2026-11-08").spent).toBe(3000); // 既定（引数なし）は今までどおり投資を除く
+    expect(weeklyReview(d, "2026-11-02", "2026-11-08").spent).toBe(103000); // 既定（引数なし）は版の数え方（公開版はすべての支出）
+    expect(weeklyReview(d, "2026-11-02", "2026-11-08", true).spent).toBe(3000); // 自分用の数え方
   });
   it("画面：公開版では「投資を除く」「生活と投資（この年）」を出さない", () => {
     expect(src("components/ForecastCard.tsx")).toContain('LIFE ? "（投資を除く・見込み）" : "（見込み）"');

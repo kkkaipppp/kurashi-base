@@ -7,7 +7,7 @@ import { FEATURES, IS_PERSONAL } from "@/lib/edition";
 import { assessPurchase } from "@/lib/decision";
 import { compareScenarios } from "@/lib/scenarios";
 import { todayStr } from "@/lib/date";
-import { formatSignedYen, formatYen } from "@/lib/money";
+import { formatDiffYen, formatSignedYen, formatYen } from "@/lib/money";
 
 /**
  * 買い物の判断（自分用。NEXT v21 DECISION_SUPPORT）。
@@ -57,14 +57,14 @@ export default function DecidePage() {
                 <tr key={s.key} className="border-t border-line">
                   <td className="py-1.5 pr-2">{s.label}</td>
                   <td className="py-1.5 text-right font-semibold">約{formatYen(s.projected)}</td>
-                  <td className="py-1.5 text-right">{s.diff === 0 ? "—" : formatSignedYen(s.diff)}</td>
+                  <td className="py-1.5 text-right">{s.diff === 0 ? "—" : formatDiffYen(s.diff)}</td>
                   {s.vsBudget !== null && <td className={`py-1.5 text-right ${s.vsBudget < 0 ? "text-expense" : ""}`}>{formatSignedYen(s.vsBudget)}</td>}
                 </tr>
               ))}
             </tbody>
           </table>
           </div>
-          <p className="mt-2 text-[12px] text-ink-3">どれも、今月の月末までの見込みです（確定ではありません）。＋は増える、−は減ります。使った額（{formatYen(sc.basis.spent)}）と、これから払う固定費（{formatYen(sc.basis.unpaidFixed)}）は、どの行でも同じです。変えているのは、残り{sc.basis.daysAhead}日の日々の出費（約{formatYen(sc.basis.variableAhead)}。食費・日用品など、月ごとに変わる出費）だけです。</p>
+          <p className="mt-2 text-[12px] text-ink-3">どれも、今月の月末までの見込みです（確定ではありません）。+は増える、−は減ります。使った額（{formatYen(sc.basis.spent)}）と、これから払う固定費（{formatYen(sc.basis.unpaidFixed)}）は、どの行でも同じです。変えているのは、残り{sc.basis.daysAhead}日の日々の出費（約{formatYen(sc.basis.variableAhead)}。食費・日用品など、月ごとに変わる出費）だけです。</p>
         </Card>
       )}
       {a && (

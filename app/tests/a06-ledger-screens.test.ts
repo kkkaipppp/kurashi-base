@@ -55,7 +55,7 @@ describe("A06：切り替えの前と後で、すべての集計が同じ答え�
         expect(nPer.summarizePeriod(T, w.from, w.to)).toEqual(oPer.summarizePeriod(T, w.from, w.to));
         expect(nPer.dailyInWeek(T, w.from)).toEqual(oPer.dailyInWeek(T, w.from));
         expect(nPer.weeklyTrend(T, w.from)).toEqual(oPer.weeklyTrend(T, w.from));
-        expect(nWr.weeklyReview(d, w.from, today)).toEqual(oWr.weeklyReview(d, w.from, today));
+        expect(nWr.weeklyReview(d, w.from, today, true)).toEqual(oWr.weeklyReview(d, w.from, today)); // 旧実装は投資を除く数え方
         // 「月末の見込み」の一文は 2026-11-26 に公開版も月末の見込みの計算にそろえた（旧実装は公開版で単純なペース）ので、比べるのはそれ以外
         const noPace = (xs: { key: string }[]) => xs.filter((x) => x.key !== "pace");
         expect(noPace(nRep.buildInsights(d, mo, today))).toEqual(noPace(oRep.buildInsights(d, mo, today)));
@@ -146,7 +146,7 @@ describe("A06：同じ条件の金額は、画面どうしで一致する（200�
       }
       // 週の見直しの「今週これまで」＝ その週の毎日の支出から投資を除いたもの（日曜を今日として）
       const wk = nPer.weekRange("2026-11-25");
-      const w = nWr.weeklyReview(d, wk.from, wk.to);
+      const w = nWr.weeklyReview(d, wk.from, wk.to, true);
       const lifeOfWeek = ledgerEntries(d).filter((e) => isLifeExpense(e) && e.date >= wk.from && e.date <= wk.to).reduce((a, e) => a + e.amount, 0);
       expect(w.spent).toBe(lifeOfWeek);
       const invOfWeek = ledgerEntries(d).filter((e) => e.kind === "expense" && e.invest && e.date >= wk.from && e.date <= wk.to).reduce((a, e) => a + e.amount, 0);
