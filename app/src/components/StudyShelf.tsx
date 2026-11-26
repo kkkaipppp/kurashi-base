@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useUI } from "./UIContext";
 import { Button, inputCls } from "./ui";
 import { useData, useStore } from "@/lib/store";
 import { newId } from "@/lib/defaults";
 import { formatDateJa, isValidDateStr } from "@/lib/date";
 import { formatMinutes } from "@/lib/study";
-import { EXAM_RESULT_LABEL, UNIT_LABEL, accuracy, coveredUnits, validAttempt, type ExamResult, type RangeUnit } from "@/lib/studyCore";
+import { EXAM_RESULT_LABEL, UNIT_LABEL, accuracy, bookPlan, bookUnit, coveredUnits, subjectExistsError, validAttempt, type BookPlan, type ExamResult, type RangeUnit } from "@/lib/studyCore";
+import { todayStr } from "@/lib/date";
 import { safeExternalLink } from "@/lib/externalLinks";
 import { toNumber } from "@/lib/goalCond";
 import type { StudyBook, StudyExamAttempt, StudySubject } from "@/lib/types";
@@ -32,27 +33,37 @@ export function StudyShelf({ s }: { s: StudySubject }) {
   const [examForm, setExamForm] = useState<{ date: string; result: ExamResult; score: string; max: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const books = s.books ?? [];
   const logs = data.studyLogs.filter((l) => l.subjectId === s.id);
   const acc = accuracy(logs);
+  const today = todayStr();
+  const review = s.reviewDays ?? 0;
+  const showPlan = !!s.examDate && books.some((b) => b.total && b.status !== "candidate" && b.status !== "done");
 
   const updateSubject = async (patch: (x: StudySubject) => StudySubject) => {
     const ts = new Date().toISOString();
-    const r = await store.commit((d) => ({ ...d, studySubjects: d.studySubjects.map((x) => (x.id === s.id ? { ...patch(x), updatedAt: ts } : x)) }));
+    const r = await store.commit((d) => ({ ...d, studySubjects: d.studySubjects.map((x) => (x.id === s.id ? { ...patch(x), updatedAt: ts } : x)) }), { check: (cur) => subjectExistsError(cur, s.id) });
     if (!r.ok) ui.toast(r.error, "error");
     return r.ok;
   };
   const setBook = (id: string, p: Partial<StudyBook>) => updateSubject((x) => ({ ...x, books: (x.books ?? []).map((b) => (b.id === id ? { ...b, ...p } : b)) }));
 
   const addExam = async () => {
-    if (!examForm || busy) return; // 2回押しても1件（点検 低-1）
+    if (!examForm || busyRef.current) return; // 2回押しても1件（点検 低-1。描き直しを待たずに止める。再点検 L-7）
     if (examForm.date && !isValidDateStr(examForm.date)) return setError("受験日を正しく入れてください");
     const num = toNumber;
     const a: StudyExamAttempt = { id: newId("ex"), date: examForm.date, result: examForm.result, score: num(examForm.score), maxScore: num(examForm.max) };
     if (!validAttempt({ ...a, note: "" })) return setError("点数は0以上・満点以下で入れてください");
+    busyRef.current = true;
     setBusy(true);
-    const ok = await updateSubject((x) => ({ ...x, exams: [...(x.exams ?? []), a] }));
-    setBusy(false);
+    let ok = false;
+    try {
+      ok = await updateSubject((x) => ({ ...x, exams: [...(x.exams ?? []), a] }));
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
     if (ok) {
       setExamForm(null);
       setError(null);
@@ -69,11 +80,28 @@ export function StudyShelf({ s }: { s: StudySubject }) {
       {books.length > 0 && (
         <section aria-label="本棚">
           <h3 className="mb-1 text-[14px] font-semibold text-ink-3">本棚</h3>
+          {showPlan && (
+            <div className="mb-1 flex items-center gap-2 text-[14px] text-ink-2">
+              <span aria-hidden="true">試験の前の復習の日数</span>
+              <input aria-label="試験の前の復習の日数" inputMode="numeric" defaultValue={review ? String(review) : ""} placeholder="0" onBlur={(e) => {
+                const raw = e.target.value.trim();
+                const n = raw === "" ? 0 : toNumber(raw);
+                if (n === null || !Number.isInteger(n) || n < 0 || n > 365) {
+                  e.target.value = review ? String(review) : "";
+                  return ui.toast("復習の日数は0〜365の整数で入れてください", "error");
+                }
+                e.target.value = n ? String(n) : "";
+                if (n !== review) updateSubject((x) => ({ ...x, reviewDays: n }));
+              }} className={`${inputCls} w-20`} />
+              <span aria-hidden="true">日</span>
+            </div>
+          )}
           <ul className="divide-y divide-line border-y border-line">
             {books.map((b) => {
               const bl = logs.filter((l) => l.bookId === b.id);
               const all = bl.filter((l) => l.range && !l.review).map((l) => l.range!);
-              const unit = b.unit ?? all[0]?.unit ?? "page";
+              // 数える単位は、選ぶ欄に出ている単位と同じ（未設定はページ。記録の並び順で変えない。再点検 M-3）
+              const unit: RangeUnit = bookUnit(books, b.id);
               // 教材の単位と同じ範囲だけを数える（違う単位は足さない。o31 C018・点検 中-3）
               const ranges = all.filter((r) => r.unit === unit);
               const otherUnits = all.length - ranges.length;
@@ -98,6 +126,7 @@ export function StudyShelf({ s }: { s: StudySubject }) {
                     {b.total ? `／全体 ${b.total}${UNIT_LABEL[unit as RangeUnit]}（残り ${Math.max(0, b.total - done)}）` : ""}
                     {otherUnits > 0 && `（ほかの単位の記録 ${otherUnits}件は数えていません）`}
                   </p>
+                  {s.examDate && b.status !== "candidate" && b.status !== "done" && <PlanLine plan={bookPlan(b.total, done, today, s.examDate, review)} unit={UNIT_LABEL[unit as RangeUnit]} review={review} />}
                   <div className="flex flex-wrap items-center gap-2">
                     <select aria-label={`${b.title}の状態`} value={b.status ?? ""} onChange={(e) => setBook(b.id, { status: (e.target.value || undefined) as StudyBook["status"] })} className={`${inputCls} w-32`}>
                       {!b.status && <option value="">未設定</option>}
@@ -114,6 +143,7 @@ export function StudyShelf({ s }: { s: StudySubject }) {
                         e.target.value = b.total ? String(b.total) : "";
                         return ui.toast("全体の量は1以上の整数で入れてください", "error");
                       }
+                      if (n !== null) e.target.value = String(n); // 全角で入れても、保存した形（半角）で見せる
                       if (n !== (b.total ?? null)) setBook(b.id, { total: n });
                     }} className={`${inputCls} w-24`} />
                     <select aria-label={`${b.title}の単位`} value={b.unit ?? "page"} onChange={(e) => setBook(b.id, { unit: e.target.value as RangeUnit })} className={`${inputCls} w-24`}>
@@ -193,5 +223,18 @@ export function StudyShelf({ s }: { s: StudySubject }) {
         )}
       </section>
     </div>
+  );
+}
+
+/** 教材の1日の量（o31 F017）。数を出せないときは理由を出す */
+function PlanLine({ plan, unit, review }: { plan: BookPlan; unit: string; review: number }) {
+  if (plan.kind === "noTotal" || plan.kind === "noExam") return null;
+  if (plan.kind === "done") return <p className="text-[14px] text-ink-3">全体の量まで進みました</p>;
+  if (plan.kind === "past") return null;
+  if (plan.kind === "noDays") return <p className="text-[14px] text-warn">試験まで{plan.days}日で、復習の{review}日を除くと進める日がありません。復習の日数を見直してください</p>;
+  return (
+    <p className="num text-[14px] text-ink-2">
+      試験日までに終えるには 1日 <b>{plan.perDay}{unit}</b>（残り {plan.remaining}{unit}・{plan.workDays}日{review > 0 ? `。復習の${review}日を除く` : ""}）
+    </p>
   );
 }

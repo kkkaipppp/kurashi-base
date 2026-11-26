@@ -14,6 +14,10 @@ import {
   TIMER_MAX_MIN,
   UNIT_LABEL,
   addStudyLogOnce,
+  studyLogExistsError,
+  subjectExistsError,
+  liveBookId,
+  bookUnit,
   lastStudy,
   minutesOn,
   parseTimer,
@@ -155,14 +159,23 @@ export function StudyTop() {
 function FinishSheet({ timer, onClose }: { timer: TimerState; onClose: () => void }) {
   const data = useData();
   const books = data.studySubjects.find((s) => s.id === timer.subjectId)?.books ?? [];
-  const [bookId, setBookId] = useState(timer.bookId ?? "");
+  // 消えた教材は選ばない（記録に消えた教材の ID を入れない。再点検 L-3）
+  const initialBook = liveBookId(books, timer.bookId);
+  const [bookId, setBookIdRaw] = useState(initialBook);
+  const unitOf = (id: string): RangeUnit => bookUnit(books, id);
   const store = useStore();
   const ui = useUI();
   const measured = timerMinutes(timer, new Date());
-  const [minutes, setMinutes] = useState(String(Math.max(1, Math.min(TIMER_MAX_MIN, measured.minutes))));
+  const [initialMinutes] = useState(String(Math.max(1, Math.min(TIMER_MAX_MIN, measured.minutes))));
+  const [minutes, setMinutes] = useState(initialMinutes);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [unit, setUnit] = useState<RangeUnit>("page");
+  // 範囲の単位は、選んだ教材の単位から始める（本棚は教材の単位の記録だけを数えるため。再点検 M-2）
+  const [unit, setUnit] = useState<RangeUnit>(unitOf(initialBook));
+  const setBookId = (id: string) => {
+    setBookIdRaw(id);
+    if (id) setUnit(unitOf(id));
+  };
   const [questions, setQuestions] = useState("");
   const [correct, setCorrect] = useState("");
   const [review, setReview] = useState(false);
@@ -170,7 +183,7 @@ function FinishSheet({ timer, onClose }: { timer: TimerState; onClose: () => voi
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const dirty = [from, to, questions, correct, note].some((x) => x.trim() !== "") || review;
+  const dirty = [from, to, questions, correct, note].some((x) => x.trim() !== "") || review || minutes !== initialMinutes || bookId !== initialBook;
   // 閉じても、タイマーは残る（記録はまだ）。入れた範囲・問題数・メモは消えるので、確かめる（点検 指摘5）
   const requestClose = async () => {
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "タイマーは残ります。入れた範囲・問題数・メモは消えます。", ok: "破棄する", danger: true }))) return;
@@ -205,9 +218,9 @@ function FinishSheet({ timer, onClose }: { timer: TimerState; onClose: () => voi
       createdAt: ts,
       updatedAt: ts,
     };
-    const r = await store.commit((d) => addStudyLogOnce(d, log));
+    const r = await store.commit((d) => addStudyLogOnce(d, log), { check: (cur) => subjectExistsError(cur, timer.subjectId) ?? studyLogExistsError(cur, log.id) });
     setBusy(false);
-    if (!r.ok) return setError(`保存できませんでした（${r.error}）。タイマーは残しています`);
+    if (!r.ok) return setError(`保存できませんでした（${r.error}）。タイマーは残しています。止めるときは「記録せずに止める」を押してください`);
     writeTimer(null);
     ui.toast(`${formatMinutes(m)}を記録しました`);
     onClose();

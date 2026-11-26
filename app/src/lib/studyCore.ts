@@ -152,6 +152,41 @@ export function hoursShortage(needHours: number, weeks: number, hoursPerWeek: nu
   return { capacity, shortage: Math.max(0, needHours - capacity) };
 }
 
+/**
+ * 教材ごとの計画（o31 F017）：残りの量を、今日から試験日の前日までの日数（復習の日を除く）で割る。
+ * - 今日も勉強できる日に数える。試験日そのものは数えない
+ * - 全体の量が無い・試験日が無い・過ぎた・復習の日で勉強の日が残らない、は数を出さずに理由を返す（作り話の数を出さない）
+ */
+export type BookPlan =
+  | { kind: "noTotal" }
+  | { kind: "done" }
+  | { kind: "noExam" }
+  | { kind: "past" }
+  | { kind: "noDays"; days: number }
+  | { kind: "ok"; perDay: number; workDays: number; remaining: number };
+
+export function bookPlan(total: number | null | undefined, done: number, today: string, examDate: string, reviewDays = 0): BookPlan {
+  if (!total || total <= 0) return { kind: "noTotal" };
+  const remaining = Math.max(0, total - done);
+  if (remaining === 0) return { kind: "done" };
+  if (!examDate) return { kind: "noExam" };
+  const days = Math.round((Date.parse(`${examDate}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
+  if (!Number.isFinite(days) || days <= 0) return { kind: "past" };
+  const p = perDayPlan(remaining, days, Math.max(0, reviewDays));
+  if (p.perDay === null) return { kind: "noDays", days };
+  return { kind: "ok", perDay: p.perDay, workDays: p.workDays, remaining };
+}
+
+/** 勉強の終わりで最初に選ぶ教材：今もある教材だけ（消えた教材の ID を記録に入れない） */
+export function liveBookId(books: { id: string }[], id: string | undefined): string {
+  return id && books.some((b) => b.id === id) ? id : "";
+}
+
+/** 教材の範囲の単位（未設定はページ）。本棚で数える単位と、勉強の終わりで最初に出す単位を同じにする */
+export function bookUnit(books: { id: string; unit?: RangeUnit }[], id: string): RangeUnit {
+  return books.find((b) => b.id === id)?.unit ?? "page";
+}
+
 /* ---------------- 受験の回 ---------------- */
 
 export type ExamResult = "planned" | "passed" | "failed" | "absent";
@@ -185,6 +220,16 @@ export function isPassed(attempts: ExamAttempt[] | undefined): boolean {
 
 /* ---------------- 記録を足す（同じ ID は1回だけ） ---------------- */
 
+
+/** タイマーの記録がもうあるか（ほかのタブで先に終わらせた）。あれば保存せず、その理由を返す（「記録しました」と言わない。反証 3） */
+export function studyLogExistsError(d: Pick<AppData, "studyLogs">, id: string): string | null {
+  return d.studyLogs.some((l) => l.id === id) ? "この勉強は、ほかのタブ（または別の画面）ですでに記録されています。この画面で入れた内容は保存していません" : null;
+}
+
+/** 資格がまだあるか（消された資格に保存して、成功と言わない。反証 2） */
+export function subjectExistsError(d: Pick<AppData, "studySubjects">, id: string): string | null {
+  return d.studySubjects.some((s) => s.id === id) ? null : "この資格は、ほかのタブなどで削除されています";
+}
 
 /** 勉強の記録を足す。同じ ID がもうあれば何もしない（タイマーの終了を2回押しても1件。o30 T021） */
 export function addStudyLogOnce(d: AppData, log: StudyLog): AppData {

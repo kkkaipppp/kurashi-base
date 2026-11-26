@@ -73,7 +73,9 @@ describe("o31 点検の直し（中-5・低-3）", () => {
     expect(judge(food, { periodOpen: false })).toBe("met");
     expect(periodOpen("2026-12-31", "2026-11-27")).toBe(true);
     expect(periodOpen("2026-11-26", "2026-11-27")).toBe(false);
-    expect(periodOpen("", "2026-11-27")).toBe(true);
+    // 期限なしは途中にしない（いつまでも未判定で達成できなくなるため。2026-11-27 再点検 L-5・反証 5 で変えた。DECISIONS 2026-11-27）
+    expect(periodOpen("", "2026-11-27")).toBe(false);
+    expect(periodOpen("2026-11-27", "2026-11-27")).toBe(true);
     // 期間の途中に「以下」だけで達成の記録を作らない
     expect(snapshotAchievement("t", "and", [food], { periodOpen: true }).verdict).toBe("unknown");
   });

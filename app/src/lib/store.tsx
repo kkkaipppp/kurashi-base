@@ -35,7 +35,8 @@ interface Store {
   data: AppData | null;
   /** 保存先の種類（localStorage／IndexedDB）。画面の「診断情報」用 */
   storageKind: Repository["kind"];
-  commit: (fn: (d: AppData) => AppData) => P;
+  /** check：保存の列の中で、最新のデータに対して確かめる。文字列を返したら保存しない */
+  commit: (fn: (d: AppData) => AppData, opts?: { check?: (cur: AppData) => string | null }) => P;
   addTx: (t: TxInput) => P<SaveResult & { id?: string }>;
   /** snapshot：編集を始めたときの記録の JSON。今の記録と違えば保存しない（別タブとの競合） */
   updateTx: (id: string, t: TxInput, snapshot?: string) => P;
@@ -136,7 +137,7 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
       data: state.data,
       corruptRaw: state.raw,
       storageKind: core.repo.kind,
-      commit: (fn) => commit(fn),
+      commit: (fn, opts) => commit(fn, opts?.check ? { check: opts.check } : undefined),
       addTx: (t) => {
         const id = newId("tx");
         const ts = now();
