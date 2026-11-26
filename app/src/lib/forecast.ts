@@ -11,6 +11,7 @@ import type { AppData } from "./types";
  * - 変動費の1日あたり：過去28日（今日を含まない）の、固定費でも投資でもない支出 ÷ 日数。記録が始まった日より前は数えない
  * - 記録が少ない（その窓の日数が7日未満・変動費の記録が3件未満）ときは、見込みを出さない（「記録なし」と「0円」を取り違えない）
  * - 確定した記録ではない。画面では「見込み」と書き、破線などで確定と区別する
+ * - 今月の記録は、今日より後の日付のもの（先に入れた予定の支払いなど）も「これまで」に数える。予算の使用率と同じ範囲（2026-11-26 平尾さん「全部おすすめで」＝承認待ち⑤。点検 低-5・低-7）
  */
 export const FORECAST_WINDOW_DAYS = 28;
 export const FORECAST_MIN_DAYS = 7;
@@ -19,7 +20,7 @@ export const FORECAST_MIN_TX = 3;
 export type Forecast =
   | {
       ok: true;
-      /** 今月これまでの生活費 */
+      /** 今月の記録の合計（今日より後の日付の記録も含む。予算の使用率と同じ範囲） */
       spent: number;
       /** まだ来る今月の固定費 */
       unpaidFixed: number;
@@ -52,7 +53,8 @@ export function forecastMonthEnd(
   const expenses = life;
   if (expenses.length === 0) return { ok: false, reason: "noData" };
 
-  const spent = expenses.filter((t) => t.date.slice(0, 7) === month && t.date <= today).reduce((a, t) => a + t.amount, 0);
+  // 予算の使用率（monthLedger）と同じく、今月の記録はすべて（今日より後の日付も）数える
+  const spent = expenses.filter((t) => t.date.slice(0, 7) === month).reduce((a, t) => a + t.amount, 0);
   // 投資を除くとき：投資の固定費（積立など）も、生活費の見込みに入れない
   const unpaidFixed = unpaidRecurringThisMonth(data.recurring, today, excludeInvest ? (r) => categoryIsInvest(cats.get(r.categoryId)) : undefined);
 
@@ -99,9 +101,13 @@ export function forecastCurve(data: AppData, today: string, excludeInvest: boole
   const month = today.slice(0, 7);
   const cats = categoryMap(data);
   const perDay = new Array<number>(dim).fill(0);
+  // 今日より後の日付の記録は、見込みの線のその日に載せる（合計は月末の見込みと同じ）
+  const laterOn = new Array<number>(dim + 1).fill(0);
   for (const t of life) {
-    if (t.date.slice(0, 7) !== month || t.date > today) continue;
-    perDay[Number(t.date.slice(8, 10)) - 1] += t.amount;
+    if (t.date.slice(0, 7) !== month) continue;
+    const day = Number(t.date.slice(8, 10));
+    if (t.date > today) laterOn[day] += t.amount;
+    else perDay[day - 1] += t.amount;
   }
   const actual: number[] = [];
   let acc = 0;
@@ -116,7 +122,7 @@ export function forecastCurve(data: AppData, today: string, excludeInvest: boole
   const projected: number[] = [actual[d - 1]];
   let cur = actual[d - 1];
   for (let day = d + 1; day <= dim; day++) {
-    cur += f.dailyVariable + fixedOn[day];
+    cur += f.dailyVariable + fixedOn[day] + laterOn[day];
     projected.push(cur);
   }
   // 月末の日が今日なら、固定費の残りを今日に足す

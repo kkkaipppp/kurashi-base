@@ -230,7 +230,7 @@ describe("A06：手で決めた期待値", () => {
       "lib/monthBreakdown.ts": [7, "台帳の出来事と NISA の記録を足す"],
       "lib/weeklyReview.ts": [4, "台帳の出来事を足す・固定費の予定"],
       "lib/report.ts": [3, "台帳の出来事を足す"],
-      "lib/forecast.ts": [4, "台帳の出来事と、固定費の予定を足す"],
+      "lib/forecast.ts": [5, "台帳の出来事と、固定費の予定を足す・今日より後の日付の記録を見込みの線のその日に載せる（承認待ち⑤）"],
       "lib/balance.ts": [4, "台帳の出来事（ledgerEvents）を足す"],
       "lib/refund.ts": [2, "返金の記録の合計（台帳の保存則と同じ）"],
       "lib/allowance.ts": [1, "固定費の予定（記録ではない）"],
