@@ -17,7 +17,7 @@ export const FORECAST_MIN_TX = 3;
 export type Forecast =
   | {
       ok: true;
-      /** 今月これまでの生活費 */
+      /** 今月の記録の合計（承認⑤から、今日より後の日付も含む） */
       spent: number;
       /** まだ来る今月の固定費 */
       unpaidFixed: number;
