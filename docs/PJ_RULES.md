@@ -15,7 +15,7 @@
 3. 決めたことを `docs/DECISIONS.md`、起きたこと・リスクを `docs/RAID.md` に
 4. `cd app && npm run check` を通す（落ちたまま終えない。落ちたら正直に書く）
 5. `py -3 -I tools/progress.py sync` を実行する。WBS・ロードマップ・論点から、進捗の画面（`docs/progress/PROGRESS.html`）と本部への報告（`portfolio/report.json`・`details.json`）が作り直され、親フォルダ `00_全体進捗/暮らしベース/` に同期される。そのあと PJ 内の検査（`py -3 -I tools/report_check.py portfolio/report.json` と `py -3 -I tools/details_check.py portfolio/details.json`）に通す。親フォルダ `00_全体進捗/暮らしベース/` が無いときは、その同期は飛ばされる（PJ の中の報告だけで完結する）。`tools/details_check.py` は本部の `details_check.py` を写したもの（出所と元の SHA-256 を先頭に記録）
-6. 最後の返信で、sync が出す「WBS の変化」と「本部への報告」（今いるマイルストン・完了数・次の作業・判断待ち）を平尾さんに伝える
+6. 最後の返信で、sync が出す「WBS の変化」と「本部への報告」（今いるマイルストン・完了数・次の作業・判断待ち）を平尾さんに伝える。コミット番号は記憶や要約から書かず、`git log --oneline` を master と feat/ios-widget の両方で見て写す（LESSONS L-18）
 7. 報告・相談の先は「PJ本部」（local_f790714b-5d36-465e-a67a-ceb9fe4dd5ac。スタンプ工房・受託デスク・暮らしベース・BOARD LOUNGE を見る。2026-11-23 平尾さんの決定で本部を「本部・PJ本部・定常本部」の3つに分けた）。プレイブックはこれまでどおり本部から届く。`portfolio/report.json` はこれまでどおり書く
 
 ## WBS・ロードマップ・論点の更新（2026-11-22 平尾さんの指示）
@@ -112,3 +112,4 @@
 - 2026-11-25｜「機能を足すのを止める日」を中止｜平尾さんの指示（アンケートの結果で本人が判断）
 - 2026-11-25｜「モデルの使い分け」を追加（基本は Sonnet・重い4場面で「Opus か Fable 推奨」と書く）｜本部の配布（平尾さんの指示）
 - 2026-11-25｜テーラリングの「PJ固有のスキル：作らない」を「PJ固有の Agent・Skill：使う」に変更（専属チーム v2 を適用）｜平尾さんの指示（本部の候補 cand_kurashi_v2。OK はこのチャットで本人から取った）
+- 2026-11-26｜終わり 6 に「コミット番号は git log から写す」を追加｜振り返り（L-18。本部経由の平尾さんの依頼）
