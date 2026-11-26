@@ -52,7 +52,7 @@ export function benchCases(d: AppData, today: string): [string, () => unknown][]
     ["保存の形にする（保存のたび）", () => JSON.stringify(d)],
     ["ホームの今月", () => monthLedger(d, mk, today)],
     ["ホーム・履歴の並べ替え（全件）", () => sortTxDesc(d.transactions)],
-    ["振り返りの気づき", () => buildInsights(d, mk, today)],
+    ["家計簿の気づき", () => buildInsights(d, mk, today)],
     ["カレンダーの1か月（31日）", () => {
       for (let i = 0; i < 31; i++) {
         const day = addDays(`${mk}-01`, i);
@@ -60,8 +60,8 @@ export function benchCases(d: AppData, today: string): [string, () => unknown][]
         eventsOnDay(d.events, day);
       }
     }],
-    ["振り返りの月", () => [summarizeMonth(d.transactions, mk), monthBreakdown(d, mk, today)]],
-    ["振り返りの年（月の内訳×12）", () => {
+    ["家計簿の月", () => [summarizeMonth(d.transactions, mk), monthBreakdown(d, mk, today)]],
+    ["家計簿の年（月の内訳×12）", () => {
       for (let m = 1; m <= 12; m++) monthBreakdown(d, `${year}-${String(m).padStart(2, "0")}`, today);
       monthlyInYear(d.transactions, year);
     }],
@@ -71,7 +71,7 @@ export function benchCases(d: AppData, today: string): [string, () => unknown][]
     ["検索（店名）", () => searchAll(d, "店12")],
     ["データの点検", () => dataHealth(d, today)],
     ["提案", () => suggestions(d, today, { inbox: true })],
-    ["未整理の記録", () => inboxGroups(d)],
+    ["未分類の記録", () => inboxGroups(d)],
     ["バックアップを作る", () => JSON.stringify(buildBackup(d))],
     ["復元：ファイルを読む（プレビュー）", () => parseBackup(backupText)],
     ["復元：関係の検査", () => validateRelationships(incoming)],

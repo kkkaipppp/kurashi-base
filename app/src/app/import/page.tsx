@@ -126,12 +126,12 @@ export default function ImportPage() {
           {native ? (
             <>
               <span className="font-bold text-brand">文字の読み取りは、iPhone の中だけで行います。</span>
-              画像の文字から、日付・金額・店名の「候補」を入力欄に入れます。読み間違いがあるので、必ず確かめてから保存してください（確認するまで、取引は登録されません）。
+              画像の文字から、日付・金額・店名の「候補」を入力欄に入れます。読み間違いがあるので、必ず確かめてから保存してください（保存するまで、記録は追加されません）。
             </>
           ) : (
             <>
               <span className="font-bold text-warn">文字の自動読み取り（OCR）は、まだありません。</span>
-              画像を見ながら金額・日付・店名を入力して登録します。入力した内容を確認するまで、取引は登録されません。
+              画像を見ながら金額・日付・店名を入力します。保存するまで、記録は追加されません。
             </>
           )}
         </p>
@@ -170,7 +170,7 @@ export default function ImportPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-1 text-ink-2">別の支出として登録するときだけ、先に進んでください。</p>
+                <p className="mt-1 text-ink-2">別の支出として追加するときだけ、先に進んでください。</p>
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">
@@ -198,7 +198,7 @@ export default function ImportPage() {
           <div role="alert" className="mt-3 space-y-2 rounded-xl bg-expense-soft px-3 py-2">
             <p className="text-[14px] font-medium text-danger">{error}</p>
             <Button variant="secondary" onClick={() => ui.openTx({ mode: "new", type: "expense" })} className="w-full">
-              画像なしで手入力する
+              画像なしで入力する
             </Button>
           </div>
         )}

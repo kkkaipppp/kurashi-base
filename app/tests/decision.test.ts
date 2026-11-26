@@ -65,6 +65,6 @@ describe("買い物の判断", () => {
     expect(page).toContain("買うかどうかは、決めません");
     expect(page).not.toMatch(/買うべき|買わない方|おすすめ/); // 画面の言葉は、判断を押しつけない
     expect(page + src("lib/decision.ts")).not.toMatch(/fetch\(|XMLHttpRequest|sendBeacon/);
-    expect(src("app/menu/page.tsx")).toContain('href: "/decide"');
+    expect(src("lib/menuGroups.ts")).toContain('href: "/decide"'); // o31 F003：メニューの一覧は app/menu/page.tsx から lib/menuGroups.ts に移した（中身は同じ。見る場所だけ変えた）
   });
 });

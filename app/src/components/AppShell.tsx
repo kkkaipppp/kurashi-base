@@ -8,6 +8,12 @@ import { LOST_STORE_PREFIX, NO_OLD_RECORDS } from "@/lib/lostStore";
 import { UIProvider, useUI } from "./UIContext";
 import { WidgetSync } from "./WidgetSync";
 import { Button, IconCalendar, IconChart, IconGrid, IconHome, IconPlus } from "./ui";
+import dynamic from "next/dynamic";
+
+// 自分用の下のメニュー・起動時の画面・最近開いた機能（o31 F001〜F003）は、別のファイルにして遅れて読む。
+// 版をこのファイルの中で直接比べるので、公開版の組み立てには入らない（点検 中-2）
+const PERSONAL_SHELL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+const PersonalShell = PERSONAL_SHELL ? dynamic(() => import("./PersonalShell").then((m) => m.PersonalShell), { ssr: false }) : null;
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -32,7 +38,7 @@ function Gate({ children }: { children: ReactNode }) {
     <UIProvider>
       <WidgetSync />
       <div className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pb-28">{children}</div>
-      <BottomNav />
+      {PersonalShell ? <PersonalShell /> : <BottomNav />}
     </UIProvider>
   );
 }
@@ -83,7 +89,7 @@ function CorruptScreen() {
         onClick={async () => {
           const ask = lost
             ? "記録がない状態から始めます（古い記録は元の場所に残します）。このあと、設定の「バックアップから復元」で最新の記録を戻してください。実行しますか？"
-            : "読み込めないデータを退避し、記録がない状態から始めます。実行しますか？";
+            : "読み込めないデータを別の場所に移して、記録がない状態から始めます。よろしいですか？";
           if (!confirm(ask)) return;
           const r = await s.resetCorrupt();
           if (!r.ok) setMsg(r.error);
@@ -103,7 +109,7 @@ function CorruptScreen() {
 const NAV = [
   { href: "/", label: "ホーム", Icon: IconHome },
   { href: "/calendar", label: "カレンダー", Icon: IconCalendar },
-  { href: "/report", label: "振り返り", Icon: IconChart },
+  { href: "/report", label: "家計簿", Icon: IconChart },
   { href: "/menu", label: "メニュー", Icon: IconGrid },
 ];
 const MAIN = ["/", "/calendar", "/report"];
@@ -135,7 +141,7 @@ function BottomNav() {
             type="button"
             onClick={() => ui.openAdd({ date: path.startsWith("/calendar") ? (ui.calendarDate ?? undefined) : undefined })}
             className="-mt-6 inline-flex size-14 items-center justify-center rounded-full bg-brand text-brand-ink shadow-lg ring-4 ring-bg"
-            aria-label="追加する（支出・収入・予定・タスク）"
+            aria-label="追加する（支出・収入・予定・やること）"
           >
             <IconPlus className="size-7" />
           </button>

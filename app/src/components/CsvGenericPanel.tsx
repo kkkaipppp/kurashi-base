@@ -87,8 +87,9 @@ export function CsvGenericPanel({ table, cfg, encoding, onChange }: { table: Tab
       </div>
       <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[13px]">
         <input type="checkbox" checked={cfg.newCategories} onChange={(e) => onChange({ ...cfg, newCategories: e.target.checked })} className="size-5 accent-[var(--brand)]" />
-        今のカテゴリにない名前は、新しいカテゴリとして作る（しないときは「その他」にします）
+        今はないカテゴリは新しく作る
       </label>
+      <p className="-mt-1 pl-7 text-[12px] text-ink-3">オフのときは「その他」に入れます</p>
       <div>
         <p className="mb-1 text-[12px] font-semibold text-ink-2">はじめの3行（そのまま）</p>
         <div className="overflow-x-auto rounded-lg border border-line bg-surface">

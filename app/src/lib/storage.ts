@@ -30,7 +30,7 @@ function getLocal(): KV | null {
 }
 
 export function loadData(kv: KV | null = getLocal()): LoadResult {
-  if (!kv) return { status: "unavailable", error: "このブラウザではデータを保存できません（プライベートモードや保存の制限が原因の可能性があります）" };
+  if (!kv) return { status: "unavailable", error: "このブラウザではデータを保存できません（プライベートブラウズや保存の制限が原因の可能性があります）" };
   let raw: string | null;
   try {
     raw = kv.getItem(STORAGE_KEY);
@@ -225,7 +225,7 @@ export function wipeAllAppData(expectedRaw: string | null, kv: KV | null = getLo
       } catch { failures.push(key); }
     }
     if (failures.length) return { ok: false, error: "削除を完了できず、元のデータもすべては戻せませんでした。画面を閉じず、残っている記録をバックアップしてください" };
-    return { ok: false, error: "削除できませんでした。元の記録は復旧しました。再度お試しください" };
+    return { ok: false, error: "削除できませんでした。元の記録は戻しました。もう一度お試しください" };
   }
 }
 
@@ -235,7 +235,7 @@ export function quarantineAndReset(raw: string, kv: KV | null = getLocal()): Sav
   try {
     kv.setItem(`kurashi-base:corrupt:${Date.now()}`, raw);
   } catch {
-    return { ok: false, error: "壊れたデータを別の場所に移せなかったため、初期化をやめました" };
+    return { ok: false, error: "壊れたデータを別の場所に移せなかったため、最初から始めるのをやめました" };
   }
   return saveData(emptyData(), kv);
 }

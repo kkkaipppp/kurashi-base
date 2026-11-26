@@ -17,7 +17,7 @@ export function WeeklyReviewCard({ from, today, isThisWeek }: { from: string; to
   return (
     <>
       <Card>
-        <SectionTitle>この週のふりかえり</SectionTitle>
+        <SectionTitle>この週のまとめ</SectionTitle>
         <dl className="num space-y-1 text-[14px]">
           <div className="flex justify-between gap-2">
             <dt className="text-ink-2">{BUDGET_EXCLUDES_INVEST ? "使ったお金（生活費・投資を除く）" : "使ったお金"}</dt>
@@ -56,13 +56,13 @@ export function WeeklyReviewCard({ from, today, isThisWeek }: { from: string; to
                   固定費：{f.name} {formatYen(f.amount)}（{formatDateJa(f.date)}）
                 </li>
               ))}
-              {r.next.tasks > 0 && <li>期限のタスクが{r.next.tasks}件あります</li>}
+              {r.next.tasks > 0 && <li>期限のあるやることが{r.next.tasks}件あります</li>}
               {r.next.renewals > 0 && <li>契約の更新日が{r.next.renewals}件あります</li>}
             </ul>
           ) : (
             <p className="text-[13px] text-ink-3">予定されているものは、まだありません。</p>
           )}
-          <p className="mt-2 text-[12px] text-ink-3">登録されているものだけです（これから変わることがあります）。</p>
+          <p className="mt-2 text-[12px] text-ink-3">入力済みのものだけです（これから変わることがあります）。</p>
         </Card>
       )}
     </>

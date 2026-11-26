@@ -27,8 +27,8 @@ export function buildNavi(data: AppData, today: string): NaviItem[] {
   for (const t of data.tasks) {
     if (t.done || !t.due) continue;
     const d = daysBetween(today, t.due);
-    if (d < 0) items.push({ key: `task-${t.id}`, tone: "warn", title: t.title, sub: `タスク・${dueLabel(d)}`, href: `/tasks?open=${t.id}` });
-    else if (d === 0) items.push({ key: `task-${t.id}`, tone: "today", title: t.title, sub: "タスク・今日が期限", href: `/tasks?open=${t.id}` });
+    if (d < 0) items.push({ key: `task-${t.id}`, tone: "warn", title: t.title, sub: `やること・${dueLabel(d)}`, href: `/tasks?open=${t.id}` });
+    else if (d === 0) items.push({ key: `task-${t.id}`, tone: "today", title: t.title, sub: "やること・今日が期限", href: `/tasks?open=${t.id}` });
   }
 
   for (const r of data.recurring) {

@@ -22,12 +22,12 @@ export function OrphanDraft({ kind, id, onNew, onDone }: { kind: DraftKind; id: 
     });
     if (!ok) return;
     const r = moveSheetDraftToNew(kind, id);
-    if (r === "busy") return ui.toast("新しい入力に別の下書きがあります。先にそちらを保存するか捨ててください", "error");
+    if (r === "busy") return ui.toast("新しい入力に別の下書きがあります。先にそちらを保存するか破棄してください", "error");
     if (r !== "ok") return ui.toast("下書きを移せませんでした", "error");
     onNew();
   };
   const discard = async () => {
-    const ok = await ui.confirm({ title: "下書きを捨てますか？", body: "この記録の下書きを端末から消します。", ok: "捨てる", danger: true });
+    const ok = await ui.confirm({ title: "下書きを破棄しますか？", body: "この記録の下書きを端末から消します。", ok: "破棄する", danger: true });
     if (!ok) return;
     clearSheetDraft(kind, id);
     onDone();
@@ -37,7 +37,7 @@ export function OrphanDraft({ kind, id, onNew, onDone }: { kind: DraftKind; id: 
       <p className="text-[14px] font-semibold">{draftTimeLabel(d.savedAt)} の下書きが残っています</p>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <Button variant="secondary" onClick={discard}>
-          捨てる
+          破棄する
         </Button>
         <Button onClick={asNew}>新しい記録として入れ直す</Button>
       </div>

@@ -29,7 +29,7 @@ export const TODAY_SHOWN = 8;
 const partialLeft = (r: { amount: number; nextDueDate: string; partialPaid?: { due: string; paid: number } }) =>
   r.partialPaid && r.partialPaid.due === r.nextDueDate ? Math.max(0, r.amount - r.partialPaid.paid) : r.amount;
 const partialNote = (r: { amount: number; nextDueDate: string; partialPaid?: { due: string; paid: number } }) =>
-  r.partialPaid && r.partialPaid.due === r.nextDueDate ? `（一部 ${formatYen(r.partialPaid.paid)} は支払い済み）` : "";
+  r.partialPaid && r.partialPaid.due === r.nextDueDate ? `（一部 ${formatYen(r.partialPaid.paid)} は支払済み）` : "";
 
 export function buildTodayItems(data: AppData, today: string): TodayItem[] {
   const out: TodayItem[] = [];
@@ -55,7 +55,7 @@ export function buildTodayItems(data: AppData, today: string): TodayItem[] {
     // 今日が期限で、予定にしたタスクは、予定として出ている（二重に出さない）。期限が過ぎたものは、予定の日が過去なので、ここに出す
     if (t.due === today && taskIsEvent(data, t)) continue;
     const late = t.due < today;
-    out.push({ key: `task-${t.id}`, sort: late ? `0${t.due}` : "3", time: late ? "期限切れ" : "期限", title: t.title, sub: late ? `期限を${daysBetween(t.due, today)}日過ぎています` : "今日が期限のタスク", warn: late, href: `/tasks?open=${t.id}` });
+    out.push({ key: `task-${t.id}`, sort: late ? `0${t.due}` : "3", time: late ? "期限切れ" : "期限", title: t.title, sub: late ? `期限を${daysBetween(t.due, today)}日過ぎています` : "今日が期限のやること", warn: late, href: `/tasks?open=${t.id}` });
   }
   for (const c of data.contracts)
     if (c.status === "active" && c.renewalDate === today) out.push({ key: `ct-${c.id}`, sort: "3", time: "期限", title: `${c.name}の更新日`, sub: "契約", href: `/contracts?open=${c.id}` });

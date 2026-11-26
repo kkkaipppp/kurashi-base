@@ -94,6 +94,27 @@ export interface StudyBook {
   title: string;
   url: string; // "" = なし
   note: string;
+  /** o31 F013（任意・足すだけ）：状態（購入候補・持っている・勉強中・終わった）。無い古い教材は「持っている」として扱う */
+  status?: "candidate" | "owned" | "studying" | "done";
+  /** 版（例「2026年版」）。同じ名前でも版が違えば別の教材（自動でまとめない。C013） */
+  edition?: string;
+  /** 全体の量（ページ数など）と単位。残りの量の計算に使う */
+  total?: number | null;
+  unit?: "page" | "problem" | "chapter" | "lecture";
+  /** ほかの資格でも使う（同じ教材を2つ目の資格に結びつける。元の資格から移さない。T013） */
+  alsoSubjectIds?: string[];
+  /** 買ったときの支出の記録（家計簿の正本は取引。ここは結びつけだけで、金額を数えない。D027） */
+  txId?: string;
+}
+
+/** o31 F012（任意・足すだけ）：受験の回。学習の記録とは別に持つ（C012） */
+export interface StudyExamAttempt {
+  id: string;
+  date: string; // "" = 未定
+  result: "planned" | "passed" | "failed" | "absent";
+  score?: number | null;
+  maxScore?: number | null;
+  note?: string;
 }
 
 /** 取り込みの履歴（CSV を取り込んだ記録。取り消し・件数の確認に使う。NEXT v21 CSV:C08） */
@@ -247,6 +268,8 @@ export interface StudySubject {
   /** v5 で追加（任意）：候補から選んだ資格の ID、参考書 */
   catalogId?: string;
   books?: StudyBook[];
+  /** o31 F012（任意）：受験の回 */
+  exams?: StudyExamAttempt[];
   createdAt: string;
   updatedAt: string;
 }
@@ -257,6 +280,18 @@ export interface StudyLog {
   date: string;
   minutes: number; // 1..1440
   note: string;
+  /** o31 F015・F016・D022（任意・足すだけ。古い記録には無く、作り話で埋めない） */
+  bookId?: string;
+  /** タイマーで測ったときの開始・終了（ISO）。手で入れた記録には無い */
+  startedAt?: string;
+  endedAt?: string;
+  /** 学んだ範囲（例 181〜196 ページ）。ページの位置と学んだ範囲の和は別に数える */
+  range?: { from: number; to: number; unit: "page" | "problem" | "chapter" | "lecture" };
+  /** 演習：問題数と正解数 */
+  questions?: number;
+  correct?: number;
+  /** 復習（新しく進んだ量に数えない） */
+  review?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -273,8 +308,27 @@ export interface Goal {
   note: string;
   /** やること（任意。NEXT v21 T06。自分用の入力。数字の進み具合は変えない） */
   steps?: { id: string; text: string; done: boolean; due?: string }[];
+  /** o31 F018・F019（任意・足すだけ。古い目標には無い。number/check と current/target はそのまま使う） */
+  conditions?: GoalConditionData[];
+  /** 条件のまとめ方（初めは AND） */
+  condMode?: "and" | "or";
+  /** 親の目標（循環は保存しない） */
+  parentId?: string;
+  /** 達成の記録（そのときの条件の写し。あとで条件を変えても残る） */
+  achievements?: { at: string; verdict: "met" | "unmet" | "unknown"; conditions: GoalConditionData[] }[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** 目標の達成条件（lib/goalCond.ts の GoalCondition と同じ形。actual は手で入れた今の値、分からなければ null） */
+export interface GoalConditionData {
+  id: string;
+  label: string;
+  unit: string;
+  op: ">=" | "<=" | "==" | "range";
+  target: number;
+  targetMax?: number;
+  actual: number | null;
 }
 
 /** v2 で追加した一覧（汎用の追加・編集・削除で扱う） */

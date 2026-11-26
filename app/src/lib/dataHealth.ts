@@ -50,7 +50,7 @@ export function dataHealth(d: AppData, today: string): HealthFinding[] {
   const hiddenWithRecords = d.categories.filter((c) => c.archived && d.transactions.some((t) => t.categoryId === c.id));
   add({ id: "hidden-cat", level: "info", text: "非表示のカテゴリに記録が残っています（集計には入ります）", count: hiddenWithRecords.length, href: "/settings#categories" });
 
-  add({ id: "inbox", level: "info", text: "「その他」のままの記録があります（整理すると、振り返りが分かりやすくなります）", count: inboxCount(d), href: "/inbox" });
+  add({ id: "inbox", level: "info", text: "「その他」のままの記録があります（カテゴリを付けると、家計簿の内訳が分かりやすくなります）", count: inboxCount(d), href: "/inbox" });
   add({ id: "rec-old", level: "warn", text: "支払日を2か月以上過ぎたままの固定費があります（払っていない、または記録していない）", count: d.recurring.filter((r) => r.active && daysBetween(r.nextDueDate, today) > 60).length, href: "/recurring" });
 
   const last = d.meta.lastBackupAt?.slice(0, 10);

@@ -50,7 +50,7 @@ describe("横断検索", () => {
   });
   it("自分用と公開版の両方の機能。メニューとホームに入口がある。外へは送らない", () => {
     expect(FEATURE_EDITIONS.search).toEqual({ personal: true, public: true }); // 2026-11-25 平尾さんの決定（①）：自分用と友達用（公開版）の両方で出す
-    expect(src("app/menu/page.tsx")).toContain('href: "/search"');
+    expect(src("lib/menuGroups.ts")).toContain('href: "/search"'); // o31 F003：メニューの一覧は app/menu/page.tsx から lib/menuGroups.ts に移した（中身は同じ。見る場所だけ変えた）
     expect(src("app/page.tsx")).toContain('href="/search"');
     expect(src("lib/search.ts")).not.toMatch(/fetch\(|XMLHttpRequest|sendBeacon/);
   });

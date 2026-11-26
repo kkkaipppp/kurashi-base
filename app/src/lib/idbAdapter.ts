@@ -243,7 +243,7 @@ export class IdbRepositoryAdapter implements Repository {
       return { ok: true as const };
     }
     if (this.opts.legacy) return quarantineAndReset(raw, this.opts.legacy);
-    return { ok: false as const, error: "退避するデータがありません" };
+    return { ok: false as const, error: "移すデータがありません" };
   }
 
   subscribe(onChange: () => void) {

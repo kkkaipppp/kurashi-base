@@ -18,7 +18,7 @@ export function SuggestionsCard({ today }: { today: string }) {
   if (list.length === 0) return null;
   return (
     <Card>
-      <SectionTitle>気にかけたいこと</SectionTitle>
+      <SectionTitle>確認したいこと</SectionTitle>
       <ul className="divide-y divide-line">
         {list.map((s) => (
           <li key={s.key}>

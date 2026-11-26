@@ -28,7 +28,7 @@ const config: CollectionConfig<"assets"> = {
   title: "資産・NISA",
   noun: "資産",
   intro: "口座や保有しているものの評価額を、手で記録します。銀行や証券会社とはつながっていないため、金額は自動では更新されません。",
-  emptyText: "まだ資産が登録されていません。預金口座などを追加しましょう。",
+  emptyText: "資産はまだありません。",
   fields: [
     { name: "name", label: "名前", type: "text", required: true, placeholder: "例：〇〇銀行 普通預金" },
     { name: "kind", label: "種類", type: "select", options: ASSET_KINDS },

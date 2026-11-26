@@ -90,10 +90,10 @@ export default function LifePage() {
     ui.toast(r.ok ? "取り消しました" : r.error, r.ok ? "ok" : "error");
   };
   const remove = async (c: LifeChange) => {
-    const ok = await ui.confirm({ title: `「${c.title}」の計画を消しますか？`, body: "まだ反映していない計画だけが消えます。", ok: "消す", danger: true });
+    const ok = await ui.confirm({ title: `「${c.title}」の計画を削除しますか？`, body: "まだ反映していない計画だけが消えます。", ok: "削除する", danger: true });
     if (!ok) return;
     const r = await store.commit((d) => removePlanned(d, c.id));
-    ui.toast(r.ok ? "消しました" : r.error, r.ok ? "ok" : "error");
+    ui.toast(r.ok ? "削除しました" : r.error, r.ok ? "ok" : "error");
   };
 
   const label = (it: LifeItem) => (it.kind === "budget" ? `予算 ${it.before === null ? "未設定" : formatYen(it.before)} → ${it.after === null ? "未設定" : formatYen(it.after)}` : it.kind === "recurringStop" ? `${it.name}：やめる` : `${it.name}：${formatYen(it.before)} → ${formatYen(it.after)}`);
@@ -114,7 +114,7 @@ export default function LifePage() {
           </Field>
           <div>
             <p className="mb-1 text-[13px] font-semibold">固定費（変えるものだけ。空欄は、変えない）</p>
-            {active.length === 0 && <p className="text-[12px] text-ink-3">固定費が登録されていません</p>}
+            {active.length === 0 && <p className="text-[12px] text-ink-3">固定費はありません</p>}
             <ul className="divide-y divide-line">
               {active.map((r) => (
                 <li key={r.id} className="flex flex-wrap items-center gap-2 py-2">
@@ -130,7 +130,7 @@ export default function LifePage() {
               ))}
             </ul>
           </div>
-          <Field label={`毎月の予算（今は ${data.budget.monthly === null ? "未設定" : formatYen(data.budget.monthly)}。空欄は、変えない）`} htmlFor="life-budget">
+          <Field label="毎月の予算" hint={`今は ${data.budget.monthly === null ? "未設定" : formatYen(data.budget.monthly)}。空欄なら変えません`} htmlFor="life-budget">
             <input id="life-budget" inputMode="numeric" value={budget} onChange={(e) => setBudget(e.target.value)} className={inputCls} placeholder="新しい予算" />
           </Field>
           {problems.length > 0 && <p role="alert" className="text-[13px] text-danger">{problems.join(" ／ ")}</p>}
@@ -183,7 +183,7 @@ export default function LifePage() {
                       この変更を反映する
                     </Button>
                     <Button variant="secondary" className="flex-1" onClick={() => remove(c)}>
-                      消す
+                      削除
                     </Button>
                   </>
                 )}

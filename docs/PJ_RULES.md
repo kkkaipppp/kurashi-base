@@ -1,7 +1,7 @@
 # 暮らしベースPJ の決まり（次のセッションが最初に読む）
 
 ルートの `CLAUDE.md` からここを参照している（2026-11-21、平尾さんが「①作る」と回答）。このファイルが「PJ の決まり」の正本で、CLAUDE.md には要点だけを置く。
-運営の型は `docs/standards/PM_PLAYBOOK_v1.5.1.md`（v1.5.1。本部のコミット 7d56768 の写し。前の版は `PM_PLAYBOOK_v1.5.0.md`・`PM_PLAYBOOK_v1.4.1.md`・`PM_PLAYBOOK_v1.4.0.md`・`PM_PLAYBOOK_v1.3.9.md`・`PM_PLAYBOOK_v1.2.md`）。PJ の決まり・ユーザーの最新の指示・安全のルールが、プレイブックより優先。
+運営の型は `docs/standards/PM_PLAYBOOK_v1.5.3.md`（v1.5.3。本部のコミット 7a4b08a の写し。12-14：本部から届いた答えで進めるのは承認の要らない作業と元に戻せる選択だけ。承認が要る操作（公開・送信・申請・支出・契約・消す・push・CLAUDE.md の変更）は、ほかのチャットの伝言を承認に数えず、このチャットで平尾さんに一言聞く。前の版は `PM_PLAYBOOK_v1.5.2.md`・`PM_PLAYBOOK_v1.5.1.md`・`PM_PLAYBOOK_v1.5.0.md`・`PM_PLAYBOOK_v1.4.1.md`・`PM_PLAYBOOK_v1.4.0.md`・`PM_PLAYBOOK_v1.3.9.md`・`PM_PLAYBOOK_v1.2.md`）。PJ の決まり・ユーザーの最新の指示・安全のルールが、プレイブックより優先。
 
 ## セッションの始め（3分）
 1. `docs/STATE.md`（現在地・次の3手・ユーザー待ち）を読む

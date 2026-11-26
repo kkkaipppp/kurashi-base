@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+import { IS_PERSONAL } from "@/lib/edition";
 
 export const metadata: Metadata = {
   title: "くらしベース",
   applicationName: "くらしベース",
-  description: "暮らしの面倒を、ひとつに。予定・お金・旅行・勉強をまとめて記録できるアプリ（β版）。記録は端末のブラウザの中だけに保存します",
+  description: "予定と家計を、ひとつのアプリで。記録はこの端末のブラウザの中だけに保存します（β版）",
   appleWebApp: { title: "くらしベース", statusBarStyle: "default" },
   // 友人βの間は検索エンジンに載せない（URL を知っている人だけが使う）
   robots: { index: false, follow: false },
@@ -14,12 +15,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f6f4ef",
+  themeColor: IS_PERSONAL ? "#ffffff" : "#f6f4ef",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ja" className="h-full antialiased">
+    <html lang="ja" className="h-full antialiased" data-edition={IS_PERSONAL ? "personal" : "public"}>
       <body className="min-h-full">
         <AppShell>{children}</AppShell>
       </body>

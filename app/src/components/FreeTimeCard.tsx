@@ -12,7 +12,7 @@ export function FreeTimeCard({ date }: { date: string }) {
     <section className="rounded-xl bg-surface-2 px-3 py-2" aria-label="予定のない時間帯">
       <h3 className="text-[13px] font-semibold text-ink-2">予定のない時間帯（{ACTIVE_FROM}〜{ACTIVE_TO}の目安）</h3>
       {slots.length === 0 ? (
-        <p className="mt-0.5 text-[13px] text-ink-3">30分以上の空きは、ありません</p>
+        <p className="mt-0.5 text-[13px] text-ink-3">30分以上、予定のない時間はありません</p>
       ) : (
         <ul className="num mt-0.5 flex flex-wrap gap-x-4 gap-y-0.5 text-[14px]">
           {slots.map((s) => (

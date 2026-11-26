@@ -120,7 +120,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (pending.base && editSnapshot.current && pending.base !== editSnapshot.current) {
       const ok = await ui.confirm({
         title: "元の記録が、下書きのあとに変わっています",
-        body: "続きからにすると、今の記録の中身が下書きの中身に置き換わります（保存するまでは変わりません）。今の記録のまま直す場合は「今の記録を使う」を選んでください（下書きは捨てます）。",
+        body: "続きからにすると、今の記録の中身が下書きの中身に置き換わります（保存するまでは変わりません）。今の記録のまま直す場合は「今の記録を使う」を選んでください（下書きは破棄します）。",
         ok: "下書きを使う",
         cancel: "今の記録を使う",
       });
@@ -221,7 +221,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         // 全額返金した支出は、数え方が「収支に数えない」になっている（返金がそうした）。その表示のままなら、変えていない扱い
         const countChanged = editing.countAs === "transfer" ? draft.countAs !== "transfer" : nowCount !== wasCount;
         if (v.amount !== editing.amount || draft.type !== editing.type || countChanged || draft.paymentMethod !== editing.paymentMethod) {
-          setSaveError("返金のある支出の、金額・種類・数え方・支払い方法は、直せません。返金の記録を消す（元に戻ります）と、直せるようになります");
+          setSaveError("返金のある支出の、金額・種類・数え方・支払方法は、直せません。返金の記録を削除する（元に戻ります）と、直せるようになります");
           return;
         }
       }
@@ -311,7 +311,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
 
   if (req.mode === "edit" && !editing) {
     return (
-      <Sheet title="取引" open onRequestClose={onClose}>
+      <Sheet title="記録" open onRequestClose={onClose}>
         <p className="text-ink-2">この記録は見つかりません（削除された可能性があります）。</p>
         <OrphanDraft kind="tx" id={req.id} onNew={() => ui.openTx({ mode: "new", type: "expense" })} onDone={onClose} />
       </Sheet>
@@ -354,7 +354,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           </p>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Button variant="secondary" onClick={discardPending}>
-              捨てる
+              破棄する
             </Button>
             <Button onClick={resume}>続きから</Button>
           </div>
@@ -376,7 +376,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
             <span className="block py-1 text-center text-[12px] text-ink-3">タップで拡大</span>
           </a>
         )}
-        <div role="radiogroup" aria-label="種別" className="grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1">
+        <div role="radiogroup" aria-label="種類" className="grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1">
           {(["expense", "income"] as const).map((t) => (
             <button
               key={t}
@@ -402,7 +402,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
             </p>
           ) : (
             <p className="pt-1">
-              返金は「収入」で登録します（元の支出と同じカテゴリで）。口座どうしの振替・分割払いは、まだ記録できません。
+              返金は「収入」で追加します（元の支出と同じカテゴリで）。口座どうしの振替・分割払いは、まだ記録できません。
             </p>
           )}
         </details>
@@ -621,17 +621,17 @@ function TxExtras({
                 </label>
               ) : null;
             })()}
-            <p className="mt-1 text-[12px] text-ink-3">全額の支払いとして登録すると、次の支払日が更新されます。一部だけ支払った場合は、残額が未払いとして残ります。</p>
+            <p className="mt-1 text-[12px] text-ink-3">全額の支払いとして保存すると、次の支払日が進みます。一部だけ支払ったときは、残りが未払いとして残ります。</p>
           </div>
         )
       )}
-      <Field label="この記録の数え方" optional htmlFor="tx-count">
+      <Field label="この記録の数え方" optional htmlFor="tx-count" hint={draft.countAs === "transfer-card" ? "収支に数えません。口座の残高は減ります" : draft.countAs === "transfer" ? "収支に数えません。残高は変わりません" : undefined}>
         <select id="tx-count" value={draft.countAs ?? ""} onChange={(e) => set("countAs", e.target.value as TxDraft["countAs"])} className={inputCls}>
           <option value="">カテゴリどおり（{catInvest ? "投資" : "生活費"}）</option>
           <option value="life">生活費として数える</option>
           <option value="invest">投資として数える（予算と比べない）</option>
-          <option value="transfer-card">カードの引き落とし（収支に数えない。残高は減る）</option>
-          <option value="transfer">収支に数えない（口座間の移動など。残高は変わらない）</option>
+          <option value="transfer-card">カードの引き落とし（収支に数えない）</option>
+          <option value="transfer">収支に数えない（口座間の移動など）</option>
         </select>
       </Field>
       {trips.length > 0 && (

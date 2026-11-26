@@ -8,7 +8,8 @@ const code = (p: string) => fs.readFileSync(path.join(root, p), "utf8").replace(
 
 describe("磨き込み：高", () => {
   it("自分用では、iPhone アプリで使える機能（文字の読み取り・ウィジェット・通知）を「まだ使えない」と書かない。公開版の文は残す", () => {
-    const menu = code("app/menu/page.tsx");
+    // o31 F003：メニューの一覧は app/menu/page.tsx から lib/menuGroups.ts に移した（中身は同じ。見る場所だけ変えた）
+    const menu = code("lib/menuGroups.ts");
     expect(menu).toMatch(/IS_PERSONAL\s*\?\s*\{ href: "\/import", label: "レシートを見て入力", desc: "レシートの写真から/);
     expect(menu).toContain('...(IS_PERSONAL ? [] : [{ href: "/widget"');
     const widget = code("app/widget/page.tsx");

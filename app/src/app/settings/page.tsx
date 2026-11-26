@@ -33,10 +33,23 @@ const IcsImportCard = FEATURES.icsImport ? dynamic(() => import("@/components/Ic
 const NativeCalendarImportCard = FEATURES.nativeCalendarRead && PERSONAL_BUILD ? dynamic(() => import("@/components/NativeCalendarImportCard").then((m) => m.NativeCalendarImportCard)) : null;
 const CsvGenericPanel = PERSONAL_BUILD ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
 const MenuVisibilityCard = PERSONAL_BUILD ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
+// 下のメニュー・追加のよく使う種類・起動時の画面（o31 F001・F002・D006。自分用だけ）
+const NavSettingsCard = PERSONAL_BUILD ? dynamic(() => import("@/components/NavSettingsCard").then((m) => m.NavSettingsCard)) : null;
+const StartScreenCard = PERSONAL_BUILD ? dynamic(() => import("@/components/StartScreenCard").then((m) => m.StartScreenCard)) : null;
 const ImportHistoryCard = PERSONAL_BUILD ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
 const DataHealthCard = PERSONAL_BUILD ? dynamic(() => import("@/components/DataHealthCard").then((m) => m.DataHealthCard)) : null;
 const DiagnosticsCard = PERSONAL_BUILD ? dynamic(() => import("@/components/DiagnosticsCard").then((m) => m.DiagnosticsCard)) : null;
 const CategoryTools = PERSONAL_BUILD ? dynamic(() => import("@/components/CategoryTools").then((m) => m.CategoryTools)) : null;
+/** 自分用の設定の6つの区切り（o31 01）。中身は今ある設定をそのまま使う（設定を消さない・増やさない） */
+const SETTING_GROUPS: [string, string, string][] = [
+  ["set-general", "一般", "起動時の画面"],
+  ["set-display", "表示", "下のメニュー・メニューに出す機能・ホーム"],
+  ["set-money", "家計簿", "予算・カテゴリ"],
+  ["set-connect", "外部連携", "カレンダー・CSV の取り込み"],
+  ["set-data", "データ管理", "バックアップ・復元・取り込みの履歴・点検・削除"],
+  ["set-about", "アプリ情報", "このアプリについて"],
+];
+
 function GroupLabel({ id, children }: { id: string; children: string }) {
   if (!GROUPS) return null;
   return (
@@ -74,9 +87,9 @@ export default function SettingsPage() {
   // --- ホーム表示 ---
   // 自分用のホームは「次の固定費」「確認したいこと」をいつも出し、並びと表示はホームの「編集」で決める（ここの切り替えは効かないので出さない。磨き込み 2026-11-26）
   const toggles: { key: HomeToggle; label: string }[] = PERSONAL_BUILD
-    ? [{ key: "todaySpent", label: "今日の支出（今月の残り予算の横）" }]
+    ? [{ key: "todaySpent", label: "今日の支出（予算の残りの横）" }]
     : [
-        { key: "todaySpent", label: "今日の支出（今月の残り予算の横）" },
+        { key: "todaySpent", label: "今日の支出（予算の残りの横）" },
         { key: "nextRecurring", label: "次の固定費" },
         { key: "needsReview", label: "確認したいこと（支払日・試験日・更新日など）" },
       ];
@@ -292,32 +305,13 @@ export default function SettingsPage() {
     else ui.toast(r.error, "error");
   };
 
-  return (
-    <main className="space-y-4">
-      <PageHeader title="設定" />
-      {/* 設定の目次（レビュー o1 の P15：長いので、日常の設定とデータの管理を分けて飛べるように） */}
-      <nav aria-label="設定の目次" className="-mt-1 flex flex-wrap gap-1.5 text-[13px]">
-        {(
-          [
-            ["#budget", "予算・ホーム"],
-            ["#categories", "カテゴリ"],
-            ...(FEATURES.calendarFile || FEATURES.csvImport ? ([["#calendar-file", "カレンダー・取り込み"]] as const) : []),
-            ...(nativeApp ? ([["#iphone", "iPhone の連携"]] as const) : []),
-            ["#backup", "バックアップ・データ"],
-            ...(GROUPS ? ([["#danger", "すべて削除"]] as const) : []),
-          ] as const
-        ).map(([href, label]) => (
-          <a key={href} href={href} className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface px-3 font-semibold text-ink-2 hover:bg-surface-2">
-            {label}
-          </a>
-        ))}
-      </nav>
-
-      <GroupLabel id="group-daily">ふだんの設定</GroupLabel>
+  // 設定の区切り（o31 01・o30 D009：自分用は 一般・表示・家計簿・外部連携・データ管理・アプリ情報 の6つ。公開版は今までの並び）
+  const blkBudget = (
+    <>
       <Card>
         <div id="budget" className="scroll-mt-20" />
         <SectionTitle>毎月の予算</SectionTitle>
-        <p className="mb-3 text-[13px] text-ink-3">{PERSONAL_BUILD ? "残り予算＝この予算−今月の生活費（投資を除く）。空欄なら未設定。" : "残り予算＝この予算−今月の支出。空欄なら未設定。"}</p>
+        <p className="mb-3 text-[13px] text-ink-3">{PERSONAL_BUILD ? "予算の残り＝この予算−今月の生活費（投資を除く）。空欄なら未設定。" : "予算の残り＝この予算−今月の支出。空欄なら未設定。"}</p>
         <div className="flex items-start gap-2">
           <div className="flex-1">
             <Field label="予算（円）" htmlFor="budget-input" error={budgetErr}>
@@ -330,12 +324,16 @@ export default function SettingsPage() {
         </div>
       </Card>
 
+    </>
+  );
+  const blkHome = (
+    <>
       <Card>
         <SectionTitle>ホームに表示する項目</SectionTitle>
         <p className="mb-2 text-[13px] text-ink-3">
           {PERSONAL_BUILD
-            ? "今月の残り予算と今日の予定・次の固定費・確認したいことは、いつも表示します。カードの並びと表示は、ホームの「編集」で変えられます。"
-            : "今月の残り予算（予算がなければ今月の支出）と今日の予定は、いつも表示します。下の3つは、オンにすると、内容があるときだけ表示します。"}
+            ? "今月の予算の残りと今日の予定・次の固定費・確認したいことは、いつも表示します。カードの並びと表示は、ホームの「編集」で変えられます。"
+            : "今月の予算の残り（予算がなければ今月の支出）と今日の予定は、いつも表示します。下の3つは、オンにすると、内容があるときだけ表示します。"}
         </p>
         <ul className="divide-y divide-line">
           {toggles.map((t) => (
@@ -358,12 +356,14 @@ export default function SettingsPage() {
       </Card>
 
 
-      {MenuVisibilityCard && <MenuVisibilityCard />}
-
+    </>
+  );
+  const blkCategories = (
+    <>
       <Card>
         <div id="categories" className="scroll-mt-20" />
         <SectionTitle>カテゴリ</SectionTitle>
-        <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="カテゴリの種別">
+        <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="カテゴリの種類">
           {(["expense", "income"] as const).map((k) => (
             <button key={k} type="button" role="radio" aria-checked={catKind === k} onClick={() => { setCatKind(k); setEditingCatId(null); }} className={`min-h-11 rounded-lg text-[14px] font-semibold ${catKind === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
               {k === "expense" ? "支出" : "収入"}
@@ -431,7 +431,7 @@ export default function SettingsPage() {
               </li>
             ))}
         </ul>
-        <p className="mt-1 text-[12px] text-ink-3">名前を変えても、今までの取引はそのカテゴリのままです。非表示にしても、登録済みの取引は残ります。</p>
+        <p className="mt-1 text-[12px] text-ink-3">名前を変えても、今までの記録はそのカテゴリのままです。非表示にしても、記録は残ります。</p>
         {CategoryTools && <CategoryTools kind={catKind} />}
         <div className="mt-3 flex gap-2">
           <input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="新しいカテゴリ名" aria-label="新しいカテゴリ名" maxLength={20} className={inputCls} />
@@ -441,7 +441,10 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {(FEATURES.calendarFile || FEATURES.csvImport) && <GroupLabel id="group-connect">ほかとつなぐ・取り込む</GroupLabel>}
+    </>
+  );
+  const blkConnect = (
+    <>
 
       {FEATURES.calendarFile && (
         <Card>
@@ -453,11 +456,11 @@ export default function SettingsPage() {
           <ul className="mt-1 mb-3 list-disc space-y-0.5 pl-5 text-[12px] text-ink-3">
             <li>予定のメモは入れません。固定費は名前と金額が入ります</li>
             <li>自動では直りません。予定を変えたら、もう一度書き出して入れてください（同じ予定が2つになったら、古いほうを消してください）</li>
-            <li>入れる先のカレンダーは「くらしベース」など、新しく作ると、まとめて消せて便利です</li>
+            <li>入れる先は「くらしベース」など新しいカレンダーにすると、あとでまとめて消せます</li>
             <li>時刻つきの予定は、ファイルを書き出した端末の時刻のままで入ります（時差のある国へ行くときは、行った先で見直してください）</li>
           </ul>
           <Button variant="secondary" onClick={exportCalendar}>
-            予定をカレンダー用ファイルに保存（.ics）
+            予定をカレンダー用ファイルに書き出す（.ics）
           </Button>
           {NativeCalendarImportCard && (
             <div className="mt-3">
@@ -594,7 +597,10 @@ export default function SettingsPage() {
 
       <NativeStatusCard />
 
-      <GroupLabel id="group-data">記録を守る</GroupLabel>
+    </>
+  );
+  const blkData = (
+    <>
       <Card>
         <div id="backup" className="scroll-mt-20" />
         <SectionTitle>バックアップと復元</SectionTitle>
@@ -639,7 +645,7 @@ export default function SettingsPage() {
               </p>
             ))}
             <fieldset className="space-y-2">
-              <legend className="mb-1 text-[13px] font-semibold text-ink-2">復元方法を選んでください（選ぶまで実行できません）</legend>
+              <legend className="mb-1 text-[13px] font-semibold text-ink-2">復元の方法（選ぶまで復元しません）</legend>
               {(
                 [
                   ["merge", "記録を追加する", "今の記録は残したまま、バックアップにしかない記録を足します。同じ記録は二重に入れません。"],
@@ -777,6 +783,10 @@ export default function SettingsPage() {
         </details>
       </Card>
 
+    </>
+  );
+  const blkAbout = (
+    <>
       <Card>
         <SectionTitle>このアプリについて</SectionTitle>
         <p className="text-[13px] text-ink-2">くらしベース（KURASHI BASE）β版（試用版）</p>
@@ -798,6 +808,76 @@ export default function SettingsPage() {
           </ul>
         )}
       </Card>
+    </>
+  );
+
+  return (
+    <main className="space-y-4">
+      <PageHeader title="設定" />
+      {PERSONAL_BUILD ? (
+        <>
+          <nav aria-label="設定の区切り">
+            <ul className="divide-y divide-line border-y border-line">
+              {SETTING_GROUPS.map(([id, label, desc]) => (
+                <li key={id}>
+                  <a href={`#${id}`} className="flex min-h-12 items-center justify-between gap-3 py-1 hover:bg-surface-2">
+                    <span>
+                      <span className="block text-[16px] font-semibold">{label}</span>
+                      <span className="block text-[13px] text-ink-3">{desc}</span>
+                    </span>
+                    <span aria-hidden="true" className="text-ink-3">›</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <GroupLabel id="set-general">一般</GroupLabel>
+          {StartScreenCard && <StartScreenCard />}
+          <GroupLabel id="set-display">表示</GroupLabel>
+          {NavSettingsCard && <NavSettingsCard />}
+          {MenuVisibilityCard && <MenuVisibilityCard />}
+          {blkHome}
+          <GroupLabel id="set-money">家計簿</GroupLabel>
+          {blkBudget}
+          {blkCategories}
+          <GroupLabel id="set-connect">外部連携</GroupLabel>
+          {blkConnect}
+          <GroupLabel id="set-data">データ管理</GroupLabel>
+          {blkData}
+          <GroupLabel id="set-about">アプリ情報</GroupLabel>
+          {blkAbout}
+        </>
+      ) : (
+        <>
+      {/* 設定の目次（レビュー o1 の P15：長いので、日常の設定とデータの管理を分けて飛べるように） */}
+      <nav aria-label="設定の目次" className="-mt-1 flex flex-wrap gap-1.5 text-[13px]">
+        {(
+          [
+            ["#budget", "予算・ホーム"],
+            ["#categories", "カテゴリ"],
+            ...(FEATURES.calendarFile || FEATURES.csvImport ? ([["#calendar-file", "カレンダー・取り込み"]] as const) : []),
+            ...(nativeApp ? ([["#iphone", "iPhone の連携"]] as const) : []),
+            ["#backup", "バックアップ・データ"],
+            ...(GROUPS ? ([["#danger", "すべて削除"]] as const) : []),
+          ] as const
+        ).map(([href, label]) => (
+          <a key={href} href={href} className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface px-3 font-semibold text-ink-2 hover:bg-surface-2">
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <GroupLabel id="group-daily">ふだんの設定</GroupLabel>
+          {blkBudget}
+          {blkHome}
+          {blkCategories}
+          {(FEATURES.calendarFile || FEATURES.csvImport) && <GroupLabel id="group-connect">ほかとつなぐ・取り込む</GroupLabel>}
+          {blkConnect}
+          <GroupLabel id="group-data">記録を守る</GroupLabel>
+          {blkData}
+          {blkAbout}
+        </>
+      )}
     </main>
   );
 }

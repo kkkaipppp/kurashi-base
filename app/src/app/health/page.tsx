@@ -15,7 +15,7 @@ const config: CollectionConfig<"health"> = {
   title: "健康記録",
   noun: "健康記録",
   intro: "体重や睡眠などを、自分の記録として残します。この記録は診断ではありません。体調に不安があるときは、医療機関に相談してください。",
-  emptyText: "まだ記録がありません。今日の体重や睡眠時間から記録してみましょう。",
+  emptyText: "健康記録はまだありません。",
   fields: [
     { name: "date", label: "日付", type: "date", required: true, half: true },
     { name: "item", label: "項目", type: "select", half: true, options: ITEMS },

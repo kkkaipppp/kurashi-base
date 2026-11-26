@@ -58,7 +58,7 @@ describe("タスクを予定にする", () => {
   });
   it("期限の一覧には、予定にしたタスクを二重に出さない", () => {
     const d = makeEventFromTask(seed(), "t1", "ev1", "2026-11-25", now);
-    expect(deadlinesOn(d, "2026-11-28").filter((x) => x.kind === "タスク")).toHaveLength(0);
-    expect(deadlinesOn(seed(), "2026-11-28").filter((x) => x.kind === "タスク")).toHaveLength(1);
+    expect(deadlinesOn(d, "2026-11-28").filter((x) => x.kind === "やること")).toHaveLength(0);
+    expect(deadlinesOn(seed(), "2026-11-28").filter((x) => x.kind === "やること")).toHaveLength(1);
   });
 });

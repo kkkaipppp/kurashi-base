@@ -23,6 +23,21 @@
   --danger: #b3261e;
 }
 
+/* 自分用（o29 の暫定のデザイン。2026-11-27）：白い地・#222 の文字・#e5e5e5 の罫線・操作の色 #254e85。
+   緑は旧仕様。支出・収入・予定の色は意味ごとに残す（色だけで伝えない）。公開版は上の :root のまま（o29 C025 個人先行） */
+:root[data-edition="personal"] {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f4f5f7;
+  --ink: #222222;
+  --ink-2: #555555;
+  --ink-3: #666666;
+  --line: #e5e5e5;
+  --brand: #254e85;
+  --brand-ink: #ffffff;
+  --brand-soft: #e8effa;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);

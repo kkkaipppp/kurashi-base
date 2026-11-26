@@ -1,6 +1,7 @@
 "use client";
 
 import { cloneElement, isValidElement, type ButtonHTMLAttributes, type ReactElement, type ReactNode } from "react";
+import Link from "next/link";
 import { IS_PERSONAL } from "@/lib/edition";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -28,7 +29,9 @@ export function Button({
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   const pad = /(^|\s)p-0(\s|$)/.test(className) ? "" : "p-4";
-  return <section className={`rounded-2xl border border-line bg-surface ${pad} shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${className}`}>{children}</section>;
+  // 自分用（o29）：影をつけず、角丸を小さく（装飾のカードを減らす）
+  const look = IS_PERSONAL ? "rounded-lg border border-line bg-surface" : "rounded-2xl border border-line bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
+  return <section className={`${look} ${pad} ${className}`}>{children}</section>;
 }
 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
@@ -103,11 +106,18 @@ export const inputCls =
 export function PageHeader({ title, right, sub }: { title: string; right?: ReactNode; sub?: ReactNode }) {
   return (
     <header className="sticky top-0 z-10 -mx-4 mb-3 flex min-h-14 items-center justify-between gap-2 bg-bg/95 px-4 pt-2 backdrop-blur">
-      <div>
+      <div className="min-w-0">
         <h1 className="text-xl font-bold tracking-tight">{title}</h1>
         {sub}
       </div>
-      {right}
+      {IS_PERSONAL ? (
+        <div className="flex shrink-0 items-center gap-1">
+          {right}
+          <GlobalActions />
+        </div>
+      ) : (
+        right
+      )}
     </header>
   );
 }
@@ -161,6 +171,12 @@ export const IconGrid = icon(
 );
 export const IconChart = icon(<path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />);
 export const IconPlus = icon(<path d="M12 5v14M5 12h14" />);
+// 下のメニューに置ける画面のアイコン（o31 F001。線だけの簡単な形）
+export const IconBook = icon(<path d="M4 19.5V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2.5ZM20 19v3H6" />);
+export const IconFlag = icon(<path d="M5 21V4M5 4h11l-2 4 2 4H5" />);
+export const IconMap = icon(<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2ZM9 4v14M15 6v14" />);
+export const IconNote = icon(<path d="M6 3h9l4 4v14H6V3ZM14 3v5h5M9 13h7M9 17h5" />);
+export const IconWallet = icon(<path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Zm0 0 2-3h11M16 13.5h.01" />);
 export const IconImage = icon(
   <>
     <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -179,3 +195,20 @@ export const IconSearch = icon(
     <path d="m21 21-4.3-4.3" />
   </>,
 );
+
+/**
+ * 自分用：どの画面の上にもある「検索」と「すべての機能」（o31 F001・F003、o30 D005）。
+ * 下のメニューから「その他」を外しても、全機能・設定・復元へ行ける
+ */
+export function GlobalActions() {
+  return (
+    <>
+      <Link href="/search" aria-label="検索" className="inline-flex size-11 items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2">
+        <IconSearch className="size-5" />
+      </Link>
+      <Link href="/menu" aria-label="メニュー（すべての機能）" className="inline-flex size-11 items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2">
+        <IconGrid className="size-5" />
+      </Link>
+    </>
+  );
+}

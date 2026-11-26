@@ -17,8 +17,8 @@ const config: CollectionConfig<"contracts"> = {
   key: "contracts",
   title: "契約",
   noun: "契約",
-  intro: "スマホ・保険・サブスク・賃貸などの契約と、更新日を記録します。支払いを家計に入れるときは「固定費」にも登録してください。解約の手続きは、各サービスで行ってください。",
-  emptyText: "まだ契約が登録されていません。",
+  intro: "スマホ・保険・サブスク・賃貸などの契約と、更新日を記録します。支払いを家計に入れるときは「固定費」にも追加してください。解約の手続きは、各サービスで行ってください。",
+  emptyText: "契約はまだありません。",
   fields: [
     { name: "name", label: "名前", type: "text", required: true, placeholder: "例：スマホ料金" },
     { name: "provider", label: "契約先", optional: true, type: "text", placeholder: "例：〇〇モバイル" },

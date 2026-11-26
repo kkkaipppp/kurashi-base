@@ -59,8 +59,36 @@ const isCheckList2 = (v: unknown) =>
   Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done) && (x.due === undefined || isDate(x.due)));
 const isCheckList = (v: unknown) =>
   Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.text) && isBool(x.done));
+const isUnit = oneOf("page", "problem", "chapter", "lecture");
+const isPosInt = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 100_000;
+// o31 F013：教材の任意の項目（無くてもよい。あれば形を確かめる）
 const isBookList = (v: unknown) =>
-  Array.isArray(v) && v.every((x) => isObj(x) && isStr(x.id) && isStr(x.title) && isHttpOrBlank(x.url) && isStr(x.note));
+  Array.isArray(v) &&
+  v.every(
+    (x) =>
+      isObj(x) && isStr(x.id) && isStr(x.title) && isHttpOrBlank(x.url) && isStr(x.note) &&
+      optional(oneOf("candidate", "owned", "studying", "done"))(x.status) && optional(isStr)(x.edition) &&
+      optional((t) => t === null || isPosInt(t))(x.total) && optional(isUnit)(x.unit) &&
+      optional((a) => Array.isArray(a) && a.every(isStr))(x.alsoSubjectIds) && optional(isStr)(x.txId),
+  );
+// o31 F012：受験の回（点数は満点以下）
+const isExamList = (v: unknown) =>
+  Array.isArray(v) &&
+  v.every(
+    (x) =>
+      isObj(x) && isStr(x.id) && okDateOrBlank(x.date) && oneOf("planned", "passed", "failed", "absent")(x.result) &&
+      optional((s) => s === null || (isNum(s) && (s as number) >= 0))(x.score) && optional((m) => m === null || (isNum(m) && (m as number) > 0))(x.maxScore) &&
+      !(isNum(x.score) && isNum(x.maxScore) && (x.score as number) > (x.maxScore as number)) && optional(isStr)(x.note),
+  );
+const isIso = (v: unknown) => isStr(v) && !Number.isNaN(Date.parse(v as string));
+// o31 F018：目標の達成条件（今の値は分からなければ null）
+const isCondList = (v: unknown) =>
+  Array.isArray(v) &&
+  v.every(
+    (x) =>
+      isObj(x) && isStr(x.id) && isStr(x.label) && isStr(x.unit) && oneOf(">=", "<=", "==", "range")(x.op) && isNum(x.target) &&
+      optional(isNum)(x.targetMax) && (x.actual === null || isNum(x.actual)),
+  );
 const isMoneyOrNull = (v: unknown) => v === null || (Number.isInteger(v) && (v as number) >= 0 && (v as number) <= MAX_AMOUNT);
 
 /** v5 で予定に足した任意の項目（無くてもよい。あれば形を確かめる） */
@@ -80,30 +108,64 @@ const EVENT_V5: Record<string, (v: unknown) => boolean> = {
 const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: unknown) => boolean> }> = {
   nisa: { label: "NISA", fields: { date: isDate, kind: oneOf("buy", "sell"), frame: oneOf("tsumitate", "growth"), amount: (v) => isAmt(v), name: isStr, note: isStr } },
   notes: { label: "生活記録・メモ", fields: { title: isStr, body: isStr, date: okDateOrBlank, pinned: isBool } },
-  tasks: { label: "タスク", fields: { title: isStr, due: okDateOrBlank, done: isBool, note: isStr, eventId: optional(isStr) } },
+  tasks: { label: "やること", fields: { title: isStr, due: okDateOrBlank, done: isBool, note: isStr, eventId: optional(isStr) } },
   assets: { label: "資産", fields: { name: isStr, kind: oneOf("cash", "investment", "nisa", "pension", "insurance", "property", "other"), value: numOrNull, asOf: okDateOrBlank, note: isStr, cardDebt: optional(isAmt) } },
   contracts: { label: "契約", fields: { name: isStr, provider: isStr, amount: numOrNull, cycle: oneOf("monthly", "yearly", "none"), renewalDate: okDateOrBlank, status: oneOf("active", "cancelled"), note: isStr } },
   health: { label: "健康記録", fields: { date: isDate, item: isStr, value: numOrNull, unit: isStr, note: isStr } },
   documents: { label: "書類", fields: { title: isStr, category: isStr, expiry: okDateOrBlank, place: isStr, note: isStr } },
-  studySubjects: { label: "勉強（資格）", fields: { name: isStr, examDate: okDateOrBlank, targetHours: (v) => v === null || (isNum(v) && (v as number) > 0), archived: isBool, catalogId: optional(isStr), books: optional(isBookList) } },
-  studyLogs: { label: "勉強記録", fields: { subjectId: isStr, date: isDate, minutes: (v) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 1440, note: isStr } },
-  goals: { label: "目標", fields: { title: isStr, deadline: okDateOrBlank, kind: oneOf("number", "check"), target: numOrNull, current: isNum, unit: isStr, done: isBool, note: isStr, steps: optional(isCheckList2) } },
+  studySubjects: { label: "勉強（資格）", fields: { name: isStr, examDate: okDateOrBlank, targetHours: (v) => v === null || (isNum(v) && (v as number) > 0), archived: isBool, catalogId: optional(isStr), books: optional(isBookList), exams: optional(isExamList) } },
+  studyLogs: {
+    label: "勉強記録",
+    fields: {
+      subjectId: isStr,
+      date: isDate,
+      minutes: (v) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 1440,
+      note: isStr,
+      // o31 F015・F016・D022（任意）
+      bookId: optional(isStr),
+      startedAt: optional(isIso),
+      endedAt: optional(isIso),
+      range: optional((r) => isObj(r) && isPosInt(r.from) && isPosInt(r.to) && (r.from as number) >= 1 && (r.to as number) >= (r.from as number) && isUnit(r.unit)),
+      questions: optional(isPosInt),
+      correct: optional(isPosInt),
+      review: optional(isBool),
+    },
+  },
+  goals: {
+    label: "目標",
+    fields: {
+      title: isStr,
+      deadline: okDateOrBlank,
+      kind: oneOf("number", "check"),
+      target: numOrNull,
+      current: isNum,
+      unit: isStr,
+      done: isBool,
+      note: isStr,
+      steps: optional(isCheckList2),
+      // o31 F018・F019（任意）
+      conditions: optional(isCondList),
+      condMode: optional(oneOf("and", "or")),
+      parentId: optional(isStr),
+      achievements: optional((v) => Array.isArray(v) && v.every((a) => isObj(a) && isIso(a.at) && oneOf("met", "unmet", "unknown")(a.verdict) && isCondList(a.conditions))),
+    },
+  },
 };
 
 export function validateAppData(input: unknown): R {
   const raw = migrate(input);
   if (!isObj(raw)) return { ok: false, error: "データの形式が正しくありません" };
   if (raw.schemaVersion !== CURRENT_SCHEMA)
-    return { ok: false, error: `対応していないデータ形式です（schemaVersion: ${String(raw.schemaVersion)}）。アプリを最新にしてください` };
+    return { ok: false, error: "対応していない形式のデータです。アプリを最新にしてください" };
   for (const k of ["transactions", "events", "categories", "recurring", ...COLLECTION_KEYS]) {
-    if (!Array.isArray(raw[k])) return { ok: false, error: `${k} が見つかりません` };
+    if (!Array.isArray(raw[k])) return { ok: false, error: "データの一部が見つかりません。データが壊れている可能性があります" };
   }
   const cats = raw.categories as unknown[];
   const catIds = new Set<string>();
   for (const c of cats) {
     if (!isObj(c) || !isStr(c.id) || !isStr(c.name) || (c.kind !== "expense" && c.kind !== "income") || !optional(oneOf("life", "invest"))(c.role))
       return { ok: false, error: "カテゴリのデータが壊れています" };
-    if (catIds.has(c.id)) return { ok: false, error: "カテゴリIDが重複しています" };
+    if (catIds.has(c.id)) return { ok: false, error: "カテゴリが二重に入っています" };
     catIds.add(c.id);
   }
   const ids = new Set<string>();
@@ -115,8 +177,8 @@ export function validateAppData(input: unknown): R {
       // 100点化で足した任意の項目（無くてもよい。あれば形を確かめる）
       !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross)
     )
-      return { ok: false, error: "取引のデータが壊れています" };
-    if (ids.has(t.id)) return { ok: false, error: "取引IDが重複しています" };
+      return { ok: false, error: "支出・収入のデータが壊れています" };
+    if (ids.has(t.id)) return { ok: false, error: "支出・収入の記録が二重に入っています" };
     ids.add(t.id);
   }
   for (const e of raw.events as unknown[]) {
@@ -129,10 +191,10 @@ export function validateAppData(input: unknown): R {
       !Object.entries(EVENT_V5).every(([f, check]) => check(e[f]))
     )
       return { ok: false, error: "予定のデータが壊れています" };
-    if (ids.has(e.id)) return { ok: false, error: "予定IDが重複しています" };
+    if (ids.has(e.id)) return { ok: false, error: "予定が二重に入っています" };
     ids.add(e.id);
   }
-  if (!Array.isArray(raw.trips)) return { ok: false, error: "trips が見つかりません" };
+  if (!Array.isArray(raw.trips)) return { ok: false, error: "旅行のデータが見つかりません" };
   const tripIds = new Set<string>();
   for (const t of raw.trips as unknown[]) {
     if (
@@ -140,7 +202,7 @@ export function validateAppData(input: unknown): R {
       (t.endDate as string) < (t.startDate as string) || !isStr(t.destination) || !isMoneyOrNull(t.budget) || !isStr(t.note)
     )
       return { ok: false, error: "旅行のデータが壊れています" };
-    if (tripIds.has(t.id)) return { ok: false, error: "旅行のIDが重複しています" };
+    if (tripIds.has(t.id)) return { ok: false, error: "旅行が二重に入っています" };
     tripIds.add(t.id);
   }
   const recurringIds = new Set<string>();
@@ -151,7 +213,7 @@ export function validateAppData(input: unknown): R {
       !Number.isInteger(r.anchorDay) || !isStr(r.nextDueDate) || !isValidDateStr(r.nextDueDate) || typeof r.active !== "boolean"
     )
       return { ok: false, error: "固定費のデータが壊れています" };
-    if (recurringIds.has(r.id)) return { ok: false, error: "固定費IDが重複しています" };
+    if (recurringIds.has(r.id)) return { ok: false, error: "固定費が二重に入っています" };
     recurringIds.add(r.id);
   }
   if (!isObj(raw.budget) || !(raw.budget.monthly === null || isAmt(raw.budget.monthly)))
@@ -160,7 +222,7 @@ export function validateAppData(input: unknown): R {
   if (!isObj(raw.prefs) || !isObj(raw.prefs.home) || !optional(isStrList)(raw.prefs.home.order) || !optional(isStrList)(raw.prefs.home.hidden) || !optional(isStrList)(raw.prefs.menuHidden))
     return { ok: false, error: "表示設定のデータが壊れています" };
   if (!isObj(raw.meta) || !optional((v) => Array.isArray(v) && v.every((b) => isObj(b) && isStr(b.id) && isStr(b.at) && isStr(b.source) && isNum(b.added)))(raw.meta.imports) || !optional(isLifeChanges)(raw.meta.lifeChanges))
-    return { ok: false, error: "管理情報が壊れています" };
+    return { ok: false, error: "取り込みの履歴・生活の変化のデータが壊れています" };
 
   const subjectIds = new Set<string>();
   for (const k of COLLECTION_KEYS) {
@@ -169,11 +231,16 @@ export function validateAppData(input: unknown): R {
     for (const item of raw[k] as unknown[]) {
       if (!isObj(item) || !isStr(item.id) || !Object.entries(spec.fields).every(([f, check]) => check(item[f])))
         return { ok: false, error: `${spec.label}のデータが壊れています` };
-      if (seen.has(item.id)) return { ok: false, error: `${spec.label}のIDが重複しています` };
+      if (seen.has(item.id)) return { ok: false, error: `${spec.label}が二重に入っています` };
       seen.add(item.id);
       if (k === "studySubjects") subjectIds.add(item.id);
       if (k === "studyLogs" && !subjectIds.has(item.subjectId as string))
-        return { ok: false, error: "勉強の記録が、存在しない資格を指しています" };
+        return { ok: false, error: "勉強の記録の資格が見つかりません" };
+      // o31 D022：正解は問題数より多くならない。正解だけ・問題数だけ、は受け付けない
+      if (k === "studyLogs" && (item.questions === undefined) !== (item.correct === undefined))
+        return { ok: false, error: "勉強の記録の問題数と正解数がそろっていません" };
+      if (k === "studyLogs" && isNum(item.questions) && isNum(item.correct) && (item.correct as number) > (item.questions as number))
+        return { ok: false, error: "勉強の記録の正解数が問題数より多くなっています" };
     }
   }
   return { ok: true, data: raw as unknown as AppData };
@@ -200,7 +267,7 @@ export function validateRelationships(data: AppData): { ok: true } | { ok: false
   const trips = new Set((data.trips ?? []).map((t) => t.id));
   for (const e of data.events) {
     if (e.tripId && !trips.has(e.tripId)) {
-      return { ok: false, error: `${e.startDate}の予定「${e.title}」が、存在しない旅行を参照しています` };
+      return { ok: false, error: `${e.startDate}の予定「${e.title}」の旅行が、バックアップの中に見つかりません` };
     }
   }
   const subjects = new Set(data.studySubjects.map((s) => s.id));

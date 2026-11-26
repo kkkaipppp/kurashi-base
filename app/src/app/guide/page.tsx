@@ -29,7 +29,6 @@ export default function GuidePage() {
             {BRAND.name}
           </p>
           <p className="text-[13px] text-ink-2">
-            {BRAND.message}
             予定・お金・旅行・勉強を、ここにまとめて記録できます。
           </p>
         </div>
@@ -39,8 +38,8 @@ export default function GuidePage() {
         <h2 className="text-[17px] font-bold">はじめにやること</h2>
         <ol className="mt-2 list-decimal space-y-2 pl-5 text-[14px]">
           <li>1か月の予算を決める（あとでも大丈夫）</li>
-          <li>画面下の「＋」から、支出・収入・予定・タスクを追加する</li>
-          <li>カレンダーでその日の記録を、振り返りで今月の使い方を見る</li>
+          <li>画面下の「＋」から、支出・収入・予定・やることを追加する</li>
+          <li>カレンダーでその日の記録を、家計簿で今月の使い方を見る</li>
         </ol>
         <div className="mt-3 grid gap-2">
           <Button onClick={() => ui.openAdd()}>支出・予定を追加する</Button>
@@ -59,7 +58,7 @@ export default function GuidePage() {
         <Card>
           <h2 className="text-[17px] font-bold">次からすぐに開く</h2>
           <p className="mt-2 text-[14px]">
-            iPhoneのSafariで共有ボタンを押し、「ホーム画面に追加」を選ぶと、次からアイコンで開けます。
+            iPhone の Safari で共有ボタンを押し、「ホーム画面に追加」を選ぶと、次からアイコンで開けます。
           </p>
           <p className="mt-2 text-[14px] font-semibold">
             アイコンから開いたときと Safari
@@ -78,16 +77,16 @@ export default function GuidePage() {
         <ul className="mt-2 list-disc space-y-2 pl-5 text-[14px]">
           <li>予定を押す → 行き方を調べる・Googleカレンダー</li>
           <li>メニュー → 旅行：日ごとの行程と持ち物</li>
-          <li>メニュー → 資格の学習：1日の勉強時間の目安</li>
+          <li>メニュー → 勉強：1日の勉強時間の目安</li>
         </ul>
         {/* 新しく使えるようになった機能（2026-11-26 承認5の3） */}
         <h3 className="mt-3 text-[14px] font-bold">お金の見通しと整理</h3>
         <ul className="mt-1 list-disc space-y-2 pl-5 text-[14px]">
-          {FEATURES.forecast && <li>振り返り → 月末の見込み：今のペースだと月末にいくらになるか（確定ではありません）</li>}
-          {FEATURES.periodReport && <li>振り返り → 週・年：週ごと・月ごとの支出と収入の推移</li>}
+          {FEATURES.forecast && <li>家計簿 → 月末の見込み：今のペースだと月末にいくらになるか（確定ではありません）</li>}
+          {FEATURES.periodReport && <li>家計簿 → 週・年：週ごと・月ごとの支出と収入の推移</li>}
           {FEATURES.decide && <li>メニュー → 買い物の判断：買う前に、今月と来月の予算への影響を見る</li>}
-          {FEATURES.inbox && <li>メニュー → 未整理の記録：「その他」の記録を、店名ごとにまとめてカテゴリを付ける</li>}
-          {FEATURES.search && <li>メニュー → さがす：記録・予定・メモなどを、1つの言葉で全部の月から探す</li>}
+          {FEATURES.inbox && <li>メニュー → 未分類の記録：「その他」の記録を、店名ごとにまとめてカテゴリを付ける</li>}
+          {FEATURES.search && <li>メニュー → 検索：記録・予定・メモなどを、1つの言葉で全部の月から探す</li>}
           {(FEATURES.csvImport || FEATURES.icsImport) && <li>設定 → 家計簿の CSV・カレンダーのファイル（.ics）を取り込む（端末の中だけで読み込みます）</li>}
         </ul>
         <div className="mt-3 grid gap-1">
@@ -96,7 +95,7 @@ export default function GuidePage() {
             <IconChevronR className="size-4" />
           </Link>
           <Link href="/study" className={linkCls}>
-            資格の学習を開く
+            勉強を開く
             <IconChevronR className="size-4" />
           </Link>
         </div>
@@ -167,7 +166,7 @@ export default function GuidePage() {
           </ul>
         )}
         <p className="mt-2 text-[13px] text-ink-3">
-          このアプリは試用版（β版）です。使い勝手や表示は、これから変わることがあります。
+          このアプリはβ版（試用版）です。使い勝手や表示は、これから変わることがあります。
         </p>
       </Card>
     </main>

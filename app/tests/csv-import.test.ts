@@ -61,7 +61,7 @@ describe("家計簿の CSV の取り込み（Web 版、2026-11-24 平尾さん�
     expect(csvToIncoming(TX + "2026/11/01,支出,100,食費,,,,\n", cur, now)).toMatchObject({ ok: false, error: expect.stringContaining("2行目の日付") });
     expect(csvToIncoming(TX + "2026-11-01,支出,-100,食費,,,,\n", cur, now)).toMatchObject({ ok: false, error: expect.stringContaining("2行目の金額") });
     expect(csvToIncoming(TX + "2026-11-01,出費,100,食費,,,,\n", cur, now)).toMatchObject({ ok: false, error: expect.stringContaining("種類") });
-    expect(csvToIncoming(TX + "2026-11-01,支出,100,食費,,ポイント払い,,\n", cur, now)).toMatchObject({ ok: false, error: expect.stringContaining("支払い方法") });
+    expect(csvToIncoming(TX + "2026-11-01,支出,100,食費,,ポイント払い,,\n", cur, now)).toMatchObject({ ok: false, error: expect.stringContaining("支払方法") });
     expect(csvToIncoming("a,b\n1,2\n", cur, now)).toMatchObject({ ok: false, error: expect.stringContaining("見出し") });
   });
   it("固定費の CSV も入れられる。同じ名前・金額の固定費があれば足さない", () => {

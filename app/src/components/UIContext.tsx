@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   createContext,
   useCallback,
@@ -17,10 +18,14 @@ import { AddChooser } from "./AddChooser";
 import { todayStr } from "@/lib/date";
 import { usePathname, useRouter } from "next/navigation";
 
+// 自分用の「追加」の一覧（o31 F002。遅れて読む。公開版は AddChooser のまま）
+const PersonalAddSheet = process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(() => import("./AddSheet").then((m) => m.PersonalAddSheet), { ssr: false }) : null;
+
 interface ConfirmOpts {
   title: string;
   body?: string;
-  ok?: string;
+  /** 押すと何が起きるかを書いたボタン名（「削除」「破棄」など）。「OK」は使わない（用語辞書 JP023） */
+  ok: string;
   cancel?: string;
   danger?: boolean;
 }
@@ -189,7 +194,16 @@ export function UIProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={ui}>
       {children}
-      {add && (
+      {add && PersonalAddSheet && (
+        <PersonalAddSheet
+          key={add.key}
+          date={add.date}
+          onClose={() => setAdd(null)}
+          openTx={(type, date) => setTx({ mode: "new", type, date, key: ++seq.current })}
+          openEvent={(date) => setEv({ mode: "new", date, key: ++seq.current })}
+        />
+      )}
+      {add && !PersonalAddSheet && (
         <AddChooser
           key={add.key}
           date={add.date}
@@ -236,13 +250,13 @@ export function UIProvider({ children }: { children: ReactNode }) {
                 onClick={() => closeCf(false)}
                 autoFocus
               >
-                {cf.cancel ?? "キャンセル"}
+                {cf.cancel ?? "やめる"}
               </Button>
               <Button
                 variant={cf.danger ? "danger" : "primary"}
                 onClick={() => closeCf(true)}
               >
-                {cf.ok ?? "OK"}
+                {cf.ok}
               </Button>
             </div>
           </div>

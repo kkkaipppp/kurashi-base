@@ -46,7 +46,7 @@ export default function RecurringPage() {
         }
       />
       <p className="mb-3 text-[13px] text-ink-3">
-        固定費は支払いの「予定」として管理するので、支出の合計には入れません。支払ったら「支払いを記録」で支出として登録すると、次回予定日が進みます。
+        固定費は支払いの「予定」なので、支出の合計には入れません。支払ったら「支払いを記録」で支出にすると、次の支払日が進みます。
       </p>
       {data.recurring.some((r) => r.active) && (
         <Card className="mb-3 flex items-center justify-between py-3">
@@ -55,7 +55,7 @@ export default function RecurringPage() {
         </Card>
       )}
       {list.length === 0 ? (
-        <Empty action={<Button onClick={() => setEditing({ key: Date.now() })}>固定費を追加</Button>}>家賃・通信費・サブスクなどを登録できます。</Empty>
+        <Empty action={<Button onClick={() => setEditing({ key: Date.now() })}>固定費を追加</Button>}>固定費はまだありません。家賃・通信費・サブスクなどを追加できます。</Empty>
       ) : (
         <ul className="space-y-2">
           {list.map((r) => {
@@ -197,7 +197,7 @@ function RecurringSheet({ id, onClose }: { id?: string; onClose: () => void }) {
               <option value="yearly">毎年</option>
             </select>
           </Field>
-          <Field label="次回の支払日" htmlFor="rc-next" error={errors.nextDue} hint={cycle === "weekly" ? "この日から7日ごとに支払日になります" : "この日付の「日」が毎回の支払日になります（月末を超える月は月末）"}>
+          <Field label="次の支払日" htmlFor="rc-next" error={errors.nextDue} hint={cycle === "weekly" ? "この日から7日ごとに支払日になります" : "この日付の「日」が毎回の支払日になります（月末を超える月は月末）"}>
             <input id="rc-next" type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} className={inputCls} aria-invalid={!!errors.nextDue} />
           </Field>
         </div>

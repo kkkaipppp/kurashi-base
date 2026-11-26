@@ -11,7 +11,7 @@ const config: CollectionConfig<"documents"> = {
   title: "生活書類",
   noun: "書類",
   intro: "大事な書類の名前・期限・保管場所を記録します。書類の画像やファイルは保存しません（保管場所のメモだけです）。",
-  emptyText: "まだ書類が登録されていません。運転免許証やパスポートの期限から登録してみましょう。",
+  emptyText: "書類はまだありません。",
   fields: [
     { name: "title", label: "名前", type: "text", required: true, placeholder: "例：運転免許証" },
     { name: "category", label: "分類", type: "select", half: true, options: CATEGORIES.map((x) => ({ value: x, label: x })) },

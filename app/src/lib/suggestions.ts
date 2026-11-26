@@ -77,7 +77,7 @@ export function suggestions(d: AppData, today: string, opt: SuggestionOptions): 
 
   if (opt.inbox) {
     const n = inboxCount(d);
-    if (n > 0) all.push({ key: "inbox", title: `未整理の記録が${n}件あります`, why: "店名ごとにまとめて整理できます", href: "/inbox", score: 200 });
+    if (n > 0) all.push({ key: "inbox", title: `未分類の記録が${n}件あります`, why: "店名ごとにまとめて整理できます", href: "/inbox", score: 200 });
   }
 
   // 同じ対象は、いちばん点の高いものだけ

@@ -42,8 +42,8 @@ function seedFor(schema) {
 const clickText = (text) => `(() => { const scope = [...document.querySelectorAll('[role=dialog]')].pop() ?? document; const b = [...scope.querySelectorAll('button,a')].find(e => e.textContent.trim().replace(/^[^\\p{L}\\p{N}]+/u, '').startsWith(${JSON.stringify(text)}) || e.getAttribute('aria-label')?.startsWith(${JSON.stringify(text)})); if (b) { b.click(); return true } return false })()`;
 const SCREENS = [
   { id: "01_home", name: "ホーム", path: "/" },
-  { id: "02_add", name: "＋（何を追加するか）", path: "/", act: [clickText("追加する")] },
-  { id: "03_event_add", name: "予定を追加", path: "/", act: [clickText("追加する"), clickText("予定")] },
+  { id: "02_add", name: "追加（種類を選ぶ）", path: "/", act: [clickText("追加")] }, // 公開版は「追加する（…）」、自分用は右端の「追加」（o31）
+  { id: "03_event_add", name: "予定を追加", path: "/", act: [clickText("追加"), clickText("予定")] },
   { id: "04_event_detail", name: "予定の詳細", path: "/", act: [`(() => { const b = document.querySelector('main li button'); if (b) { b.click(); return true } return false })()`], sampleOnly: true },
   { id: "04b_event_edit", name: "予定を編集", path: "/", act: [`(() => { const b = document.querySelector('main li button'); if (b) { b.click(); return true } return false })()`, clickText("編集する")], sampleOnly: true },
   { id: "05_calendar", name: "カレンダー", path: "/calendar" },
@@ -58,8 +58,28 @@ const SCREENS = [
   { id: "11_guide", name: "使い方", path: "/guide" },
   { id: "12_settings", name: "設定", path: "/settings" },
   { id: "12a_csv_calendar", name: "カレンダー用ファイル・CSV の取り込み", path: "/settings", act: [`(() => { const e = document.getElementById("calendar-file"); if (e) { e.scrollIntoView(); return true } return false })()`] },
+  { id: "12c_nav", name: "下のメニューの編集（自分用）", path: "/settings", act: [`(() => { const e = document.getElementById("nav"); if (e) { e.scrollIntoView(); return true } return false })()`] },
   { id: "12b_backup", name: "バックアップと復元", path: "/settings", act: [`(() => { const e = document.getElementById("backup"); if (e) { e.scrollIntoView(); return true } return false })()`] },
   { id: "13_history", name: "取引履歴", path: "/history" },
+  { id: "14_tasks", name: "やること", path: "/tasks" }, // o29 の全画面（2026-11-27）
+  { id: "15_search", name: "さがす", path: "/search" }, // o29 の全画面（2026-11-27）
+  { id: "16_recurring", name: "定期支払い", path: "/recurring" }, // o29 の全画面（2026-11-27）
+  { id: "17_decide", name: "買い物の判断", path: "/decide" }, // o29 の全画面（2026-11-27）
+  { id: "18_inbox", name: "未整理の記録", path: "/inbox" }, // o29 の全画面（2026-11-27）
+  { id: "19_import", name: "データ取り込み", path: "/import" }, // o29 の全画面（2026-11-27）
+  { id: "20_goals", name: "目標", path: "/goals" }, // o29 の全画面（2026-11-27）
+  { id: "21_life", name: "計画", path: "/life" }, // o29 の全画面（2026-11-27）
+  { id: "22_assets", name: "資産", path: "/assets" }, // o29 の全画面（2026-11-27）
+  { id: "23_nisa", name: "NISA", path: "/nisa" }, // o29 の全画面（2026-11-27）
+  { id: "24_contracts", name: "契約", path: "/contracts" }, // o29 の全画面（2026-11-27）
+  { id: "25_documents", name: "書類", path: "/documents" }, // o29 の全画面（2026-11-27）
+  { id: "26_notes", name: "メモ", path: "/notes" }, // o29 の全画面（2026-11-27）
+  { id: "27_health", name: "健康", path: "/health" }, // o29 の全画面（2026-11-27）
+  { id: "28_integrations", name: "外部連携", path: "/integrations" }, // o29 の全画面（2026-11-27）
+  { id: "29_widget", name: "ウィジェット", path: "/widget" }, // o29 の全画面（2026-11-27）
+  { id: "30_share", name: "共有", path: "/share" }, // o29 の全画面（2026-11-27）
+  { id: "31_ai", name: "AI", path: "/ai" }, // o29 の全画面（2026-11-27）
+  { id: "32_perf", name: "性能", path: "/perf" }, // o29 の全画面（2026-11-27）
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -121,7 +141,10 @@ async function main() {
       mkdirSync(join(OUT, state), { recursive: true });
       manifest.states[state] = [];
       await go(`${BASE}/`);
+      // 自分用は IndexedDB に保存する（A04/A05）。前の状態の IndexedDB が残っていると localStorage のサンプルが読まれないので、先に両方消す（2026-11-27）
+      await send("Storage.clearDataForOrigin", { origin: new URL(BASE).origin, storageTypes: "indexeddb,local_storage" });
       await evaluate(state === "empty" ? `localStorage.clear()` : `localStorage.clear(); localStorage.setItem(${JSON.stringify(KEY)}, ${JSON.stringify(JSON.stringify(seedFor(SCHEMA)))})`);
+      await go(`${BASE}/`); // 入れたサンプルを読み込ませる（自分用はここで IndexedDB へ移る）
       for (const s of SCREENS) {
         if (state === "empty" && s.sampleOnly) continue;
         const status = (await fetch(BASE + s.path.split("?")[0]).catch(() => null))?.status;

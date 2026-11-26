@@ -256,7 +256,7 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
           )}
           {link && (
             <a href={link} target="_blank" rel="noopener noreferrer" className={linkBtn}>
-              登録したページを開く
+              URL のページを開く
             </a>
           )}
           {gcal && (
@@ -264,7 +264,7 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
               Googleカレンダーで予定を作る
             </a>
           )}
-          {gcal && <p className="text-[12px] text-ink-3">Google の画面で「保存」すると登録されます（予定名・日時・場所だけ渡します。連動はしません）。</p>}
+          {gcal && <p className="text-[12px] text-ink-3">Google の画面で「保存」すると、Google カレンダーに入ります（タイトル・日時・場所だけ渡します。連動はしません）。</p>}
         </div>
         {ev.repeat && ev.repeat !== "none" && (
           <p className="text-[12px] text-ink-3">繰り返しの予定です。編集・削除は、繰り返しのすべての日に反映されます（1回分だけの変更には、まだ対応していません）。</p>
@@ -340,7 +340,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     if (pending.base && initialEventSnapshot.current && pending.base !== initialEventSnapshot.current) {
       const ok = await ui.confirm({
         title: "元の予定が、下書きのあとに変わっています",
-        body: "続きからにすると、今の予定の中身が下書きの中身に置き換わります（保存するまでは変わりません）。今の予定のまま直す場合は「今の予定を使う」を選んでください（下書きは捨てます）。",
+        body: "続きからにすると、今の予定の中身が下書きの中身に置き換わります（保存するまでは変わりません）。今の予定のまま直す場合は「今の予定を使う」を選んでください（下書きは破棄します）。",
         ok: "下書きを使う",
         cancel: "今の予定を使う",
       });
@@ -513,7 +513,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
                 setResumeAsked(true);
               }}
             >
-              捨てる
+              破棄する
             </Button>
             <Button onClick={resume}>
               続きから
@@ -530,7 +530,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
           save();
         }}
       >
-        <Field label="予定名" htmlFor="ev-title" error={errors.title}>
+        <Field label="タイトル" htmlFor="ev-title" error={errors.title}>
           <input
             id="ev-title"
             value={draft.title}
@@ -592,7 +592,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
 
             <div>
               <p className="mb-1 text-[14px] font-semibold">
-                持ち物<span className="ml-1 text-[12px] font-normal text-ink-3">任意</span>
+                持ち物<span className="ml-1 rounded bg-surface-2 px-1 py-px text-[12px] font-medium text-ink-3">任意</span>
               </p>
               {extra.items.length > 0 && (
                 <ul className="mb-2 space-y-1">

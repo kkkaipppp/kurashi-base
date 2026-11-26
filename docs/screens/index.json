@@ -2521,6 +2521,250 @@
     }
   },
   {
+    "dir": "2026-11-24_plan100-personal_c9b0b32",
+    "date": "2026-11-24",
+    "label": "plan100-personal",
+    "commit": "c9b0b32",
+    "viewport": "375x812@2x",
+    "screens": {
+      "empty": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "＋（何を追加するか）",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-24_plan100-personal_c9b0b32/empty/13_history.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ],
+      "sample": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "＋（何を追加するか）",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04_event_detail",
+          "name": "予定の詳細",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/04_event_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04b_event_edit",
+          "name": "予定を編集",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/04b_event_edit.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "08_trip_detail",
+          "name": "旅行の詳細",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/08_trip_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-24_plan100-personal_c9b0b32/sample/13_history.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ]
+    }
+  },
+  {
     "dir": "2026-11-24_review-personal_c253395",
     "date": "2026-11-24",
     "label": "review-personal",
@@ -3002,6 +3246,2052 @@
           "id": "13_history",
           "name": "取引履歴",
           "file": "2026-11-24_review2-personal_d160d17/sample/13_history.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ]
+    }
+  },
+  {
+    "dir": "2026-11-25_v21-personal_e11d8be",
+    "date": "2026-11-25",
+    "label": "v21-personal",
+    "commit": "e11d8be",
+    "viewport": "375x812@2x",
+    "screens": {
+      "empty": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "＋（何を追加するか）",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-25_v21-personal_e11d8be/empty/13_history.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ],
+      "sample": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "＋（何を追加するか）",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04_event_detail",
+          "name": "予定の詳細",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/04_event_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04b_event_edit",
+          "name": "予定を編集",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/04b_event_edit.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "08_trip_detail",
+          "name": "旅行の詳細",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/08_trip_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-25_v21-personal_e11d8be/sample/13_history.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ]
+    }
+  },
+  {
+    "dir": "2026-11-25_v21-round4-personal_afaca0b",
+    "date": "2026-11-25",
+    "label": "v21-round4-personal",
+    "commit": "afaca0b",
+    "viewport": "375x812@2x",
+    "screens": {
+      "empty": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "＋（何を追加するか）",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/empty/13_history.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ],
+      "sample": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "＋（何を追加するか）",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04_event_detail",
+          "name": "予定の詳細",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/04_event_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04b_event_edit",
+          "name": "予定を編集",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/04b_event_edit.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "08_trip_detail",
+          "name": "旅行の詳細",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/08_trip_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-25_v21-round4-personal_afaca0b/sample/13_history.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ]
+    }
+  },
+  {
+    "dir": "2026-11-27_o29-before-personal_1ec623c_390",
+    "date": "2026-11-27",
+    "label": "o29-before-personal",
+    "commit": "1ec623c",
+    "viewport": "390x844@2x",
+    "screens": {
+      "empty": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "＋（何を追加するか）",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/13_history.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "14_tasks",
+          "name": "やること",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/14_tasks.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "15_search",
+          "name": "さがす",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/15_search.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "16_recurring",
+          "name": "定期支払い",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/16_recurring.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "17_decide",
+          "name": "買い物の判断",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/17_decide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "18_inbox",
+          "name": "未整理の記録",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/18_inbox.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "19_import",
+          "name": "データ取り込み",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/19_import.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "20_goals",
+          "name": "目標",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/20_goals.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "21_life",
+          "name": "計画",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/21_life.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "22_assets",
+          "name": "資産",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/22_assets.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "23_nisa",
+          "name": "NISA",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/23_nisa.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "24_contracts",
+          "name": "契約",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/24_contracts.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "25_documents",
+          "name": "書類",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/25_documents.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "26_notes",
+          "name": "メモ",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/26_notes.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "27_health",
+          "name": "健康",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/27_health.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "28_integrations",
+          "name": "外部連携",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/28_integrations.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "29_widget",
+          "name": "ウィジェット",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/29_widget.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "30_share",
+          "name": "共有",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/30_share.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "31_ai",
+          "name": "AI",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/31_ai.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "32_perf",
+          "name": "性能",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/empty/32_perf.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ],
+      "sample": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "＋（何を追加するか）",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04_event_detail",
+          "name": "予定の詳細",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/04_event_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04b_event_edit",
+          "name": "予定を編集",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/04b_event_edit.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "08_trip_detail",
+          "name": "旅行の詳細",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/08_trip_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/13_history.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "14_tasks",
+          "name": "やること",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/14_tasks.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "15_search",
+          "name": "さがす",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/15_search.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "16_recurring",
+          "name": "定期支払い",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/16_recurring.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "17_decide",
+          "name": "買い物の判断",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/17_decide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "18_inbox",
+          "name": "未整理の記録",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/18_inbox.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "19_import",
+          "name": "データ取り込み",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/19_import.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "20_goals",
+          "name": "目標",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/20_goals.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "21_life",
+          "name": "計画",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/21_life.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "22_assets",
+          "name": "資産",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/22_assets.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "23_nisa",
+          "name": "NISA",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/23_nisa.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "24_contracts",
+          "name": "契約",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/24_contracts.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "25_documents",
+          "name": "書類",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/25_documents.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "26_notes",
+          "name": "メモ",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/26_notes.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "27_health",
+          "name": "健康",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/27_health.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "28_integrations",
+          "name": "外部連携",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/28_integrations.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "29_widget",
+          "name": "ウィジェット",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/29_widget.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "30_share",
+          "name": "共有",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/30_share.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "31_ai",
+          "name": "AI",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/31_ai.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "32_perf",
+          "name": "性能",
+          "file": "2026-11-27_o29-before-personal_1ec623c_390/sample/32_perf.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ]
+    }
+  },
+  {
+    "dir": "2026-11-27_o31-personal_5b50c09_390",
+    "date": "2026-11-27",
+    "label": "o31-personal",
+    "commit": "5b50c09",
+    "viewport": "390x844@2x",
+    "screens": {
+      "empty": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "追加（種類を選ぶ）",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12c_nav",
+          "name": "下のメニューの編集（自分用）",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/12c_nav.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/13_history.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "14_tasks",
+          "name": "やること",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/14_tasks.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "15_search",
+          "name": "さがす",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/15_search.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "16_recurring",
+          "name": "定期支払い",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/16_recurring.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "17_decide",
+          "name": "買い物の判断",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/17_decide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "18_inbox",
+          "name": "未整理の記録",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/18_inbox.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "19_import",
+          "name": "データ取り込み",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/19_import.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "20_goals",
+          "name": "目標",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/20_goals.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "21_life",
+          "name": "計画",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/21_life.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "22_assets",
+          "name": "資産",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/22_assets.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "23_nisa",
+          "name": "NISA",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/23_nisa.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "24_contracts",
+          "name": "契約",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/24_contracts.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "25_documents",
+          "name": "書類",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/25_documents.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "26_notes",
+          "name": "メモ",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/26_notes.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "27_health",
+          "name": "健康",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/27_health.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "28_integrations",
+          "name": "外部連携",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/28_integrations.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "29_widget",
+          "name": "ウィジェット",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/29_widget.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "30_share",
+          "name": "共有",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/30_share.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "31_ai",
+          "name": "AI",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/31_ai.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "32_perf",
+          "name": "性能",
+          "file": "2026-11-27_o31-personal_5b50c09_390/empty/32_perf.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ],
+      "sample": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "追加（種類を選ぶ）",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/03_event_add.jpg",
+          "skipped": null,
+          "note": "操作のボタンが見つからず、開いただけの画面"
+        },
+        {
+          "id": "04_event_detail",
+          "name": "予定の詳細",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/04_event_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04b_event_edit",
+          "name": "予定を編集",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/04b_event_edit.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "08_trip_detail",
+          "name": "旅行の詳細",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/08_trip_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12c_nav",
+          "name": "下のメニューの編集（自分用）",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/12c_nav.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/13_history.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "14_tasks",
+          "name": "やること",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/14_tasks.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "15_search",
+          "name": "さがす",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/15_search.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "16_recurring",
+          "name": "定期支払い",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/16_recurring.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "17_decide",
+          "name": "買い物の判断",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/17_decide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "18_inbox",
+          "name": "未整理の記録",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/18_inbox.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "19_import",
+          "name": "データ取り込み",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/19_import.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "20_goals",
+          "name": "目標",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/20_goals.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "21_life",
+          "name": "計画",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/21_life.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "22_assets",
+          "name": "資産",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/22_assets.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "23_nisa",
+          "name": "NISA",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/23_nisa.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "24_contracts",
+          "name": "契約",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/24_contracts.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "25_documents",
+          "name": "書類",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/25_documents.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "26_notes",
+          "name": "メモ",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/26_notes.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "27_health",
+          "name": "健康",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/27_health.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "28_integrations",
+          "name": "外部連携",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/28_integrations.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "29_widget",
+          "name": "ウィジェット",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/29_widget.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "30_share",
+          "name": "共有",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/30_share.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "31_ai",
+          "name": "AI",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/31_ai.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "32_perf",
+          "name": "性能",
+          "file": "2026-11-27_o31-personal_5b50c09_390/sample/32_perf.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ]
+    }
+  },
+  {
+    "dir": "2026-11-27_o31-public_5b50c09_390",
+    "date": "2026-11-27",
+    "label": "o31-public",
+    "commit": "5b50c09",
+    "viewport": "390x844@2x",
+    "screens": {
+      "empty": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "追加（種類を選ぶ）",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12c_nav",
+          "name": "下のメニューの編集（自分用）",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/12c_nav.jpg",
+          "skipped": null,
+          "note": "操作のボタンが見つからず、開いただけの画面"
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/13_history.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "14_tasks",
+          "name": "やること",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/14_tasks.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "15_search",
+          "name": "さがす",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/15_search.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "16_recurring",
+          "name": "定期支払い",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/16_recurring.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "17_decide",
+          "name": "買い物の判断",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/17_decide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "18_inbox",
+          "name": "未整理の記録",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/18_inbox.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "19_import",
+          "name": "データ取り込み",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/19_import.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "20_goals",
+          "name": "目標",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/20_goals.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "21_life",
+          "name": "計画",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/21_life.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "22_assets",
+          "name": "資産",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/22_assets.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "23_nisa",
+          "name": "NISA",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/23_nisa.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "24_contracts",
+          "name": "契約",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/24_contracts.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "25_documents",
+          "name": "書類",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/25_documents.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "26_notes",
+          "name": "メモ",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/26_notes.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "27_health",
+          "name": "健康",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/27_health.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "28_integrations",
+          "name": "外部連携",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/28_integrations.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "29_widget",
+          "name": "ウィジェット",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/29_widget.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "30_share",
+          "name": "共有",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/30_share.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "31_ai",
+          "name": "AI",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/31_ai.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "32_perf",
+          "name": "性能",
+          "file": "2026-11-27_o31-public_5b50c09_390/empty/32_perf.jpg",
+          "skipped": null,
+          "note": null
+        }
+      ],
+      "sample": [
+        {
+          "id": "01_home",
+          "name": "ホーム",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/01_home.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "02_add",
+          "name": "追加（種類を選ぶ）",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/02_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "03_event_add",
+          "name": "予定を追加",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/03_event_add.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04_event_detail",
+          "name": "予定の詳細",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/04_event_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "04b_event_edit",
+          "name": "予定を編集",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/04b_event_edit.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "05_calendar",
+          "name": "カレンダー",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/05_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06_report",
+          "name": "振り返り",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/06_report.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06b_report_week",
+          "name": "振り返り（週）",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/06b_report_week.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "06c_report_year",
+          "name": "振り返り（年）",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/06c_report_year.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "07_trips",
+          "name": "旅行",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/07_trips.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "08_trip_detail",
+          "name": "旅行の詳細",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/08_trip_detail.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "09_study",
+          "name": "資格の学習",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/09_study.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "10_menu",
+          "name": "メニュー",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/10_menu.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "11_guide",
+          "name": "使い方",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/11_guide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12_settings",
+          "name": "設定",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/12_settings.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12a_csv_calendar",
+          "name": "カレンダー用ファイル・CSV の取り込み",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/12a_csv_calendar.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "12c_nav",
+          "name": "下のメニューの編集（自分用）",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/12c_nav.jpg",
+          "skipped": null,
+          "note": "操作のボタンが見つからず、開いただけの画面"
+        },
+        {
+          "id": "12b_backup",
+          "name": "バックアップと復元",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/12b_backup.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "13_history",
+          "name": "取引履歴",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/13_history.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "14_tasks",
+          "name": "やること",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/14_tasks.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "15_search",
+          "name": "さがす",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/15_search.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "16_recurring",
+          "name": "定期支払い",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/16_recurring.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "17_decide",
+          "name": "買い物の判断",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/17_decide.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "18_inbox",
+          "name": "未整理の記録",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/18_inbox.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "19_import",
+          "name": "データ取り込み",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/19_import.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "20_goals",
+          "name": "目標",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/20_goals.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "21_life",
+          "name": "計画",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/21_life.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "22_assets",
+          "name": "資産",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/22_assets.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "23_nisa",
+          "name": "NISA",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/23_nisa.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "24_contracts",
+          "name": "契約",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/24_contracts.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "25_documents",
+          "name": "書類",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/25_documents.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "26_notes",
+          "name": "メモ",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/26_notes.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "27_health",
+          "name": "健康",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/27_health.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "28_integrations",
+          "name": "外部連携",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/28_integrations.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "29_widget",
+          "name": "ウィジェット",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/29_widget.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "30_share",
+          "name": "共有",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/30_share.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "31_ai",
+          "name": "AI",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/31_ai.jpg",
+          "skipped": null,
+          "note": null
+        },
+        {
+          "id": "32_perf",
+          "name": "性能",
+          "file": "2026-11-27_o31-public_5b50c09_390/sample/32_perf.jpg",
           "skipped": null,
           "note": null
         }

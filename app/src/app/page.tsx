@@ -14,7 +14,7 @@ import { useUI } from "@/components/UIContext";
 import { AddFromQuery } from "@/components/AddFromQuery";
 import { EventRow, TxRow } from "@/components/Rows";
 import { LogoLockup } from "@/components/Logo";
-import { Card, DevBadge, IconChevronR, IconSearch, SectionTitle } from "@/components/ui";
+import { Card, DevBadge, GlobalActions, IconChevronR, IconSearch, SectionTitle } from "@/components/ui";
 import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
 import { monthLedger } from "@/lib/ledger";
 import { addMonthsToKey } from "@/lib/date";
@@ -108,7 +108,7 @@ export default function HomePage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 id="home-budget" className="text-[14px] font-semibold opacity-90">
-                {remaining === null ? "今月の支出" : "今月の残り予算"}
+                {remaining === null ? "今月の支出" : "今月の予算の残り"}
               </h2>
               {remaining === null ? (
                 <p className="num mt-1 text-[32px] break-words leading-tight font-bold">{formatYen(sum.expense)}</p>
@@ -129,7 +129,7 @@ export default function HomePage() {
             data.transactions.length >= BUDGET_HINT_AFTER && (
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[13px] opacity-90">
-                {lastMonthExpense > 0 ? `先月の支出は${formatYen(lastMonthExpense)}でした。` : ""}予算を設定すると、今月の残り予算が分かります。設定は任意です。
+                {lastMonthExpense > 0 ? `先月の支出は${formatYen(lastMonthExpense)}でした。` : ""}予算を設定すると、今月の予算の残りが分かります。設定は任意です。
               </p>
               <Link href="/settings#budget" className="inline-flex min-h-11 items-center rounded-xl bg-white/15 px-4 text-[14px] font-semibold hover:bg-white/25">
                 予算を設定する
@@ -146,7 +146,7 @@ export default function HomePage() {
                   予算 {formatYen(data.budget.monthly ?? 0)}・使った額{ledger ? "（投資を除く）" : ""} {formatYen(spentForBudget)}
                 </p>
                 <Link href="/report" className="inline-flex min-h-11 shrink-0 items-center rounded-lg bg-white/15 px-3 text-[12px] font-semibold hover:bg-white/25">
-                  振り返り
+                  家計簿
                 </Link>
               </div>
               {allowance && (
@@ -412,15 +412,13 @@ export default function HomePage() {
           {/* ホームの編集（右上。自分用だけ。100点化の指示 E） */}
           {/* さがす：2026-11-25 から公開版（友達用）にも出す。ホームの編集は自分用だけ */}
           {!PERSONAL && (
-            <Link href="/search" aria-label="さがす" className="inline-flex size-11 items-center justify-center rounded-lg text-brand hover:bg-brand-soft">
+            <Link href="/search" aria-label="検索" className="inline-flex size-11 items-center justify-center rounded-lg text-brand hover:bg-brand-soft">
               <IconSearch className="size-5" />
             </Link>
           )}
           {PERSONAL && (
             <div className="flex items-center gap-0.5">
-              <Link href="/search" aria-label="さがす" className="inline-flex size-11 items-center justify-center rounded-lg text-brand hover:bg-brand-soft">
-                <IconSearch className="size-5" />
-              </Link>
+              <GlobalActions />
               <button type="button" aria-label="ホームを編集" onClick={() => setEditLayout(currentLayout(prefs))} className="min-h-11 rounded-lg px-2 text-[13px] font-semibold text-brand hover:bg-brand-soft">
                 編集
               </button>

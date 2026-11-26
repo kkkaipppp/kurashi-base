@@ -9,6 +9,7 @@ import { goalActions } from "@/lib/goalLinks";
 import { displayProgress, parseSteps, stepProgress, stepsToText } from "@/lib/goalSteps";
 import { IS_PERSONAL } from "@/lib/edition";
 import { Card } from "@/components/ui";
+import { GoalConditionsButton, VERDICT_LABEL, goalVerdict } from "@/components/GoalConditions";
 
 // 版の値を、このファイルの中で直接比べる（公開版の組み立てから、自分用の入力を外すため）
 const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
@@ -19,7 +20,7 @@ const config: CollectionConfig<"goals"> = {
   key: "goals",
   title: "目標",
   noun: "目標",
-  intro: "数値目標（例：100万円ためる）と、達成目標（例：引っ越す）を登録できます。進み具合は自分で更新します。",
+  intro: "数値目標（例：100万円ためる）と、達成目標（例：引っ越す）を追加できます。進み具合は自分で更新します。",
   emptyText: "まだ目標がありません。",
   fields: [
     { name: "title", label: "内容", type: "text", required: true, placeholder: "例：旅行のために30万円ためる" },
@@ -89,7 +90,10 @@ const config: CollectionConfig<"goals"> = {
         (g.kind === "number" && g.target !== null ? `${fmt(g.current)} / ${fmt(g.target)}${g.unit}・` : "") +
         (g.deadline ? `${formatDateJa(g.deadline, true)}まで` : "期限なし") +
         (stepProgress(g).total > 0 && IS_PERSONAL ? `・やること${stepProgress(g).done}/${stepProgress(g).total}` : "") +
-        (act && act.events > 0 ? `・予定${act.events}件（完了${act.doneCount}回）` : ""),
+        (act && act.events > 0 ? `・予定${act.events}件（完了${act.doneCount}回）` : "") +
+        // 自分用：達成条件のまとめた結果（o31 F018。条件が無ければ出さない）
+        (PERSONAL_BUILD && goalVerdict(g, today) ? `・条件を${VERDICT_LABEL[goalVerdict(g, today)!]}` : "") +
+        (PERSONAL_BUILD && g.parentId && data.goals.some((x) => x.id === g.parentId) ? `・親：${data.goals.find((x) => x.id === g.parentId)!.title}` : ""),
       muted: g.done,
       badge: g.done ? { text: "達成", tone: "ok" } : d !== null && d < 0 ? { text: dueLabel(d), tone: "warn" } : undefined,
       right: (
@@ -104,6 +108,9 @@ const config: CollectionConfig<"goals"> = {
     };
   },
 };
+
+// 自分用：一覧の行に「条件」（達成条件・まとめ方・親の目標。o31 F018・F019）
+if (PERSONAL_BUILD) config.rowAction = (g) => <GoalConditionsButton goal={g} />;
 
 export default function GoalsPage() {
   return <CollectionPage config={config} />;

@@ -29,7 +29,7 @@ describe("旅行のコピー", () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     const t = r.next.trips!.find((x) => x.id === r.tripId)!;
-    expect([t.title, t.startDate, t.endDate, t.budget, t.destination]).toEqual(["京都（コピー）", "2027-03-10", "2027-03-12", 60000, "京都"]);
+    expect([t.title, t.startDate, t.endDate, t.budget, t.destination]).toEqual(["京都（複製）", "2027-03-10", "2027-03-12", 60000, "京都"]);
     const evs = r.next.events.filter((e) => e.tripId === r.tripId);
     expect(r.events).toBe(2);
     expect(evs.map((e) => [e.title, e.startDate, e.endDate])).toEqual([["新幹線", "2027-03-10", "2027-03-10"], ["宿", "2027-03-10", "2027-03-12"]]);

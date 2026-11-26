@@ -72,7 +72,7 @@ export function MonthBreakdownCard({ month }: { month: string }) {
               </div>
             </dl>
             <p className="mt-1 text-[12px] text-ink-3">
-              固定費は、固定費の画面に登録したカテゴリの支出です。
+              固定費は、固定費の画面で選んだカテゴリの支出です。
             </p>
           </>
         ) : (

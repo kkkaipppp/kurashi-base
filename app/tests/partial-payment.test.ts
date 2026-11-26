@@ -65,7 +65,7 @@ describe("固定費の一部の支払い（X02）", () => {
     d.recurring = [rc({ nextDueDate: "2026-11-25", partialPaid: { due: "2026-11-25", paid: 3000 } })];
     const item = buildTodayItems(d, "2026-11-25").find((i) => i.key === "rc-r");
     expect(item?.title).toContain("¥2,000");
-    expect(item?.sub).toContain("一部 ¥3,000 は支払い済み");
+    expect(item?.sub).toContain("一部 ¥3,000 は支払済み");
     expect(src("app/calendar/page.tsx")).toContain("r.amount - r.partialPaid.paid");
     const ok = validateAppData(JSON.parse(JSON.stringify(d)));
     expect(ok.ok).toBe(true);
