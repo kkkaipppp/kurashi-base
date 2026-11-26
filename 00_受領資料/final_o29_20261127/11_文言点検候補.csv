@@ -1,0 +1,160 @@
+﻿版,パス,行,検出語,候補,根拠行,状態
+公開,app/page.tsx,59,タスク,やること,// 今日やること：期限が今日まで（過ぎたものを先に）の未完了タスク,要目視・文脈確認
+公開,app/page.tsx,62,タスク,やること,// 確認したいこと：タスクは「今日やること」に出すので除く,要目視・文脈確認
+公開,app/page.tsx,117,振り返り,家計簿（金融画面の場合）,振り返り,要目視・文脈確認
+公開,app/guide/page.tsx,30,タスク,やること,<li>画面下の「＋」から、支出・収入・予定・タスクを追加する</li>,要目視・文脈確認
+公開,app/guide/page.tsx,31,振り返り,家計簿（金融画面の場合）,<li>カレンダーでその日の記録を、振り返りで今月の使い方を見る</li>,要目視・文脈確認
+公開,app/history/page.tsx,14,振り返り,家計簿（金融画面の場合）,/** 振り返りなどからの ?m=YYYY-MM&cat=<id> を、絞り込みに反映する */,要目視・文脈確認
+公開,app/settings/page.tsx,225,登録,追加（新規開始）／保存（確定）,"<p className=""mt-1 text-[12px] text-ink-3"">非表示にしても、登録済みの取引のカテゴリはそのまま残ります。</p>",要目視・文脈確認
+公開,app/study/page.tsx,190,登録,追加（新規開始）／保存（確定）,"<p className=""mb-1 text-[12px] font-semibold text-ink-3"">登録した参考書</p>",要目視・文脈確認
+公開,app/study/page.tsx,365,登録,追加（新規開始）／保存（確定）,「{q.trim()}」を自分で登録する,要目視・文脈確認
+公開,components/EventSheet.tsx,194,登録,追加（新規開始）／保存（確定）,登録したページを開く,要目視・文脈確認
+公開,components/EventSheet.tsx,202,登録,追加（新規開始）／保存（確定）,"{gcal && <p className=""text-[12px] text-ink-3"">Google の画面で「保存」すると登録されます（予定名・日時・場所だけ渡します。連動はしません）。</p>}",要目視・文脈確認
+公開,components/UIContext.tsx,18,タスク,やること,/** 何を追加するか選ぶシート（支出・収入・予定・タスク）。date はその日付で入力を始める */,要目視・文脈確認
+公開,components/UIContext.tsx,113,キャンセル,閉じる／やめる（文脈別）,キャンセル,要目視・文脈確認
+公開,components/UIContext.tsx,116,OK,保存／削除／確認（結果を明示）,"{cf.ok ?? ""OK""}",要目視・文脈確認
+公開,app/page.tsx,65,振り返り,家計簿（金融画面の場合）,// 自分用は、予算と比べるのを「投資を除いた生活費」に。ホーム・振り返り・1日あたりで同じ計算（lib/ledger.ts。100点化の指示 D）。,要目視・文脈確認
+公開,app/page.tsx,85,タスク,やること,// 今日やること：期限が今日まで（過ぎたものを先に）の未完了タスク,要目視・文脈確認
+公開,app/page.tsx,88,タスク,やること,// 確認したいこと：タスクは「今日やること」に出すので除く,要目視・文脈確認
+公開,app/page.tsx,149,振り返り,家計簿（金融画面の場合）,振り返り,要目視・文脈確認
+公開,app/assets/page.tsx,31,登録,追加（新規開始）／保存（確定）,"emptyText: ""まだ資産が登録されていません。預金口座などを追加しましょう。"",",要目視・文脈確認
+公開,app/calendar/page.tsx,104,支払い予定,支払予定,// 選んだ日の固定費の支払い予定（実績の支出とは分ける。自分用だけ：公開版は友人β中なので今のまま）,要目視・文脈確認
+公開,app/calendar/page.tsx,263,支払い予定,支払予定,{/* 固定費の支払い予定（実績の支出とは分けて出す。100点化の指示 A） */},要目視・文脈確認
+公開,app/contracts/page.tsx,20,登録,追加（新規開始）／保存（確定）,"intro: ""スマホ・保険・サブスク・賃貸などの契約と、更新日を記録します。支払いを家計に入れるときは「固定費」にも登録してください。解約の手続きは、各サービスで行ってください。"",",要目視・文脈確認
+公開,app/contracts/page.tsx,21,登録,追加（新規開始）／保存（確定）,"emptyText: ""まだ契約が登録されていません。"",",要目視・文脈確認
+公開,app/decide/page.tsx,121,登録,追加（新規開始）／保存（確定）,<li>来月に払う固定費は、登録済みの分で合計 {formatYen(a.nextMonth.fixed)} です</li>,要目視・文脈確認
+公開,app/documents/page.tsx,14,登録,追加（新規開始）／保存（確定）,"emptyText: ""まだ書類が登録されていません。運転免許証やパスポートの期限から登録してみましょう。"",",要目視・文脈確認
+公開,app/goals/page.tsx,22,登録,追加（新規開始）／保存（確定）,"intro: ""数値目標（例：100万円ためる）と、達成目標（例：引っ越す）を登録できます。進み具合は自分で更新します。"",",要目視・文脈確認
+公開,app/guide/page.tsx,42,タスク,やること,<li>画面下の「＋」から、支出・収入・予定・タスクを追加する</li>,要目視・文脈確認
+公開,app/guide/page.tsx,43,振り返り,家計簿（金融画面の場合）,<li>カレンダーでその日の記録を、振り返りで今月の使い方を見る</li>,要目視・文脈確認
+公開,app/guide/page.tsx,86,振り返り,家計簿（金融画面の場合）,{FEATURES.forecast && <li>振り返り → 月末の見込み：今のペースだと月末にいくらになるか（確定ではありません）</li>},要目視・文脈確認
+公開,app/guide/page.tsx,87,振り返り,家計簿（金融画面の場合）,{FEATURES.periodReport && <li>振り返り → 週・年：週ごと・月ごとの支出と収入の推移</li>},要目視・文脈確認
+公開,app/history/page.tsx,17,振り返り,家計簿（金融画面の場合）,/** 振り返りなどからの ?m=YYYY-MM&cat=<id> を、絞り込みに反映する */,要目視・文脈確認
+公開,app/import/page.tsx,13,OK,保存／削除／確認（結果を明示）,"const OK_TYPES = [""image/png"", ""image/jpeg"", ""image/webp"", ""image/gif"", ""image/heic"", ""image/heif""];",要目視・文脈確認
+公開,app/import/page.tsx,39,OK,保存／削除／確認（結果を明示）,"if (!f.type.startsWith(""image/"") || (f.type && !OK_TYPES.includes(f.type))) {",要目視・文脈確認
+公開,app/import/page.tsx,75,登録,追加（新規開始）／保存（確定）,画像を見ながら金額・日付・店名を入力して登録します。入力した内容を確認するまで、取引は登録されません。,要目視・文脈確認
+公開,app/import/page.tsx,112,登録,追加（新規開始）／保存（確定）,"<p className=""mt-1 text-ink-2"">別の支出として登録するときだけ、先に進んでください。</p>",要目視・文脈確認
+公開,app/life/page.tsx,117,登録,追加（新規開始）／保存（確定）,"{active.length === 0 && <p className=""text-[12px] text-ink-3"">固定費が登録されていません</p>}",要目視・文脈確認
+公開,app/menu/page.tsx,25,タスク,やること,"{ href: ""/tasks"", label: ""タスク"", desc: ""やることと期限"", count: (d) => d.tasks.filter((t) => !t.done).length },",要目視・文脈確認
+公開,app/recurring/page.tsx,49,登録,追加（新規開始）／保存（確定）,固定費は支払いの「予定」として管理するので、支出の合計には入れません。支払ったら「支払いを記録」で支出として登録すると、次回予定日が進みます。,要目視・文脈確認
+公開,app/recurring/page.tsx,58,登録,追加（新規開始）／保存（確定）,<Empty action={<Button onClick={() => setEditing({ key: Date.now() })}>固定費を追加</Button>}>家賃・通信費・サブスクなどを登録できます。</Empty>,要目視・文脈確認
+公開,app/report/page.tsx,16,振り返り,家計簿（金融画面の場合）,// 週・年の振り返りは自分用（personal）だけ（lib/edition.ts の periodReport）。,要目視・文脈確認
+公開,app/report/page.tsx,18,振り返り,家計簿（金融画面の場合）,// 週・年の振り返り：2026-11-25 から、自分用と公開版（友達用）の両方で出す（FEATURE_EDITIONS.periodReport）,要目視・文脈確認
+公開,app/report/page.tsx,80,振り返り,家計簿（金融画面の場合）,"<PageHeader title=""振り返り"" />",要目視・文脈確認
+公開,app/report/page.tsx,100,振り返り,家計簿（金融画面の場合）,/** 月の振り返り（今までの画面）。embedded のときは見出しと外側の main を付けない */,要目視・文脈確認
+公開,app/report/page.tsx,126,振り返り,家計簿（金融画面の場合）,"{!embedded && <PageHeader title=""振り返り"" />}",要目視・文脈確認
+公開,app/report/page.tsx,269,登録,追加（新規開始）／保存（確定）,"<p className=""text-[14px] text-ink-3"">登録されている固定費はありません。</p>",要目視・文脈確認
+公開,app/search/page.tsx,13,タスク,やること,/** 横断検索（自分用。NEXT v21 Phase 2）：記録・予定・固定費・旅行・タスク・メモ・契約・書類などを、1つの言葉で探す */,要目視・文脈確認
+公開,app/settings/page.tsx,432,登録,追加（新規開始）／保存（確定）,"<p className=""mt-1 text-[12px] text-ink-3"">名前を変えても、今までの取引はそのカテゴリのままです。非表示にしても、登録済みの取引は残ります。</p>",要目視・文脈確認
+公開,app/settings/page.tsx,476,支払い方法,支払方法,"決まった形：1行目が「日付,種類,金額,カテゴリ,内容,支払い方法,メモ,元ID」（支出・収入）か「名前,金額,周期,支払日,次の支払日,カテゴリ,支払い方法」（固定費）。文字の形式は「UTF-8」と「Shift_JIS」（銀行・カードの CSV に多い形式）のどちらでも読めます。",要目視・文脈確認
+公開,app/study/page.tsx,196,登録,追加（新規開始）／保存（確定）,"<p className=""mb-1 text-[12px] font-semibold text-ink-3"">登録した参考書</p>",要目視・文脈確認
+公開,app/study/page.tsx,371,登録,追加（新規開始）／保存（確定）,「{q.trim()}」を自分で登録する,要目視・文脈確認
+公開,app/tasks/page.tsx,26,タスク,やること,// 予定にしたタスクは、予定の完了も同じに揃える,要目視・文脈確認
+公開,app/tasks/page.tsx,68,タスク,やること,"title: ""タスク"",",要目視・文脈確認
+公開,app/tasks/page.tsx,69,タスク,やること,"noun: ""タスク"",",要目視・文脈確認
+公開,app/tasks/page.tsx,70,タスク,やること,"emptyText: ""まだタスクがありません。やることを追加しましょう。"",",要目視・文脈確認
+公開,components/AddChooser.tsx,12,タスク,やること,"{ kind: ""task"", label: ""タスク"", desc: ""期限までにやること"", cls: ""bg-brand-soft text-brand"", mark: ""✓"" },",要目視・文脈確認
+公開,components/AddChooser.tsx,15,タスク,やること,/** ＋ボタンから「何を追加するか」を選ぶ。支出・収入・予定・タスクを同じ並びで出す */,要目視・文脈確認
+公開,components/AppShell.tsx,104,振り返り,家計簿（金融画面の場合）,"{ href: ""/report"", label: ""振り返り"", Icon: IconChart },",要目視・文脈確認
+公開,components/AppShell.tsx,136,タスク,やること,"aria-label=""追加する（支出・収入・予定・タスク）""",要目視・文脈確認
+公開,components/CollectionPage.tsx,13,タスク,やること,// タスク・資産・契約・健康・書類・生活記録などで共通に使う「一覧＋入力シート」,要目視・文脈確認
+公開,components/CollectionPage.tsx,49,タスク,やること,noun: string; // 「タスク」「資産」など。ボタン・確認文に使う,要目視・文脈確認
+公開,components/CollectionPage.tsx,52,タスク,やること,/** ＋から日を選んで新しく作るとき、その日を入れる日付の項目（タスクの期限など） */,要目視・文脈確認
+公開,components/CollectionPage.tsx,61,登録,追加（新規開始）／保存（確定）,/** 追加できない理由（例：先に資格を登録してください）。あれば追加ボタンを押せない */,要目視・文脈確認
+公開,components/CollectionPage.tsx,75,タスク,やること,/** 行の右側に置く操作（例：タスクの完了チェック） */,要目視・文脈確認
+公開,components/EventSheet.tsx,259,登録,追加（新規開始）／保存（確定）,登録したページを開く,要目視・文脈確認
+公開,components/EventSheet.tsx,267,登録,追加（新規開始）／保存（確定）,"{gcal && <p className=""text-[12px] text-ink-3"">Google の画面で「保存」すると登録されます（予定名・日時・場所だけ渡します。連動はしません）。</p>}",要目視・文脈確認
+公開,components/FreeTimeCard.tsx,6,登録,追加（新規開始）／保存（確定）,/** 選んだ日の、予定のない時間帯（自分用。NEXT v21 X10）。自由時間と断定しない・無断で何も登録しない */,要目視・文脈確認
+公開,components/IcsImportCard.tsx,53,タスク,やること,const hadData = (Object.values(base) as unknown[]).some((v) => Array.isArray(v) && v.length > 0 && v !== base.categories) || base.budget.monthly !== null || base.meta.lastBackupAt !== null; // タスク・目標などだけの端末も「データあり」（再点検 低-b）,要目視・文脈確認
+公開,components/MonthBreakdownCard.tsx,10,振り返り,家計簿（金融画面の場合）,/** 月の振り返りに足す「生活と投資」「固定費と変動費」「先月より増えたもの」（自分用だけ） */,要目視・文脈確認
+公開,components/MonthBreakdownCard.tsx,75,登録,追加（新規開始）／保存（確定）,固定費は、固定費の画面に登録したカテゴリの支出です。,要目視・文脈確認
+公開,components/OpenFromQuery.tsx,17,タスク,やること,// open=new は新しく追加するシートを開く（＋ボタンの「タスク」から）,要目視・文脈確認
+公開,components/OpenFromQuery.tsx,19,タスク,やること,// open=new&date=YYYY-MM-DD：＋の「タスク」を、カレンダーで選んだ日から始める（期限の初めの値。磨き込み 2026-11-26）,要目視・文脈確認
+公開,components/TrendChart.tsx,7,振り返り,家計簿（金融画面の場合）,* 振り返りの「週」「年」で使う（2026-11-24 平尾さん：縦の棒グラフと推移見たい）。,要目視・文脈確認
+公開,components/TxSheet.tsx,224,支払い方法,支払方法,"setSaveError(""返金のある支出の、金額・種類・数え方・支払い方法は、直せません。返金の記録を消す（元に戻ります）と、直せるようになります"");",要目視・文脈確認
+公開,components/TxSheet.tsx,405,登録,追加（新規開始）／保存（確定）,返金は「収入」で登録します（元の支出と同じカテゴリで）。口座どうしの振替・分割払いは、まだ記録できません。,要目視・文脈確認
+公開,components/TxSheet.tsx,624,登録,追加（新規開始）／保存（確定）,"<p className=""mt-1 text-[12px] text-ink-3"">全額の支払いとして登録すると、次の支払日が更新されます。一部だけ支払った場合は、残額が未払いとして残ります。</p>",要目視・文脈確認
+公開,components/UIContext.tsx,29,タスク,やること,/** 何を追加するか選ぶシート（支出・収入・予定・タスク）。date はその日付で入力を始める */,要目視・文脈確認
+公開,components/UIContext.tsx,120,キャンセル,閉じる／やめる（文脈別）,// 確認の窓を開く前に focus があった所（閉じたら、そこへ戻す）。窓の「キャンセル」が autoFocus で先に focus を取るので、開く前に覚えておく（点検 中-1）,要目視・文脈確認
+公開,components/UIContext.tsx,239,キャンセル,閉じる／やめる（文脈別）,"{cf.cancel ?? ""キャンセル""}",要目視・文脈確認
+公開,components/UIContext.tsx,245,OK,保存／削除／確認（結果を明示）,"{cf.ok ?? ""OK""}",要目視・文脈確認
+公開,components/WeeklyReviewCard.tsx,59,タスク,やること,{r.next.tasks > 0 && <li>期限のタスクが{r.next.tasks}件あります</li>},要目視・文脈確認
+公開,components/WeeklyReviewCard.tsx,65,登録,追加（新規開始）／保存（確定）,"<p className=""mt-2 text-[12px] text-ink-3"">登録されているものだけです（これから変わることがあります）。</p>",要目視・文脈確認
+公開,app/calendar/page.tsx,86,支払い予定,支払予定,// 選んだ日の固定費の支払い予定（実績の支出とは分ける。自分用だけ：公開版は友人β中なので今のまま）,要目視・文脈確認
+公開,app/calendar/page.tsx,233,支払い予定,支払予定,{/* 固定費の支払い予定（実績の支出とは分けて出す。100点化の指示 A） */},要目視・文脈確認
+公開,app/calendar/page.tsx,234,支払い予定,支払予定,"{dayFixed > 0 && <span className=""text-warn"">・固定費の支払い予定 {formatYen(dayFixed)}</span>}",要目視・文脈確認
+自分用,app/page.tsx,65,振り返り,家計簿（金融画面の場合）,// 自分用は、予算と比べるのを「投資を除いた生活費」に。ホーム・振り返り・1日あたりで同じ計算（lib/ledger.ts。100点化の指示 D）。,要目視・文脈確認
+自分用,app/page.tsx,85,タスク,やること,// 今日やること：期限が今日まで（過ぎたものを先に）の未完了タスク,要目視・文脈確認
+自分用,app/page.tsx,88,タスク,やること,// 確認したいこと：タスクは「今日やること」に出すので除く,要目視・文脈確認
+自分用,app/page.tsx,149,振り返り,家計簿（金融画面の場合）,振り返り,要目視・文脈確認
+自分用,app/assets/page.tsx,31,登録,追加（新規開始）／保存（確定）,"emptyText: ""まだ資産が登録されていません。預金口座などを追加しましょう。"",",要目視・文脈確認
+自分用,app/calendar/page.tsx,104,支払い予定,支払予定,// 選んだ日の固定費の支払い予定（実績の支出とは分ける。自分用だけ：公開版は友人β中なので今のまま）,要目視・文脈確認
+自分用,app/calendar/page.tsx,263,支払い予定,支払予定,{/* 固定費の支払い予定（実績の支出とは分けて出す。100点化の指示 A） */},要目視・文脈確認
+自分用,app/contracts/page.tsx,20,登録,追加（新規開始）／保存（確定）,"intro: ""スマホ・保険・サブスク・賃貸などの契約と、更新日を記録します。支払いを家計に入れるときは「固定費」にも登録してください。解約の手続きは、各サービスで行ってください。"",",要目視・文脈確認
+自分用,app/contracts/page.tsx,21,登録,追加（新規開始）／保存（確定）,"emptyText: ""まだ契約が登録されていません。"",",要目視・文脈確認
+自分用,app/decide/page.tsx,121,登録,追加（新規開始）／保存（確定）,<li>来月に払う固定費は、登録済みの分で合計 {formatYen(a.nextMonth.fixed)} です</li>,要目視・文脈確認
+自分用,app/documents/page.tsx,14,登録,追加（新規開始）／保存（確定）,"emptyText: ""まだ書類が登録されていません。運転免許証やパスポートの期限から登録してみましょう。"",",要目視・文脈確認
+自分用,app/goals/page.tsx,22,登録,追加（新規開始）／保存（確定）,"intro: ""数値目標（例：100万円ためる）と、達成目標（例：引っ越す）を登録できます。進み具合は自分で更新します。"",",要目視・文脈確認
+自分用,app/guide/page.tsx,42,タスク,やること,<li>画面下の「＋」から、支出・収入・予定・タスクを追加する</li>,要目視・文脈確認
+自分用,app/guide/page.tsx,43,振り返り,家計簿（金融画面の場合）,<li>カレンダーでその日の記録を、振り返りで今月の使い方を見る</li>,要目視・文脈確認
+自分用,app/guide/page.tsx,86,振り返り,家計簿（金融画面の場合）,{FEATURES.forecast && <li>振り返り → 月末の見込み：今のペースだと月末にいくらになるか（確定ではありません）</li>},要目視・文脈確認
+自分用,app/guide/page.tsx,87,振り返り,家計簿（金融画面の場合）,{FEATURES.periodReport && <li>振り返り → 週・年：週ごと・月ごとの支出と収入の推移</li>},要目視・文脈確認
+自分用,app/history/page.tsx,17,振り返り,家計簿（金融画面の場合）,/** 振り返りなどからの ?m=YYYY-MM&cat=<id> を、絞り込みに反映する */,要目視・文脈確認
+自分用,app/import/page.tsx,18,OK,保存／削除／確認（結果を明示）,"const OK_TYPES = [""image/png"", ""image/jpeg"", ""image/webp"", ""image/gif"", ""image/heic"", ""image/heif""];",要目視・文脈確認
+自分用,app/import/page.tsx,51,OK,保存／削除／確認（結果を明示）,"if (!f.type.startsWith(""image/"") || (f.type && !OK_TYPES.includes(f.type))) {",要目視・文脈確認
+自分用,app/import/page.tsx,129,登録,追加（新規開始）／保存（確定）,画像の文字から、日付・金額・店名の「候補」を入力欄に入れます。読み間違いがあるので、必ず確かめてから保存してください（確認するまで、取引は登録されません）。,要目視・文脈確認
+自分用,app/import/page.tsx,134,登録,追加（新規開始）／保存（確定）,画像を見ながら金額・日付・店名を入力して登録します。入力した内容を確認するまで、取引は登録されません。,要目視・文脈確認
+自分用,app/import/page.tsx,173,登録,追加（新規開始）／保存（確定）,"<p className=""mt-1 text-ink-2"">別の支出として登録するときだけ、先に進んでください。</p>",要目視・文脈確認
+自分用,app/life/page.tsx,117,登録,追加（新規開始）／保存（確定）,"{active.length === 0 && <p className=""text-[12px] text-ink-3"">固定費が登録されていません</p>}",要目視・文脈確認
+自分用,app/menu/page.tsx,25,タスク,やること,"{ href: ""/tasks"", label: ""タスク"", desc: ""やることと期限"", count: (d) => d.tasks.filter((t) => !t.done).length },",要目視・文脈確認
+自分用,app/recurring/page.tsx,49,登録,追加（新規開始）／保存（確定）,固定費は支払いの「予定」として管理するので、支出の合計には入れません。支払ったら「支払いを記録」で支出として登録すると、次回予定日が進みます。,要目視・文脈確認
+自分用,app/recurring/page.tsx,58,登録,追加（新規開始）／保存（確定）,<Empty action={<Button onClick={() => setEditing({ key: Date.now() })}>固定費を追加</Button>}>家賃・通信費・サブスクなどを登録できます。</Empty>,要目視・文脈確認
+自分用,app/report/page.tsx,16,振り返り,家計簿（金融画面の場合）,// 週・年の振り返りは自分用（personal）だけ（lib/edition.ts の periodReport）。,要目視・文脈確認
+自分用,app/report/page.tsx,18,振り返り,家計簿（金融画面の場合）,// 週・年の振り返り：2026-11-25 から、自分用と公開版（友達用）の両方で出す（FEATURE_EDITIONS.periodReport）,要目視・文脈確認
+自分用,app/report/page.tsx,80,振り返り,家計簿（金融画面の場合）,"<PageHeader title=""振り返り"" />",要目視・文脈確認
+自分用,app/report/page.tsx,100,振り返り,家計簿（金融画面の場合）,/** 月の振り返り（今までの画面）。embedded のときは見出しと外側の main を付けない */,要目視・文脈確認
+自分用,app/report/page.tsx,126,振り返り,家計簿（金融画面の場合）,"{!embedded && <PageHeader title=""振り返り"" />}",要目視・文脈確認
+自分用,app/report/page.tsx,269,登録,追加（新規開始）／保存（確定）,"<p className=""text-[14px] text-ink-3"">登録されている固定費はありません。</p>",要目視・文脈確認
+自分用,app/search/page.tsx,13,タスク,やること,/** 横断検索（自分用。NEXT v21 Phase 2）：記録・予定・固定費・旅行・タスク・メモ・契約・書類などを、1つの言葉で探す */,要目視・文脈確認
+自分用,app/settings/page.tsx,434,登録,追加（新規開始）／保存（確定）,"<p className=""mt-1 text-[12px] text-ink-3"">名前を変えても、今までの取引はそのカテゴリのままです。非表示にしても、登録済みの取引は残ります。</p>",要目視・文脈確認
+自分用,app/settings/page.tsx,483,支払い方法,支払方法,"決まった形：1行目が「日付,種類,金額,カテゴリ,内容,支払い方法,メモ,元ID」（支出・収入）か「名前,金額,周期,支払日,次の支払日,カテゴリ,支払い方法」（固定費）。文字の形式は「UTF-8」と「Shift_JIS」（銀行・カードの CSV に多い形式）のどちらでも読めます。",要目視・文脈確認
+自分用,app/study/page.tsx,196,登録,追加（新規開始）／保存（確定）,"<p className=""mb-1 text-[12px] font-semibold text-ink-3"">登録した参考書</p>",要目視・文脈確認
+自分用,app/study/page.tsx,371,登録,追加（新規開始）／保存（確定）,「{q.trim()}」を自分で登録する,要目視・文脈確認
+自分用,app/tasks/page.tsx,26,タスク,やること,// 予定にしたタスクは、予定の完了も同じに揃える,要目視・文脈確認
+自分用,app/tasks/page.tsx,68,タスク,やること,"title: ""タスク"",",要目視・文脈確認
+自分用,app/tasks/page.tsx,69,タスク,やること,"noun: ""タスク"",",要目視・文脈確認
+自分用,app/tasks/page.tsx,70,タスク,やること,"emptyText: ""まだタスクがありません。やることを追加しましょう。"",",要目視・文脈確認
+自分用,components/AddChooser.tsx,12,タスク,やること,"{ kind: ""task"", label: ""タスク"", desc: ""期限までにやること"", cls: ""bg-brand-soft text-brand"", mark: ""✓"" },",要目視・文脈確認
+自分用,components/AddChooser.tsx,15,タスク,やること,/** ＋ボタンから「何を追加するか」を選ぶ。支出・収入・予定・タスクを同じ並びで出す */,要目視・文脈確認
+自分用,components/AppShell.tsx,106,振り返り,家計簿（金融画面の場合）,"{ href: ""/report"", label: ""振り返り"", Icon: IconChart },",要目視・文脈確認
+自分用,components/AppShell.tsx,138,タスク,やること,"aria-label=""追加する（支出・収入・予定・タスク）""",要目視・文脈確認
+自分用,components/CollectionPage.tsx,13,タスク,やること,// タスク・資産・契約・健康・書類・生活記録などで共通に使う「一覧＋入力シート」,要目視・文脈確認
+自分用,components/CollectionPage.tsx,49,タスク,やること,noun: string; // 「タスク」「資産」など。ボタン・確認文に使う,要目視・文脈確認
+自分用,components/CollectionPage.tsx,52,タスク,やること,/** ＋から日を選んで新しく作るとき、その日を入れる日付の項目（タスクの期限など） */,要目視・文脈確認
+自分用,components/CollectionPage.tsx,61,登録,追加（新規開始）／保存（確定）,/** 追加できない理由（例：先に資格を登録してください）。あれば追加ボタンを押せない */,要目視・文脈確認
+自分用,components/CollectionPage.tsx,75,タスク,やること,/** 行の右側に置く操作（例：タスクの完了チェック） */,要目視・文脈確認
+自分用,components/EventSheet.tsx,259,登録,追加（新規開始）／保存（確定）,登録したページを開く,要目視・文脈確認
+自分用,components/EventSheet.tsx,267,登録,追加（新規開始）／保存（確定）,"{gcal && <p className=""text-[12px] text-ink-3"">Google の画面で「保存」すると登録されます（予定名・日時・場所だけ渡します。連動はしません）。</p>}",要目視・文脈確認
+自分用,components/FreeTimeCard.tsx,6,登録,追加（新規開始）／保存（確定）,/** 選んだ日の、予定のない時間帯（自分用。NEXT v21 X10）。自由時間と断定しない・無断で何も登録しない */,要目視・文脈確認
+自分用,components/IcsImportCard.tsx,53,タスク,やること,const hadData = (Object.values(base) as unknown[]).some((v) => Array.isArray(v) && v.length > 0 && v !== base.categories) || base.budget.monthly !== null || base.meta.lastBackupAt !== null; // タスク・目標などだけの端末も「データあり」（再点検 低-b）,要目視・文脈確認
+自分用,components/MonthBreakdownCard.tsx,10,振り返り,家計簿（金融画面の場合）,/** 月の振り返りに足す「生活と投資」「固定費と変動費」「先月より増えたもの」（自分用だけ） */,要目視・文脈確認
+自分用,components/MonthBreakdownCard.tsx,75,登録,追加（新規開始）／保存（確定）,固定費は、固定費の画面に登録したカテゴリの支出です。,要目視・文脈確認
+自分用,components/NotifyCard.tsx,11,タスク,やること,* 予定・固定費・タスク・契約の項目に従属し、直す・消す・完了にすると取り消される。拒否されても、アプリの基本は使える。,要目視・文脈確認
+自分用,components/NotifyCard.tsx,64,タスク,やること,"<p className=""text-[13px] text-ink-2"">予定・固定費の支払日・タスクの期限・契約の更新日を、iPhone の通知で知らせます。端末の中だけで動き、外へは送りません。予定などを直す・消す・完了にすると、通知も取り消されます。</p>",要目視・文脈確認
+自分用,components/NotifyCard.tsx,86,タスク,やること,タスクの期限の日の朝,要目視・文脈確認
+自分用,components/NotifyCard.tsx,129,登録,追加（新規開始）／保存（確定）,"<p className=""num text-[12px] text-ink-3"">登録している通知：{pending}件（近い2週間の分。入れ替えのたびに更新します）</p>",要目視・文脈確認
+自分用,components/OpenFromQuery.tsx,17,タスク,やること,// open=new は新しく追加するシートを開く（＋ボタンの「タスク」から）,要目視・文脈確認
+自分用,components/OpenFromQuery.tsx,19,タスク,やること,// open=new&date=YYYY-MM-DD：＋の「タスク」を、カレンダーで選んだ日から始める（期限の初めの値。磨き込み 2026-11-26）,要目視・文脈確認
+自分用,components/TrendChart.tsx,7,振り返り,家計簿（金融画面の場合）,* 振り返りの「週」「年」で使う（2026-11-24 平尾さん：縦の棒グラフと推移見たい）。,要目視・文脈確認
+自分用,components/TxSheet.tsx,224,支払い方法,支払方法,"setSaveError(""返金のある支出の、金額・種類・数え方・支払い方法は、直せません。返金の記録を消す（元に戻ります）と、直せるようになります"");",要目視・文脈確認
+自分用,components/TxSheet.tsx,405,登録,追加（新規開始）／保存（確定）,返金は「収入」で登録します（元の支出と同じカテゴリで）。口座どうしの振替・分割払いは、まだ記録できません。,要目視・文脈確認
+自分用,components/TxSheet.tsx,624,登録,追加（新規開始）／保存（確定）,"<p className=""mt-1 text-[12px] text-ink-3"">全額の支払いとして登録すると、次の支払日が更新されます。一部だけ支払った場合は、残額が未払いとして残ります。</p>",要目視・文脈確認
+自分用,components/UIContext.tsx,29,タスク,やること,/** 何を追加するか選ぶシート（支出・収入・予定・タスク）。date はその日付で入力を始める */,要目視・文脈確認
+自分用,components/UIContext.tsx,120,キャンセル,閉じる／やめる（文脈別）,// 確認の窓を開く前に focus があった所（閉じたら、そこへ戻す）。窓の「キャンセル」が autoFocus で先に focus を取るので、開く前に覚えておく（点検 中-1）,要目視・文脈確認
+自分用,components/UIContext.tsx,239,キャンセル,閉じる／やめる（文脈別）,"{cf.cancel ?? ""キャンセル""}",要目視・文脈確認
+自分用,components/UIContext.tsx,245,OK,保存／削除／確認（結果を明示）,"{cf.ok ?? ""OK""}",要目視・文脈確認
+自分用,components/WeeklyReviewCard.tsx,59,タスク,やること,{r.next.tasks > 0 && <li>期限のタスクが{r.next.tasks}件あります</li>},要目視・文脈確認
+自分用,components/WeeklyReviewCard.tsx,65,登録,追加（新規開始）／保存（確定）,"<p className=""mt-2 text-[12px] text-ink-3"">登録されているものだけです（これから変わることがあります）。</p>",要目視・文脈確認
+自分用,components/WidgetSync.tsx,124,タスク,やること,// 記録が0件でも入れ替える（消した予定・タスクの通知を残さない。lib/nativeSyncPlan.ts）,要目視・文脈確認
+自分用,components/WidgetSync.tsx,138,登録,追加（新規開始）／保存（確定）,// 拒否・一部の失敗のときは「登録した」とせず、次の機会（許可されたあと・前面に戻ったとき）にもう一度入れ替える,要目視・文脈確認
+自分用,components/WidgetSync.tsx,144,登録,追加（新規開始）／保存（確定）,// 通知を登録できなくても、記録には影響しない（失敗は設定に出す。消した予定の通知が残っていることがある）,要目視・文脈確認

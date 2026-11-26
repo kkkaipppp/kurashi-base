@@ -20,7 +20,8 @@ import { usePathname, useRouter } from "next/navigation";
 interface ConfirmOpts {
   title: string;
   body?: string;
-  ok?: string;
+  /** 押すと何が起きるかを書いたボタン名（「削除」「破棄」など）。「OK」は使わない（用語辞書 JP023） */
+  ok: string;
   cancel?: string;
   danger?: boolean;
 }
@@ -236,13 +237,13 @@ export function UIProvider({ children }: { children: ReactNode }) {
                 onClick={() => closeCf(false)}
                 autoFocus
               >
-                {cf.cancel ?? "キャンセル"}
+                {cf.cancel ?? "やめる"}
               </Button>
               <Button
                 variant={cf.danger ? "danger" : "primary"}
                 onClick={() => closeCf(true)}
               >
-                {cf.ok ?? "OK"}
+                {cf.ok}
               </Button>
             </div>
           </div>

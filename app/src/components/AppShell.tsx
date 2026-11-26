@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, type ReactNode } from "react";
 import { StoreProvider, useStore } from "@/lib/store";
 import { LOST_STORE_PREFIX, NO_OLD_RECORDS } from "@/lib/lostStore";
 import { UIProvider, useUI } from "./UIContext";
-import { Button, IconCalendar, IconChart, IconGrid, IconHome, IconPlus } from "./ui";
+import { Button, IconCalendar, IconChart, IconGrid, IconHome, IconList, IconPlus } from "./ui";
+import { IS_PERSONAL } from "@/lib/edition";
+import { LAUNCHED_KEY, PLUS_LABEL, START_KEY, parseStart, plusFor, startRedirect, tabOf, type Tab } from "@/lib/startScreen";
+import { todayStr } from "@/lib/date";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -30,7 +33,14 @@ function Gate({ children }: { children: ReactNode }) {
   return (
     <UIProvider>
       <div className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pb-28">{children}</div>
-      <BottomNav />
+      {IS_PERSONAL ? (
+        <>
+          <StartRedirect />
+          <TabBar />
+        </>
+      ) : (
+        <BottomNav />
+      )}
     </UIProvider>
   );
 }
@@ -139,6 +149,84 @@ function BottomNav() {
           </button>
         </div>
         {NAV.slice(2).map(item)}
+      </div>
+    </nav>
+  );
+}
+
+/** 自分用：起動したとき、設定で選んだ画面へ移る（o29 起動設定。このタブで最初に "/" を開いたときだけ） */
+function StartRedirect() {
+  const router = useRouter();
+  const path = usePathname();
+  useEffect(() => {
+    let launched = true;
+    let start = parseStart(null);
+    try {
+      launched = sessionStorage.getItem(LAUNCHED_KEY) === "1";
+      sessionStorage.setItem(LAUNCHED_KEY, "1");
+      start = parseStart(localStorage.getItem(START_KEY));
+    } catch {
+      /* 読めないときは移らない（ホームのまま） */
+      return;
+    }
+    const to = startRedirect(path, location.search, start, launched);
+    if (to) router.replace(to);
+    // 起動のときの1回だけ見る
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return null;
+}
+
+const TABS: { tab: Tab; href: string; label: string; Icon: typeof IconHome }[] = [
+  { tab: "calendar", href: "/calendar", label: "カレンダー", Icon: IconCalendar },
+  { tab: "money", href: "/report", label: "家計簿", Icon: IconChart },
+  { tab: "tasks", href: "/tasks", label: "やること", Icon: IconList },
+  { tab: "more", href: "/menu", label: "その他", Icon: IconGrid },
+];
+
+/** 自分用の下のタブ（o29 A 案）：カレンダー・家計簿・＋・やること・その他。＋は画面ごとに既定の種類を直接開く */
+function TabBar() {
+  const path = usePathname();
+  const router = useRouter();
+  const ui = useUI();
+  const current = tabOf(path);
+  const plus = plusFor(path);
+  const onPlus = () => {
+    const date = path.startsWith("/calendar") ? (ui.calendarDate ?? undefined) : undefined;
+    if (plus.kind === "event") ui.openEvent({ mode: "new", date });
+    else if (plus.kind === "expense") ui.openTx({ mode: "new", type: "expense" });
+    else if (plus.kind === "task") router.push(date && date !== todayStr() ? `/tasks?open=new&date=${date}` : "/tasks?open=new");
+    else ui.openAdd({ date });
+  };
+  const item = (n: (typeof TABS)[number]) => {
+    const active = current === n.tab;
+    return (
+      <Link
+        key={n.href}
+        href={n.href}
+        aria-current={active ? "page" : undefined}
+        className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[12px] font-semibold ${active ? "text-brand" : "text-ink-3"}`}
+      >
+        <n.Icon className="size-6" />
+        {n.label}
+      </Link>
+    );
+  };
+  return (
+    <nav aria-label="メイン" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto flex max-w-[480px] items-stretch px-2">
+        {TABS.slice(0, 2).map(item)}
+        <div className="flex flex-1 items-center justify-center">
+          <button
+            type="button"
+            onClick={onPlus}
+            className="inline-flex size-12 items-center justify-center rounded-full bg-brand text-brand-ink"
+            aria-label={PLUS_LABEL[plus.kind]}
+          >
+            <IconPlus className="size-6" />
+          </button>
+        </div>
+        {TABS.slice(2).map(item)}
       </div>
     </nav>
   );

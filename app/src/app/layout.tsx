@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+import { IS_PERSONAL } from "@/lib/edition";
 
 export const metadata: Metadata = {
   title: "くらしベース",
@@ -14,12 +15,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f6f4ef",
+  themeColor: IS_PERSONAL ? "#ffffff" : "#f6f4ef",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ja" className="h-full antialiased">
+    <html lang="ja" className="h-full antialiased" data-edition={IS_PERSONAL ? "personal" : "public"}>
       <body className="min-h-full">
         <AppShell>{children}</AppShell>
       </body>

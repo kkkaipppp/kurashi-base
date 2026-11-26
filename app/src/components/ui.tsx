@@ -28,7 +28,9 @@ export function Button({
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   const pad = /(^|\s)p-0(\s|$)/.test(className) ? "" : "p-4";
-  return <section className={`rounded-2xl border border-line bg-surface ${pad} shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${className}`}>{children}</section>;
+  // 自分用（o29）：影をつけず、角丸を小さく（装飾のカードを減らす）
+  const look = IS_PERSONAL ? "rounded-lg border border-line bg-surface" : "rounded-2xl border border-line bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
+  return <section className={`${look} ${pad} ${className}`}>{children}</section>;
 }
 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {

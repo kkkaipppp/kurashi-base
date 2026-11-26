@@ -45,7 +45,8 @@ export interface SearchGroup {
 }
 
 export const SEARCH_PER_KIND = 8;
-const norm = (s: string) => s.normalize("NFKC").toLowerCase();
+// 比べるときだけ、全角・半角（NFKC）・大文字小文字・ひらがなとカタカナをそろえる。表示と記録は原文のまま（o29 T027、2026-11-27）
+const norm = (s: string) => s.normalize("NFKC").toLowerCase().replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
 
 /** 検索語を、言葉（AND）と金額（あれば）に分ける */
 export function parseQuery(q: string): { words: string[]; amount: number | null } {
