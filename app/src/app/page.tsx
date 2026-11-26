@@ -23,6 +23,8 @@ import { currentLayout, layoutFor, saveLayout, type HomeCardId, type LayoutDraft
 
 // 自分用（personal）だけの新しい機能（レビュー o1 の家計の機能。公開するかは平尾さんが決める）
 const PERSONAL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+// 「1日あたり」の内訳（A3。自分用だけ。公開版の組み立てには入れない）
+const AllowanceDetails = PERSONAL ? dynamic(() => import("@/components/AllowanceDetails").then((m) => m.AllowanceDetails)) : () => null;
 /** 予算を決める案内を出すまでの記録の数（はじめは記録を優先。レビュー o1 の P08） */
 const BUDGET_HINT_AFTER = 10;
 // ホームの編集と「今日のまとめ」は自分用だけ（公開版では読み込まない）
@@ -164,6 +166,7 @@ export default function HomePage() {
                   </span>
                 </p>
               )}
+              {allowance && <AllowanceDetails today={today} />}
             </>
           )}
         </section>
