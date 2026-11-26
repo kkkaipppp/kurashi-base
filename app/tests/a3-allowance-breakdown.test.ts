@@ -68,3 +68,20 @@ describe("A3 今月あといくらの内訳", () => {
     expect(home).toContain('const AllowanceDetails = PERSONAL ? dynamic(() => import("@/components/AllowanceDetails")');
   });
 });
+
+describe("A3 点検の直し（中-1・低-3）", () => {
+  it("済みにした何日もの予定は、2日目以降も数えない（済みの印は開始日）。今日より前に始まって済みのものも数えない", () => {
+    const d = base();
+    d.events = [
+      ev({ id: "t", title: "旅行(済み)", startDate: "2026-11-29", endDate: "2026-11-30", cost: 2000, doneDates: ["2026-11-29"] }),
+      ev({ id: "p", title: "進行中(済み)", startDate: "2026-11-22", endDate: "2026-11-25", cost: 3000, doneDates: ["2026-11-22"] }),
+      ev({ id: "q", title: "進行中", startDate: "2026-11-22", endDate: "2026-11-25", cost: 500 }),
+    ];
+    expect(allowanceBreakdown(d, today, true)!.eventCosts).toEqual([{ title: "進行中", date: "2026-11-24", cost: 500 }]);
+  });
+  it("何日もの予定に繰り返しが付いた古いデータは、1つの期間として1回だけ", () => {
+    const d = base();
+    d.events = [ev({ id: "w", title: "合宿", startDate: "2026-11-26", endDate: "2026-11-28", repeat: "weekly", repeatUntil: "", cost: 9000 })];
+    expect(allowanceBreakdown(d, today, true)!.eventCosts).toEqual([{ title: "合宿", date: "2026-11-26", cost: 9000 }]);
+  });
+});

@@ -139,7 +139,7 @@ export function TodayAll({ today }: { today: string }) {
                     {body}
                   </Link>
                 ) : (
-                  <button type="button" onClick={() => it.eventId && ui.openEvent({ mode: "view", id: it.eventId })} className={cls}>
+                  <button type="button" onClick={() => it.eventId && ui.openEvent({ mode: "view", id: it.eventId, day: today })} className={cls}>
                     {body}
                   </button>
                 )}
@@ -151,7 +151,7 @@ export function TodayAll({ today }: { today: string }) {
         <div className="py-1">
           <p className="text-[14px] text-ink-3">今日の予定・支払い・期限はありません</p>
           {next && (
-            <button type="button" onClick={() => ui.openEvent({ mode: "view", id: next.id })} className="mt-1 flex min-h-11 w-full items-center justify-between rounded-xl px-1 text-left text-[13px] hover:bg-surface-2">
+            <button type="button" onClick={() => ui.openEvent({ mode: "view", id: next.id, day: next.day })} className="mt-1 flex min-h-11 w-full items-center justify-between rounded-xl px-1 text-left text-[13px] hover:bg-surface-2">
               <span>
                 次は{daysBetween(today, next.day) === 1 ? "明日" : formatDateJa(next.day)}：{next.title}
               </span>

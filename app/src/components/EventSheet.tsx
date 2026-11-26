@@ -15,6 +15,8 @@ import { OrphanDraft } from "./OrphanDraft";
 import { newId } from "@/lib/defaults";
 import { IS_PERSONAL } from "@/lib/edition";
 import { eventExpenseStart, similarExpenseOn } from "@/lib/eventExpense";
+// 組み立てのときに決まる値をこのファイルの中で比べる（公開版の組み立てから、自分用の部品を取り除くため。点検 低-1）
+const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 import { departureTime } from "@/lib/eventOps";
 import { EventActions } from "./EventActions";
 import { calendarTemplate, isSavableUrl, mapsDirections, safeExternalLink } from "@/lib/externalLinks";
@@ -189,7 +191,7 @@ function EventDetail({ ev, day, onClose, onEdit }: { ev: CalendarEvent; day?: st
             <p className="text-[12px] font-semibold text-ink-3">費用の目安</p>
             <p className="num text-[15px]">{formatYen(ev.cost)}</p>
             {/* A2（自分用）：この額で支出の入力を始める。保存は入力の画面で本人が押す */}
-            {IS_PERSONAL && eventExpenseStart(ev, day) && (
+            {PERSONAL_BUILD && eventExpenseStart(ev, day) && (
               <>
                 <button
                   type="button"

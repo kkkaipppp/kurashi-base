@@ -7,6 +7,8 @@ import { BRAND, LogoMark } from "@/components/Logo";
 import { useIsNativeApp } from "@/lib/platform";
 import { FEATURES, IS_PERSONAL } from "@/lib/edition";
 
+// 組み立てのときに決まる値をこのファイルの中で比べる（公開版の組み立てから、自分用の手順を取り除く。点検 低-1）
+const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const linkCls =
   "flex min-h-11 items-center justify-between rounded-xl px-1 text-[14px] font-semibold text-brand hover:bg-brand-soft";
 
@@ -124,13 +126,13 @@ export default function GuidePage() {
           )}
         </ul>
         {/* A4（自分用アプリ。2026-11-26）：機種変更・入れ直しで記録をなくさない手順 */}
-        {nativeApp && (
+        {PERSONAL_BUILD && nativeApp && (
           <details className="mt-2 text-[14px]">
             <summary className="flex min-h-11 cursor-pointer items-center font-semibold">機種変更・入れ直しのときの手順</summary>
             <ol className="list-decimal space-y-1.5 pb-1 pl-5">
-              <li>古い iPhone で、設定の「バックアップを書き出す」を押し、「ファイル」の iCloud Drive に保存する（自動バックアップは古い iPhone の中だけにあり、新しい iPhone には移りません）</li>
+              <li>古い iPhone の「ファイル」アプリで、このiPhone内 → くらしベース の、いちばん新しい自動バックアップを、iCloud Drive にコピーする（この iPhone の中にだけあるので、機種変更の方法によっては新しい iPhone に移りません）</li>
               <li>新しい iPhone に、Mac からアプリを入れる</li>
-              <li>新しい iPhone でアプリを開き、設定の「バックアップから復元…」で、1 で保存したファイルを選ぶ</li>
+              <li>新しい iPhone でアプリを開き、設定の「バックアップから復元…」で、1 でコピーしたファイルを選び、「バックアップの状態に戻す」を選んで「すべて置き換える」を押す</li>
               <li>件数（記録・予定など）が古い iPhone と同じかを確かめてから、古い iPhone のアプリを消す</li>
             </ol>
           </details>
