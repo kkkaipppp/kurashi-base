@@ -30,7 +30,7 @@ describe("週ごとの見直し", () => {
       tx({ id: "p2", date: "2026-11-18", amount: 700 }), // 前の週 水
       tx({ id: "p3", date: "2026-11-20", amount: 5000 }), // 前の週 金（同じ曜日までに入らない）
     ];
-    const r = weeklyReview(d, "2026-11-23", "2026-11-25");
+    const r = weeklyReview(d, "2026-11-23", "2026-11-25", true);
     expect(r.spent).toBe(3000);
     expect(r.prevSpent).toBe(1200);
     expect(r.topCategory).toEqual({ categoryId: "exp-2", total: 2000 });
@@ -38,11 +38,11 @@ describe("週ごとの見直し", () => {
   it("前の週に記録がまったくないときは null（0円と比べない）。過去の週は、その週の最後まで", () => {
     const d = base();
     d.transactions = [tx({ id: "a", date: "2026-11-10", amount: 800 }), tx({ id: "b", date: "2026-11-12", amount: 400 })];
-    const past = weeklyReview(d, "2026-11-09", "2026-11-25");
+    const past = weeklyReview(d, "2026-11-09", "2026-11-25", true);
     expect(past.spent).toBe(1200);
     expect(past.prevSpent).toBeNull();
-    expect(weeklyReview(d, "2026-11-23", "2026-11-25").spent).toBe(0);
-    expect(weeklyReview(d, "2026-11-23", "2026-11-25").topCategory).toBeNull();
+    expect(weeklyReview(d, "2026-11-23", "2026-11-25", true).spent).toBe(0);
+    expect(weeklyReview(d, "2026-11-23", "2026-11-25", true).topCategory).toBeNull();
   });
   it("次の週にあるもの：予定・固定費・期限のタスク・契約の更新日。済んだもの・止めたものは入れない", () => {
     const d = base();
@@ -59,7 +59,7 @@ describe("週ごとの見直し", () => {
       { id: "t2", title: "済み", due: "2026-12-01", done: true, note: "", createdAt: now, updatedAt: now },
     ];
     d.contracts = [{ id: "c1", name: "保険", provider: "", amount: null, cycle: "yearly", renewalDate: "2026-12-06", status: "active", note: "", createdAt: now, updatedAt: now }];
-    const r = weeklyReview(d, "2026-11-23", "2026-11-25");
+    const r = weeklyReview(d, "2026-11-23", "2026-11-25", true);
     expect(r.events).toBe(1); // 今週：11/25 の予定
     expect(r.next.from).toBe("2026-11-30");
     expect(r.next.to).toBe("2026-12-06");

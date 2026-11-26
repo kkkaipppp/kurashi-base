@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, SectionTitle } from "./ui";
 import { cashBalance } from "@/lib/balance";
 import { todayStr, formatDateJa } from "@/lib/date";
-import { formatYen } from "@/lib/money";
+import { formatSignedYen, formatYen } from "@/lib/money";
 import { useData } from "@/lib/store";
 
 /**
@@ -34,12 +34,12 @@ export function CashBalanceCard({ month }: { month: string }) {
       ) : (
         <>
           <p className="num text-[24px] font-bold">
-            約{formatYen(r.balance)}
+            約{formatSignedYen(r.balance)}
             <span className="ml-1 text-[12px] font-medium text-ink-3">（目安）</span>
           </p>
           {r.cardPending > 0 && (
             <p className="num mt-0.5 text-[14px] font-semibold">
-              カードで使って、まだ引かれていない額 {r.cardPendingKnown ? "" : "少なくとも "}{formatYen(r.cardPending)}。引かれたあとの残高は {r.cardPendingKnown ? "約" : "多くても約"}{formatYen(r.afterCard)}
+              カードで使って、まだ引かれていない額 {r.cardPendingKnown ? "" : "少なくとも "}{formatYen(r.cardPending)}。引かれたあとの残高は {r.cardPendingKnown ? "約" : "多くても約"}{formatSignedYen(r.afterCard)}
             </p>
           )}
           <dl className="num mt-2 space-y-0.5 rounded-xl border border-dashed border-line px-3 py-2 text-[12px] text-ink-2">

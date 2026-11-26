@@ -43,7 +43,7 @@ export function assessPurchase(d: AppData, amount: number, today: string, exclud
   const f = forecastMonthEnd(d, today, undefined, excludeInvest);
   const projected = f.ok ? { before: f.projected, after: f.projected + amount } : null;
   const vsBudget = projected && budget !== null ? { before: budget - projected.before, after: budget - projected.after } : null;
-  // 来月の固定費：来月 1 日を今日として、その月に来る固定費の合計（投資の積立は生活費に入れない）
+  // 来月の固定費：来月 1 日を今日として、その月に来る固定費の合計（投資を除くとき＝自分用は、投資の積立を入れない。公開版は入れる）
   const nm = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
   // 「古い」の判定は、今月を基準にする（今月に払う予定の固定費は、来月も来る。Q30 の直しで来月の分が 0 にならないように）
   const fixed = unpaidRecurringThisMonth(d.recurring, nm, excludeInvest ? (r) => categoryIsInvest(cats.get(r.categoryId)) : undefined, `${today.slice(0, 7)}-01`);

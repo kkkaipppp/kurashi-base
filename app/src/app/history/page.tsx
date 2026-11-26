@@ -136,10 +136,10 @@ export default function HistoryPage() {
       <div className="mt-3 space-y-2">
         <div className="relative">
           <IconSearch className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-ink-3" />
-          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="この月の店名・メモで検索" aria-label="この月の店名・メモで検索" aria-describedby="history-q-hint" className={`${inputCls} pl-10`} />
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="この月の店名・メモで検索" aria-label="この月の店名・メモで検索" className={`${inputCls} pl-10`} />
         </div>
         {/* 検索は、表示している月の中だけ。ほかの月は「さがす」へ（2026-11-26 承認5の5） */}
-        <p id="history-q-hint" className="flex flex-wrap items-center gap-x-2 px-1 text-[12px] text-ink-3">
+        <p className="flex flex-wrap items-center gap-x-2 px-1 text-[12px] text-ink-3">
           <span>この月の記録だけを探します。</span>
           {FEATURES.search && (
             <Link href={q.trim() ? `/search?q=${encodeURIComponent(q.trim())}` : "/search"} className="inline-flex min-h-11 items-center rounded-lg px-1 font-semibold text-brand hover:bg-brand-soft">

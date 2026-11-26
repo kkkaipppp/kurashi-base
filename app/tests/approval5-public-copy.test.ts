@@ -12,6 +12,10 @@ describe("承認5：公開版の文言・見た目", () => {
     expect([formatSignedYen(-500), formatSignedYen(500), formatDiffYen(1200), formatDiffYen(-1200), formatDiffYen(0)]).toEqual(["−¥500", "¥500", "+¥1,200", "−¥1,200", "¥0"]);
     expect(shortAmount(-250000)).toBe("−25万");
     expect(src("components/Rows.tsx")).toContain('{exp ? "−" : "+"}');
+    // 点検 中-1：買い物の判断・生活の変化の「差」は、増えたら「+¥」
+    expect(src("app/decide/page.tsx")).toContain("formatDiffYen(s.diff)");
+    expect(src("app/life/page.tsx").match(/formatDiffYen\(/g)?.length).toBe(3);
+    for (const f of ["app/decide/page.tsx", "app/life/page.tsx"]) expect(src(f), f).not.toContain("＋は増える");
     for (const f of ["components/ForecastCard.tsx", "components/CashBalanceCard.tsx"]) expect(src(f), f).not.toContain("<dd>＋");
   });
   it("2 外部サービス連携：今は CSV・.ics で取り込めることを書く", () => {

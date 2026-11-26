@@ -1,5 +1,5 @@
 import { eventsOnDay } from "./aggregate";
-import { isBudgetExpense, ledgerEntries } from "./ledgerCore";
+import { BUDGET_EXCLUDES_INVEST, isBudgetExpense, ledgerEntries } from "./ledgerCore";
 import { addDays } from "./date";
 import type { AppData } from "./types";
 
@@ -24,7 +24,7 @@ export interface WeeklyReview {
   next: { from: string; to: string; events: number; fixed: { name: string; amount: number; date: string }[]; tasks: number; renewals: number };
 }
 
-export function weeklyReview(data: AppData, from: string, today: string, excludeInvest = true): WeeklyReview {
+export function weeklyReview(data: AppData, from: string, today: string, excludeInvest: boolean = BUDGET_EXCLUDES_INVEST): WeeklyReview {
   const to = addDays(from, 6);
   const upTo = today < to ? today : to; // 今週は、今日まで
   const entries = ledgerEntries(data);
