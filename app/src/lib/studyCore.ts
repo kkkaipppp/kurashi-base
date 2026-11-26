@@ -222,8 +222,9 @@ export function isPassed(attempts: ExamAttempt[] | undefined): boolean {
 
 
 /** タイマーの記録がもうあるか（ほかのタブで先に終わらせた）。あれば保存せず、その理由を返す（「記録しました」と言わない。反証 3） */
+export const STUDY_LOG_EXISTS = "この勉強は、ほかのタブ（または別の画面）ですでに記録されています。この画面で入れた内容は保存していません";
 export function studyLogExistsError(d: Pick<AppData, "studyLogs">, id: string): string | null {
-  return d.studyLogs.some((l) => l.id === id) ? "この勉強は、ほかのタブ（または別の画面）ですでに記録されています。この画面で入れた内容は保存していません" : null;
+  return d.studyLogs.some((l) => l.id === id) ? STUDY_LOG_EXISTS : null;
 }
 
 /** 資格がまだあるか（消された資格に保存して、成功と言わない。反証 2） */

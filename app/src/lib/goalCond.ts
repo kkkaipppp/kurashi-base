@@ -128,6 +128,7 @@ export function goalSaveError(goals: { id: string; parentId?: string; updatedAt:
   const g = goals.find((x) => x.id === id);
   if (!g) return "この目標は、ほかのタブなどで削除されています。入力した内容を控えてから、画面を閉じてください";
   if (g.updatedAt !== openedAt) return "ほかのタブ（または別の画面）でこの目標が変わっていたため、保存をやめました。入力した内容を控えてから、いったん閉じて開き直してください";
+  if (parentId && !goals.some((x) => x.id === parentId)) return "親に選んだ目標は、ほかのタブなどで削除されています。親を選び直してください";
   if (parentId && wouldCycle(new Map(goals.map((x) => [x.id, x.parentId] as [string, string | undefined])), id, parentId)) return "その目標を親にすると、つながりが輪になります";
   return null;
 }
@@ -150,7 +151,7 @@ export function toNumber(s: string): number | null {
   // 数の形（符号・3桁ごとのカンマ・小数）だけを受け付ける。16進・指数・崩れたカンマは数にしない（再点検 L-4）
   const t = s.normalize("NFKC").replace(/[\u2212\u2012\u2013\uFE63]/g, "-").trim();
   if (t === "") return null;
-  if (!/^-?(\d+|\d{1,3}(,\d{3})+)(\.\d+)?$/.test(t)) return null;
+  if (!/^[-+]?(\d+|\d{1,3}(,\d{3})+)?(\.\d*)?$/.test(t) || !/\d/.test(t)) return null;
   const n = Number(t.replace(/,/g, ""));
   return Number.isFinite(n) ? n : null;
 }

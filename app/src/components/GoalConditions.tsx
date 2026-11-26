@@ -47,6 +47,8 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
   const [parentId, setParentId] = useState(liveParent);
   // 開いたときの目標の更新時刻。保存のときに、ほかのタブで変わっていないかを比べる（反証 2）
   const [openedAt] = useState(goal.updatedAt);
+  // 「今の値」に数でないものを入れた条件（保存しない。空欄は「分からない」として保存できる）
+  const [badActual, setBadActual] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const open = periodOpen(goal.deadline, todayStr());
   const verdict = conds.length ? combine(mode, conds.map((c) => judge(c, { periodOpen: open }))) : null;
@@ -64,6 +66,7 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
     for (const c of conds) {
       if (!c.label.trim()) return setError("条件の名前を入れてください");
       if (!Number.isFinite(c.target)) return setError(`「${c.label}」の目標の値を入れてください`);
+      if (badActual[c.id]) return setError(`「${c.label}」の今の値を数で入れてください（分からなければ空欄）`);
       if (c.op === "range" && (c.targetMax === undefined || c.targetMax < c.target)) return setError(`「${c.label}」の範囲は「下限 ≦ 上限」で入れてください`);
     }
     const parentOf = new Map(data.goals.map((g) => [g.id, g.parentId] as [string, string | undefined]));
@@ -136,7 +139,19 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
                 <label className="text-[14px] text-ink-2" htmlFor={`act-${c.id}`}>
                   今の値
                 </label>
-                <input id={`act-${c.id}`} inputMode="decimal" defaultValue={c.actual === null ? "" : String(c.actual)} onChange={(e) => set(i, { actual: num(e.target.value) })} placeholder="分からなければ空欄" className={`${inputCls} w-36`} />
+                <input
+                  id={`act-${c.id}`}
+                  inputMode="decimal"
+                  defaultValue={c.actual === null ? "" : String(c.actual)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    set(i, { actual: num(v) });
+                    setBadActual((x) => ({ ...x, [c.id]: v.trim() !== "" && num(v) === null }));
+                  }}
+                  placeholder="分からなければ空欄"
+                  aria-invalid={!!badActual[c.id]}
+                  className={`${inputCls} w-36`}
+                />
                 <button type="button" aria-label={`条件「${c.label || "名前なし"}」を削除`} onClick={() => setConds((x) => x.filter((_, j) => j !== i))} className="ml-auto min-h-11 px-2 text-[14px] font-semibold text-danger">
                   削除
                 </button>
