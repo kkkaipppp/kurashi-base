@@ -61,8 +61,16 @@ describe("A5 iPhone のカレンダーを読む", () => {
     expect(isOwnExport({})).toBe(false);
     const r = splitOwnExport([it0({}), it0({ title: "家賃", externalId: uid }), it0({ title: "会議", externalId: "x@icloud.com" })]);
     expect([r.items.map((x) => x.title), r.own]).toEqual([["歯医者", "会議"], 1]);
-    const sw = src("ios/App/App/WidgetBridgePlugin.swift");
-    expect(sw).toContain('item["externalId"]');
+    // コメントの行を除いて見る（コメントにしたら気づくように。点検 低-3）
+    const sw = src("ios/App/App/WidgetBridgePlugin.swift")
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("//"))
+      .join("\n");
+    expect(sw).toContain('item["externalId"] = String(x.prefix(200))');
+    expect(sw).toContain('x.lowercased().hasSuffix("@kurashi-base") { ownSkipped += 1; continue }');
+    expect(sw).toContain('"ownSkipped": ownSkipped');
+    // 上限（5,000件）より前で除く
+    expect(sw.indexOf("hasSuffix(\"@kurashi-base\")")).toBeLessThan(sw.indexOf("items.count >= 5_000"));
   });
   it("読む期間：今日から1年（既定）・3か月・1か月前から1年先", () => {
     expect(nativeRange("1y", "2026-11-26")).toEqual({ from: "2026-11-26", to: "2027-11-27" });

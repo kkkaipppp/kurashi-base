@@ -19,7 +19,7 @@ type Bridge = { nativePromise?: (plugin: string, method: string, options?: objec
 const readNative = (from: string, to: string) => {
   const cap = (window as unknown as { Capacitor?: Bridge }).Capacitor;
   if (!cap?.nativePromise) return Promise.reject(new Error("iPhone アプリの中でだけ使えます"));
-  return cap.nativePromise("WidgetBridge", "readCalendarEvents", { from, to }) as Promise<{ items?: NativeCalendarItem[]; overLimit?: number }>;
+  return cap.nativePromise("WidgetBridge", "readCalendarEvents", { from, to }) as Promise<{ items?: NativeCalendarItem[]; overLimit?: number; ownSkipped?: number }>;
 };
 
 const noSubscribe = () => () => {};
@@ -53,7 +53,9 @@ export function NativeCalendarImportCard() {
       const { from, to } = nativeRange(range, todayStr());
       const r = await readNative(from, to);
       // くらしベースが書き出した .ics から入った予定は、読み戻さない（承認待ち⑥）
-      const { items, own } = splitOwnExport(Array.isArray(r.items) ? r.items : []);
+      const split = splitOwnExport(Array.isArray(r.items) ? r.items : []);
+      const items = split.items;
+      const own = split.own + (Number(r.ownSkipped) || 0);
       setLoaded({ items, own, overLimit: Number(r.overLimit) || 0, from, to });
       setSelected(new Set(summarizeCalendars(items).filter((c) => c.defaultOn).map(calendarKey)));
       if (items.length === 0) ui.toast(own > 0 ? `この期間の予定は、くらしベースから書き出したものだけでした（${own}件。読み戻しません）` : "この期間に、ほかのカレンダーの予定はありません");
@@ -138,7 +140,7 @@ export function NativeCalendarImportCard() {
             <li>取り込む予定：{plan.add.length}件</li>
             {plan.duplicates > 0 && <li>すでにアプリにある予定（取り込まない）：{plan.duplicates}件</li>}
             {plan.inFileDuplicates > 0 && <li>同じ名前・日・時刻が重なった予定（1つだけ取り込む）：{plan.inFileDuplicates}件</li>}
-            {loaded.own > 0 && <li>くらしベースから書き出した予定（読み戻さない）：{loaded.own}件</li>}
+            {loaded.own > 0 && <li>読んだ予定のうち、くらしベースから書き出したもの（どのカレンダーでも読み戻さない）：{loaded.own}件</li>}
             {plan.parsed.skipped > 0 && <li>日付が読めず、飛ばした予定：{plan.parsed.skipped}件</li>}
             {plan.parsed.overLimit > 0 && <li>多すぎて読まなかった予定：{plan.parsed.overLimit}件（期間を短くしてください）</li>}
           </ul>

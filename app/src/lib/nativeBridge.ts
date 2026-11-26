@@ -16,7 +16,7 @@ export interface NativeBridge {
   /** 画像（base64）から、文字を上から下の順に読み取る（iPhone の Vision。端末の中だけ。候補で、確認は本人） */
   recognizeText(options: { image: string }): Promise<{ lines: string[] }>;
   /** iPhone のカレンダーの予定を読む（A5。「くらしベース」カレンダーは除く。端末の中だけ。lib/nativeCalendar.ts） */
-  readCalendarEvents(options: { from: string; to: string }): Promise<{ items: import("./nativeCalendar").NativeCalendarItem[]; overLimit: number }>;
+  readCalendarEvents(options: { from: string; to: string }): Promise<{ items: import("./nativeCalendar").NativeCalendarItem[]; overLimit: number; ownSkipped: number }>;
 }
 
 export const NativeBridge = registerPlugin<NativeBridge>("WidgetBridge");

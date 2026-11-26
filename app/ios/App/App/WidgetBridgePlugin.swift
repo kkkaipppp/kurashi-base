@@ -455,10 +455,13 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                 f.dateFormat = "yyyy-MM-dd HH:mm"
                 var items: [[String: Any]] = []
                 var over = 0
+                var ownSkipped = 0
                 let events = store.events(matching: store.predicateForEvents(withStart: from, end: to, calendars: cals))
                     .sorted { ($0.startDate ?? .distantPast) < ($1.startDate ?? .distantPast) }
                 for ev in events where ev.url != Self.ownedMark {
                     guard let s = ev.startDate, let e = ev.endDate else { continue }
+                    // 設定で書き出した .ics（UID が @kurashi-base）から入った予定は、上限に数える前に除く（承認待ち⑥・点検 低-2）
+                    if let x = ev.calendarItemExternalIdentifier, x.lowercased().hasSuffix("@kurashi-base") { ownSkipped += 1; continue }
                     if items.count >= 5_000 { over += 1; continue }
                     // 終日の終わりは「次の日の0時」か「最後の日の終わり」で来るので、1秒前の日を最後の日にする
                     let end = ev.isAllDay ? max(s, e.addingTimeInterval(-1)) : max(s, e)
@@ -484,7 +487,7 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                     if let x = ev.calendarItemExternalIdentifier, !x.isEmpty { item["externalId"] = String(x.prefix(200)) }
                     items.append(item)
                 }
-                call.resolve(["items": items, "overLimit": over])
+                call.resolve(["items": items, "overLimit": over, "ownSkipped": ownSkipped])
             }
         }
         let status = EKEventStore.authorizationStatus(for: .event)
