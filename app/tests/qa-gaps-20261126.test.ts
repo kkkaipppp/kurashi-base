@@ -52,6 +52,23 @@ describe("公開版の数え方の境界", () => {
     expect(c.projected[3] - c.projected[2]).toBe(f.dailyVariable + 5000);
     expect(c.projected[c.projected.length - 1]).toBe(f.projected);
   });
+  it("承認⑤の境界（点検）：先の日付が月末の日でも線の終わりは見込みと同じ。自分用は先の日付の投資を数えない。結びつけた先の日付の固定費は1回だけ", () => {
+    const d = base();
+    d.transactions.push(tx({ id: "e", date: "2026-11-30", amount: 2500 }));
+    const f = forecastMonthEnd(d, "2026-11-26", undefined, false);
+    const c = forecastCurve(d, "2026-11-26", false);
+    expect(f.ok && c && c.projected[c.projected.length - 1]).toBe(f.ok ? f.projected : -1);
+    // 自分用（投資を除く）：先の日付の投資の記録は、これまでにも線にも入らない（4,000 ＋ 2,500 だけ）
+    d.transactions.push(tx({ id: "i", date: "2026-11-29", amount: 9000, categoryId: "inv" }));
+    const p = forecastMonthEnd(d, "2026-11-26", undefined, true);
+    expect(p.ok && p.spent).toBe(6500);
+    // 固定費（公開版で数える積立 30,000）と結びつけて先の日付で記録すると、予定は来月へ進むので1回だけ
+    const g = base();
+    g.transactions.push(tx({ id: "r", date: "2026-11-28", amount: 30000, categoryId: "inv", recurringId: "r2" }));
+    g.recurring[0].nextDueDate = "2026-12-28";
+    const q = forecastMonthEnd(g, "2026-11-26", undefined, false);
+    expect(q.ok && [q.spent, q.unpaidFixed]).toEqual([34000, 0]);
+  });
   it("月末の日（11/30）は残り0日。うるう年の2月末（2028-02-29）も同じ", () => {
     const f = forecastMonthEnd(base(), "2026-11-30", undefined, false);
     expect(f.ok && [f.daysAhead, f.projected]).toEqual([0, 4000 + 30000]);
