@@ -480,6 +480,8 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                     ]
                     if let l = ev.location, !l.isEmpty { item["location"] = String(l.prefix(300)) }
                     if let n = ev.notes, !n.isEmpty { item["notes"] = String(n.prefix(600)) }
+                    // .ics の UID（書き出した .ics を別のカレンダーに入れた予定を、JS の側で見分けるため。承認待ち⑥）
+                    if let x = ev.calendarItemExternalIdentifier, !x.isEmpty { item["externalId"] = String(x.prefix(200)) }
                     items.append(item)
                 }
                 call.resolve(["items": items, "overLimit": over])

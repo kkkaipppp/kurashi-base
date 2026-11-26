@@ -8,6 +8,7 @@ import { MAX_ICS_EVENTS, type IcsEvent, type IcsParseResult } from "./icsImport"
  * - 繰り返しの予定は、選んだ期間の中の回を1つずつ写す（iPhone のカレンダーが回ごとに返すため）
  * - くらしベースが書いた「くらしベース」カレンダーの予定は、Swift の側で除く（自分で書いたものを読み戻さない）
  * - 誕生日・照会（購読）のカレンダーは、初めは選ばない（本人が選べば読む）
+ * - 設定で書き出した .ics（UID が「@kurashi-base」で終わる）を別のカレンダーに入れていても、その予定は読み戻さない（2026-11-26 平尾さん「全部おすすめで頼む．」＝承認待ち⑥。点検 低-6）
  */
 export interface NativeCalendarItem {
   title: string;
@@ -21,6 +22,21 @@ export interface NativeCalendarItem {
   /** カレンダーの名前と種類（"local" | "calDAV" | "exchange" | "subscription" | "birthday"） */
   calendar: string;
   calendarType: string;
+  /** 予定の外の ID（.ics から入った予定は、たいてい .ics の UID） */
+  externalId?: string;
+}
+
+/** 設定の「カレンダー用ファイルを書き出す」（lib/ics.ts）が付ける UID の終わり */
+export const OWN_EXPORT_UID_SUFFIX = "@kurashi-base";
+
+/** くらしベースが書き出した .ics から入った予定か */
+export const isOwnExport = (it: Pick<NativeCalendarItem, "externalId">) =>
+  typeof it.externalId === "string" && it.externalId.trim().toLowerCase().endsWith(OWN_EXPORT_UID_SUFFIX);
+
+/** 読んだ予定を、取り込む候補と、くらしベースが書き出した予定（読み戻さない）に分ける */
+export function splitOwnExport(items: NativeCalendarItem[]): { items: NativeCalendarItem[]; own: number } {
+  const keep = items.filter((it) => !isOwnExport(it));
+  return { items: keep, own: items.length - keep.length };
 }
 
 export interface NativeCalendarSummary {

@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 import { emptyData } from "@/lib/defaults";
 import { FEATURE_EDITIONS } from "@/lib/edition";
 import { planIcsImport } from "@/lib/icsImport";
-import { calendarKey, nativeItemToEvent, nativeRange, nativeToParsed, summarizeCalendars, type NativeCalendarItem } from "@/lib/nativeCalendar";
+import { buildCalendarItems } from "@/lib/calendarExport";
+import { buildIcs } from "@/lib/ics";
+import { calendarKey, isOwnExport, nativeItemToEvent, nativeRange, nativeToParsed, splitOwnExport, summarizeCalendars, type NativeCalendarItem } from "@/lib/nativeCalendar";
 
 // A5（2026-11-26 平尾さん「全部おすすめで」＝朝の報告の 8）：自分用アプリで iPhone のカレンダーを直接読む。期待値は手で作った
 const src = (p: string) => readFileSync(join(__dirname, "..", p), "utf8");
@@ -45,6 +47,22 @@ describe("A5 iPhone のカレンダーを読む", () => {
     const d = emptyData("2026-11-26T00:00:00.000Z");
     d.events.push({ id: "e1", title: "歯医者", startDate: "2026-12-03", endDate: "2026-12-03", allDay: false, startTime: "10:00", endTime: "11:00", note: "", createdAt: "x", updatedAt: "x" });
     expect(planIcsImport(d, parsed)).toMatchObject({ duplicates: 1, add: [] });
+  });
+  it("承認待ち⑥：書き出した .ics（UID が @kurashi-base で終わる）から入った予定は読み戻さない。ほかの UID・UID なしは残す", () => {
+    // 本物の書き出しの UID を使う（書き出しの形が変わったら、ここで気づく）
+    const d = emptyData("2026-11-26T00:00:00.000Z");
+    d.events.push({ id: "e1", title: "家賃", startDate: "2026-12-03", endDate: "2026-12-03", allDay: true, startTime: "", endTime: "", note: "", createdAt: "x", updatedAt: "x" });
+    const text = buildIcs(buildCalendarItems(d, "2026-11-26"), "2026-11-26T00:00:00.000Z");
+    const uid = /^UID:(.+)$/m.exec(text.split("\r\n").join("\n"))?.[1]?.trim() ?? "";
+    expect(uid.endsWith("@kurashi-base")).toBe(true);
+    expect(isOwnExport({ externalId: uid })).toBe(true);
+    expect(isOwnExport({ externalId: uid.toUpperCase() })).toBe(true);
+    expect(isOwnExport({ externalId: "ABC-123@google.com" })).toBe(false);
+    expect(isOwnExport({})).toBe(false);
+    const r = splitOwnExport([it0({}), it0({ title: "家賃", externalId: uid }), it0({ title: "会議", externalId: "x@icloud.com" })]);
+    expect([r.items.map((x) => x.title), r.own]).toEqual([["歯医者", "会議"], 1]);
+    const sw = src("ios/App/App/WidgetBridgePlugin.swift");
+    expect(sw).toContain('item["externalId"]');
   });
   it("読む期間：今日から1年（既定）・3か月・1か月前から1年先", () => {
     expect(nativeRange("1y", "2026-11-26")).toEqual({ from: "2026-11-26", to: "2027-11-27" });

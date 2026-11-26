@@ -8,7 +8,7 @@ import { newId } from "@/lib/defaults";
 import { todayStr } from "@/lib/date";
 import { isNativeApp } from "@/lib/platform";
 import { applyIcsImport, planIcsImport } from "@/lib/icsImport";
-import { NATIVE_RANGES, calendarKey, nativeRange, nativeToParsed, summarizeCalendars, type NativeCalendarItem, type NativeRangeKey } from "@/lib/nativeCalendar";
+import { NATIVE_RANGES, calendarKey, nativeRange, nativeToParsed, splitOwnExport, summarizeCalendars, type NativeCalendarItem, type NativeRangeKey } from "@/lib/nativeCalendar";
 
 /**
  * iPhone のカレンダーから予定を取り込む（A5。自分用アプリの中だけ。2026-11-26 平尾さん「全部おすすめで」）。
@@ -29,7 +29,7 @@ export function NativeCalendarImportCard() {
   const store = useStore();
   const ui = useUI();
   const [range, setRange] = useState<NativeRangeKey>("1y");
-  const [loaded, setLoaded] = useState<{ items: NativeCalendarItem[]; overLimit: number; from: string; to: string } | null>(null);
+  const [loaded, setLoaded] = useState<{ items: NativeCalendarItem[]; own: number; overLimit: number; from: string; to: string } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
@@ -52,10 +52,11 @@ export function NativeCalendarImportCard() {
     try {
       const { from, to } = nativeRange(range, todayStr());
       const r = await readNative(from, to);
-      const items = Array.isArray(r.items) ? r.items : [];
-      setLoaded({ items, overLimit: Number(r.overLimit) || 0, from, to });
+      // くらしベースが書き出した .ics から入った予定は、読み戻さない（承認待ち⑥）
+      const { items, own } = splitOwnExport(Array.isArray(r.items) ? r.items : []);
+      setLoaded({ items, own, overLimit: Number(r.overLimit) || 0, from, to });
       setSelected(new Set(summarizeCalendars(items).filter((c) => c.defaultOn).map(calendarKey)));
-      if (items.length === 0) ui.toast("この期間に、ほかのカレンダーの予定はありません");
+      if (items.length === 0) ui.toast(own > 0 ? `この期間の予定は、くらしベースから書き出したものだけでした（${own}件。読み戻しません）` : "この期間に、ほかのカレンダーの予定はありません");
     } catch (e) {
       ui.toast(e instanceof Error && e.message ? e.message : "カレンダーを読めませんでした", "error");
     } finally {
@@ -137,6 +138,7 @@ export function NativeCalendarImportCard() {
             <li>取り込む予定：{plan.add.length}件</li>
             {plan.duplicates > 0 && <li>すでにアプリにある予定（取り込まない）：{plan.duplicates}件</li>}
             {plan.inFileDuplicates > 0 && <li>同じ名前・日・時刻が重なった予定（1つだけ取り込む）：{plan.inFileDuplicates}件</li>}
+            {loaded.own > 0 && <li>くらしベースから書き出した予定（読み戻さない）：{loaded.own}件</li>}
             {plan.parsed.skipped > 0 && <li>日付が読めず、飛ばした予定：{plan.parsed.skipped}件</li>}
             {plan.parsed.overLimit > 0 && <li>多すぎて読まなかった予定：{plan.parsed.overLimit}件（期間を短くしてください）</li>}
           </ul>
