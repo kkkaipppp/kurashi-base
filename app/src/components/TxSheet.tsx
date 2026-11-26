@@ -16,6 +16,7 @@ import { PAYMENT_METHODS, type Transaction, type TxSource, type TxType } from "@
 import { applyRefund, refundedTotal } from "@/lib/refund";
 import { newId } from "@/lib/defaults";
 import { parseAmount } from "@/lib/money";
+import { categoryForMerchant, recentMerchants } from "@/lib/merchantSuggest";
 
 export type TxSheetRequest =
   | { mode: "edit"; id: string }
@@ -158,6 +159,13 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
       pay: lastPay,
     };
   }, [data.transactions, data.categories, draft.type]);
+  // A2（自分用）：よく使う店名と、その店でいつも使うカテゴリ（押したときだけ入る）
+  const merchants = useMemo(() => (SUGGEST ? recentMerchants(data.transactions, draft.type, todayStr()) : []), [data.transactions, draft.type]);
+  const merchantCat = useMemo(() => {
+    if (!SUGGEST) return null;
+    const id = categoryForMerchant(data.transactions, draft.type, draft.merchant);
+    return id && id !== draft.categoryId && data.categories.some((c) => c.id === id && c.kind === draft.type && !c.archived) ? id : null;
+  }, [data.transactions, data.categories, draft.type, draft.merchant, draft.categoryId]);
 
   const set = <K extends keyof TxDraft>(k: K, v: TxDraft[K]) => {
     setDraft((d) => ({ ...d, [k]: v }));
@@ -464,6 +472,21 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         <Field label={draft.type === "expense" ? "店名" : "相手先"} optional htmlFor="tx-merchant" error={errors.merchant}>
           <input id="tx-merchant" value={draft.merchant} onChange={(e) => set("merchant", e.target.value)} className={inputCls} maxLength={100} />
         </Field>
+        {!draft.merchant.trim() && merchants.length > 0 && (
+          <div className="-mt-2 flex flex-wrap items-center gap-1.5" role="group" aria-label="よく使う店名">
+            <span className="text-[12px] text-ink-3">よく使う：</span>
+            {merchants.map((name) => (
+              <button key={name} type="button" onClick={() => set("merchant", name)} className="min-h-11 max-w-full truncate rounded-full border border-line bg-surface px-3 text-[13px] font-semibold text-ink-2">
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+        {merchantCat && (
+          <button type="button" onClick={() => set("categoryId", merchantCat)} className="-mt-2 min-h-11 rounded-full border border-line bg-surface px-3 text-left text-[13px] font-semibold text-ink-2">
+            この店はいつも：{catName(merchantCat)}
+          </button>
+        )}
 
         <Field label="支払方法" optional htmlFor="tx-pay">
           <select id="tx-pay" value={draft.paymentMethod} onChange={(e) => set("paymentMethod", e.target.value)} className={inputCls}>
