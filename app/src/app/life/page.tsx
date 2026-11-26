@@ -7,7 +7,7 @@ import { Button, Card, Empty, Field, PageHeader, SectionTitle, inputCls } from "
 import { FEATURES } from "@/lib/edition";
 import { newId } from "@/lib/defaults";
 import { todayStr, formatDateJa } from "@/lib/date";
-import { formatDiffYen, formatSignedYen, formatYen, parseAmount } from "@/lib/money";
+import { formatDiffYen, formatYen, parseAmount } from "@/lib/money";
 import { addLifeChange, applyLifeChange, listChanges, removePlanned, totalMonthlyImpact, undoLifeChange, type LifeChange, type LifeItem } from "@/lib/lifeChange";
 
 /**
