@@ -42,8 +42,8 @@ function seedFor(schema) {
 const clickText = (text) => `(() => { const scope = [...document.querySelectorAll('[role=dialog]')].pop() ?? document; const b = [...scope.querySelectorAll('button,a')].find(e => e.textContent.trim().replace(/^[^\\p{L}\\p{N}]+/u, '').startsWith(${JSON.stringify(text)}) || e.getAttribute('aria-label')?.startsWith(${JSON.stringify(text)})); if (b) { b.click(); return true } return false })()`;
 const SCREENS = [
   { id: "01_home", name: "ホーム", path: "/" },
-  { id: "02_add", name: "＋（何を追加するか）", path: "/", act: [clickText("追加する")] },
-  { id: "03_event_add", name: "予定を追加", path: "/", act: [clickText("追加する"), clickText("予定")] },
+  { id: "02_add", name: "追加（種類を選ぶ）", path: "/", act: [clickText("追加")] }, // 公開版は「追加する（…）」、自分用は右端の「追加」（o31）
+  { id: "03_event_add", name: "予定を追加", path: "/", act: [clickText("追加"), clickText("予定")] },
   { id: "04_event_detail", name: "予定の詳細", path: "/", act: [`(() => { const b = document.querySelector('main li button'); if (b) { b.click(); return true } return false })()`], sampleOnly: true },
   { id: "04b_event_edit", name: "予定を編集", path: "/", act: [`(() => { const b = document.querySelector('main li button'); if (b) { b.click(); return true } return false })()`, clickText("編集する")], sampleOnly: true },
   { id: "05_calendar", name: "カレンダー", path: "/calendar" },
@@ -58,6 +58,7 @@ const SCREENS = [
   { id: "11_guide", name: "使い方", path: "/guide" },
   { id: "12_settings", name: "設定", path: "/settings" },
   { id: "12a_csv_calendar", name: "カレンダー用ファイル・CSV の取り込み", path: "/settings", act: [`(() => { const e = document.getElementById("calendar-file"); if (e) { e.scrollIntoView(); return true } return false })()`] },
+  { id: "12c_nav", name: "下のメニューの編集（自分用）", path: "/settings", act: [`(() => { const e = document.getElementById("nav"); if (e) { e.scrollIntoView(); return true } return false })()`] },
   { id: "12b_backup", name: "バックアップと復元", path: "/settings", act: [`(() => { const e = document.getElementById("backup"); if (e) { e.scrollIntoView(); return true } return false })()`] },
   { id: "13_history", name: "取引履歴", path: "/history" },
   { id: "14_tasks", name: "やること", path: "/tasks" }, // o29 の全画面（2026-11-27）

@@ -1,0 +1,40 @@
+﻿ID,段階,対象,候補ファイル(app/src基準またはrepo基準),現状根拠,実装指示,完了条件
+D001,P0,基準確定,docs/STATE.md;docs/PJ_RULES.md,作業中差分と個人版差分を照合,git status/diff、HEAD、既存WBS、テスト結果を記録し、作業中変更を保全。個人版は差分ZIPなので単独で復元しない,既存変更を失わず基準コミットと未コミット差分を記録
+D002,P0,保存保護,lib/schema.ts;lib/storeCore.ts;lib/repository.ts;lib/backup.ts,schemaVersion 2、個人IDB・公開localStorage,旧バックアップを読み、新規任意項目を検証。旧版互換不可ならADRと移行計画を先に作る。復元・取り消し・CSV・ウィジェットを回帰,旧データの件数、ID、金額、リンク一致。失敗時旧データ保持
+D003,P1,右端追加,components/AppShell.tsx;lib/startScreen.ts;tests/o29-shell.test.ts,TABS中央に＋、個人差分にもAppShellあり,個人版の実体を先に確認。追加を最後の子要素にし文字「追加」を表示、48px以上の操作域、safe area対応。公開版は維持,全設定・幅320/375/390で追加が右端、重複なし
+D004,P1,メニュー編集,components/AppShell.tsx;lib/startScreen.ts;components/MenuVisibilityCard.tsx,固定TABS、menuHidden既存,許可済みroute IDの登録表を作り、最大4枠を選択・並べ替え・削除。初期はカレンダー/家計簿/やること/その他。設定は端末別、未知ID・重複を除外,勉強/目標/旅行等を配置、再起動で維持、標準復元で記録不変
+D005,P1,全機能入口,app/menu/page.tsx;components/AppShell.tsx;components/ui.tsx,その他タブに依存,上部に全機能一覧への常設ボタン。検索も到達可能。非表示機能は版の権限と区別し、利用可能機能を検索可能に,その他を外しても設定・全機能・復元へ到達
+D006,P1,起動設定,lib/startScreen.ts;components/StartScreenCard.tsx,4種類、sessionStorage初回のみ,利用可能な登録画面と前回画面を候補にする。通知・widget・query深リンク優先。無効な選択は既定へ,深リンクを奪わず、設定保存不能でも起動可能
+D007,P1,追加一覧,components/AddChooser.tsx;components/UIContext.tsx;components/AddFromQuery.tsx,AddKindは4種類、plusFor直接起動,右端追加は全種類一覧を開く。現在画面の種類を先頭にし、最大4お気に入りを編集可能。既存直接追加は画面内操作・深リンクで維持。長押しは任意補助,全種類に到達、選択日と目標ID引継ぎ、キャンセルで元画面
+D008,P1,入力の短縮,components/TxSheet.tsx;components/EventSheet.tsx;lib/sheetDraft.ts,既存入力・下書き,最近の記録から金額・分類等を候補にし日付とIDは新規。金額のみの支出は未分類を許容、口座不明を捏造しない。保存後元画面へ,新規ID、二重保存なし、失敗時入力保持
+D009,P1,設定再編,app/settings/page.tsx;app/menu/page.tsx,3区分、長い縦画面,一般/表示/家計簿/外部連携/データ管理/アプリ情報の一覧から個別詳細へ。既存カードを再利用、検索・別名、危険操作は確認,全既存設定に到達、通常2階層、設定初期化で実績不変
+D010,P1,共通操作,components/Sheet.tsx;components/ui.tsx;components/Rows.tsx,共通部品あり,保存・閉じる・編集・削除・複製・取り消しの配置統一。スワイプ長押しは補助、通常ボタンを残す。キーボードと拡大時に保存を隠さない,200%文字、VoiceOver、320幅、フォーカス復帰
+D011,P1,画面別UI,app/calendar/page.tsx;app/report/page.tsx;components/MoneyMonth.tsx;app/tasks/page.tsx,o29白紺変更途中、写真は変更前,月グリッド＋日別明細、家計簿は金額と明細、タスクはチェック一覧。固定ホームは互換入口。カード装飾を削減、余白と罫線,同一データで前後画像、金額一致、主要操作を計測
+D012,P2,分類編集,lib/types.ts;lib/categoryRename.ts;components/CategoryTools.tsx;app/settings/page.tsx,Categoryは支出収入、role、order、archived,金融カテゴリに親IDを任意追加し2階層から。名前・色・別名・順序・お気に入り。循環禁止、同一親内重複検証。既存IDとrole維持,親子集計で二重なし、名称変更で投資判定が変わらない
+D013,P2,入力中分類,components/TxSheet.tsx;components/CategoryTools.tsx,既存設定側操作,検索・最近・お気に入り・階層を選択画面に追加。検索結果なしから新規作成し元の下書きへ戻す,追加した分類が選択済み、入力金額維持
+D014,P2,分類整理,lib/storeCore.ts;components/CategoryTools.tsx,統合・取り消しあり,既存mergeCategoryを再利用。分割は対象記録選択、移動は影響確認。固定費、返金、予算、取り消しも確認。非表示を基本,統合前後総額一致、生活費/投資区分維持、undoで復元
+D015,P2,横断タグ,lib/types.ts;lib/search.ts,金融分類と他機能は別,予定・勉強・目標等の分類は別スコープ。共通タグは複数付与可、タグ集計はID集合で重複排除,複数タグ付き支出が全体で1回、検索で発見
+D016,P2,表示設定,lib/homeLayout.ts;lib/menuHidden.ts;components/HomeLayout.tsx,ホーム編集・メニュー非表示あり,既存方式を一般化する前に再利用評価。画面ごと許可済み表示項目、順序、密度、文字サイズを別管理。標準復元は表示のみ,非表示・再表示でデータ保持、必須操作は隠せない
+D017,P3,勉強トップ,app/study/page.tsx;lib/study.ts,資格カード、＋15分等、学習記録,今日の時間、今日の計画、前回教材、開始、下部に本棚/成績/計画。既存短時間記録と資格編集を残す,開始1操作目標、資格なしから名前だけ登録可能
+D018,P3,資格情報,lib/study.ts;lib/certifications.json;lib/externalLinks.ts,別名検索、公式URL、出典付き目安,既存カタログを再利用、年度・試験範囲・申込期限・確認日を任意追加。未確認は不明、独自資格も登録,出典なし時間を捏造しない、古い情報を明示
+D019,P3,共通本棚,lib/types.ts;app/study/page.tsx;lib/schema.ts,"StudySubject.booksにStudyBook(id,title,url,note)",教材マスターと資格リンクを導入候補。旧教材ID/所属/メモを保持し、同名だけで統合しない。所有/候補/完了を区別,複数資格で同一教材参照、旧本が消えない
+D020,P3,教材進捗,lib/types.ts;app/study/page.tsx,StudyLogに教材IDなし,教材種類別にページ/章/問題/講義等の型を定義。進捗は到達値と累計を区別、復習でページが戻っても実績保持,ページ180→186は6ページ、復習を新規読了と誤計上しない
+D021,P3,タイマー,app/study/page.tsx;lib/storeCore.ts;lib/platform.ts,手入力時間,開始時刻・停止/休止区間・対象ID・状態を端末に保存。再起動復帰、時計変更確認、同時開始防止、終了時に時間修正可能。手入力も維持,二重終了でログ1件、異常時間は確認、保存失敗で復旧
+D022,P3,演習成績,app/study/page.tsx;lib/types.ts,時間記録中心,問題数・正解数・分野・教材・模試点数/満点を入力。0問は正答率なし、得点は満点以下、再演習と初回を区別,14/20=70%、異なる満点の点数を無条件平均しない
+D023,P3,復習,app/study/page.tsx;lib/study.ts,学習内容メモ,問題番号/分野を任意登録、復習予定と完了を管理。本文転記不要、復習間隔は設定可能,復習完了で過去の誤答実績は消えない
+D024,P3,学習計画,lib/study.ts;lib/goalPlan.ts;app/study/page.tsx,dailyTargetは残時間/残日数,曜日別可能時間、休息日、試験日、既存予定を使い残時間を配分。未登録時間を空きと断定しない。足りない場合は不足と選択肢、確定は本人,60h/8週/6h=12h不足、完了済み計画不変
+D025,P3,短時間学習,lib/study.ts;app/study/page.tsx,固定分数追加,5/15/30/60分の候補を未完了項目・復習期限・教材の所要時間から選ぶ。理由表示、手動選択可,候補なしは無理に生成しない、時間超過候補を明示
+D026,P3,教材紹介,lib/externalLinks.ts;lib/study.ts;app/study/page.tsx,参考書検索リンクと勉強法リンク,まず公式無料教材と所有教材を優先。ISBN/版/価格/対象/出典/確認日を持つ公開カタログ候補。規約確認前は外部検索リンクのみ、無断通信なし,未確認価格は不明、広告と通常推薦を分離
+D027,P3,購入連携,lib/eventExpense.ts;lib/ledgerCore.ts;app/study/page.tsx,教材と支出は独立,購入候補→購入予定→本人確認した支出→所有教材の関連付け。既存支出を選べる。金額・日付を確認,教材購入1件を家計簿と目標で参照、全体計上1回
+D028,P4,目標トップ,app/goals/page.tsx;lib/goalPlan.ts;lib/goalSteps.ts,number/check、steps、期限,期間別・分類別一覧、今日の行動、達成条件を表示。名前だけ登録可。旧目標編集を維持,旧current/target/doneを保持、期限なし可
+D029,P4,目標階層,lib/types.ts;lib/goalLinks.ts;lib/goalOcc.ts,既存目標関連処理,親子リンクを型付きで追加、循環禁止。親達成は明示条件、子の単純平均禁止。削除はリンク解除と区別,親子循環拒否、子の実績保持
+D030,P4,達成条件,lib/goalPlan.ts;lib/types.ts;app/goals/page.tsx,数値・チェック,累計/到達/回数/頻度/上限/結果/複数条件。単位、期間、比較演算、実績源、定義版を保持,学習時間達成と合格を分離、欠測は未判定
+D031,P4,目標実績連携,lib/goalLinks.ts;lib/ledgerCore.ts;lib/study.ts,目標の手入力実績,学習ログ・支出・タスク等を参照する指標を追加。手入力と自動集計を区別、重複しない,同じログが複数目標にあっても全体時間1回
+D032,P4,計画の転用,lib/taskEvent.ts;lib/eventOps.ts;lib/goalSteps.ts,タスク→予定など既存,メモ→タスク/予定/教材候補/購入予定、元IDと生成IDを関連付け。確認後保存,メモだけで支出発生しない、再実行で重複しない
+D033,P5,自由記録,lib/types.ts;lib/schema.ts;components/CollectionPage.tsx,固定CollectionConfig,定義ID/版、項目ID、型、単位、値、必須、選択肢を検証。まず読書/釣り等2用途で実証。任意コード実行禁止,型変更で旧値保持、自由金額は家計簿に入らない
+D034,P5,自由集計,lib/search.ts;lib/periods.ts;lib/ledgerCore.ts;components/PeriodReport.tsx,期間別集計と検索,期間・カテゴリ・タグ・目標・支払方法の条件を保存。型に合う集計のみ、件数/単位/欠測表示。金融は既存台帳,一覧・表・グラフの合計一致、異単位合算禁止
+D035,P5,自由画面,components/HomeLayout.tsx;components/CollectionPage.tsx,既存ホーム設定,許可された表示部品から組み立て、テンプレートは定義のみ複製。作成した記録画面をメニュー候補へ,実績を複製しない、標準復元、無効部品を安全に除外
+D036,P5,検索・一括,app/search/page.tsx;lib/search.ts;lib/storeCore.ts,横断検索・状態復元あり,設定/教材/操作/自由記録を登録。選択件数と影響を表示して一括変更、取り消し。検索結果から元画面復帰,金融一括変更で合計保持、途中失敗は原子性または明示的回復
+D037,P6,性能・容量,docs/design/o29/PERF_RESULT.md;app/settings/page.tsx;lib/perfBench.ts,250k目標57.65MB、復元上限20MB,バックアップ出力と復元上限の矛盾を検証。上限緩和だけでなくメモリ・分割/ストリーム等を比較。7回計測の限界を明記,対応範囲内で出力→復元成功、超過は事前警告、実機別測定
+D038,P6,収益,docs/CHARTER.md;docs/design/o29/,既存事業案、未実装,基本機能・自由化無料。教材紹介/テンプレート/高度分析は仮説。規約・費用・利益・広告明示・購入復元を別ADR。無断実装課金禁止,外部送信・広告・課金なしで基本機能完結
+D039,P6,最終品質,docs/STATE.md;docs/progress/WBS.csv;tools/screens/capture.mjs,古いGO、写真はo29前,全画面撮影、型lintテストbuild、独立レビュー、実機待ちを明記、既存WBSへ統合。公開版変更は別承認,最新コミットに証拠、未確認をPASSにしない

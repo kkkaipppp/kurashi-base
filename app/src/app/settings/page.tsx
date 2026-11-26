@@ -31,6 +31,9 @@ const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const IcsImportCard = FEATURES.icsImport ? dynamic(() => import("@/components/IcsImportCard").then((m) => m.IcsImportCard)) : null;
 const CsvGenericPanel = PERSONAL_BUILD ? dynamic(() => import("@/components/CsvGenericPanel").then((m) => m.CsvGenericPanel)) : null;
 const MenuVisibilityCard = PERSONAL_BUILD ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
+// 下のメニュー・追加のよく使う種類・起動時の画面（o31 F001・F002・D006。自分用だけ）
+const NavSettingsCard = PERSONAL_BUILD ? dynamic(() => import("@/components/NavSettingsCard").then((m) => m.NavSettingsCard)) : null;
+const StartScreenCard = PERSONAL_BUILD ? dynamic(() => import("@/components/StartScreenCard").then((m) => m.StartScreenCard)) : null;
 const ImportHistoryCard = PERSONAL_BUILD ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
 const DataHealthCard = PERSONAL_BUILD ? dynamic(() => import("@/components/DataHealthCard").then((m) => m.DataHealthCard)) : null;
 const DiagnosticsCard = PERSONAL_BUILD ? dynamic(() => import("@/components/DiagnosticsCard").then((m) => m.DiagnosticsCard)) : null;
@@ -356,6 +359,8 @@ export default function SettingsPage() {
       </Card>
 
 
+      {NavSettingsCard && <NavSettingsCard />}
+      {StartScreenCard && <StartScreenCard />}
       {MenuVisibilityCard && <MenuVisibilityCard />}
 
       <Card>

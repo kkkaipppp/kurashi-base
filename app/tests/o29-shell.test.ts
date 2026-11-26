@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_START, parseStart, plusFor, startRedirect, tabOf } from "@/lib/startScreen";
+import { DEFAULT_START, parseStart, startRedirect } from "@/lib/startScreen";
 import { ratio } from "./contrast.test";
 
 // o29（2026-11-27）：自分用の下のタブ（A 案）・起動時の画面・画面ごとの＋・自分用の色。期待値は 01_製品仕様・02_画面契約・05_矛盾解消から手で作った
@@ -23,27 +23,8 @@ describe("o29 起動時の画面", () => {
   });
 });
 
-describe("o29 下のタブと＋", () => {
-  it("02_画面契約の新しい入口に沿って、画面をタブに分ける", () => {
-    expect(tabOf("/calendar")).toBe("calendar");
-    for (const p of ["/report", "/history", "/recurring", "/decide", "/inbox", "/assets", "/nisa"]) expect(tabOf(p)).toBe("money");
-    expect(tabOf("/tasks")).toBe("tasks");
-    for (const p of ["/", "/menu", "/settings", "/trips", "/study", "/goals", "/notes", "/search", "/reportx"]) expect(tabOf(p)).toBe("more");
-  });
-  it("＋は画面ごとの既定の種類を直接開く（C005）。その他の画面では選ぶ", () => {
-    expect(plusFor("/calendar").kind).toBe("event");
-    expect(plusFor("/report").kind).toBe("expense");
-    expect(plusFor("/history").kind).toBe("expense");
-    expect(plusFor("/tasks").kind).toBe("task");
-    expect(plusFor("/").kind).toBe("choose");
-    expect(plusFor("/trips").kind).toBe("choose");
-  });
-  it("公開版の下のメニューは変えない（C025 個人先行）。自分用のタブは IS_PERSONAL の中だけ", () => {
-    const shell = readFileSync(join(__dirname, "..", "src", "components", "AppShell.tsx"), "utf8");
-    expect(shell).toMatch(/IS_PERSONAL \? \([\s\S]*<TabBar \/>[\s\S]*\) : \([\s\S]*<BottomNav \/>/);
-  });
-});
-
+// 「o29 下のタブと＋」（中央の＋・固定の4つのタブ・画面ごとの＋）の試験は、o31 C001 で仕様が撤回されたので、
+// o31 の右端の「追加」と下のメニューの試験（tests/o31-nav.test.ts）に置き換えた（2026-11-27。旧仕様の期待値を新仕様に合わせて変えたのではない）
 describe("o29 自分用の色（白・#222・#e5e5e5・#254e85）", () => {
   const css = readFileSync(join(__dirname, "..", "src", "app", "globals.css"), "utf8");
   const block = css.slice(css.indexOf(':root[data-edition="personal"]'));
