@@ -178,7 +178,7 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
   const trip = plan.tripId ? (data.trips ?? []).find((t) => t.id === plan.tripId) : undefined;
   const cats = categoryMap(data);
   const unlinkedExpenses = data.transactions
-    .filter((t) => t.type === "expense" && !t.planId && !t.refundOf && t.countAs !== "transfer" && !txIsInvest(t, cats))
+    .filter((t) => t.type === "expense" && !t.planId && !t.refundOf && t.countAs !== "transfer" && !txIsInvest(t, cats) && !(plan.tripId && t.tripId === plan.tripId))
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 30);
 
@@ -326,7 +326,12 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
             </Link>
           ) : (
             <Field label="旅行の記録をつなぐ" htmlFor="pl-tripid" hint="旅程・移動・宿は「旅行」の画面で入れます">
-              <select id="pl-tripid" value="" onChange={(e) => e.target.value && void save((d) => updatePlan(d, plan.id, { tripId: e.target.value }, ts()), "旅行をつなぎました")} className={inputCls}>
+              <select id="pl-tripid" value="" onChange={(e) => {
+                const id = e.target.value;
+                if (!id) return;
+                // ほかのタブで旅行が消されていたら、つながない（点検 高-1）
+                void save((d) => updatePlan(d, plan.id, { tripId: id }, ts()), "旅行をつなぎました", (cur) => ((cur.trips ?? []).some((t) => t.id === id) ? null : "この旅行は、ほかのタブなどで削除されています"));
+              }} className={inputCls}>
                 <option value="">選ぶ</option>
                 {(data.trips ?? []).map((t) => (
                   <option key={t.id} value={t.id}>

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { TxRow } from "./Rows";
-import { formatDateJa, todayStr } from "@/lib/date";
+import { addDays, daysBetween, formatDateJa, todayStr } from "@/lib/date";
+import { upcomingPayments } from "@/lib/upcoming";
 import { formatSignedYen, formatYen } from "@/lib/money";
 import { monthLedger } from "@/lib/ledger";
 import { daySummary, txInMonth, sortTxDesc } from "@/lib/aggregate";
@@ -49,6 +50,44 @@ export function MoneySummary({ month }: { month: string }) {
           <Row label={`固定費の支払予定（${formatYen(l.unpaidFixed)}）を引くと`} value={formatYen(l.freeLeft)} />
         )}
       </dl>
+    </section>
+  );
+}
+
+/** 自分用：これからの支払い（固定費の次の支払日が、今日から30日のうち。予定日を過ぎたものは先頭。一部だけ払ったものは残りの額） */
+export function UpcomingPayments() {
+  const data = useData();
+  const today = todayStr();
+  const list = upcomingPayments(data.recurring, today, 30);
+  const total = list.reduce((s, x) => s + x.amount, 0);
+  return (
+    <section aria-labelledby="upcoming-pay" className="space-y-1">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="upcoming-pay" className="text-[16px] font-bold">
+          これからの支払い<span className="ml-1 text-[13px] font-medium text-ink-3">30日</span>
+        </h2>
+        {list.length > 0 && <span className="num text-[16px] font-bold">{formatYen(total)}</span>}
+      </div>
+      {list.length === 0 ? (
+        <p className="py-2 text-[14px] text-ink-3">今日から30日の固定費の支払いはありません</p>
+      ) : (
+        <ul className="divide-y divide-line border-y border-line">
+          {list.map((x) => (
+            <li key={x.id}>
+              <Link href={`/recurring?open=${x.id}`} className="flex min-h-12 items-center gap-3 text-[15px]">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{x.name}</span>
+                  <span className={`block text-[13px] ${x.due < today ? "text-warn" : "text-ink-3"}`}>
+                    {x.due < today ? `予定日（${formatDateJa(x.due)}）を${daysBetween(x.due, today)}日過ぎています` : x.due === today ? "今日" : x.due === addDays(today, 1) ? "明日" : formatDateJa(x.due)}
+                    {x.partial ? "・残りの額" : ""}
+                  </span>
+                </span>
+                <span className="num shrink-0 font-semibold">{formatYen(x.amount)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { emptyData } from "@/lib/defaults";
-import { migrate, validateAppData } from "@/lib/schema";
+import { migrate, validateAppData, validateRelationships } from "@/lib/schema";
 import { applyRestore, countData } from "@/lib/backup";
 import { addCandidate, addPlan, chooseCandidate, deletePlan, linkToPlan, planView, sortPlans } from "@/lib/plan";
 import type { AppData, Transaction } from "@/lib/types";
@@ -208,16 +208,37 @@ describe("点検の残り（2026-11-27）", () => {
     expect([...v.uncounted].sort()).toEqual(["b", "c"]);
     expect([...v.viaTrip]).toEqual(["d"]);
   });
-  it("計画を指す番号の指し先が無いバックアップは、復元しない（今のデータは変えない）", () => {
+  it("計画を指す番号の指し先が無いときは、断らずに、つながりだけ外して戻す（記録は残す。点検 高-1：端末で切れたつながりがあっても、どのバックアップも戻せる）", () => {
     const withPlan = addPlan(base(), { type: "free", title: "x", date: "", budget: null, note: "" }, "p1", ts);
     const okData = { ...withPlan, transactions: [tx({ id: "a", planId: "p1" })] };
-    expect(applyRestore(base(), okData, "replace").ok).toBe(true);
-    const orphanTx = { ...base(), transactions: [tx({ id: "a", planId: "nope" })] };
-    expect(applyRestore(base(), orphanTx, "replace")).toMatchObject({ ok: false, error: expect.stringContaining("計画が、バックアップの中に見つかりません") });
-    const orphanTask = { ...base(), tasks: [{ id: "k", title: "予約", due: "", done: false, note: "", planId: "nope", createdAt: ts, updatedAt: ts }] };
-    expect(applyRestore(base(), orphanTask, "merge").ok).toBe(false);
-    const orphanTrip = addPlan(base(), { type: "trip", title: "京都", date: "", budget: null, note: "", tripId: "nope" }, "p1", ts);
-    expect(applyRestore(base(), orphanTrip, "replace")).toMatchObject({ ok: false, error: expect.stringContaining("計画「京都」の旅行") });
+    const ok = applyRestore(base(), okData, "replace");
+    expect(ok.ok && ok.data.transactions[0].planId).toBe("p1");
+    // 置き換え：切れた planId・tripId は外れ、記録は残る
+    const orphan = { ...addPlan(base(), { type: "trip", title: "京都", date: "", budget: null, note: "", tripId: "nope" }, "p1", ts), transactions: [tx({ id: "a", planId: "gone" })] };
+    const r1 = applyRestore(base(), orphan, "replace");
+    expect(r1.ok).toBe(true);
+    if (r1.ok) {
+      expect(r1.data.transactions).toHaveLength(1);
+      expect(r1.data.transactions[0]).not.toHaveProperty("planId");
+      expect(r1.data.plans[0]).not.toHaveProperty("tripId");
+    }
+    // 追加：端末の今のデータに切れたつながりがあっても、ほかのバックアップを追加できる
+    const broken = { ...base(), tasks: [{ id: "k", title: "予約", due: "", done: false, note: "", planId: "gone", createdAt: ts, updatedAt: ts }] };
+    const r2 = applyRestore(broken, okData, "merge");
+    expect(r2.ok).toBe(true);
+    if (r2.ok) {
+      expect(r2.data.tasks[0]).not.toHaveProperty("planId");
+      expect(r2.data.transactions.find((t) => t.id === "a")?.planId).toBe("p1");
+    }
+    // 書き出し → 読み込み（parseBackup）でも断らない
+    expect(validateRelationships(broken).ok).toBe(true);
+  });
+  it("追加の復元：中身の違う同じ ID の旅行を指す計画は、旅行とのつながりを外して入れる（点検 低-1）", () => {
+    const cur = { ...base(), trips: [{ id: "tr1", title: "大阪", destination: "", startDate: "2026-12-01", endDate: "2026-12-02", budget: null, note: "", createdAt: ts, updatedAt: ts }] };
+    const inc = { ...addPlan(base(), { type: "trip", title: "京都", date: "", budget: null, note: "", tripId: "tr1" }, "p9", ts), trips: [{ id: "tr1", title: "京都", destination: "", startDate: "2027-01-01", endDate: "2027-01-02", budget: null, note: "", createdAt: ts, updatedAt: ts }] };
+    const r = applyRestore(cur as AppData, inc as AppData, "merge");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.data.plans.find((p) => p.id === "p9")).not.toHaveProperty("tripId");
   });
   it("計画の画面から旅行を開くと、その旅行が開く（?open=）。つなぐ候補に投資は出さない", () => {
     const s = readFileSync("src/components/PlansScreen.tsx", "utf8");
@@ -238,5 +259,13 @@ describe("計画の名前を変える（2026-11-28）", () => {
     expect(r.events.map((e) => [e.id, e.title])).toEqual([["e1", "部署の忘年会"], ["e2", "二次会（自分で名前を変えた）"]]);
     expect(renamePlan(d, "p1", "   ", ts)).toBe(d);
     expect(renamePlan(d, "nope", "x", ts)).toBe(d);
+  });
+});
+
+describe("公開版の組み立てに計画の言葉を入れない", () => {
+  it("復元（backup.ts）は、計画の画面の言葉を持つ plan.ts を読み込まない", () => {
+    const b = readFileSync("src/lib/backup.ts", "utf8");
+    expect(b).not.toMatch(/from "\.\/plan"/);
+    expect(readFileSync("src/lib/planLinks.ts", "utf8")).not.toMatch(/from "\.\/plan"|飲み会/);
   });
 });

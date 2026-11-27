@@ -34,6 +34,7 @@ const PERSONAL_MONEY = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const TITLE = "家計簿";
 const MoneySummary = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.MoneySummary)) : () => null;
 const MonthTxList = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.MonthTxList)) : () => null;
+const UpcomingPayments = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.UpcomingPayments)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
 
 // 円グラフの色（カテゴリの順に使う。意味は持たせず、凡例と金額で読めるようにする）
@@ -107,8 +108,8 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
   const data = useData();
   const today = todayStr();
   const [month, setMonth] = useState(monthKey(today));
-  // 自分用：「明細」と「集計」を切り替える（初めは明細。o31 07：家計簿は金額と明細）
-  const [view, setView] = useState<"list" | "stats">("list");
+  // 自分用：「収支（明細）」「予算（予算と実績・内訳）」「支払い（固定費・これからの支払い・残高）」の3つ（To-Be 02「収支・予算・支払いを主要タブ」。初めは収支）
+  const [view, setView] = useState<"list" | "stats" | "pay">("list");
   const ui = useUI();
   const r = monthReport(data, month);
   const weeks = weeklyBuckets(data.transactions, month);
@@ -147,11 +148,12 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
       {PERSONAL_MONEY && (
         <>
           <MoneySummary month={month} />
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-surface-2 p-1" role="radiogroup" aria-label="表示">
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-surface-2 p-1" role="radiogroup" aria-label="表示">
             {(
               [
-                ["list", "明細"],
-                ["stats", "集計"],
+                ["list", "収支"],
+                ["stats", "予算"],
+                ["pay", "支払い"],
               ] as const
             ).map(([k, label]) => (
               <button key={k} type="button" role="radio" aria-checked={view === k} onClick={() => setView(k)} className={`min-h-11 rounded-md text-[15px] font-semibold ${view === k ? "bg-surface text-ink shadow-sm" : "text-ink-2"}`}>
@@ -159,6 +161,8 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
               </button>
             ))}
           </div>
+          {view === "pay" && <UpcomingPayments />}
+          {view === "pay" && <CashBalanceCard month={month} />}
           {view === "list" && (
             <>
               <MonthTxList month={month} />
@@ -170,7 +174,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
           )}
         </>
       )}
-      {PERSONAL_MONEY && view === "list" ? null : r.count === 0 ? (
+      {PERSONAL_MONEY && view !== "stats" ? null : r.count === 0 ? (
         <Empty
           action={
             // 空の月は、まず記録できるように（レビュー o1 の P16）
@@ -222,7 +226,8 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
 
           <ForecastCard month={month} />
           {month === monthKey(today) && <UsageCard />}
-          <CashBalanceCard month={month} />
+          {/* 自分用の残高の目安は「支払い」のタブに出す */}
+          {!PERSONAL_MONEY && <CashBalanceCard month={month} />}
           <MonthBreakdownCard month={month} />
 
           {insights.length > 0 && (
@@ -290,7 +295,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
         </>
       )}
 
-      {!(PERSONAL_MONEY && view === "list") && (
+      {!(PERSONAL_MONEY && view !== "pay") && (
       <Card>
         <SectionTitle
           action={

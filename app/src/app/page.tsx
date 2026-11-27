@@ -248,7 +248,7 @@ export default function HomePage() {
         {todo.length > 0 && (
           <Card className="py-3">
             <h2 className="mb-1 text-[17px] font-bold">
-              {PERSONAL ? "やること" : "今日やること"}<span className="ml-1 text-[13px] font-medium text-ink-3">{todo.length}件</span>
+              今日やること<span className="ml-1 text-[13px] font-medium text-ink-3">{todo.length}件</span>
             </h2>
             <ul className="-mx-2">
               {todo.slice(0, TASKS_SHOWN).map((t) => {

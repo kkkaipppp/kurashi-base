@@ -245,6 +245,7 @@ describe("A06：手で決めた期待値", () => {
       "app/contracts/page.tsx": [1, "契約の月額"],
       "app/recurring/page.tsx": [1, "固定費の月額"],
       "app/report/page.tsx": [1, "固定費の月額"],
+      "components/MoneyMonth.tsx": [1, "家計簿の支払いのタブ：これからの固定費の予定の合計（記録ではない。To-Be 2026-11-28）"],
       "app/trips/page.tsx": [1, "行程の費用（予定の cost）。旅行につないだ支出は sumEntries"],
     };
     const counts: Record<string, number> = {};

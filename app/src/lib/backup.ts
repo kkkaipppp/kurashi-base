@@ -1,4 +1,5 @@
 import { checksum, CURRENT_SCHEMA, validateAppData, validateRelationships } from "./schema";
+import { dropDanglingPlanLinks } from "./planLinks";
 import { COLLECTION_KEYS, type AppData, type Category, type CollectionKey } from "./types";
 import { DEFAULT_CATEGORY_IDS } from "./defaults";
 
@@ -152,7 +153,8 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
     if (!rel.ok) return { ok: false, error: `復元できませんでした。${rel.error}` };
     const c = countData(data);
     const total = Object.entries(c).filter(([k]) => k !== "categories").reduce((s, [, n]) => s + n, 0);
-    return { ok: true, data: v.data, added: total, duplicates: 0, conflicts: 0, dependentSkipped: 0 };
+    // 指し先の無い計画のつながりは外して入れる（記録は残す。To-Be 点検 高-1）
+    return { ok: true, data: dropDanglingPlanLinks(v.data).data, added: total, duplicates: 0, conflicts: 0, dependentSkipped: 0 };
   }
 
   let added = 0;
@@ -207,7 +209,8 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
     transactions: mergeList(current.transactions, incoming.transactions, { skipIf: (t) => badCat.has(t.categoryId) || (!!t.tripId && badTrip.has(t.tripId)) }),
     events: mergeList(current.events, incoming.events, { skipIf: (e) => !!e.tripId && badTrip.has(e.tripId) }),
     trips: mergeList(current.trips ?? [], incoming.trips ?? []),
-    plans: mergeList(current.plans ?? [], incoming.plans ?? []),
+    // 中身の違う同じ ID の旅行を指す計画は、旅行とのつながりを外して入れる（別の旅行の支出が混ざらないように。点検 低-1）
+    plans: mergeList(current.plans ?? [], (incoming.plans ?? []).map((p) => (p.tripId && badTrip.has(p.tripId) ? (({ tripId: _t, ...rest }) => rest)(p) : p))), // eslint-disable-line @typescript-eslint/no-unused-vars
     recurring: mergeList(current.recurring, incoming.recurring, { skipIf: (r) => badCat.has(r.categoryId) }),
     studySubjects: mergeList(current.studySubjects, incoming.studySubjects, { sameMeaning: (x, y) => x.name === y.name }),
     studyLogs: mergeList(current.studyLogs, incoming.studyLogs, { skipIf: (l) => badSubj.has(l.subjectId) }),
@@ -224,7 +227,7 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
   if (!v.ok) return { ok: false, error: `復元できませんでした。合わせた結果に問題があります（${v.error}）。今のデータは変更していません` };
   const rel = validateRelationships(v.data);
   if (!rel.ok) return { ok: false, error: `復元できませんでした。${rel.error}。今のデータは変更していません` };
-  return { ok: true, data: v.data, added, duplicates, conflicts, dependentSkipped };
+  return { ok: true, data: dropDanglingPlanLinks(v.data).data, added, duplicates, conflicts, dependentSkipped };
 }
 
 export function backupFileName(nowIso: string): string {

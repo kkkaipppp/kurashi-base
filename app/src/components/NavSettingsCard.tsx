@@ -31,7 +31,7 @@ export function NavSettingsCard() {
       <div id="nav" className="scroll-mt-20" />
       <SectionTitle>下のメニュー</SectionTitle>
       <p className="mb-2 text-[14px] text-ink-2">
-        {NAV_MIN}〜{NAV_MAX}個まで選べます。真ん中の「追加」はいつも出ます。外した画面にも、上のメニュー（四角が4つのアイコン）から行けます。
+        {NAV_MIN}〜{NAV_MAX}個まで選べます。「追加」はいつも出ます（並べた画面の真ん中）。外した画面にも、上のメニュー（四角が4つのアイコン）から行けます。
       </p>
       <ol className="divide-y divide-line border-y border-line" aria-label="今の下のメニュー（左から順）">
         {nav.map((id, i) => (

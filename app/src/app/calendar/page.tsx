@@ -169,7 +169,7 @@ function CalendarInner() {
   };
   // 年月を選ぶ（自分用。To-Be 02「年月指定」）・年の表示で月を押す → その月を開く
   const jumpMonth = (m: string, openMonth = false) => {
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(m)) return;
+    if (!/^(19|20)\d{2}-(0[1-9]|1[0-2])$/.test(m)) return;
     setMonth(m);
     setSelected(monthKey(today) === m ? today : `${m}-01`);
     if (openMonth) pickView("month");
@@ -196,11 +196,11 @@ function CalendarInner() {
           <button type="button" onClick={() => move(-1)} aria-label={`前の${unit}`} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
             <IconChevronL />
           </button>
-          <h2 className="relative text-[17px] font-bold" aria-live="polite">
-            {view === "year" ? `${month.slice(0, 4)}年` : view === "day" ? formatDateJa(selected, true) : formatMonthJa(month)}
-            {/* 見出しを押すと年月を選べる（自分用。見出しの上に透明の入力を重ねる） */}
+          <h2 className="relative flex min-h-11 items-center rounded-lg px-3 text-[17px] font-bold focus-within:ring-2 focus-within:ring-brand">
+            <span aria-live="polite">{view === "year" ? `${month.slice(0, 4)}年` : view === "day" ? formatDateJa(selected, true) : formatMonthJa(month)}</span>
+            {/* 見出しを押すと年月を選べる（自分用。見出しの上に透明の入力を重ねる。キーボードで移ったときは見出しに枠が出る。点検 中-3） */}
             {PERSONAL_BUILD && view !== "day" && (
-              <input type="month" aria-label="年月を選ぶ" value={month} onChange={(e) => jumpMonth(e.target.value)} className="absolute inset-0 min-h-11 w-full cursor-pointer opacity-0" />
+              <input type="month" aria-label="年月を選ぶ" value={month} onChange={(e) => jumpMonth(e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
             )}
           </h2>
           <button type="button" onClick={() => move(1)} aria-label={`次の${unit}`} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
@@ -208,8 +208,9 @@ function CalendarInner() {
           </button>
         </div>
         <p className="num mb-2 text-center text-[12px] text-ink-3">
-          {/* 年の合計は自分用だけ（公開版の組み立てに文字を残さない） */}
-          {PERSONAL_BUILD && view === "year" ? "この年の" : ""}支出 {formatYen(view === "year" ? yearSum.expense : sum.expense)} ・ 収入 {formatYen(view === "year" ? yearSum.income : sum.income)}
+          {/* 年・日の表示はその期間の合計（自分用だけ。公開版の組み立てに文字を残さない。点検 中-1：日の見出しの下に月の合計を出さない） */}
+          {PERSONAL_BUILD && view === "year" ? "この年の" : PERSONAL_BUILD && view === "day" ? "この日の" : ""}支出 {formatYen(view === "year" ? yearSum.expense : view === "day" ? day.expense : sum.expense)} ・ 収入{" "}
+          {formatYen(view === "year" ? yearSum.income : view === "day" ? day.income : sum.income)}
         </p>
         <div className="mb-2 grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="マスに出すもの">
           {(

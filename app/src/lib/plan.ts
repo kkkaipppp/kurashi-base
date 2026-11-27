@@ -1,5 +1,6 @@
 import { ledgerEntries, sumEntries } from "./ledgerCore";
 import type { AppData, Plan, PlanCandidate, PlanStatus, PlanType } from "./types";
+export { dropDanglingPlanLinks } from "./planLinks";
 
 /**
  * 計画（To-Be 2026-11-27 02「計画」・03「旅行/計画」「予算と支払い」）。画面から切り離した処理だけを置く。
@@ -150,7 +151,7 @@ export interface PlanView {
   transactions: AppData["transactions"];
   /** 使ったお金（家計簿と同じ数え方。返金・口座間の移動・カードの引き落とし・投資は入らない） */
   spent: number;
-  /** つないだ記録のうち、かかったお金に数えないもの（口座間の移動・投資）の ID */
+  /** つないだ支出のうち、かかったお金に数えないもの（口座間の移動・カードの引き落とし・投資・全額返金した買い物）の ID */
   uncounted: Set<string>;
   /** 旅行とのつながりだけで入っている記録（計画からは外せない。旅行の画面で外す）の ID */
   viaTrip: Set<string>;

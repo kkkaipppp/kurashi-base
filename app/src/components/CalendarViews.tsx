@@ -1,6 +1,7 @@
 "use client";
 
 import { addDays, formatDateJa, monthGrid } from "@/lib/date";
+import { useMemo } from "react";
 import { daySummary, eventsOnDay, summarizeMonth } from "@/lib/aggregate";
 import { deadlinesOn } from "@/lib/deadlines";
 import { formatYen } from "@/lib/money";
@@ -37,11 +38,19 @@ export function yearMonths(year: string): string[] {
 /** 年の表示：12か月のマス。支出・収入は家計簿と同じ月の集計、予定は予定のある日の数（繰り返しの予定も数える） */
 export function YearView(p: { year: string; month: string; today: string; showEv: boolean; showMoney: boolean; onPickMonth: (m: string) => void }) {
   const data = useData();
+  // 12か月の集計は、記録・年が変わったときだけ作り直す（点検 低-6）
+  const rows = useMemo(
+    () =>
+      yearMonths(p.year).map((m) => ({
+        m,
+        s: summarizeMonth(data.transactions, m),
+        evDays: monthGrid(m).flat().filter((d): d is string => !!d && eventsOnDay(data.events, d).length > 0).length,
+      })),
+    [p.year, data.transactions, data.events],
+  );
   return (
     <ul className="grid grid-cols-3 gap-1" aria-label={`${p.year}年の月ごとの予定とお金`}>
-      {yearMonths(p.year).map((m) => {
-        const s = summarizeMonth(data.transactions, m);
-        const evDays = p.showEv ? monthGrid(m).flat().filter((d): d is string => !!d && eventsOnDay(data.events, d).length > 0).length : 0;
+      {rows.map(({ m, s, evDays }) => {
         const isNow = m === p.today.slice(0, 7);
         return (
           <li key={m}>
