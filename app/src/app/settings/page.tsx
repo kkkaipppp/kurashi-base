@@ -3,7 +3,7 @@
 import { Fragment, useMemo, useRef, useState } from "react";
 import { useData, useStore } from "@/lib/store";
 import { parseAmount, formatYen } from "@/lib/money";
-import { applyRestore, backupFileName, buildBackup, countData, COUNT_LABELS, parseBackup, type RestorePreview } from "@/lib/backup";
+import { applyRestore, backupFileName, backupSizeNotice, buildBackup, countData, COUNT_LABELS, MAX_BACKUP_BYTES, parseBackup, type RestorePreview } from "@/lib/backup";
 import { emptyData } from "@/lib/defaults";
 import { formatDateJa, todayStr } from "@/lib/date";
 import { buildCalendarItems, CAL_FUTURE_DAYS, CAL_PAST_DAYS } from "@/lib/calendarExport";
@@ -57,8 +57,6 @@ function GroupLabel({ id, children }: { id: string; children: string }) {
     </h2>
   );
 }
-
-const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
 
 export default function SettingsPage() {
   const nativeApp = useIsNativeApp();
@@ -118,7 +116,9 @@ export default function SettingsPage() {
   const exportBackup = async () => {
     const now = new Date().toISOString();
     const b = buildBackup({ ...data, meta: { ...data.meta, lastBackupAt: now } }, now);
-    const url = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: "application/json" }));
+    const blob = new Blob([JSON.stringify(b, null, 2)], { type: "application/json" });
+    const sizeNotice = backupSizeNotice(blob.size); // 戻せる大きさに近い・超えるときは知らせる（ADR-002）
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = backupFileName(now);
@@ -127,6 +127,7 @@ export default function SettingsPage() {
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
     const r = await store.commit((d) => ({ ...d, meta: { ...d.meta, lastBackupAt: now } }));
     ui.toast(r.ok ? "バックアップの保存を始めました。ファイルが保存されたか確認してください" : `ファイルは書き出しましたが、書き出した日を記録できませんでした。${r.error}`, r.ok ? "ok" : "error");
+    if (sizeNotice) ui.toast(sizeNotice, "error");
   };
 
   // --- カレンダー用ファイル（.ics） ---
