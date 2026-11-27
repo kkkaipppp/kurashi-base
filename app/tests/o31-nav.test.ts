@@ -7,8 +7,8 @@ import { ADD_KINDS, DEFAULT_NAV, NAV_ITEMS, activeNav, addOrder, contextKind, mo
 const src = (p: string) => readFileSync(join(__dirname, "..", "src", p), "utf8");
 
 describe("o31 T001 下のメニュー（1〜4個）", () => {
-  it("初期はカレンダー・家計簿・やること・メニュー（To-Be の並びに変えるかは判断待ち Q-T01）", () => {
-    expect(DEFAULT_NAV).toEqual(["calendar", "money", "tasks", "more"]);
+  it("初期はホーム・カレンダー・家計簿・メニュー（To-Be 02。平尾さん Q-T01 ①）", () => {
+    expect(DEFAULT_NAV).toEqual(["home", "calendar", "money", "more"]);
     expect(parseNav(null)).toEqual(DEFAULT_NAV);
   });
   it("その他を外して勉強を足す → 保存して読み直しても順序が同じ（再起動で維持）", () => {
@@ -16,7 +16,7 @@ describe("o31 T001 下のメニュー（1〜4個）", () => {
     const v = validateNav(next);
     expect(v.ok).toBe(true);
     const saved = serializeNav(v.ok ? v.ids : []);
-    expect(parseNav(saved)).toEqual(["calendar", "money", "tasks", "study"]);
+    expect(parseNav(saved)).toEqual(["home", "calendar", "money", "study"]);
   });
   it("0個・5個・重複・知らない ID は保存しない（理由を返す）", () => {
     expect(validateNav([]).ok).toBe(false);
@@ -69,15 +69,16 @@ describe("o31 T002・T007 右端の「追加」", () => {
     expect(parseAddFav(JSON.stringify(["goal", "goal", "x", "note", "trip", "study", "expense"]))).toEqual(["goal", "note", "trip", "study"]);
     expect(parseAddFav("[")).toEqual(["expense", "event", "task", "income"]);
   });
-  it("「追加」は下のメニューの最後の子要素で、文字「追加」と 48px 以上の高さ（D003）。公開版の下のメニューは変えない（C025）", () => {
+  it("「追加」は下のメニューの真ん中（前半の画面のあと・後半の画面の前）で、文字「追加」と 48px 以上の高さ（D003・To-Be 02）。公開版の下のメニューは変えない（C025）", () => {
     // 点検 中-2 で、自分用の下のメニューは components/PersonalShell.tsx に移し、AppShell から遅れて読む形にした（中身は同じ）
     const shell = src("components/AppShell.tsx");
     const personal = src("components/PersonalShell.tsx");
     const tab = personal.slice(personal.indexOf("function TabBar()"));
     const nav = tab.slice(tab.indexOf("<nav"), tab.indexOf("</nav>"));
-    const lastLink = nav.lastIndexOf("</Link>");
     const addBtn = nav.indexOf('data-testid="nav-add"');
-    expect(addBtn).toBeGreaterThan(lastLink);
+    expect(nav.indexOf("nav.slice(0, half).map(tab)")).toBeLessThan(addBtn);
+    expect(nav.indexOf("nav.slice(half).map(tab)")).toBeGreaterThan(addBtn);
+    expect(tab).toContain("const half = Math.ceil(nav.length / 2);");
     expect(nav).toMatch(/min-h-12[^"]*"[\s\S]*?追加\s*<\/button>/);
     expect(shell).toContain('const PERSONAL_SHELL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";');
     expect(shell).toContain("{PersonalShell ? <PersonalShell /> : <BottomNav />}");

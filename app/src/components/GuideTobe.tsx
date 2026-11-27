@@ -7,7 +7,12 @@ export function GuideTobe() {
   return (
     <Card>
       <h2 className="text-[17px] font-bold">メニューと計画</h2>
-      <h3 className="mt-2 text-[14px] font-bold">メニュー</h3>
+      <h3 className="mt-2 text-[14px] font-bold">下のボタン</h3>
+      <ul className="mt-1 list-disc space-y-1 pl-5 text-[14px]">
+        <li>初めは「ホーム・カレンダー・追加・家計簿・メニュー」です。真ん中の「追加」から、支出・予定・やることなどを足します</li>
+        <li>並びは設定の「下のメニュー」で変えられます。やることは、ホームの「今日やること」とメニューの下の一覧から開きます</li>
+      </ul>
+      <h3 className="mt-3 text-[14px] font-bold">メニュー</h3>
       <ul className="mt-1 list-disc space-y-1 pl-5 text-[14px]">
         <li>計画・目標・資産・契約・固定費・健康・メモ・書類に分かれています。旅行は「計画」、資格・勉強は「目標」の中です</li>
         <li>「編集」で並びを変えられます。出す機能は設定の「メニューに出す機能」で選びます。隠しても記録は消えず、検索で見つかります</li>

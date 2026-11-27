@@ -1,6 +1,6 @@
 /**
  * 自分用の下のメニュー（o31 F001・F002、o30 D003・D004・D007）。
- * - 下は、利用者が選ぶ 1〜4 個の画面と、右端に固定の「追加」。初期はカレンダー・家計簿・やること・その他
+ * - 下は、利用者が選ぶ 1〜4 個の画面と、真ん中に固定の「追加」。初期はホーム・カレンダー・＋・家計簿・メニュー（To-Be 02。平尾さん 2026-11-27 Q-T01 ①）
  * - 0 個は許さない。保存が壊れている・知らない ID だけ・重複は、取り除くか初期に戻す（o31 01：旧設定0件・未知IDのみなら初期構成に復帰）
  * - 全機能の入口（メニュー）と検索は、画面の上に常にある（PageHeader の GlobalActions）。その他を外しても、全機能・設定・復元へ行ける（D005）
  * - 端末ごとの表示の設定で、記録ではない（バックアップには入らない）。読めない・書けないときも、初期の構成で動く
@@ -35,8 +35,8 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const NAV_MAX = 4;
 export const NAV_MIN = 1;
-// 初期の並びは o31 で平尾さんが決めたまま（To-Be の「ホーム・カレンダー・＋・家計簿・メニュー」とは食い違う → 判断待ち Q-T01。反証 中：やることを黙って外さない）
-export const DEFAULT_NAV: NavId[] = ["calendar", "money", "tasks", "more"];
+// 初期の並びは To-Be 02（平尾さん 2026-11-27 Q-T01 ①）。やることはホームとメニューの下の一覧から行く。保存してある並びは変えない（初期のままの端末だけ変わる）
+export const DEFAULT_NAV: NavId[] = ["home", "calendar", "money", "more"];
 export const NAV_KEY = "kurashi-base:ui:nav";
 
 const known = new Set<string>(NAV_ITEMS.map((n) => n.id));

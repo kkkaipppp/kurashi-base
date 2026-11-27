@@ -8,7 +8,7 @@ import { ADD_FAV_MAX, ADD_KINDS, NAV_ITEMS, NAV_MAX, NAV_MIN, moveNav, navItem, 
 
 /**
  * 自分用：下のメニューの編集と、「追加」のよく使う種類（o31 F001・F002、o30 D004）。
- * 並べ替えは上下のボタン（ドラッグはしない）。1〜4個。右端の「追加」は動かせない。
+ * 並べ替えは上下のボタン（ドラッグはしない）。1〜4個。真ん中の「追加」は動かせない。
  * 初期に戻すのは表示の設定だけで、記録は変わらない
  */
 export function NavSettingsCard() {
@@ -31,7 +31,7 @@ export function NavSettingsCard() {
       <div id="nav" className="scroll-mt-20" />
       <SectionTitle>下のメニュー</SectionTitle>
       <p className="mb-2 text-[14px] text-ink-2">
-        {NAV_MIN}〜{NAV_MAX}個まで選べます。右端の「追加」はいつも出ます。外した画面にも、上のメニュー（四角が4つのアイコン）から行けます。
+        {NAV_MIN}〜{NAV_MAX}個まで選べます。真ん中の「追加」はいつも出ます。外した画面にも、上のメニュー（四角が4つのアイコン）から行けます。
       </p>
       <ol className="divide-y divide-line border-y border-line" aria-label="今の下のメニュー（左から順）">
         {nav.map((id, i) => (
@@ -83,7 +83,7 @@ export function NavSettingsCard() {
         <Button
           variant="secondary"
           onClick={async () => {
-            if (!(await ui.confirm({ title: "下のメニューを初期に戻しますか？", body: "カレンダー・家計簿・やること・その他と、「追加」でよく使う種類を初めの状態に戻します。記録は変わりません。", ok: "初期に戻す" }))) return;
+            if (!(await ui.confirm({ title: "下のメニューを初期に戻しますか？", body: "ホーム・カレンダー・家計簿・メニューと、「追加」でよく使う種類を初めの状態に戻します。記録は変わりません。", ok: "初期に戻す" }))) return;
             setError(resetNav() ? null : "保存できませんでした。ブラウザの保存の設定を確かめてください");
           }}
         >
