@@ -229,3 +229,15 @@ export function backupFileName(nowIso: string): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `kurashi-base-backup-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
 }
+
+// 復元で読むファイルの上限。書き出しも同じ値で確かめる（ADR-002「守ること」1：書き出せたファイルは必ず戻せる）。
+// 自分用で上げるのは、iPhone 実機で大きな復元を試してから（ADR-002 決定 2026-11-27）
+export const MAX_BACKUP_BYTES = 20 * 1024 * 1024;
+
+// 書き出すファイルが上限の 8 割を超えたら知らせる（止めはしない。記録を守る手段を減らさないため）
+export function backupSizeNotice(bytes: number, max: number = MAX_BACKUP_BYTES): string | null {
+  const mb = (n: number) => (n / 1024 / 1024).toFixed(1);
+  if (bytes > max) return `このバックアップは ${mb(bytes)}MB で、このアプリで戻せる大きさ（${mb(max)}MB）を超えています。このファイルは消さずに残してください`;
+  if (bytes > max * 0.8) return `このバックアップは ${mb(bytes)}MB で、戻せる大きさ（${mb(max)}MB）に近づいています`;
+  return null;
+}
