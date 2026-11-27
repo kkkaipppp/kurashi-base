@@ -21,6 +21,8 @@ export function replaceEventEditableFields(existing: CalendarEvent, next: EventE
     // 完了の記録は、編集の入力にないので、そのまま引き継ぐ（編集で消さない）
     // 1回きりの予定で開始日を変えたときは、完了の日付も同じだけずらす（古い日付が残って、未完了なのに数えられるのを防ぐ）
     ...(existing.doneDates ? { doneDates: movedDone(existing, next) } : {}),
+    // 計画とのつながりも編集の入力に無いので引き継ぐ（直すたびに計画から外れて、予定が二重にできるのを防ぐ。To-Be 反証 高-1）
+    ...(existing.planId && next.planId === undefined ? { planId: existing.planId } : {}),
     id: existing.id,
     createdAt: existing.createdAt,
     updatedAt,

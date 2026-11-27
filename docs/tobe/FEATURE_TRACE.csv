@@ -71,7 +71,7 @@ F069,家計簿,返金,あり,"src/components/TxSheet.tsx,src/lib/refund.ts","ref
 F070,家計簿,分割払い,なし,src/components/TxSheet.tsx,,なし,,家計簿,未着手,,未更新,未着手
 F071,家計簿,外貨,なし,src/lib/types.ts,,なし,,家計簿,未着手,,未更新,未着手
 F072,家計簿,ポイント期限,なし,,,なし,,家計簿,未着手,,未更新,未着手
-F073,家計簿,活動別集計,一部（自分用）,"src/app/trips/page.tsx,src/lib/tripMemo.ts",a06-ledger-screens.test.ts,personal,旅行ごとだけ,家計簿,旅行ごとに加えて、計画ごとの使ったお金,tobe-plan.test.ts,未更新,試験あり・実機未確認
+F073,家計簿,活動別集計,一部,"src/app/trips/page.tsx,src/lib/tripMemo.ts",a06-ledger-screens.test.ts,personal,旅行ごとだけ,家計簿,旅行ごとに加えて、計画ごとのかかったお金,tobe-plan.test.ts,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F074,家計簿,欠測期間,なし,src/lib/forecast.ts,forecast.test.ts,なし,,家計簿,未着手,,未更新,未着手
 F075,家計簿,予算シナリオ,あり,"src/app/decide/page.tsx,src/lib/scenarios.ts",scenarios.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F076,計画,日程調整,なし,,,なし,,メニュー→計画,共有の仕組み（サーバー）が要る。費用・外部送信の承認と実現性の確認の前なので未提供（画面に出さない）,,未更新,承認待ち
@@ -81,11 +81,11 @@ F079,計画,アンケート,なし,,,なし,,メニュー→計画,共有の仕�
 F080,計画,回答集計,なし,,,なし,,メニュー→計画,共有の仕組み（サーバー）が要る。費用・外部送信の承認と実現性の確認の前なので未提供（画面に出さない）,,未更新,承認待ち
 F081,計画,お店探し,一部,"src/app/trips/page.tsx,src/lib/externalLinks.ts",external-links.test.ts,両方,Google 検索を開くだけ,メニュー→計画,店探し APIが要る。規約・費用・鍵の保護を確かめる前なので未提供。手で URL を入れる形は計画の候補で使える,,未更新,承認待ち
 F082,計画,集合場所比較,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
-F083,計画,候補比較,あり（自分用）,,,なし,,メニュー→計画,計画の「〇〇を比べる」：候補の名前・URL・目安の金額・これに決める,tobe-plan.test.ts,未更新,試験あり・実機未確認
+F083,計画,候補比較,なし,,,personal,,メニュー→計画,計画の「〇〇を比べる」：候補の名前・URL・目安の金額・これに決める（1つだけ）,tobe-plan.test.ts（候補と「これに決める」）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F084,計画,予約情報,一部,src/components/EventSheet.tsx,external-links.test.ts,両方,予定の URL とメモだけ,メニュー→計画,今の部分を残す。足りない部分は未着手,,未更新,未着手（一部あり）
-F085,計画,確定と予定連携,一部（自分用）,,,なし,,メニュー→計画,決めた日を「予定に入れる」（planId で結ぶ。同じ計画から予定は1件）。共有先への反映は無い,tobe-plan.test.ts,未更新,試験あり・実機未確認
+F085,計画,確定と予定連携,なし,,,personal,,メニュー→計画,日にちを「予定に入れる」：同じ計画から1件（保存の列の中で確かめる）。計画の日にちを変えると、つないだ1日の予定を同じ ID のまま移す。カレンダーで直してもつながりは残る。共有先への反映は無い,tobe-plan.test.ts（予定は1件・直してもつながりは残る）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F086,計画,決定共有,なし,,,なし,,メニュー→計画,共有の仕組み（サーバー）が要る。費用・外部送信の承認と実現性の確認の前なので未提供（画面に出さない）,,未更新,承認待ち
-F087,計画,精算連携,一部（自分用）,,,なし,,メニュー→計画,計画のお金：予算（見込み）・使ったお金（家計簿と同じ数え方）・残り。精算・割り勘は無い,tobe-plan.test.ts,未更新,試験あり・実機未確認
+F087,計画,精算連携,なし,,,personal,,メニュー→計画,計画のお金：予算（見込み）・かかったお金（家計簿と同じ数え方。返金のあとの金額・旅行につないだ支出も入る）・残り。精算・割り勘は無い,tobe-plan.test.ts（見込み・返金・旅行の計画）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F088,計画,プレゼント,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
 F089,計画,計画コピー,一部,"src/components/TripCopy.tsx,src/lib/tripTemplate.ts",trip-template.test.ts,personal,旅行の複製だけ,メニュー→計画,今の部分を残す。足りない部分は未着手,,未更新,未着手（一部あり）
 F090,計画,旅行,あり,src/app/trips/page.tsx,"trip-template.test.ts,backup-roundtrip.test.ts",両方,,メニュー→計画,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
@@ -98,16 +98,16 @@ F096,計画,キャンセル期限,なし,,,なし,,メニュー→計画,未着�
 F097,計画,旅程共有,なし,,,なし,,メニュー→計画,共有の仕組み（サーバー）が要る。費用・外部送信の承認と実現性の確認の前なので未提供（画面に出さない）,,未更新,承認待ち
 F098,計画,旅行費用,あり,"src/app/trips/page.tsx,src/components/TxSheet.tsx",a06-ledger-screens.test.ts,両方,,メニュー→計画,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F099,計画,引っ越し手続き,一部,"src/app/life/page.tsx,src/lib/lifeChange.ts",life-change.test.ts,personal,固定費と予算の変更計画だけ,メニュー→計画,今の部分を残す。足りない部分は未着手,,未更新,未着手（一部あり）
-F100,計画,物件比較,一部（自分用）,,,なし,,メニュー→計画,計画の種類「引っ越し」の「物件を比べる」,tobe-plan.test.ts,未更新,試験あり・実機未確認
+F100,計画,物件比較,なし,,,personal,,メニュー→計画,計画の種類「引っ越し」の「物件を比べる」,tobe-plan.test.ts（種類ごとの候補の名前）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F101,計画,内見,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
 F102,計画,家事分担,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
-F103,計画,冠婚葬祭,一部（自分用）,,,なし,,メニュー→計画,「自由に作る」計画で入れられる。専用の項目は無い,tobe-plan.test.ts,未更新,試験あり・実機未確認
-F104,計画,転職先比較,一部（自分用）,,,なし,,メニュー→計画,計画の種類「転職」の「応募先を比べる」,tobe-plan.test.ts,未更新,試験あり・実機未確認
+F103,計画,冠婚葬祭,なし,,,personal,,メニュー→計画,「自由に作る」計画で入れられる。専用の項目は無い,なし（種類「自由に作る」の試験で代用しない）,未更新,今回作った・専用の試験なし・実機未確認
+F104,計画,転職先比較,なし,,,personal,,メニュー→計画,計画の種類「転職」の「応募先を比べる」,tobe-plan.test.ts（種類ごとの候補の名前）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F105,計画,面接,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
-F106,計画,出張準備,一部（自分用）,,,なし,,メニュー→計画,計画の種類「出張」。経費の区分は無い,tobe-plan.test.ts,未更新,試験あり・実機未確認
-F107,計画,買い物計画,一部（自分用）,src/app/decide/page.tsx,decision.test.ts,両方,保存しない,メニュー→計画,計画の種類「買い物」：商品を比べる・これに決める。買う前に確認（/decide）は計画の中から行ける,tobe-plan.test.ts,未更新,試験あり・実機未確認
-F108,計画,自由作成,あり（自分用）,,,なし,,メニュー→計画,計画の種類「自由に作る」,tobe-plan.test.ts,未更新,試験あり・実機未確認
-F109,計画,中止・過去,あり（自分用）,src/app/trips/page.tsx,,両方,中止の状態は無い,メニュー→計画,計画の状態：検討中・準備中・完了・中止。完了・中止は「過去の計画」,tobe-plan.test.ts,未更新,試験あり・実機未確認
+F106,計画,出張準備,なし,,,personal,,メニュー→計画,計画の種類「出張」の「ホテル・航空券を比べる」。経費の区分は無い,tobe-plan.test.ts（種類ごとの候補の名前）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
+F107,計画,買い物計画,一部,src/app/decide/page.tsx,decision.test.ts,personal,保存しない,メニュー→計画,計画の種類「買い物」の「商品を比べる」。買う前に確認（/decide）とはつないでいない,tobe-plan.test.ts（種類ごとの候補の名前）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
+F108,計画,自由作成,なし,,,personal,,メニュー→計画,計画の種類「自由に作る」,tobe-plan.test.ts,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
+F109,計画,中止・過去,一部,src/app/trips/page.tsx,,personal,中止の状態は無い,メニュー→計画,計画の状態：検討中・準備中・完了・中止。完了・中止は「過去の計画」。旅行には中止の状態は無いまま,tobe-plan.test.ts（並び）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F110,計画,生活テンプレート,なし,src/lib/tripTemplate.ts,trip-template.test.ts,なし,,メニュー→計画,未着手,,未更新,未着手
 F111,目標,資格申込,一部,"src/app/study/page.tsx,src/lib/certifications.json",o31-study-data.test.ts,両方,申込の期限は無い,メニュー→目標,今の部分を残す。足りない部分は未着手,,未更新,未着手（一部あり）
 F112,目標,勉強計画,あり,"src/components/StudyShelf.tsx,src/lib/studyCore.ts",o31-study-plan.test.ts,personal,,メニュー→目標,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
@@ -178,7 +178,7 @@ F176,設定・共通,削除,あり,"src/app/settings/page.tsx,src/components/Col
 F177,設定・共通,元に戻す,あり,"src/app/settings/page.tsx,src/lib/storeCore.ts,src/lib/importBatch.ts","store-core.test.ts,import-batch.test.ts,life-change.test.ts",両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F178,設定・共通,外部連携,一部,"src/app/integrations/page.tsx,src/components/NativeStatusCard.tsx",a07-native-boundary.test.ts,両方,,設定・使い方,今の部分を残す。足りない部分は未着手,,未更新,未着手（一部あり）
 F179,設定・共通,ウィジェット,あり,"src/components/WidgetSync.tsx,src/lib/widgetSummary.ts,ios/App/KurashiWidget/KurashiWidget.swift","widget-summary.test.ts,a07-payload-limits.test.ts",personal,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-F180,設定・共通,使い方,あり,src/app/guide/page.tsx,"copy-v5.test.ts,approval5-public-copy.test.ts",両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
+F180,設定・共通,使い方,あり,src/app/guide/page.tsx,"copy-v5.test.ts,approval5-public-copy.test.ts",両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,自分用の使い方に「メニューと計画」を足した,既存・回帰試験あり
 F181,設定・共通,練習,なし,,,なし,,設定・使い方,未着手,,未更新,未着手
 F182,設定・共通,機種変更,一部,"src/app/guide/page.tsx,src/lib/platform.ts",,personal,,設定・使い方,今の部分を残す。足りない部分は未着手,,未更新,未着手（一部あり）
 F183,設定・共通,買い足すもの,なし,,,なし,,設定・使い方,未着手,,未更新,未着手
@@ -188,16 +188,16 @@ F186,設定・共通,公開版制御,あり,"src/lib/edition.ts,src/lib/menuGrou
 X001,AI,AIに相談（/ai）,なし,src/app/ai/page.tsx,,両方,準備中の説明だけ,（出さない）,未着手,,未更新,未着手
 X002,共通,共有（/share）,なし,src/app/share/page.tsx,,両方,準備中の説明だけ,（出さない）,共有の仕組み（サーバー）が要る。費用・外部送信の承認と実現性の確認の前なので未提供（画面に出さない）,,未更新,承認待ち
 X003,設定・共通,外部サービス連携の画面（/integrations）,一部,src/app/integrations/page.tsx,,両方,,設定・使い方,今の部分を残す。足りない部分は未着手,,未更新,未着手（一部あり）
-X004,設定・共通,ウィジェットのプレビュー（/widget）,あり,src/app/widget/page.tsx,widget-summary.test.ts,両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
+X004,設定・共通,ウィジェットのプレビュー（/widget）,あり,src/app/widget/page.tsx,widget-summary.test.ts,両方,,設定・使い方,今の機能を残す。自分用のメニューの下の一覧から開く（To-Be の家計簿・＋・設定へ移すのは段階2）,,未更新,既存・回帰試験あり
 X005,設定・共通,性能を測る（/perf）,あり,"src/app/perf/page.tsx,src/components/PerfLab.tsx,src/lib/perfBench.ts","a06-perf.test.ts,a08-perf-years.test.ts,perf-10years.test.ts",personal,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 X006,計画,生活の変化（/life）,あり,"src/app/life/page.tsx,src/lib/lifeChange.ts",life-change.test.ts,personal,,メニュー→計画,メニュー→計画→引っ越し・転職のお金（画面は今のまま）,,未更新,試験あり・実機未確認
 X007,家計簿,買い物の判断（/decide）,あり,"src/app/decide/page.tsx,src/lib/decision.ts,src/lib/scenarios.ts","decision.test.ts,scenarios.test.ts",両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-X008,家計簿,未分類の記録（/inbox）,あり,"src/app/inbox/page.tsx,src/lib/inbox.ts",inbox.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-X009,追加,レシートを見て入力（/import）,あり,"src/app/import/page.tsx,src/lib/receiptParse.ts,src/lib/imageScale.ts",receipt-parse.test.ts,両方,,＋（追加）,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
+X008,家計簿,未分類の記録（/inbox）,あり,"src/app/inbox/page.tsx,src/lib/inbox.ts",inbox.test.ts,両方,,家計簿,今の機能を残す。自分用のメニューの下の一覧から開く（To-Be の家計簿・＋・設定へ移すのは段階2）,,未更新,既存・回帰試験あり
+X009,追加,レシートを見て入力（/import）,あり,"src/app/import/page.tsx,src/lib/receiptParse.ts,src/lib/imageScale.ts",receipt-parse.test.ts,両方,,＋（追加）,今の機能を残す。自分用のメニューの下の一覧から開く（To-Be の家計簿・＋・設定へ移すのは段階2）,,未更新,既存・回帰試験あり
 X010,設定・共通,横断検索（/search）,あり,"src/app/search/page.tsx,src/lib/search.ts,src/lib/searchState.ts","search.test.ts,search-state.test.ts",両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 X011,家計簿,家計簿・振り返り（/report）,あり,"src/app/report/page.tsx,src/components/MoneyMonth.tsx,src/lib/report.ts","report.test.ts,o31-money-screen.test.ts",両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-X012,家計簿,取引履歴（/history）,あり,"src/app/history/page.tsx,src/lib/aggregate.ts",a06-ledger-screens.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-X013,設定・共通,すべての機能（/menu）,作り直し（自分用）,"src/app/menu/page.tsx,src/components/PersonalMenu.tsx,src/lib/menuPrefs.ts","o31-menu.test.ts,menu-hidden.test.ts",両方,,設定・使い方,メニューを7分類の3列に。お気に入り・最近の重複一覧はやめた,tobe-menu.test.ts,未更新,試験あり・実機未確認
+X012,家計簿,取引履歴（/history）,あり,"src/app/history/page.tsx,src/lib/aggregate.ts",a06-ledger-screens.test.ts,両方,,家計簿,今の機能を残す。自分用のメニューの下の一覧から開く（To-Be の家計簿・＋・設定へ移すのは段階2）,,未更新,既存・回帰試験あり
+X013,設定・共通,すべての機能（/menu）,あり,"src/app/menu/page.tsx,src/components/PersonalMenu.tsx,src/lib/menuPrefs.ts","o31-menu.test.ts,menu-hidden.test.ts",両方,,設定・使い方,作り直し（自分用）：7分類の3列・並び替え・下に分類していない画面の一覧と検索・設定・使い方。お気に入り・最近の一覧はやめた（判断待ち Q-T04）,tobe-menu.test.ts（前のメニューの画面に全部届く）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 X014,家計簿,月末の見込み,あり,"src/components/ForecastCard.tsx,src/lib/forecast.ts",forecast.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 X015,家計簿,週ごとの見直し,あり,"src/components/WeeklyReviewCard.tsx,src/lib/weeklyReview.ts",weekly-review.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 X016,家計簿,支出の変化（気づき）,あり,"src/lib/report.ts,src/app/page.tsx",report.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり

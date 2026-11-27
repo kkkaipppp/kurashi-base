@@ -193,6 +193,12 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
         commit((d) => ({
           ...d,
           trips: (d.trips ?? []).filter((x) => x.id !== id),
+          // 計画が消えた旅行を指したまま残らないように、つながりを外す（To-Be 点検 M4）
+          plans: (d.plans ?? []).map((p) => {
+            if (p.tripId !== id) return p;
+            const { tripId: _t, ...rest } = p; // eslint-disable-line @typescript-eslint/no-unused-vars
+            return { ...rest, updatedAt: now() };
+          }),
           events: d.events.map((e) => {
             if (e.tripId !== id) return e;
             const { tripId: _drop, ...rest } = e; // eslint-disable-line @typescript-eslint/no-unused-vars

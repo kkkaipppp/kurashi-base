@@ -22,7 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "calendar", label: "カレンダー", href: "/calendar", paths: ["/calendar"] },
   { id: "money", label: "家計簿", href: "/report", paths: ["/report", "/history", "/decide", "/inbox"] },
   { id: "tasks", label: "やること", href: "/tasks", paths: ["/tasks"] },
-  { id: "more", label: "メニュー", href: "/menu", paths: ["/menu"] },
+  { id: "more", label: "メニュー", href: "/menu", paths: ["/menu", "/plans"] },
   { id: "study", label: "勉強", href: "/study", paths: ["/study"] },
   { id: "goals", label: "目標", href: "/goals", paths: ["/goals"] },
   { id: "trips", label: "旅行", href: "/trips", paths: ["/trips"] },
@@ -35,8 +35,8 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const NAV_MAX = 4;
 export const NAV_MIN = 1;
-// To-Be 2026-11-27 02「階層化: ホーム、カレンダー、＋、家計簿、メニュー」。やることはカレンダーとホームから行く。本人が選んだ並びはそのまま（保存してある並びは変えない）
-export const DEFAULT_NAV: NavId[] = ["home", "calendar", "money", "more"];
+// 初期の並びは o31 で平尾さんが決めたまま（To-Be の「ホーム・カレンダー・＋・家計簿・メニュー」とは食い違う → 判断待ち Q-T01。反証 中：やることを黙って外さない）
+export const DEFAULT_NAV: NavId[] = ["calendar", "money", "tasks", "more"];
 export const NAV_KEY = "kurashi-base:ui:nav";
 
 const known = new Set<string>(NAV_ITEMS.map((n) => n.id));

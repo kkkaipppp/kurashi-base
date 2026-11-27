@@ -47,12 +47,20 @@ export function hubCategories(): HubCategory[] {
   ];
 }
 
-/** 家計簿の画面の中から行くもの（家計簿の上の「記録」タブの並び。メニューには出さない） */
-export const MONEY_LINKS = (d: AppData) => [
-  { href: "/history", label: "お金の記録", count: d.transactions.length },
-  ...(FEATURES.inbox ? [{ href: "/inbox", label: "分類していない記録", count: inboxCount(d) }] : []),
-  { href: "/recurring", label: "固定費", count: d.recurring.filter((r) => r.active).length },
-];
+/**
+ * 分類に入れていない画面（To-Be では家計簿・＋・カレンダー・設定の中に移す予定。移すまではメニューの下に出して、行けなくならないようにする。
+ * To-Be 反証 中：前のメニューにあった入口を落とさない。03「独立ページの削除は機能廃止ではない」）
+ */
+export function otherLinks(): HubItem[] {
+  return [
+    { href: "/tasks", label: "やること", count: (d) => d.tasks.filter((t) => !t.done).length },
+    { href: "/history", label: "お金の記録", count: (d) => d.transactions.length },
+    ...(FEATURES.inbox ? [{ href: "/inbox", label: "分類していない記録", count: (d: AppData) => inboxCount(d) }] : []),
+    { href: "/import", label: "レシートを見て入力" },
+    { href: "/widget", label: "ウィジェット" },
+    { href: "/settings#backup", label: "バックアップと復元" },
+  ];
+}
 
 export const MENU_ORDER_KEY = "kurashi-base:ui:menu-order";
 

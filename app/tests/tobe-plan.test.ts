@@ -113,3 +113,77 @@ describe("並びとバックアップ", () => {
     expect(r.ok && r.data.plans.map((p) => p.id)).toEqual(["p1"]);
   });
 });
+
+// 反証（2026-11-27）の指摘の直し。期待値は手で決めた
+import { replaceEventEditableFields } from "@/lib/eventMerge";
+import { PLAN_EVENT_EXISTS, addPlanEvent, candidateNoun, planEventError, setPlanDate } from "@/lib/plan";
+import { applyRefund } from "@/lib/refund";
+
+describe("計画の予定は1件・直してもつながりは残る（A09・反証 高-1・高-2）", () => {
+  const withPlan = () => addPlan(base(), { type: "gathering", title: "忘年会", date: "2026-12-20", budget: null, note: "" }, "p1", ts);
+  it("予定に入れるを2回しても1件。2回目は理由を返す", () => {
+    const d1 = addPlanEvent(withPlan(), { id: "p1", title: "忘年会", date: "2026-12-20" }, "e1", ts);
+    expect(planEventError(d1, "p1")).toBe(PLAN_EVENT_EXISTS);
+    const d2 = addPlanEvent(d1, { id: "p1", title: "忘年会", date: "2026-12-20" }, "e2", ts);
+    expect(d2.events.map((e) => e.id)).toEqual(["e1"]);
+  });
+  it("カレンダーで予定を直しても planId は残る", () => {
+    const d1 = addPlanEvent(withPlan(), { id: "p1", title: "忘年会", date: "2026-12-20" }, "e1", ts);
+    const { id: _i, createdAt: _c, updatedAt: _u, planId: _p, ...form } = d1.events[0]; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const edited = replaceEventEditableFields(d1.events[0], { ...form, allDay: false, startTime: "19:00", endTime: "21:00" }, "t2");
+    expect(edited).toMatchObject({ id: "e1", planId: "p1", startTime: "19:00" });
+  });
+  it("計画の日にちを変えると、結んだ1日の予定は同じ ID のまま移る（時刻はそのまま）。日にちを消しても予定は消さない", () => {
+    let d = addPlanEvent(withPlan(), { id: "p1", title: "忘年会", date: "2026-12-20" }, "e1", ts);
+    d = { ...d, events: d.events.map((e) => ({ ...e, allDay: false, startTime: "19:00", endTime: "21:00" })) };
+    d = setPlanDate(d, "p1", "2026-12-27", "t3");
+    expect(d.events).toHaveLength(1);
+    expect(d.events[0]).toMatchObject({ id: "e1", startDate: "2026-12-27", endDate: "2026-12-27", startTime: "19:00" });
+    expect(d.plans[0].date).toBe("2026-12-27");
+    d = setPlanDate(d, "p1", "", "t4");
+    expect(d.events[0].startDate).toBe("2026-12-27");
+  });
+});
+
+describe("返金があっても、使ったお金は家計簿と同じ（反証 中 F087）", () => {
+  it("5,000円の支出に2,000円の返金 → 使ったお金は3,000円", () => {
+    let d = addPlan(base(), { type: "gathering", title: "忘年会", date: "", budget: 10000, note: "" }, "p1", ts);
+    d = { ...d, transactions: [tx({ id: "t1", amount: 5000, planId: "p1" })] };
+    const r = applyRefund(d, "t1", 2000, "2026-12-21", "r1", ts);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(planView(r.next, r.next.plans[0]).spent).toBe(3000);
+  });
+});
+
+describe("種類ごとの候補の名前（05）", () => {
+  it("飲み会はお店・引っ越しは物件・買い物は商品・転職は応募先・出張と旅行はホテル・航空券（05「ホテルを比べる／航空券を比べる」）", () => {
+    expect((["gathering", "move", "shopping", "job", "business", "trip", "free"] as const).map(candidateNoun)).toEqual(["お店", "物件", "商品", "応募先", "ホテル・航空券", "ホテル・航空券", "候補"]);
+  });
+});
+
+// 品質の点検（2026-11-27）の直し。期待値は手で決めた
+import { integrity } from "@/lib/idbRepository";
+import { readFileSync } from "node:fs";
+
+describe("旅行の計画のお金・つながりの照合・旅行を消したとき（点検 M3・M4）", () => {
+  it("旅行の計画は、旅行につないだ支出も数える。同じ支出は1回だけ", () => {
+    let d = addPlan(base(), { type: "trip", title: "京都", date: "", budget: 50000, note: "", tripId: "tr1" }, "p1", ts);
+    d = { ...d, transactions: [tx({ id: "a", amount: 10000, tripId: "tr1" }), tx({ id: "b", amount: 3000, tripId: "tr1", planId: "p1" }), tx({ id: "c", amount: 999 })] };
+    const v = planView(d, d.plans[0]);
+    expect(v.spent).toBe(13000);
+    expect(v.transactions.map((t) => t.id)).toEqual(["a", "b"]);
+  });
+  it("IndexedDB へ移すときの照合に、計画とのつながりの数が入る", () => {
+    let d = addPlan(base(), { type: "trip", title: "x", date: "", budget: null, note: "", tripId: "tr1" }, "p1", ts);
+    d = { ...d, transactions: [tx({ planId: "p1" })] };
+    expect(integrity(d, "").links.planId).toBe(2);
+  });
+  it("旅行を消すと、計画の tripId も外す", () => {
+    const src = readFileSync("src/lib/store.tsx", "utf8");
+    expect(src).toMatch(/deleteTrip:[\s\S]{0,400}plans: \(d\.plans \?\? \[\]\)\.map\(\(p\) => \{\s*if \(p\.tripId !== id\) return p;/);
+  });
+  it("計画の検索の処理は、公開版の組み立てで消える形（環境の値を直接比べる。点検 L1）", () => {
+    expect(readFileSync("src/lib/search.ts", "utf8")).toContain('if (process.env.NEXT_PUBLIC_KB_EDITION === "personal") for (const p of data.plans ?? [])');
+  });
+});

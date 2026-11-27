@@ -1,7 +1,6 @@
 import { formatDateJa } from "./date";
 import { formatYen } from "./money";
 import type { AppData } from "./types";
-import { IS_PERSONAL } from "./edition";
 
 /**
  * 横断検索（NEXT v21 Phase 2）。端末の中の記録だけを、その場で探す（外へは送らない）。
@@ -85,7 +84,8 @@ export function searchAll(data: AppData, q: string, perKind: number = SEARCH_PER
   for (const r of data.recurring) if (match([r.name], r.amount)) add({ kind: "recurring", id: r.id, title: r.name, sub: `${formatYen(r.amount)}・次は${formatDateJa(r.nextDueDate)}`, date: r.nextDueDate, href: `/recurring?open=${r.id}` });
   for (const t of data.trips ?? []) if (match([t.title, t.destination, t.note])) add({ kind: "trip", id: t.id, title: t.title, sub: `${formatDateJa(t.startDate, true)}〜${t.destination ? `・${t.destination}` : ""}`, date: t.startDate, href: `/trips?open=${t.id}` });
   // 計画は自分用だけ（To-Be 2026-11-27）。公開版には計画の画面が無いので出さない
-  if (IS_PERSONAL) for (const p of data.plans ?? []) if (match([p.title, p.note, ...(p.candidates ?? []).map((c) => c.label)])) add({ kind: "plan", id: p.id, title: p.title, sub: p.date ? formatDateJa(p.date, true) : "日程未定", date: p.date, href: `/plans?open=${p.id}` });
+  // 環境の値を直接比べる（組み立てのときに決まり、公開版ではこの処理ごと消える。点検 L1）
+  if (process.env.NEXT_PUBLIC_KB_EDITION === "personal") for (const p of data.plans ?? []) if (match([p.title, p.note, ...(p.candidates ?? []).map((c) => c.label)])) add({ kind: "plan", id: p.id, title: p.title, sub: p.date ? formatDateJa(p.date, true) : "日程未定", date: p.date, href: `/plans?open=${p.id}` });
   for (const t of data.tasks) if (match([t.title, t.note])) add({ kind: "task", id: t.id, title: t.title, sub: t.done ? "完了" : t.due ? `期限 ${formatDateJa(t.due, true)}` : "期限なし", date: t.due, href: `/tasks?open=${t.id}` });
   for (const n of data.notes) if (match([n.title, n.body])) add({ kind: "note", id: n.id, title: n.title || "（タイトルなし）", sub: n.date ? formatDateJa(n.date, true) : "", date: n.date, href: `/notes?open=${n.id}` });
   for (const c of data.contracts) if (match([c.name, c.provider, c.note], c.amount ?? undefined)) add({ kind: "contract", id: c.id, title: c.name, sub: `${c.provider}${c.renewalDate ? `・更新 ${formatDateJa(c.renewalDate, true)}` : ""}`, date: c.renewalDate, href: `/contracts?open=${c.id}` });

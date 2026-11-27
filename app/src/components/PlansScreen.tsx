@@ -15,6 +15,9 @@ import {
   PLAN_TYPE_LABEL,
   addCandidate,
   addPlan,
+  addPlanEvent,
+  planEventError,
+  setPlanDate,
   candidateNoun,
   chooseCandidate,
   deletePlan,
@@ -24,11 +27,11 @@ import {
   sortPlans,
   updatePlan,
 } from "@/lib/plan";
-import type { Plan, PlanStatus, PlanType } from "@/lib/types";
+import type { AppData, Plan, PlanStatus, PlanType } from "@/lib/types";
 
 /**
  * 計画（To-Be 2026-11-27 02「計画」・05「計画を作る／次にやること／日程を決める…」）。
- * 予定・やること・支出は、それぞれの記録が正本で、ここでは計画に結んだものを集めて見せる。
+ * 予定・やること・支出は、それぞれの記録が正本で、ここでは計画につないだものを集めて見せる。
  * みんなに回答してもらうリンク（日程調整・アンケート）は、共有の仕組みが無いのでまだ出さない（To-Be 03：成立しなければ隠す）
  */
 export function PlansScreen() {
@@ -156,9 +159,9 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
   const ui = useUI();
   const v = planView(data, plan);
   const ts = () => new Date().toISOString();
-  const save = async (fn: Parameters<typeof store.commit>[0], ok?: string) => {
-    // 開いている計画が、ほかのタブで消されていたら保存しない
-    const r = await store.commit(fn, { check: (cur) => ((cur.plans ?? []).some((p) => p.id === plan.id) ? null : "この計画は、ほかのタブなどで削除されています") });
+  const save = async (fn: Parameters<typeof store.commit>[0], ok?: string, extra?: (cur: AppData) => string | null) => {
+    // 開いている計画が、ほかのタブで消されていたら保存しない。extra は、保存の列の中で最新のデータに対して確かめること
+    const r = await store.commit(fn, { check: (cur) => ((cur.plans ?? []).some((p) => p.id === plan.id) ? (extra?.(cur) ?? null) : "この計画は、ほかのタブなどで削除されています") });
     if (!r.ok) {
       ui.toast(`保存できませんでした（${r.error}）`, "error");
       return false;
@@ -205,12 +208,13 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
         <Field label="日にち" htmlFor="pl-date" hint={plan.date ? undefined : "日程未定"}>
           <input
             id="pl-date"
+            key={`d-${plan.updatedAt}`}
             type="date"
             defaultValue={plan.date}
             onBlur={(e) => {
               const v2 = e.target.value;
               if (v2 !== "" && !isValidDateStr(v2)) return;
-              if (v2 !== plan.date) void save((d) => updatePlan(d, plan.id, { date: v2 }, ts()));
+              if (v2 !== plan.date) void save((d) => setPlanDate(d, plan.id, v2, ts()), v.events.length ? "日にちと、つないだ予定の日を変えました" : undefined);
             }}
             className={inputCls}
           />
@@ -222,13 +226,7 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
           variant="secondary"
           className="w-full"
           onClick={() =>
-            void save(
-              (d) => ({
-                ...d,
-                events: [...d.events, { id: newId("ev"), title: plan.title, startDate: plan.date, endDate: plan.date, allDay: true, startTime: "", endTime: "", note: "", planId: plan.id, createdAt: ts(), updatedAt: ts() }],
-              }),
-              `${formatDateJa(plan.date)}の予定に入れました`,
-            )
+            void save((d) => addPlanEvent(d, plan, newId("ev"), ts()), `${formatDateJa(plan.date)}の予定に入れました`, (cur) => planEventError(cur, plan.id))
           }
         >
           {formatDateJa(plan.date)}の予定に入れる
@@ -306,8 +304,8 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
               <IconChevronR className="size-4 text-ink-3" />
             </Link>
           ) : (
-            <Field label="旅行の記録を結ぶ" htmlFor="pl-tripid" hint="旅程・移動・宿は「旅行」の画面で入れます">
-              <select id="pl-tripid" value="" onChange={(e) => e.target.value && void save((d) => updatePlan(d, plan.id, { tripId: e.target.value }, ts()), "旅行を結びました")} className={inputCls}>
+            <Field label="旅行の記録をつなぐ" htmlFor="pl-tripid" hint="旅程・移動・宿は「旅行」の画面で入れます">
+              <select id="pl-tripid" value="" onChange={(e) => e.target.value && void save((d) => updatePlan(d, plan.id, { tripId: e.target.value }, ts()), "旅行をつなぎました")} className={inputCls}>
                 <option value="">選ぶ</option>
                 {(data.trips ?? []).map((t) => (
                   <option key={t.id} value={t.id}>
@@ -405,7 +403,7 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
             <dd className="num text-[16px] font-semibold">{plan.budget === null ? "未設定" : formatYen(plan.budget)}</dd>
           </div>
           <div>
-            <dt className="text-[13px] text-ink-3">使ったお金</dt>
+            <dt className="text-[13px] text-ink-3">かかったお金</dt>
             <dd className="num text-[16px] font-semibold">{formatYen(v.spent)}</dd>
           </div>
           <div>
@@ -417,6 +415,7 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
         <Field label="予算（見込み）" htmlFor="pl-budget" optional>
           <input
             id="pl-budget"
+            key={`b-${plan.updatedAt}`}
             inputMode="numeric"
             defaultValue={plan.budget === null ? "" : String(plan.budget)}
             onBlur={(e) => {
@@ -452,8 +451,8 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
           </ul>
         )}
         {unlinkedExpenses.length > 0 && (
-          <Field label="支出の記録を結ぶ" htmlFor="pl-tx" hint="家計簿に記録した支出から選びます（新しい順に30件）">
-            <select id="pl-tx" value="" onChange={(e) => e.target.value && void save((d) => linkToPlan(d, "transaction", e.target.value, plan.id, ts()), "支出を結びました")} className={inputCls}>
+          <Field label="支出の記録をつなぐ" htmlFor="pl-tx" hint="家計簿に記録した支出から選びます（新しい順に30件）">
+            <select id="pl-tx" value="" onChange={(e) => e.target.value && void save((d) => linkToPlan(d, "transaction", e.target.value, plan.id, ts()), "支出をつなぎました")} className={inputCls}>
               <option value="">選ぶ</option>
               {unlinkedExpenses.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -468,6 +467,7 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
       <Field label="メモ" htmlFor="pl-note" optional>
         <textarea
           id="pl-note"
+          key={`n-${plan.updatedAt}`}
           defaultValue={plan.note}
           rows={3}
           onBlur={(e) => e.target.value !== plan.note && void save((d) => updatePlan(d, plan.id, { note: e.target.value.slice(0, 2000) }, ts()))}
@@ -479,7 +479,7 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
         variant="danger"
         className="w-full"
         onClick={async () => {
-          const yes = await ui.confirm({ title: `計画「${plan.title}」を削除しますか？`, body: "結んだ予定・やること・支出の記録は消えません。計画とのつながりだけを外します。", ok: "削除", danger: true });
+          const yes = await ui.confirm({ title: `計画「${plan.title}」を削除しますか？`, body: "つないだ予定・やること・支出の記録は消えません。計画とのつながりだけを外します。", ok: "削除", danger: true });
           if (!yes) return;
           const r = await store.commit((d) => deletePlan(d, plan.id));
           if (!r.ok) return ui.toast(`削除できませんでした（${r.error}）`, "error");

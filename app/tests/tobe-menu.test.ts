@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { hubCategories, moveCategory, orderCategories, visibleItems } from "@/lib/menuHub";
+import { hubCategories, moveCategory, orderCategories, otherLinks, visibleItems } from "@/lib/menuHub";
+import { GROUPS } from "@/lib/menuGroups";
 import { HIDEABLE_MENU, cleanMenuHidden } from "@/lib/menuHidden";
 
 // To-Be 2026-11-27 02「メニュー: 計画、目標、資産、契約・固定費、健康、メモ、書類。3列アイコン、短い名称、編集」。期待値は 02 から手で作った
@@ -19,6 +20,15 @@ describe("メニューの7分類", () => {
     // 固定費は家計の基本なので隠せない。契約を隠しても固定費は残る
     expect(visibleItems(contract, new Set(cleanMenuHidden(["/contracts", "/recurring"]))).map((i) => i.href)).toEqual(["/recurring"]);
     expect(HIDEABLE_MENU.map((m) => m.href)).toContain("/plans");
+  });
+});
+
+describe("前のメニューにあった画面に、自分用のメニューから全部行ける（反証 中：入口を落とさない）", () => {
+  it("前のメニュー（menuGroups）の使える画面と、隠せる画面が、7分類かその下の一覧にある", () => {
+    const now = new Set([...hubCategories().flatMap((c) => c.items), ...otherLinks()].map((i) => i.href.split("#")[0]));
+    const before = GROUPS.flatMap((g) => g.items.filter((i) => !i.soon).map((i) => i.href.split("#")[0]));
+    // 検索・設定・使い方はメニューの下に別に出す
+    for (const h of [...before, ...HIDEABLE_MENU.map((m) => m.href)]) if (!["/search", "/settings", "/guide"].includes(h)) expect(now.has(h), h).toBe(true);
   });
 });
 

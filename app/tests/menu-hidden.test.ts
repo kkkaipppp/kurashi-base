@@ -14,9 +14,9 @@ const now = "2026-11-25T00:00:00.000Z";
 describe("メニューに出す機能", () => {
   it("隠せるのはメニューにある機能だけ。基本（取引履歴・固定費・設定・使い方）は隠せない", () => {
     // o31 F003：メニューの一覧は app/menu/page.tsx から lib/menuGroups.ts に移した（中身は同じ。見る場所だけ変えた）
-    // To-Be 2026-11-27：自分用のメニュー（lib/menuHub.ts）の計画も隠せる。どちらかの一覧にあればよい
-    const menu = src("lib/menuGroups.ts") + src("lib/menuHub.ts");
-    for (const m of HIDEABLE_MENU) expect(menu, m.href).toContain(`href: "${m.href}"`);
+    const menu = src("lib/menuGroups.ts");
+    // 計画（/plans）は自分用のメニュー（lib/menuHub.ts）だけにある。自分用のメニューに全部あることは tobe-menu.test.ts で確かめる
+    for (const m of HIDEABLE_MENU.filter((x) => x.href !== "/plans")) expect(menu, m.href).toContain(`href: "${m.href}"`);
     const hrefs = HIDEABLE_MENU.map((m) => m.href);
     for (const core of ["/history", "/recurring", "/settings", "/guide", "/settings#backup"]) expect(hrefs).not.toContain(core);
   });

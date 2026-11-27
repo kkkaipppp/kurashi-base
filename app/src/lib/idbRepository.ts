@@ -352,7 +352,7 @@ export interface Integrity {
   plans: number;
   collections: Record<string, number>;
   /** 関連：固定費・旅行・返金・目標につながった記録の数 */
-  links: { recurringId: number; tripId: number; refundOf: number; goalId: number; eventId: number };
+  links: { recurringId: number; tripId: number; refundOf: number; goalId: number; eventId: number; planId: number };
 }
 
 export function integrity(d: AppData, json: string): Integrity {
@@ -373,6 +373,8 @@ export function integrity(d: AppData, json: string): Integrity {
       refundOf: d.transactions.filter((t) => t.refundOf).length,
       goalId: d.events.filter((e) => e.goalId).length,
       eventId: d.tasks.filter((t) => t.eventId).length,
+      // To-Be：計画とのつながり（移す途中で落ちたら照合で見つける。点検 M4）
+      planId: d.transactions.filter((t) => t.planId).length + d.events.filter((e) => e.planId).length + d.tasks.filter((t) => t.planId).length + (d.plans ?? []).filter((p) => p.tripId).length,
     },
   };
 }

@@ -7,9 +7,8 @@ import { ADD_KINDS, DEFAULT_NAV, NAV_ITEMS, activeNav, addOrder, contextKind, mo
 const src = (p: string) => readFileSync(join(__dirname, "..", "src", p), "utf8");
 
 describe("o31 T001 下のメニュー（1〜4個）", () => {
-  // To-Be 2026-11-27（docs/tobe/DECISIONS_TOBE.md D-T06）で初期を変えた。保存してある本人の並びは変えない（下の parseNav の試験）
-  it("初期はホーム・カレンダー・家計簿・メニュー", () => {
-    expect(DEFAULT_NAV).toEqual(["home", "calendar", "money", "more"]);
+  it("初期はカレンダー・家計簿・やること・メニュー（To-Be の並びに変えるかは判断待ち Q-T01）", () => {
+    expect(DEFAULT_NAV).toEqual(["calendar", "money", "tasks", "more"]);
     expect(parseNav(null)).toEqual(DEFAULT_NAV);
   });
   it("その他を外して勉強を足す → 保存して読み直しても順序が同じ（再起動で維持）", () => {
@@ -17,7 +16,7 @@ describe("o31 T001 下のメニュー（1〜4個）", () => {
     const v = validateNav(next);
     expect(v.ok).toBe(true);
     const saved = serializeNav(v.ok ? v.ids : []);
-    expect(parseNav(saved)).toEqual(["home", "calendar", "money", "study"]);
+    expect(parseNav(saved)).toEqual(["calendar", "money", "tasks", "study"]);
   });
   it("0個・5個・重複・知らない ID は保存しない（理由を返す）", () => {
     expect(validateNav([]).ok).toBe(false);

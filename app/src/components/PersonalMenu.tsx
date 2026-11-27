@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { IconChevronR, IconCoins, IconFile, IconFolder, IconHeart, IconLayers, IconNote, IconSearch, IconSettings, IconTarget, IconBook, PageHeader } from "./ui";
 import { useData } from "@/lib/store";
-import { MENU_ORDER_KEY, hubCategories, moveCategory, orderCategories, visibleItems, type HubCategory, type HubIcon } from "@/lib/menuHub";
+import { MENU_ORDER_KEY, hubCategories, moveCategory, orderCategories, otherLinks, visibleItems, type HubCategory, type HubIcon } from "@/lib/menuHub";
 import { cleanMenuHidden } from "@/lib/menuHidden";
 
 const EVENT = "kb-menu-order";
@@ -61,7 +61,7 @@ export function PersonalMenu() {
           title={open.label}
           right={
             <button type="button" onClick={() => setOpen(null)} className="min-h-11 px-2 text-[15px] font-semibold text-brand">
-              メニュー
+              メニューに戻る
             </button>
           }
         />
@@ -158,6 +158,23 @@ export function PersonalMenu() {
           </ul>
         </nav>
       )}
+
+      <ul aria-label="そのほかの画面" className="divide-y divide-line border-y border-line">
+        {otherLinks()
+          .filter((i) => !hidden.has(i.href))
+          .map((i) => {
+            const n = i.count?.(data);
+            return (
+              <li key={i.href}>
+                <Link href={i.href} className="flex min-h-12 items-center gap-3">
+                  <span className="flex-1 text-[16px]">{i.label}</span>
+                  {n !== undefined && n > 0 && <span className="num text-[14px] text-ink-3">{n}件</span>}
+                  <IconChevronR className="size-4 text-ink-3" />
+                </Link>
+              </li>
+            );
+          })}
+      </ul>
 
       <ul className="divide-y divide-line border-y border-line">
         {[

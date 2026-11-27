@@ -24,7 +24,7 @@ export const isActivePlan = (p: Pick<Plan, "status">) => p.status === "consideri
 
 /** 候補の名前（種類に合わせる。05「お店を比べる／物件を比べる／商品を比べる／応募先を比べる」） */
 export function candidateNoun(t: PlanType): string {
-  return { gathering: "お店", trip: "宿・移動", move: "物件", shopping: "商品", business: "宿・移動", job: "応募先", free: "候補" }[t];
+  return { gathering: "お店", trip: "ホテル・航空券", move: "物件", shopping: "商品", business: "ホテル・航空券", job: "応募先", free: "候補" }[t];
 }
 
 export type PlanInput = Pick<Plan, "type" | "title" | "date" | "budget" | "note"> & { status?: PlanStatus; tripId?: string };
@@ -58,6 +58,39 @@ export function deletePlan(d: AppData, id: string): AppData {
       return rest as T;
     });
   return { ...d, plans: (d.plans ?? []).filter((p) => p.id !== id), events: unlink(d.events), tasks: unlink(d.tasks), transactions: unlink(d.transactions) };
+}
+
+export const PLAN_EVENT_EXISTS = "この計画の予定は、もう入っています（ほかのタブなどで先に入れた可能性があります）";
+
+/**
+ * 計画の日にちを予定に入れる（To-Be 03「内部予定は同一IDで更新」・06 A09「再送しても予定1件」）。
+ * - まだ結んだ予定が無ければ、終日の予定を1件作る
+ * - もう結んだ予定があれば、作らずに理由を返す（保存の列の中で最新のデータに対して確かめる）
+ */
+export function planEventError(d: Pick<AppData, "events">, planId: string): string | null {
+  return d.events.some((e) => e.planId === planId) ? PLAN_EVENT_EXISTS : null;
+}
+export function addPlanEvent(d: AppData, plan: Pick<Plan, "id" | "title" | "date">, eventId: string, ts: string): AppData {
+  if (!plan.date || planEventError(d, plan.id)) return d;
+  return {
+    ...d,
+    events: [...d.events, { id: eventId, title: plan.title, startDate: plan.date, endDate: plan.date, allDay: true, startTime: "", endTime: "", note: "", planId: plan.id, createdAt: ts, updatedAt: ts }],
+  };
+}
+
+/**
+ * 計画の日にちを変える。結んだ予定のうち1日の予定は、同じ ID のまま新しい日へ移す（時刻・中身はそのまま）。
+ * 何日にもまたがる予定・繰り返しの予定は、本人が組んだものなので動かさない
+ */
+export function setPlanDate(d: AppData, planId: string, date: string, ts: string): AppData {
+  const next = updatePlan(d, planId, { date }, ts);
+  if (!date) return next;
+  return {
+    ...next,
+    events: next.events.map((e) =>
+      e.planId === planId && e.startDate === e.endDate && (!e.repeat || e.repeat === "none") && e.startDate !== date ? { ...e, startDate: date, endDate: date, updatedAt: ts } : e,
+    ),
+  };
 }
 
 export function addCandidate(d: AppData, planId: string, c: Omit<PlanCandidate, "id" | "chosen">, cid: string, ts: string): AppData {
@@ -111,10 +144,11 @@ export interface PlanView {
   next: AppData["tasks"];
 }
 
-export function planView(d: AppData, plan: Pick<Plan, "id" | "budget">): PlanView {
+export function planView(d: AppData, plan: Pick<Plan, "id" | "budget"> & { tripId?: string }): PlanView {
   const events = d.events.filter((e) => e.planId === plan.id).sort((a, b) => (a.startDate + a.startTime).localeCompare(b.startDate + b.startTime));
   const tasks = d.tasks.filter((t) => t.planId === plan.id);
-  const transactions = d.transactions.filter((t) => t.planId === plan.id).sort((a, b) => a.date.localeCompare(b.date));
+  // 旅行の計画は、旅行につないだ支出（tripId）も入れる。同じ記録は1回だけ（To-Be 点検 M3：旅行の支出の正本は今までどおり Trip とのつながり）
+  const transactions = d.transactions.filter((t) => t.planId === plan.id || (!!plan.tripId && t.tripId === plan.tripId)).sort((a, b) => a.date.localeCompare(b.date));
   const ids = new Set(transactions.map((t) => t.id));
   const spent = sumEntries(ledgerEntries({ ...d, transactions }), (e) => ids.has(e.txId)).expense;
   const next = tasks.filter((t) => !t.done).sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
