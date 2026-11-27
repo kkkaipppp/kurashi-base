@@ -187,3 +187,42 @@ describe("旅行の計画のお金・つながりの照合・旅行を消した�
     expect(readFileSync("src/lib/search.ts", "utf8")).toContain('if (process.env.NEXT_PUBLIC_KB_EDITION === "personal") for (const p of data.plans ?? [])');
   });
 });
+
+describe("点検の残り（2026-11-27）", () => {
+  it("投資のカテゴリの支出は、かかったお金に数えない（家計簿の生活費と同じ）。数えない記録とつながりの元が分かる", () => {
+    let d = addPlan(base(), { type: "trip", title: "京都", date: "", budget: 20000, note: "", tripId: "tr1" }, "p1", ts);
+    const exp = d.categories.find((c) => c.kind === "expense")!;
+    d = { ...d, categories: [...d.categories, { ...exp, id: "inv", name: "投資", role: "invest" }] };
+    d = {
+      ...d,
+      transactions: [
+        tx({ id: "a", amount: 4000, planId: "p1" }),
+        tx({ id: "b", amount: 10000, planId: "p1", categoryId: "inv" }),
+        tx({ id: "c", amount: 1000, planId: "p1", countAs: "transfer" }),
+        tx({ id: "d", amount: 2500, tripId: "tr1" }),
+      ],
+    };
+    const v = planView(d, d.plans[0]);
+    expect(v.spent).toBe(6500);
+    expect(v.left).toBe(13500);
+    expect([...v.uncounted].sort()).toEqual(["b", "c"]);
+    expect([...v.viaTrip]).toEqual(["d"]);
+  });
+  it("計画を指す番号の指し先が無いバックアップは、復元しない（今のデータは変えない）", () => {
+    const withPlan = addPlan(base(), { type: "free", title: "x", date: "", budget: null, note: "" }, "p1", ts);
+    const okData = { ...withPlan, transactions: [tx({ id: "a", planId: "p1" })] };
+    expect(applyRestore(base(), okData, "replace").ok).toBe(true);
+    const orphanTx = { ...base(), transactions: [tx({ id: "a", planId: "nope" })] };
+    expect(applyRestore(base(), orphanTx, "replace")).toMatchObject({ ok: false, error: expect.stringContaining("計画が、バックアップの中に見つかりません") });
+    const orphanTask = { ...base(), tasks: [{ id: "k", title: "予約", due: "", done: false, note: "", planId: "nope", createdAt: ts, updatedAt: ts }] };
+    expect(applyRestore(base(), orphanTask, "merge").ok).toBe(false);
+    const orphanTrip = addPlan(base(), { type: "trip", title: "京都", date: "", budget: null, note: "", tripId: "nope" }, "p1", ts);
+    expect(applyRestore(base(), orphanTrip, "replace")).toMatchObject({ ok: false, error: expect.stringContaining("計画「京都」の旅行") });
+  });
+  it("計画の画面から旅行を開くと、その旅行が開く（?open=）。つなぐ候補に投資は出さない", () => {
+    const s = readFileSync("src/components/PlansScreen.tsx", "utf8");
+    expect(s).not.toContain('href="/trips"');
+    expect(s.match(/href=\{`\/trips\?open=\$\{(t|trip)\.id\}`\}/g)?.length).toBe(2);
+    expect(s).toContain("!txIsInvest(t, cats)");
+  });
+});

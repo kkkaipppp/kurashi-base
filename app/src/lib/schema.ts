@@ -290,6 +290,16 @@ export function validateRelationships(data: AppData): { ok: true } | { ok: false
       return { ok: false, error: `${e.startDate}の予定「${e.title}」の旅行が、バックアップの中に見つかりません` };
     }
   }
+  // 計画を指す番号（planId・Plan.tripId）の指し先（To-Be 点検 M4・L3。旅行と同じく、指し先の無い記録は入れない）
+  const plans = new Set((data.plans ?? []).map((p) => p.id));
+  for (const p of data.plans ?? []) {
+    if (p.tripId && !trips.has(p.tripId)) return { ok: false, error: `計画「${p.title}」の旅行が、バックアップの中に見つかりません` };
+  }
+  for (const e of data.events) if (e.planId && !plans.has(e.planId)) return { ok: false, error: `${e.startDate}の予定「${e.title}」の計画が、バックアップの中に見つかりません` };
+  for (const t of data.tasks) if (t.planId && !plans.has(t.planId)) return { ok: false, error: `やること「${t.title}」の計画が、バックアップの中に見つかりません` };
+  for (const t of data.transactions) {
+    if (t.planId && !plans.has(t.planId)) return { ok: false, error: `${t.date}の${t.type === "expense" ? "支出" : "収入"}${t.amount.toLocaleString("ja-JP")}円の計画が、バックアップの中に見つかりません` };
+  }
   const subjects = new Set(data.studySubjects.map((s) => s.id));
   for (const l of data.studyLogs) {
     if (!subjects.has(l.subjectId)) return { ok: false, error: `${l.date}の勉強の記録（${l.minutes}分）の資格が、バックアップの中に見つかりません` };

@@ -136,8 +136,12 @@ export interface PlanView {
   events: AppData["events"];
   tasks: AppData["tasks"];
   transactions: AppData["transactions"];
-  /** 使ったお金（家計簿と同じ数え方。返金・口座間の移動・カードの引き落としは入らない） */
+  /** 使ったお金（家計簿と同じ数え方。返金・口座間の移動・カードの引き落とし・投資は入らない） */
   spent: number;
+  /** つないだ記録のうち、かかったお金に数えないもの（口座間の移動・投資）の ID */
+  uncounted: Set<string>;
+  /** 旅行とのつながりだけで入っている記録（計画からは外せない。旅行の画面で外す）の ID */
+  viaTrip: Set<string>;
   /** 見込みの残り（予算 − 使ったお金）。予算が無ければ null */
   left: number | null;
   /** 次にやること：終わっていないやること（期限の近い順。期限なしは後ろ） */
@@ -149,10 +153,14 @@ export function planView(d: AppData, plan: Pick<Plan, "id" | "budget"> & { tripI
   const tasks = d.tasks.filter((t) => t.planId === plan.id);
   // 旅行の計画は、旅行につないだ支出（tripId）も入れる。同じ記録は1回だけ（To-Be 点検 M3：旅行の支出の正本は今までどおり Trip とのつながり）
   const transactions = d.transactions.filter((t) => t.planId === plan.id || (!!plan.tripId && t.tripId === plan.tripId)).sort((a, b) => a.date.localeCompare(b.date));
-  const ids = new Set(transactions.map((t) => t.id));
-  const spent = sumEntries(ledgerEntries({ ...d, transactions }), (e) => ids.has(e.txId)).expense;
+  // 投資は家計簿の生活費と同じく数えない（To-Be 点検 L2・kurashi-ledger「投資のカテゴリは収支に入れない」）
+  const entries = ledgerEntries({ ...d, transactions });
+  const counted = new Set(entries.filter((e) => e.kind === "expense" && !e.invest).map((e) => e.txId));
+  const spent = sumEntries(entries, (e) => counted.has(e.txId)).expense;
+  const uncounted = new Set(transactions.filter((t) => t.type === "expense" && !counted.has(t.id)).map((t) => t.id));
+  const viaTrip = new Set(transactions.filter((t) => t.planId !== plan.id).map((t) => t.id));
   const next = tasks.filter((t) => !t.done).sort((a, b) => (a.due || "9999").localeCompare(b.due || "9999"));
-  return { events, tasks, transactions, spent, left: plan.budget === null ? null : plan.budget - spent, next };
+  return { events, tasks, transactions, spent, uncounted, viaTrip, left: plan.budget === null ? null : plan.budget - spent, next };
 }
 
 /** 一覧の並び：進めている計画（日付の近い順・日程未定は後ろ）→ 過去・中止（新しい順） */

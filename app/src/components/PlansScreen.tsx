@@ -9,6 +9,7 @@ import { newId } from "@/lib/defaults";
 import { formatDateJa, isValidDateStr, todayStr } from "@/lib/date";
 import { formatYen, parseAmount } from "@/lib/money";
 import { safeExternalLink } from "@/lib/externalLinks";
+import { categoryMap, txIsInvest } from "@/lib/classify";
 import {
   PLAN_STATUS_LABEL,
   PLAN_TYPES,
@@ -65,7 +66,7 @@ export function PlansScreen() {
           ))}
           {trips.map((t) => (
             <li key={t.id}>
-              <Link href="/trips" className="flex min-h-14 items-center gap-3 py-2">
+              <Link href={`/trips?open=${t.id}`} className="flex min-h-14 items-center gap-3 py-2">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[16px] font-semibold">{t.title}</span>
                   <span className="block text-[13px] text-ink-3">旅行・{formatDateJa(t.startDate)}〜{formatDateJa(t.endDate)}</span>
@@ -174,8 +175,9 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
   const [candErr, setCandErr] = useState<string | null>(null);
   const noun = candidateNoun(plan.type);
   const trip = plan.tripId ? (data.trips ?? []).find((t) => t.id === plan.tripId) : undefined;
+  const cats = categoryMap(data);
   const unlinkedExpenses = data.transactions
-    .filter((t) => t.type === "expense" && !t.planId && !t.refundOf && t.countAs !== "transfer")
+    .filter((t) => t.type === "expense" && !t.planId && !t.refundOf && t.countAs !== "transfer" && !txIsInvest(t, cats))
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 30);
 
@@ -299,7 +301,7 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
             旅行の日程
           </h2>
           {trip ? (
-            <Link href="/trips" className="flex min-h-12 items-center justify-between border-y border-line text-[15px]">
+            <Link href={`/trips?open=${trip.id}`} className="flex min-h-12 items-center justify-between border-y border-line text-[15px]">
               {trip.title}（{formatDateJa(trip.startDate)}〜{formatDateJa(trip.endDate)}）
               <IconChevronR className="size-4 text-ink-3" />
             </Link>
@@ -443,9 +445,14 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
                   {formatDateJa(t.date)} {t.merchant || "支出"}
                 </span>
                 <span className="num">{formatYen(t.amount)}</span>
-                <Button variant="ghost" className="px-2 text-[14px]" aria-label={`${t.merchant || "支出"}をこの計画から外す`} onClick={() => void save((d) => linkToPlan(d, "transaction", t.id, null, ts()))}>
-                  外す
-                </Button>
+                {v.uncounted.has(t.id) && <span className="text-[12px] text-ink-3">数えない</span>}
+                {v.viaTrip.has(t.id) ? (
+                  <span className="px-2 text-[12px] text-ink-3">旅行から</span>
+                ) : (
+                  <Button variant="ghost" className="px-2 text-[14px]" aria-label={`${t.merchant || "支出"}をこの計画から外す`} onClick={() => void save((d) => linkToPlan(d, "transaction", t.id, null, ts()))}>
+                    外す
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
