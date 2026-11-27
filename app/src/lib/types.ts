@@ -28,6 +28,7 @@ export interface Transaction {
   refundGross?: number; // 返金がある支出：返金の前の元の金額（返金の記録の合計から、いまの金額を計算し直すための控え。lib/refund.ts）
   refundWas?: "life" | "invest"; // 返金がある支出：返金の前の数え方の控え
   importBatchId?: string; // 取り込みの単位（CSV の取り込みごと。取り消しに使う。NEXT v21 CSV:C08）
+  planId?: string; // 計画のお金（Plan.id。To-Be 2026-11-27。支出の正本はこの記録で、計画は集めて見るだけ）
   createdAt: string; // ISO
   updatedAt: string; // ISO
 }
@@ -55,6 +56,7 @@ export interface CalendarEvent {
   doneDates?: string[];
   travelMinutes?: number;
   goalId?: string; // 関連する目標（Goal.id。予定は目標の行動。時間・費用は予定のまま一度だけ数える。NEXT v21 X07）
+  planId?: string; // 計画の予定（Plan.id。To-Be 2026-11-27。計画の日程を決めたときの予定）
   createdAt: string;
   updatedAt: string;
 }
@@ -73,6 +75,37 @@ export interface CheckItem {
   id: string;
   text: string;
   done: boolean;
+}
+
+/**
+ * To-Be（2026-11-27）で追加：計画（飲み会・旅行・引っ越し・買い物・出張・転職・自由）。
+ * - 計画は「実行するもの」、目標は「達成の状態」で、別のもの（To-Be 03）
+ * - 予定・やること・支出は、それぞれの記録が正本。計画は planId で集めて見るだけ（二重に持たない）
+ * - 旅行の計画は、今までの旅行（Trip）を tripId でつなぐ（行程・旅行の支出は Trip のまま）
+ * - budget は見込みで、家計簿の集計には入れない（確定した支払いではない。To-Be 03「予算と支払い」）
+ */
+export type PlanType = "gathering" | "trip" | "move" | "shopping" | "business" | "job" | "free";
+export type PlanStatus = "considering" | "preparing" | "done" | "canceled";
+export interface PlanCandidate {
+  id: string;
+  label: string; // 候補の名前（日にち・お店・物件・商品など）
+  url: string; // "" = なし（http/https のみ）
+  price: number | null; // 目安の金額（円。取得した値ではなく、本人が入れた値）
+  note: string;
+  chosen?: boolean; // 「これに決める」を押した候補
+}
+export interface Plan {
+  id: string;
+  type: PlanType;
+  title: string;
+  status: PlanStatus;
+  date: string; // 決まった日（"" = 日程未定）
+  budget: number | null; // 見込み（円）
+  note: string;
+  tripId?: string;
+  candidates?: PlanCandidate[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** v5 で追加：旅行（複数日の行程）。行程は CalendarEvent.tripId でつなぐ */
@@ -205,6 +238,7 @@ export interface Task {
   note: string;
   /** 予定にしたとき、その予定の ID（任意。NEXT v21 T06。自分用） */
   eventId?: string;
+  planId?: string; // 計画の準備（Plan.id。To-Be 2026-11-27）
   createdAt: string;
   updatedAt: string;
 }
@@ -359,6 +393,8 @@ export interface AppData extends Collections {
   recurring: RecurringExpense[];
   /** v5 で追加。古いデータには無いので、読み込み時に空の一覧を足す（schema.ts の migrate） */
   trips: Trip[];
+  /** To-Be（2026-11-27）：計画。古い記録には無い（読み込むときに空で足す。schema.ts の migrate） */
+  plans: Plan[];
   budget: { monthly: number | null }; // 毎月の支出予算（円）。null = 未設定
   prefs: { home: HomePrefs; /** メニューに出さない機能の道筋（任意。非表示でも記録は消えない。NEXT v21 X16・D11） */ menuHidden?: string[] };
   meta: { createdAt: string; lastBackupAt: string | null; /** 取り込みの履歴（任意。100点化以降に追加） */ imports?: ImportBatch[]; /** 生活変化の計画と履歴（任意。NEXT v21 B03。lib/lifeChange.ts） */ lifeChanges?: LifeChange[] };

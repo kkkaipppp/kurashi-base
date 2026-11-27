@@ -32,6 +32,8 @@ export function migrate(raw: unknown): unknown {
   }
   // v5：旅行の一覧（無ければ空で足す。形式の番号は 2 のまま。古いアプリは知らない項目をそのまま残す）
   if (d.schemaVersion === 2 && d.trips === undefined) d = { ...d, trips: [] };
+  // To-Be（2026-11-27）：計画の一覧（無ければ空で足す。形式の番号は 2 のまま。今ある記録は変えない）
+  if (d.schemaVersion === 2 && d.plans === undefined) d = { ...d, plans: [] };
   return d;
 }
 
@@ -91,6 +93,16 @@ const isCondList = (v: unknown) =>
   );
 const isMoneyOrNull = (v: unknown) => v === null || (Number.isInteger(v) && (v as number) >= 0 && (v as number) <= MAX_AMOUNT);
 
+/** To-Be（2026-11-27）の計画。候補は任意 */
+const isCandidate = (c: unknown) =>
+  isObj(c) && isStr(c.id) && isStr(c.label) && isHttpOrBlank(c.url) && isMoneyOrNull(c.price) && isStr(c.note) && optional(isBool)(c.chosen);
+const isPlan = (p: unknown): p is Record<string, unknown> =>
+  isObj(p) && isStr(p.id) && isStr(p.title) &&
+  oneOf("gathering", "trip", "move", "shopping", "business", "job", "free")(p.type) &&
+  oneOf("considering", "preparing", "done", "canceled")(p.status) &&
+  okDateOrBlank(p.date) && isMoneyOrNull(p.budget) && isStr(p.note) && optional(isStr)(p.tripId) &&
+  optional((v) => Array.isArray(v) && v.every(isCandidate))(p.candidates) && isStr(p.createdAt) && isStr(p.updatedAt);
+
 /** v5 で予定に足した任意の項目（無くてもよい。あれば形を確かめる） */
 const EVENT_V5: Record<string, (v: unknown) => boolean> = {
   location: optional(isStr),
@@ -102,13 +114,14 @@ const EVENT_V5: Record<string, (v: unknown) => boolean> = {
   doneDates: optional((v) => Array.isArray(v) && v.every((x) => isDate(x))),
   travelMinutes: optional((v) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 1440),
   goalId: optional(isStr),
+  planId: optional(isStr),
 };
 
 // 追加した一覧ごとの項目チェック（順番は COLLECTION_KEYS に合わせる。studySubjects は studyLogs より前）
 const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: unknown) => boolean> }> = {
   nisa: { label: "NISA", fields: { date: isDate, kind: oneOf("buy", "sell"), frame: oneOf("tsumitate", "growth"), amount: (v) => isAmt(v), name: isStr, note: isStr } },
   notes: { label: "生活記録・メモ", fields: { title: isStr, body: isStr, date: okDateOrBlank, pinned: isBool } },
-  tasks: { label: "やること", fields: { title: isStr, due: okDateOrBlank, done: isBool, note: isStr, eventId: optional(isStr) } },
+  tasks: { label: "やること", fields: { title: isStr, due: okDateOrBlank, done: isBool, note: isStr, eventId: optional(isStr), planId: optional(isStr) } },
   assets: { label: "資産", fields: { name: isStr, kind: oneOf("cash", "investment", "nisa", "pension", "insurance", "property", "other"), value: numOrNull, asOf: okDateOrBlank, note: isStr, cardDebt: optional(isAmt) } },
   contracts: { label: "契約", fields: { name: isStr, provider: isStr, amount: numOrNull, cycle: oneOf("monthly", "yearly", "none"), renewalDate: okDateOrBlank, status: oneOf("active", "cancelled"), note: isStr } },
   health: { label: "健康記録", fields: { date: isDate, item: isStr, value: numOrNull, unit: isStr, note: isStr } },
@@ -175,7 +188,7 @@ export function validateAppData(input: unknown): R {
       !isStr(t.date) || !isValidDateStr(t.date) || !isAmt(t.amount) || !isStr(t.categoryId) ||
       !isStr(t.merchant) || !isStr(t.paymentMethod) || !isStr(t.note) || !isStr(t.createdAt) ||
       // 100点化で足した任意の項目（無くてもよい。あれば形を確かめる）
-      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross)
+      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross) || !optional(isStr)(t.planId)
     )
       return { ok: false, error: "支出・収入のデータが壊れています" };
     if (ids.has(t.id)) return { ok: false, error: "支出・収入の記録が二重に入っています" };
@@ -204,6 +217,13 @@ export function validateAppData(input: unknown): R {
       return { ok: false, error: "旅行のデータが壊れています" };
     if (tripIds.has(t.id)) return { ok: false, error: "旅行が二重に入っています" };
     tripIds.add(t.id);
+  }
+  if (!Array.isArray(raw.plans)) return { ok: false, error: "計画のデータが見つかりません" };
+  const planIds = new Set<string>();
+  for (const p of raw.plans as unknown[]) {
+    if (!isPlan(p)) return { ok: false, error: "計画のデータが壊れています" };
+    if (planIds.has(p.id as string)) return { ok: false, error: "計画が二重に入っています" };
+    planIds.add(p.id as string);
   }
   const recurringIds = new Set<string>();
   for (const r of raw.recurring as unknown[]) {

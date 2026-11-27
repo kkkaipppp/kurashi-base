@@ -349,6 +349,7 @@ export interface Integrity {
   events: number;
   recurring: number;
   trips: number;
+  plans: number;
   collections: Record<string, number>;
   /** 関連：固定費・旅行・返金・目標につながった記録の数 */
   links: { recurringId: number; tripId: number; refundOf: number; goalId: number; eventId: number };
@@ -364,6 +365,7 @@ export function integrity(d: AppData, json: string): Integrity {
     events: d.events.length,
     recurring: d.recurring.length,
     trips: (d.trips ?? []).length,
+    plans: (d.plans ?? []).length,
     collections: cols,
     links: {
       recurringId: d.transactions.filter((t) => t.recurringId).length,

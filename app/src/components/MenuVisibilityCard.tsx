@@ -19,8 +19,10 @@ export function MenuVisibilityCard() {
     if (!r.ok) ui.toast(r.error, "error");
   };
   return (
-    <Card>
-      <SectionTitle>メニューに出す機能</SectionTitle>
+    <Card className="scroll-mt-20">
+      <SectionTitle>
+        <span id="menu">メニューに出す機能</span>
+      </SectionTitle>
       <p className="mb-2 text-[13px] text-ink-3">使わない機能は、メニューから隠せます。隠しても、記録は消えません（検索・バックアップ・集計にも残ります）。</p>
       <ul className="divide-y divide-line">
         {HIDEABLE_MENU.map((m) => (

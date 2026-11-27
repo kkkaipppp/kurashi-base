@@ -1,6 +1,7 @@
 import { formatDateJa } from "./date";
 import { formatYen } from "./money";
 import type { AppData } from "./types";
+import { IS_PERSONAL } from "./edition";
 
 /**
  * 横断検索（NEXT v21 Phase 2）。端末の中の記録だけを、その場で探す（外へは送らない）。
@@ -9,13 +10,14 @@ import type { AppData } from "./types";
  * - 数字だけ（「1200」「¥1,200」）は、金額が同じものも探す
  * - 結果は種類ごとに、新しい・近いものから。多すぎるときは件数を数えて、上位だけ返す
  */
-export type SearchKind = "tx" | "event" | "recurring" | "trip" | "task" | "note" | "contract" | "document" | "asset" | "health" | "goal" | "study" | "nisa";
+export type SearchKind = "tx" | "event" | "recurring" | "trip" | "plan" | "task" | "note" | "contract" | "document" | "asset" | "health" | "goal" | "study" | "nisa";
 
 export const KIND_LABEL: Record<SearchKind, string> = {
   tx: "支出・収入",
   event: "予定",
   recurring: "固定費",
   trip: "旅行",
+  plan: "計画",
   task: "やること",
   note: "メモ",
   contract: "契約",
@@ -82,6 +84,8 @@ export function searchAll(data: AppData, q: string, perKind: number = SEARCH_PER
       add({ kind: "event", id: e.id, title: e.title || "（名前なし）", sub: `${formatDateJa(e.startDate, true)}${e.location ? `・${e.location}` : ""}`, date: e.startDate });
   for (const r of data.recurring) if (match([r.name], r.amount)) add({ kind: "recurring", id: r.id, title: r.name, sub: `${formatYen(r.amount)}・次は${formatDateJa(r.nextDueDate)}`, date: r.nextDueDate, href: `/recurring?open=${r.id}` });
   for (const t of data.trips ?? []) if (match([t.title, t.destination, t.note])) add({ kind: "trip", id: t.id, title: t.title, sub: `${formatDateJa(t.startDate, true)}〜${t.destination ? `・${t.destination}` : ""}`, date: t.startDate, href: `/trips?open=${t.id}` });
+  // 計画は自分用だけ（To-Be 2026-11-27）。公開版には計画の画面が無いので出さない
+  if (IS_PERSONAL) for (const p of data.plans ?? []) if (match([p.title, p.note, ...(p.candidates ?? []).map((c) => c.label)])) add({ kind: "plan", id: p.id, title: p.title, sub: p.date ? formatDateJa(p.date, true) : "日程未定", date: p.date, href: `/plans?open=${p.id}` });
   for (const t of data.tasks) if (match([t.title, t.note])) add({ kind: "task", id: t.id, title: t.title, sub: t.done ? "完了" : t.due ? `期限 ${formatDateJa(t.due, true)}` : "期限なし", date: t.due, href: `/tasks?open=${t.id}` });
   for (const n of data.notes) if (match([n.title, n.body])) add({ kind: "note", id: n.id, title: n.title || "（タイトルなし）", sub: n.date ? formatDateJa(n.date, true) : "", date: n.date, href: `/notes?open=${n.id}` });
   for (const c of data.contracts) if (match([c.name, c.provider, c.note], c.amount ?? undefined)) add({ kind: "contract", id: c.id, title: c.name, sub: `${c.provider}${c.renewalDate ? `・更新 ${formatDateJa(c.renewalDate, true)}` : ""}`, date: c.renewalDate, href: `/contracts?open=${c.id}` });

@@ -13,7 +13,7 @@ export interface BackupFile {
   data: AppData;
 }
 
-export type Counts = Record<"transactions" | "events" | "recurring" | "categories" | "trips" | CollectionKey, number>;
+export type Counts = Record<"transactions" | "events" | "recurring" | "categories" | "trips" | "plans" | CollectionKey, number>;
 
 export function countData(d: AppData): Counts {
   const c = {
@@ -22,6 +22,7 @@ export function countData(d: AppData): Counts {
     recurring: d.recurring.length,
     categories: d.categories.length,
     trips: (d.trips ?? []).length,
+    plans: (d.plans ?? []).length,
   } as Counts;
   for (const k of COLLECTION_KEYS) c[k] = d[k].length;
   return c;
@@ -34,6 +35,7 @@ export const COUNT_LABELS: Record<keyof Counts, string> = {
   recurring: "固定費",
   categories: "カテゴリ",
   trips: "旅行",
+  plans: "計画",
   nisa: "NISAの記録",
   notes: "生活記録・メモ",
   tasks: "やること",
@@ -205,6 +207,7 @@ export function applyRestore(current: AppData, incoming: AppData, mode: "replace
     transactions: mergeList(current.transactions, incoming.transactions, { skipIf: (t) => badCat.has(t.categoryId) || (!!t.tripId && badTrip.has(t.tripId)) }),
     events: mergeList(current.events, incoming.events, { skipIf: (e) => !!e.tripId && badTrip.has(e.tripId) }),
     trips: mergeList(current.trips ?? [], incoming.trips ?? []),
+    plans: mergeList(current.plans ?? [], incoming.plans ?? []),
     recurring: mergeList(current.recurring, incoming.recurring, { skipIf: (r) => badCat.has(r.categoryId) }),
     studySubjects: mergeList(current.studySubjects, incoming.studySubjects, { sameMeaning: (x, y) => x.name === y.name }),
     studyLogs: mergeList(current.studyLogs, incoming.studyLogs, { skipIf: (l) => badSubj.has(l.subjectId) }),

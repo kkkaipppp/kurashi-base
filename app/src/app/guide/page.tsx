@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useUI } from "@/components/UIContext";
 import { Button, Card, IconChevronR, PageHeader } from "@/components/ui";
@@ -9,6 +10,8 @@ import { FEATURES, IS_PERSONAL } from "@/lib/edition";
 
 // 組み立てのときに決まる値をこのファイルの中で比べる（公開版の組み立てから、自分用の手順を取り除く。点検 低-1）
 const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+// 自分用の使い方（メニューと計画。To-Be 2026-11-27）は、公開版の組み立てに入れない
+const GuideTobe = PERSONAL_BUILD ? dynamic(() => import("@/components/GuideTobe").then((m) => m.GuideTobe)) : null;
 const linkCls =
   "flex min-h-11 items-center justify-between rounded-xl px-1 text-[14px] font-semibold text-brand hover:bg-brand-soft";
 
@@ -71,6 +74,8 @@ export default function GuidePage() {
           </p>
         </Card>
       )}
+
+      {GuideTobe && <GuideTobe />}
 
       <Card>
         <h2 className="text-[17px] font-bold">ほかにできること</h2>

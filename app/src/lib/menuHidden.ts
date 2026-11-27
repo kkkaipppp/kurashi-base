@@ -4,6 +4,7 @@
  */
 export const HIDEABLE_MENU: { href: string; label: string }[] = [
   { href: "/tasks", label: "やること" },
+  { href: "/plans", label: "計画" },
   { href: "/trips", label: "旅行" },
   { href: "/import", label: "レシートを見て入力" },
   { href: "/assets", label: "資産・NISA" },

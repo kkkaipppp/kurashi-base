@@ -24,6 +24,7 @@ export function emptyData(nowIso: string = new Date().toISOString()): AppData {
     transactions: [],
     events: [],
     trips: [],
+    plans: [],
     categories: defaultCategories(),
     recurring: [],
     budget: { monthly: null },
