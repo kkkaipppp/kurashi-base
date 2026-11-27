@@ -174,22 +174,23 @@ describe("E ホームのカードの並び（自分用）", () => {
   it("公開版は今までの並びのまま", () => {
     expect(layoutFor({ ...prefs(), order: ["recent"], hidden: ["budget"] }, null, false)).toEqual(PUBLIC_ORDER);
   });
-  it("知らないカードは無視し、足りないカードは最後に足す。はじめは「今日のまとめ」で、重なるカードは隠す", () => {
+  it("知らないカードは無視し、足りないカードは最後に足す。はじめは To-Be 05 の並び（今日の予定・やること・今月の残り予算・次の支払い・確認すること）で、重なるカードは隠す", () => {
     const l = currentLayout({ ...prefs(), order: ["recent", "未来のカード", "budget", "recent"] });
     expect(l.order.slice(0, 2)).toEqual(["recent", "budget"]);
     expect(l.order).toHaveLength(8);
-    expect(currentLayout(prefs()).hidden).toEqual(["today", "todo"]);
-    expect(layoutFor(prefs(), null, true)[1]).toBe("todayAll");
+    expect(currentLayout(prefs()).hidden).toEqual(["todayAll", "insight", "recent"]);
+    expect(layoutFor(prefs(), null, true)).toEqual(["today", "todo", "budget", "nextFixed", "navi"]);
   });
   it("並べ替え・隠す・はじめに戻す。編集中は、その並びで見える（プレビュー）", () => {
     let l = defaultLayout();
-    l = moveCard(moveCard(l, "recent", -1), "recent", -1);
-    l = toggleCard(l, "insight");
+    l = toggleCard(l, "recent");
+    l = moveCard(moveCard(moveCard(l, "recent", -1), "recent", -1), "recent", -1);
+    l = toggleCard(l, "todo");
     const shown = layoutFor(prefs(), l, true);
-    expect(shown).not.toContain("insight");
-    expect(shown.indexOf("recent")).toBeLessThan(shown.indexOf("navi"));
-    expect(moveCard(l, "budget", -1)).toBe(l); // いちばん上より上へは動かない
-    expect(defaultLayout()).toEqual({ order: currentLayout(prefs()).order, hidden: ["today", "todo"] });
+    expect(shown).not.toContain("todo");
+    expect(shown).toEqual(["today", "budget", "nextFixed", "recent", "navi"]);
+    expect(moveCard(l, "today", -1)).toBe(l); // いちばん上より上へは動かない
+    expect(defaultLayout()).toEqual({ order: currentLayout(prefs()).order, hidden: ["todayAll", "insight", "recent"] });
   });
   it("保存は、並び・隠したもの・今までの設定（次の固定費・確認したいこと）に分けて書く", async () => {
     const calls: unknown[] = [];

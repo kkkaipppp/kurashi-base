@@ -12,21 +12,22 @@ import type { SaveResult } from "./storage";
 export type HomeCardId = "budget" | "todayAll" | "today" | "nextFixed" | "todo" | "navi" | "insight" | "recent";
 
 export const HOME_CARDS: { id: HomeCardId; label: string; desc: string }[] = [
-  { id: "budget", label: "今月の予算の残り", desc: "予算・使った額（投資を除く）・1日あたり" },
+  { id: "budget", label: "今月の残り予算", desc: "予算・使った額（投資を除く）・1日あたり" },
   { id: "todayAll", label: "今日のまとめ", desc: "予定・固定費・やること・期限を時間順に" },
   { id: "today", label: "今日の予定", desc: "今日の予定（なければ次の予定）" },
-  { id: "nextFixed", label: "次の固定費", desc: "いちばん近い固定費の支払い" },
-  { id: "todo", label: "今日やること", desc: "期限が今日までのやること" },
-  { id: "navi", label: "確認したいこと", desc: "期限・予算・バックアップの案内" },
+  { id: "nextFixed", label: "次の支払い", desc: "いちばん近い固定費の支払い" },
+  { id: "todo", label: "やること", desc: "期限が今日までのやること" },
+  { id: "navi", label: "確認すること", desc: "期限・予算・バックアップの案内" },
   { id: "insight", label: "支出の変化", desc: "先月と比べて変わったこと" },
   { id: "recent", label: "最近の記録", desc: "新しい支出・収入3件" },
 ];
 const KNOWN = new Set<string>(HOME_CARDS.map((c) => c.id));
 
 export const PUBLIC_ORDER: HomeCardId[] = ["budget", "today", "nextFixed", "todo", "navi", "insight", "recent"];
-export const PERSONAL_DEFAULT_ORDER: HomeCardId[] = ["budget", "todayAll", "nextFixed", "navi", "insight", "recent", "today", "todo"];
-/** 「今日のまとめ」と中身が重なるので、はじめは隠しておく（編集で出せる） */
-export const PERSONAL_DEFAULT_HIDDEN: HomeCardId[] = ["today", "todo"];
+// 自分用の初めの並びは To-Be 05「今日の予定／やること／今月の残り予算／次の支払い／確認すること」（2026-11-28。保存した並びは変えない）
+export const PERSONAL_DEFAULT_ORDER: HomeCardId[] = ["today", "todo", "budget", "nextFixed", "navi", "todayAll", "insight", "recent"];
+/** 「今日のまとめ」は今日の予定・やることと中身が重なる。支出の変化・最近の記録は家計簿にある（To-Be 02「重複数値なし」）。はじめは隠す（編集で出せる） */
+export const PERSONAL_DEFAULT_HIDDEN: HomeCardId[] = ["todayAll", "insight", "recent"];
 
 export interface LayoutDraft {
   order: HomeCardId[];

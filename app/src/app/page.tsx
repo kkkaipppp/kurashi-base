@@ -97,6 +97,8 @@ export default function HomePage() {
   const recent = sortTxDesc(data.transactions).slice(0, 3);
   const firstUse = data.transactions.length === 0 && data.events.length === 0;
   const allowance = ledger && ledger.perDay !== null ? { perDay: ledger.perDay, daysLeft: ledger.daysLeft, unpaidFixed: ledger.unpaidFixed, freeLeft: ledger.freeLeft ?? 0 } : null;
+  // 未記録とゼロを分ける（To-Be 02。自分用）
+  const monthHasTx = data.transactions.some((t) => t.date.startsWith(month));
   const lastMonthExpense = summarizeMonth(data.transactions, addMonthsToKey(month, -1)).expense;
 
   // ホームのカード（100点化の指示 E：自分用は並び替え・隠すができる。公開版は今までの並びのまま）
@@ -108,9 +110,11 @@ export default function HomePage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 id="home-budget" className="text-[14px] font-semibold opacity-90">
-                {remaining === null ? "今月の支出" : "今月の予算の残り"}
+                {PERSONAL && remaining !== null ? "今月の残り予算" : remaining === null ? "今月の支出" : "今月の予算の残り"}
               </h2>
-              {remaining === null ? (
+              {PERSONAL && remaining === null && !monthHasTx ? (
+                <p className="mt-1 text-[20px] font-bold">まだ記録がありません</p>
+              ) : remaining === null ? (
                 <p className="num mt-1 text-[32px] break-words leading-tight font-bold">{formatYen(sum.expense)}</p>
               ) : (
                 <p className={`num text-[32px] break-words leading-tight font-bold ${remaining < 0 ? "text-[#ffd9d2]" : ""}`}>
@@ -227,7 +231,7 @@ export default function HomePage() {
             <Card className="flex items-center justify-between gap-3 py-3 hover:bg-surface-2">
               {/* 長い名前・大きい金額でも、横にはみ出さない（N03・N15 の画面幅の点検） */}
               <div className="min-w-0 flex-1">
-                <h2 className="text-[14px] font-semibold text-ink-2">次の固定費</h2>
+                <h2 className="text-[14px] font-semibold text-ink-2">{PERSONAL ? "次の支払い" : "次の固定費"}</h2>
                 <p className="text-[13px] text-ink-3 [overflow-wrap:anywhere]">
                   {formatDateJa(next.nextDueDate)} {next.name}
                 </p>
@@ -244,7 +248,7 @@ export default function HomePage() {
         {todo.length > 0 && (
           <Card className="py-3">
             <h2 className="mb-1 text-[17px] font-bold">
-              今日やること<span className="ml-1 text-[13px] font-medium text-ink-3">{todo.length}件</span>
+              {PERSONAL ? "やること" : "今日やること"}<span className="ml-1 text-[13px] font-medium text-ink-3">{todo.length}件</span>
             </h2>
             <ul className="-mx-2">
               {todo.slice(0, TASKS_SHOWN).map((t) => {
@@ -319,7 +323,7 @@ export default function HomePage() {
         {(PERSONAL || prefs.needsReview) && navi.length > 0 && (
           <Card className="py-3">
             <h2 className="mb-1 text-[17px] font-bold">
-              確認したいこと<span className="ml-1 text-[13px] font-medium text-ink-3">{navi.length}件</span>
+              {PERSONAL ? "確認すること" : "確認したいこと"}<span className="ml-1 text-[13px] font-medium text-ink-3">{navi.length}件</span>
             </h2>
             <ul className="-mx-2">
               {(naviOpen ? navi : navi.slice(0, NAVI_SHOWN)).map((n) => (
