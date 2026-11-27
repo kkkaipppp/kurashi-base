@@ -12,9 +12,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+const PERSONAL_SCALE = 0.88;
+
 export const viewport: Viewport = {
   width: "device-width",
-  initialScale: 1,
+  // 自分用は画面に入る量を増やすため、全体を少し小さく見せる（平尾さん 2026-11-27「画面いっぱいすぎる」）。
+  // 入力欄の文字は 16px のままなので、入力のときの自動の拡大は起きない。公開版は今のまま
+  initialScale: IS_PERSONAL ? PERSONAL_SCALE : 1,
   themeColor: IS_PERSONAL ? "#ffffff" : "#f6f4ef",
 };
 

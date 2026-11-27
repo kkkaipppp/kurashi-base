@@ -69,4 +69,20 @@ describe("本棚の計画の行（画面）", () => {
       expect(check.snapshot.data!.studySubjects[0].reviewDays).toBe(10);
     });
   });
+
+  it("教材が0冊でも、本棚の見出しと足し方を出す（見つけられるように）", async () => {
+    const kv = memKV();
+    const seed = new StoreCore(new LocalStorageRepository(kv));
+    await seed.reload();
+    expect((await seed.commit((d) => ({ ...d, studySubjects: [{ ...subject, books: [] }] }))).ok).toBe(true);
+    render(
+      <StoreProvider repo={new LocalStorageRepository(kv)}>
+        <UIProvider>
+          <Shelf />
+        </UIProvider>
+      </StoreProvider>,
+    );
+    expect(await screen.findByRole("region", { name: "本棚" })).toBeTruthy();
+    expect(screen.getByText(/教材はまだありません。上の「編集」の「参考書」で足すと/)).toBeTruthy();
+  });
 });

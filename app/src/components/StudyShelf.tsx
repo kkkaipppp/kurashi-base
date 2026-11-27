@@ -167,6 +167,13 @@ export function StudyShelf({ s }: { s: StudySubject }) {
           </ul>
         </section>
       )}
+      {books.length === 0 && (
+        // 教材が0冊でも本棚の場所と足し方を見せる（平尾さん 2026-11-27「本棚の機能わからんから見つからん」）
+        <section aria-label="本棚">
+          <h3 className="mb-1 text-[14px] font-semibold text-ink-3">本棚</h3>
+          <p className="text-[13px] text-ink-2">教材はまだありません。上の「編集」の「参考書」で足すと、ここに並び、全体の量を入れると試験日までの1日の量が出ます。</p>
+        </section>
+      )}
 
       <section aria-label="受験の回">
         <h3 className="mb-1 text-[14px] font-semibold text-ink-3">受験</h3>
