@@ -89,7 +89,8 @@ describe("o31 T002・T007 右端の「追加」", () => {
   });
   it("選んだ種類だけ開く（選ぶまで保存しない）。日付はカレンダーの選んだ日を引き継ぐ。どの入口からも同じ一覧（点検 指摘6）", () => {
     const add = src("components/AddSheet.tsx");
-    const pick = add.slice(add.indexOf("const pick = "), add.indexOf("return <AddSheet"));
+    const pick = add.slice(add.indexOf("const pick = "), add.indexOf("<AddSheet path={path}"));
+    expect(pick.length).toBeGreaterThan(50);
     expect(pick).toContain("openTx(k, date)");
     expect(pick).toContain("openEvent(date)");
     expect(pick).toContain("&date=${date}");

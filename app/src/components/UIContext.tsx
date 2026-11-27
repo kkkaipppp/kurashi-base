@@ -199,7 +199,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
           key={add.key}
           date={add.date}
           onClose={() => setAdd(null)}
-          openTx={(type, date) => setTx({ mode: "new", type, date, key: ++seq.current })}
+          openTx={(type, date, initial) => setTx({ mode: "new", type, date, ...(initial ? { initial } : {}), key: ++seq.current })}
           openEvent={(date) => setEv({ mode: "new", date, key: ++seq.current })}
         />
       )}
