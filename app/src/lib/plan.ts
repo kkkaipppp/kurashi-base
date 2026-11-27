@@ -49,6 +49,18 @@ export function updatePlan(d: AppData, id: string, patch: Partial<Omit<Plan, "id
   return { ...d, plans: (d.plans ?? []).map((p) => (p.id === id ? { ...p, ...patch, id, updatedAt: ts } : p)) };
 }
 
+/**
+ * 計画の名前を変える。つないだ予定のうち、名前が前の計画の名前のままのものだけ新しい名前にする
+ * （本人がカレンダーで名前を変えた予定は変えない。予定の ID はそのまま。To-Be 03「内部予定は同一IDで更新」）
+ */
+export function renamePlan(d: AppData, id: string, title: string, ts: string): AppData {
+  const old = (d.plans ?? []).find((p) => p.id === id);
+  const name = title.trim().slice(0, 100);
+  if (!old || !name || name === old.title) return d;
+  const next = updatePlan(d, id, { title: name }, ts);
+  return { ...next, events: next.events.map((e) => (e.planId === id && e.title === old.title ? { ...e, title: name, updatedAt: ts } : e)) };
+}
+
 /** 計画を消す。結んだ記録は残し、planId だけを外す（記録の更新日時は変えない：中身は変わっていないため） */
 export function deletePlan(d: AppData, id: string): AppData {
   const unlink = <T extends { planId?: string }>(xs: T[]): T[] =>

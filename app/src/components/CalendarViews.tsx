@@ -1,7 +1,7 @@
 "use client";
 
 import { addDays, formatDateJa, monthGrid } from "@/lib/date";
-import { daySummary, eventsOnDay } from "@/lib/aggregate";
+import { daySummary, eventsOnDay, summarizeMonth } from "@/lib/aggregate";
 import { deadlinesOn } from "@/lib/deadlines";
 import { formatYen } from "@/lib/money";
 import { holidayName } from "@/lib/holidays";
@@ -9,21 +9,53 @@ import { eventTimeLabel } from "./Rows";
 import { useData } from "@/lib/store";
 
 /**
- * 自分用のカレンダーの表示形式（o31 F008・C008）：月（マス）・週・一覧。
+ * 自分用のカレンダーの表示形式（o31 F008・C008、To-Be 02「月/週/日/年」2026-11-28）：日・週・月（マス）・年・一覧。
+ * - 日は、選んだ日の明細だけ（上のマスを出さない）。年は12か月の支出・収入・予定のある日の数で、押すとその月を開く
  * - 一覧は期間ではなく表示の形：見ている月の、記録や予定がある日だけを順に並べる
  * - 週は、選んだ日を含む日曜〜土曜の7日
  * - どれも押すとその日を選ぶ（下の明細が変わる）。表示を変えても記録・集計は変わらない
  */
-export type CalendarView = "month" | "week" | "list";
+export type CalendarView = "day" | "month" | "week" | "year" | "list";
 export const CAL_VIEW_KEY = "kurashi-base:ui:calendar-view:v1";
 export const CAL_VIEWS: [CalendarView, string][] = [
-  ["month", "月"],
+  ["day", "日"],
   ["week", "週"],
+  ["month", "月"],
+  ["year", "年"],
   ["list", "一覧"],
 ];
 
 export function parseCalView(v: string | null): CalendarView {
-  return v === "week" || v === "list" ? v : "month";
+  return v === "day" || v === "week" || v === "year" || v === "list" ? v : "month";
+}
+
+/** その年の12か月（"YYYY-01"〜"YYYY-12"） */
+export function yearMonths(year: string): string[] {
+  return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+}
+
+/** 年の表示：12か月のマス。支出・収入は家計簿と同じ月の集計、予定は予定のある日の数（繰り返しの予定も数える） */
+export function YearView(p: { year: string; month: string; today: string; showEv: boolean; showMoney: boolean; onPickMonth: (m: string) => void }) {
+  const data = useData();
+  return (
+    <ul className="grid grid-cols-3 gap-1" aria-label={`${p.year}年の月ごとの予定とお金`}>
+      {yearMonths(p.year).map((m) => {
+        const s = summarizeMonth(data.transactions, m);
+        const evDays = p.showEv ? monthGrid(m).flat().filter((d): d is string => !!d && eventsOnDay(data.events, d).length > 0).length : 0;
+        const isNow = m === p.today.slice(0, 7);
+        return (
+          <li key={m}>
+            <button type="button" onClick={() => p.onPickMonth(m)} aria-current={m === p.month ? "date" : undefined} className={`flex min-h-20 w-full flex-col items-start rounded-lg border px-2 py-1.5 text-left ${m === p.month ? "border-brand bg-brand-soft" : "border-line hover:bg-surface-2"}`}>
+              <span className={`text-[15px] font-bold ${isNow ? "text-brand" : ""}`}>{Number(m.slice(5))}月</span>
+              {p.showEv && <span className="text-[12px] text-ink-2">{evDays > 0 ? `予定 ${evDays}日` : "予定なし"}</span>}
+              {p.showMoney && s.expense > 0 && <span className="num text-[12px] text-expense">−{formatYen(s.expense)}</span>}
+              {p.showMoney && s.income > 0 && <span className="num text-[12px] text-income">+{formatYen(s.income)}</span>}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 /** 選んだ日を含む週（日曜はじまり）の7日 */

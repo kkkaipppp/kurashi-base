@@ -226,3 +226,17 @@ describe("点検の残り（2026-11-27）", () => {
     expect(s).toContain("!txIsInvest(t, cats)");
   });
 });
+
+describe("計画の名前を変える（2026-11-28）", () => {
+  it("つないだ予定は、名前が前の計画の名前のままのものだけ変わる。ID は同じ。空の名前では変えない", async () => {
+    const { renamePlan } = await import("@/lib/plan");
+    let d = addPlan(base(), { type: "gathering", title: "忘年会", date: "2026-12-20", budget: null, note: "" }, "p1", ts);
+    d = addPlanEvent(d, d.plans[0], "e1", ts);
+    d = { ...d, events: [...d.events, { ...d.events[0], id: "e2", title: "二次会（自分で名前を変えた）" }] };
+    const r = renamePlan(d, "p1", "  部署の忘年会 ", "2026-11-28T00:00:00.000Z");
+    expect(r.plans[0].title).toBe("部署の忘年会");
+    expect(r.events.map((e) => [e.id, e.title])).toEqual([["e1", "部署の忘年会"], ["e2", "二次会（自分で名前を変えた）"]]);
+    expect(renamePlan(d, "p1", "   ", ts)).toBe(d);
+    expect(renamePlan(d, "nope", "x", ts)).toBe(d);
+  });
+});

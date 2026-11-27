@@ -28,6 +28,7 @@ const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 // 週・一覧の表示は自分用だけ。公開版の組み立てに入れないよう、遅れて読む（反証 4）
 const WeekView = PERSONAL_BUILD ? dynamic(() => import("@/components/CalendarViews").then((m) => m.WeekView)) : () => null;
 const ListView = PERSONAL_BUILD ? dynamic(() => import("@/components/CalendarViews").then((m) => m.ListView)) : () => null;
+const YearView = PERSONAL_BUILD ? dynamic(() => import("@/components/CalendarViews").then((m) => m.YearView)) : () => null;
 // 予定のない時間帯（自分用。NEXT v21 X10）
 const FreeTimeCard = PERSONAL_BUILD ? dynamic(() => import("@/components/FreeTimeCard").then((m) => m.FreeTimeCard)) : null;
 
@@ -120,6 +121,18 @@ function CalendarInner() {
   }, [selected, setCalendarDate]);
   const weeks = useMemo(() => monthGrid(month), [month]);
   const sum = summarizeMonth(data.transactions, month);
+  // 年の表示の合計（家計簿と同じ月の集計を12か月足す）
+  const yearSum = useMemo(() => {
+    if (view !== "year") return { expense: 0, income: 0 };
+    let expense = 0;
+    let income = 0;
+    for (let i = 1; i <= 12; i++) {
+      const s = summarizeMonth(data.transactions, `${month.slice(0, 4)}-${String(i).padStart(2, "0")}`);
+      expense += s.expense;
+      income += s.income;
+    }
+    return { expense, income };
+  }, [view, month, data.transactions]);
 
   // 日ごとの支出・予定件数を前計算
   const perDay = useMemo(() => {
@@ -143,17 +156,25 @@ function CalendarInner() {
   const dayStudy = data.studyLogs.filter((l) => l.date === selected).reduce((s, l) => s + l.minutes, 0);
 
   const move = (delta: number) => {
-    // 週の表示では、前後の週へ（選んだ日を7日ずらす）
-    if (view === "week") {
-      const d = addDays(selected, 7 * delta);
+    // 日の表示では前後の日へ、週の表示では前後の週へ（選んだ日をずらす）
+    if (view === "week" || view === "day") {
+      const d = addDays(selected, (view === "week" ? 7 : 1) * delta);
       setSelected(d);
       setMonth(monthKey(d));
       return;
     }
-    const next = addMonthsToKey(month, delta);
+    const next = addMonthsToKey(month, view === "year" ? 12 * delta : delta);
     setMonth(next);
     setSelected(monthKey(today) === next ? today : `${next}-01`);
   };
+  // 年月を選ぶ（自分用。To-Be 02「年月指定」）・年の表示で月を押す → その月を開く
+  const jumpMonth = (m: string, openMonth = false) => {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(m)) return;
+    setMonth(m);
+    setSelected(monthKey(today) === m ? today : `${m}-01`);
+    if (openMonth) pickView("month");
+  };
+  const unit = view === "day" ? "日" : view === "week" ? "週" : view === "year" ? "年" : "月";
   const goToday = () => {
     setMonth(monthKey(today));
     setSelected(today);
@@ -172,18 +193,23 @@ function CalendarInner() {
 
       <Card className="px-2 pt-2 pb-3">
         <div className="flex items-center justify-between px-1">
-          <button type="button" onClick={() => move(-1)} aria-label={view === "week" ? "前の週" : "前の月"} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
+          <button type="button" onClick={() => move(-1)} aria-label={`前の${unit}`} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
             <IconChevronL />
           </button>
-          <h2 className="text-[17px] font-bold" aria-live="polite">
-            {formatMonthJa(month)}
+          <h2 className="relative text-[17px] font-bold" aria-live="polite">
+            {view === "year" ? `${month.slice(0, 4)}年` : view === "day" ? formatDateJa(selected, true) : formatMonthJa(month)}
+            {/* 見出しを押すと年月を選べる（自分用。見出しの上に透明の入力を重ねる） */}
+            {PERSONAL_BUILD && view !== "day" && (
+              <input type="month" aria-label="年月を選ぶ" value={month} onChange={(e) => jumpMonth(e.target.value)} className="absolute inset-0 min-h-11 w-full cursor-pointer opacity-0" />
+            )}
           </h2>
-          <button type="button" onClick={() => move(1)} aria-label={view === "week" ? "次の週" : "次の月"} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
+          <button type="button" onClick={() => move(1)} aria-label={`次の${unit}`} className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
             <IconChevronR />
           </button>
         </div>
         <p className="num mb-2 text-center text-[12px] text-ink-3">
-          支出 {formatYen(sum.expense)} ・ 収入 {formatYen(sum.income)}
+          {/* 年の合計は自分用だけ（公開版の組み立てに文字を残さない） */}
+          {PERSONAL_BUILD && view === "year" ? "この年の" : ""}支出 {formatYen(view === "year" ? yearSum.expense : sum.expense)} ・ 収入 {formatYen(view === "year" ? yearSum.income : sum.income)}
         </p>
         <div className="mb-2 grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="マスに出すもの">
           {(
@@ -199,7 +225,7 @@ function CalendarInner() {
           ))}
         </div>
         {PERSONAL_BUILD && (
-          <div className="mb-2 grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="表示の形">
+          <div className="mb-2 grid grid-cols-5 gap-1 rounded-xl bg-surface-2 p-1" role="radiogroup" aria-label="表示の形">
             {CAL_VIEWS.map(([k, label]) => (
               <button key={k} type="button" role="radio" aria-checked={view === k} onClick={() => pickView(k)} className={`min-h-11 rounded-lg text-[13px] font-semibold ${view === k ? "bg-surface shadow-sm" : "text-ink-2"}`}>
                 {label}
@@ -208,6 +234,7 @@ function CalendarInner() {
           </div>
         )}
         {view === "week" && <WeekView selected={selected} today={today} showEv={showEv} showMoney={showMoney} onPick={setSelected} />}
+        {view === "year" && <YearView year={month.slice(0, 4)} month={month} today={today} showEv={showEv} showMoney={showMoney} onPickMonth={(m) => jumpMonth(m, true)} />}
         {view === "list" && <ListView month={month} selected={selected} today={today} showEv={showEv} showMoney={showMoney} onPick={setSelected} />}
         {view === "month" && (
         <table className="w-full table-fixed border-separate border-spacing-0.5" aria-label={`${formatMonthJa(month)}のカレンダー`}>

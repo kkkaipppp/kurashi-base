@@ -25,6 +25,7 @@ import {
   linkToPlan,
   planView,
   removeCandidate,
+  renamePlan,
   sortPlans,
   updatePlan,
 } from "@/lib/plan";
@@ -193,6 +194,24 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
           </Button>
         }
       />
+
+      <Field label="計画の名前" htmlFor="pl-title">
+        <input
+          id="pl-title"
+          key={`t-${plan.updatedAt}`}
+          defaultValue={plan.title}
+          maxLength={100}
+          onBlur={(e) => {
+            const name = e.target.value.trim();
+            if (!name) {
+              e.target.value = plan.title;
+              return ui.toast("計画の名前を入れてください", "error");
+            }
+            if (name !== plan.title) void save((d) => renamePlan(d, plan.id, name, ts()), "名前を変えました");
+          }}
+          className={inputCls}
+        />
+      </Field>
 
       <section aria-labelledby="pl-state" className="grid grid-cols-2 gap-3">
         <h2 id="pl-state" className="sr-only">
