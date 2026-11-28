@@ -53,6 +53,8 @@ const SETTING_GROUPS: [string, string, string][] = [
 /** 前からの「/settings#〜」のリンクを、区切りの画面に読み替える */
 // 特別支出の年の予算と、毎月の予算の履歴（自分用。2026-11-28）
 const SpecialBudgetSettings = PERSONAL_BUILD ? dynamic(() => import("@/components/SpecialBudget").then((m) => m.SpecialBudgetSettings)) : null;
+// 給料日（自分用。2026-11-28）
+const PaydaySettings = PERSONAL_BUILD ? dynamic(() => import("@/components/SpecialBudget").then((m) => m.PaydaySettings)) : null;
 
 const HASH_GROUP: Record<string, string> = {
   budget: "set-money",
@@ -349,6 +351,7 @@ export default function SettingsPage() {
           </Button>
         </div>
       </Card>
+      {PaydaySettings && <PaydaySettings />}
       {SpecialBudgetSettings && <SpecialBudgetSettings />}
     </>
   );

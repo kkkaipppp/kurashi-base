@@ -23,7 +23,7 @@ export type { SaveResult };
 
 const ID_PREFIX: Record<CollectionKey, string> = {
   nisa: "nisa", notes: "note", tasks: "task", assets: "asset", contracts: "ct", health: "hl",
-  documents: "doc", studySubjects: "subj", studyLogs: "slog", goals: "goal", wishes: "wish", accounts: "acct",
+  documents: "doc", studySubjects: "subj", studyLogs: "slog", goals: "goal", wishes: "wish", accounts: "acct", points: "pt",
 };
 
 type Status = "loading" | "ready" | "corrupt" | "unavailable";
@@ -57,6 +57,8 @@ interface Store {
   setBudget: (monthly: number | null) => P;
   /** 特別支出の年の予算（自分用） */
   setYearlySpecial: (yearly: number | null) => P;
+  /** 給料日（自分用） */
+  setPayday: (day: number | null) => P;
   setHomePref: (key: HomeToggle, v: boolean) => P;
   /** 自分用のホームのカードの並びと、隠したカード（100点化 E） */
   setHomeLayout: (order: string[], hidden: string[], flags: { nextRecurring: boolean; needsReview: boolean }) => P;
@@ -225,6 +227,7 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
           budget: { ...d.budget, monthly, ...(d.budget.monthly !== monthly ? { history: [...(d.budget.history ?? []), { at: todayStr(), monthly }].slice(-24) } : {}) },
         })),
       setYearlySpecial: (yearlySpecial) => commit((d) => ({ ...d, budget: { ...d.budget, yearlySpecial } })),
+      setPayday: (payday) => commit((d) => ({ ...d, budget: { ...d.budget, payday } })),
       setHomePref: (key, v) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, [key]: v } } })),
       setMenuHidden: (hrefs) => commit((d) => ({ ...d, prefs: { ...d.prefs, menuHidden: [...new Set(hrefs)] } })),
       setHomeLayout: (order, hidden, flags) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, ...flags, order: [...order], hidden: [...hidden] } } })),

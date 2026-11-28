@@ -37,6 +37,8 @@ const MonthTxList = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMon
 const UpcomingPayments = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.UpcomingPayments)) : () => null;
 // 特別支出（今年）と年の予算（自分用。2026-11-28）
 const SpecialBudgetCard = PERSONAL_MONEY ? dynamic(() => import("@/components/SpecialBudget").then((m) => m.SpecialBudgetCard)) : ({ month: _month }: { month?: string }) => (void _month, null);
+// 給料日からの予算（自分用。To-Be 02「給料日予算」。2026-11-28）
+const PaydayBudgetCard = PERSONAL_MONEY ? dynamic(() => import("@/components/SpecialBudget").then((m) => m.PaydayBudgetCard)) : ({ month: _month }: { month?: string }) => (void _month, null);
 // 支払方法ごとの支出（自分用。To-Be 02 家計簿「口座/カード/電子マネー」。2026-11-28）
 const PayBreakdown = PERSONAL_MONEY ? dynamic(() => import("@/components/PayBreakdown").then((m) => m.PayBreakdown)) : () => null;
 // 口座ごとの残高の目安とカードの次の引き落とし（自分用。2026-11-28）
@@ -190,6 +192,8 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
           )}
         </>
       )}
+      {/* 給料日からの予算は、記録のない月（給料日のあとの月初めなど）でも出す（点検 低2） */}
+      {PERSONAL_MONEY && view === "stats" && <PaydayBudgetCard month={month} />}
       {PERSONAL_MONEY && view !== "stats" ? null : r.count === 0 ? (
         <Empty
           action={

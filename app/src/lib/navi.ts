@@ -67,6 +67,14 @@ export function buildNavi(data: AppData, today: string): NaviItem[] {
     else if (d <= WITHIN_DAYS) items.push({ key: `ct-${c.id}`, tone: d <= 7 ? "today" : "info", title: `${c.name}の更新まであと${d}日`, sub: `契約・${formatDateJa(c.renewalDate)}`, href: `/contracts?open=${c.id}` });
   }
 
+  // ポイントの期限（自分用。2026-11-28）
+  if (process.env.NEXT_PUBLIC_KB_EDITION === "personal")
+    for (const p of data.points ?? []) {
+      if (!p.expiry || (p.balance !== null && p.balance <= 0)) continue;
+      const d = daysBetween(today, p.expiry);
+      if (d >= 0 && d <= WITHIN_DAYS) items.push({ key: `pt-${p.id}`, tone: d <= 7 ? "today" : "info", title: d === 0 ? `${p.name}のポイントの期限は今日まで` : `${p.name}のポイントの期限まであと${d}日`, sub: `ポイント・${formatDateJa(p.expiry)}${p.balance !== null ? `・${p.balance.toLocaleString("ja-JP")}pt` : ""}`, href: `/points?open=${p.id}` });
+    }
+
   for (const doc of data.documents) {
     if (!doc.expiry) continue;
     const d = daysBetween(today, doc.expiry);

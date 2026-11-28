@@ -38,6 +38,8 @@ export function migrate(raw: unknown): unknown {
   if (d.schemaVersion === 2 && d.wishes === undefined) d = { ...d, wishes: [] };
   // 2026-11-28：口座・カードの一覧（無ければ空で足す）
   if (d.schemaVersion === 2 && d.accounts === undefined) d = { ...d, accounts: [] };
+  // 2026-11-28：ポイントの一覧（無ければ空で足す）
+  if (d.schemaVersion === 2 && d.points === undefined) d = { ...d, points: [] };
   return d;
 }
 
@@ -175,6 +177,7 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
     },
   },
   accounts: { label: "口座・カード", fields: { name: isStr, kind: oneOf("bank", "card", "emoney", "cash"), closingDay: (v) => v === null || (Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 31), payDay: (v) => v === null || (Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 31), baseBalance: (v) => v === null || Number.isInteger(v), baseDate: okDateOrBlank, baseAt: optional(isStr), note: isStr, archived: isBool } },
+  points: { label: "ポイント", fields: { name: isStr, balance: (v: unknown) => v === null || (Number.isInteger(v) && (v as number) >= 0), expiry: okDateOrBlank, note: isStr } },
   wishes: { label: "欲しいもの", fields: { name: isStr, price: numOrNull, url: isHttpOrBlank, priority: oneOf("high", "mid", "low"), status: oneOf("want", "bought", "dropped"), note: isStr } },
 };
 
@@ -252,6 +255,7 @@ export function validateAppData(input: unknown): R {
   if (
     !isObj(raw.budget) || !(raw.budget.monthly === null || isAmt(raw.budget.monthly)) ||
     !optional((v) => v === null || isAmt(v))(raw.budget.yearlySpecial) ||
+    !optional((v) => v === null || (Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 31))(raw.budget.payday) ||
     !optional((v) => Array.isArray(v) && v.length <= 100 && v.every((h) => isObj(h) && isDate(h.at) && (h.monthly === null || isAmt(h.monthly))))(raw.budget.history)
   )
     return { ok: false, error: "予算のデータが壊れています" };

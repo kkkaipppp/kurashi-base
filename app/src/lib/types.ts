@@ -272,6 +272,17 @@ export interface Account {
   updatedAt: string;
 }
 
+/** ポイント（自分用。2026-11-28）。期限が近づいたら、ホームの確認に出す */
+export interface PointCard {
+  id: string;
+  name: string;
+  balance: number | null;
+  expiry: string; // "" = 期限なし
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** 欲しいもの（自分用。2026-11-28）。買ったら「買った」にする（支出は家計簿に記録する。二重に数えない） */
 export interface Wish {
   id: string;
@@ -444,11 +455,12 @@ export interface Collections {
   goals: Goal[];
   wishes: Wish[];
   accounts: Account[];
+  points: PointCard[];
 }
 
 export type CollectionKey = keyof Collections;
 export type ItemOf<K extends CollectionKey> = Collections[K][number];
-export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals", "wishes", "accounts"];
+export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals", "wishes", "accounts", "points"];
 
 export interface AppData extends Collections {
   schemaVersion: 2;
@@ -464,6 +476,8 @@ export interface AppData extends Collections {
     monthly: number | null; // 毎月の支出予算（円）。null = 未設定
     /** 特別支出（帰省・車検など）の年の予算（円。自分用・任意。2026-11-28） */
     yearlySpecial?: number | null;
+    /** 給料日（1〜31。月末を超える月は月末）。あれば給料日からの予算も出す（自分用・任意。2026-11-28） */
+    payday?: number | null;
     /** 月の予算を変えた記録（変えた日と新しい額。新しいものが後ろ。最大 24 件。自分用・任意） */
     history?: { at: string; monthly: number | null }[];
   };
