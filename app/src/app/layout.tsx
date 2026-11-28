@@ -12,13 +12,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const PERSONAL_SCALE = 0.88;
-
 export const viewport: Viewport = {
   width: "device-width",
-  // 自分用は画面に入る量を増やすため、全体を少し小さく見せる（平尾さん 2026-11-27「画面いっぱいすぎる」）。
-  // 入力欄の文字は 16px のままなので、入力のときの自動の拡大は起きない。公開版は今のまま
-  initialScale: IS_PERSONAL ? PERSONAL_SCALE : 1,
+  // 自分用は画面に入る量を増やすため、全体を 0.88 倍に見せる（平尾さん 2026-11-27「画面いっぱいすぎる」）。
+  // 2026-11-28：初めの倍率（initial-scale）で縮めると、iPhone で横幅だけ広がって縮まず、右が切れた（平尾さんの写真）。
+  // 倍率は 1 のままにして、globals.css の zoom で縮める。入力欄に触れたときの自動の拡大は、最大の倍率 1 で止める。公開版は今のまま
+  initialScale: 1,
+  ...(IS_PERSONAL ? { maximumScale: 1 } : {}),
   themeColor: IS_PERSONAL ? "#ffffff" : "#f6f4ef",
 };
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet } from "./Sheet";
-import { Button, Field, IconAlert, inputCls } from "./ui";
+import { Button, Field, IconAlert, IconChevronD, inputCls } from "./ui";
 import { useUI } from "./UIContext";
 import { useData, useStore, type TxInput } from "@/lib/store";
 import { validateTx, type FieldErrors, type TxDraft } from "@/lib/validate";
@@ -88,6 +88,11 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   }, []);
 
   const [draft, setDraft] = useState<TxDraft>(initialDraft);
+  // 自分用：支払方法・数え方・旅行・固定費・立替・メモは「詳細」にたたむ（平尾さん 2026-11-28「入力の画面が長い」。To-Be 02「詳細は折りたたみ」）。
+  // 直すとき・どれかに値が入っているときは、初めから開く
+  const [moreOpen, setMoreOpen] = useState(
+    () => !EXTRA || req.mode === "edit" || !!(initialDraft.paymentMethod || initialDraft.note || initialDraft.countAs || initialDraft.tripId || initialDraft.advanceMine || (req.mode === "new" && req.recurringId)),
+  );
   // 「続けて追加」のあとは、その時点の空の入力を基準にする（何も入力していなければ閉じるときに確認しない）
   const [base, setBase] = useState<TxDraft>(initialDraft);
   // 手入力の新規追加のときだけ「続けて追加」を出す（画像・固定費からの記録は1件ずつ）
@@ -533,6 +538,15 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           </button>
         )}
 
+        {EXTRA && !(moreOpen || errors.advanceMine || errors.note) ? (
+          <button type="button" onClick={() => setMoreOpen(true)} aria-expanded="false" className="flex min-h-12 w-full items-center justify-between rounded-xl border border-line px-3 text-left text-[15px] hover:bg-surface-2">
+            <span>
+              詳細<span className="ml-2 text-[13px] text-ink-3">支払方法・数え方・旅行・立替・メモ</span>
+            </span>
+            <IconChevronD className="size-5 text-ink-3" />
+          </button>
+        ) : (
+        <>
         <Field label="支払方法" optional htmlFor="tx-pay">
           <select id="tx-pay" value={draft.paymentMethod} onChange={(e) => set("paymentMethod", e.target.value)} className={inputCls}>
             {PAYMENT_METHODS.map((p) => (
@@ -566,6 +580,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
           <textarea id="tx-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
         </Field>
+        </>
+        )}
 
         {gone && (
           <div className="rounded-xl border border-warn/40 bg-warn-soft p-3" role="alert">

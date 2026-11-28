@@ -103,3 +103,8 @@ input[type="time"]::-webkit-date-and-time-value {
   text-align: left;
   margin: 0;
 }
+
+/* 自分用：画面全体を 0.88 倍に見せる（layout.tsx の説明。横幅は iPhone の画面のまま） */
+html[data-edition="personal"] {
+  zoom: 0.88;
+}

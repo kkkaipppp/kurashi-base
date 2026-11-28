@@ -2,6 +2,7 @@
 
 import { cloneElement, isValidElement, type ButtonHTMLAttributes, type ReactElement, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { IS_PERSONAL } from "@/lib/edition";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -106,9 +107,12 @@ export const inputCls =
 export function PageHeader({ title, right, sub }: { title: string; right?: ReactNode; sub?: ReactNode }) {
   return (
     <header className="sticky top-0 z-10 -mx-4 mb-3 flex min-h-14 items-center justify-between gap-2 bg-bg/95 px-4 pt-2 backdrop-blur">
-      <div className="min-w-0">
-        <h1 className="text-xl font-bold tracking-tight">{title}</h1>
-        {sub}
+      <div className="flex min-w-0 items-center gap-1">
+        {process.env.NEXT_PUBLIC_KB_EDITION === "personal" && <BackButton />}
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+          {sub}
+        </div>
       </div>
       {IS_PERSONAL ? (
         <div className="flex shrink-0 items-center gap-1">
@@ -119,6 +123,30 @@ export function PageHeader({ title, right, sub }: { title: string; right?: React
         right
       )}
     </header>
+  );
+}
+
+/** 下のボタンで開く画面（戻る先が無い） */
+export const TOP_PATHS = ["/", "/calendar", "/report", "/menu"];
+
+/**
+ * 自分用：見出しの左の「戻る」（平尾さん 2026-11-28「一個前に行くページの戻るボタンが欲しい」）。
+ * 一つ前の画面に戻る。アプリを開いてすぐで前が無いときは、メニューへ。下のボタンで開く画面には出さない
+ */
+export function BackButton() {
+  const path = usePathname();
+  const router = useRouter();
+  if (TOP_PATHS.includes(path)) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => (typeof window !== "undefined" && window.history.length > 1 ? router.back() : router.push("/menu"))}
+      aria-label="前の画面に戻る"
+      className="-ml-2 inline-flex min-h-11 shrink-0 items-center rounded-lg pr-1 text-[15px] font-semibold text-brand hover:bg-surface-2"
+    >
+      <IconChevronL className="size-6" />
+      戻る
+    </button>
   );
 }
 
@@ -204,6 +232,7 @@ export const IconCoins = icon(
 );
 export const IconChevronL = icon(<path d="m15 18-6-6 6-6" />);
 export const IconChevronR = icon(<path d="m9 18 6-6-6-6" />);
+export const IconChevronD = icon(<path d="m6 9 6 6 6-6" />);
 export const IconX = icon(<path d="M18 6 6 18M6 6l12 12" />);
 export const IconRepeat = icon(<path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3" />);
 export const IconAlert = icon(<path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />);

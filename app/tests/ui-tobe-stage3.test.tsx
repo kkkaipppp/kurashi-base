@@ -100,7 +100,7 @@ describe("段階3（画面）", () => {
     fireEvent.click(await screen.findByLabelText(/休止中/));
     fireEvent.click(screen.getByText("保存する"));
     expect(await screen.findByText(/休止中（11月28日/)).toBeTruthy();
-    expect(seen.d!.goals[0].pausedAt).toBe("2026-11-28");
+    await waitFor(() => expect(seen.d!.goals[0].pausedAt).toBe("2026-11-28"));
     fireEvent.click((await screen.findAllByText("本を読む")).at(-1)!);
     fireEvent.click(await screen.findByLabelText(/休止中/));
     fireEvent.click(screen.getByText("保存する"));

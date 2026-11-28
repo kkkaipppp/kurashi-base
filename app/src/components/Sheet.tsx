@@ -29,7 +29,11 @@ export function Sheet({
   useEffect(() => {
     const v = typeof window !== "undefined" ? window.visualViewport : null;
     if (!open || !v) return;
-    const update = () => setVp({ top: v.offsetTop, height: v.height });
+    // 自分用は画面全体を zoom で縮めている（globals.css）。見えている範囲の大きさは縮める前の値なので、zoom で割って合わせる（割らないと下にすき間が出る）
+    const update = () => {
+      const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
+      setVp({ top: v.offsetTop / z, height: v.height / z });
+    };
     update();
     v.addEventListener("resize", update);
     v.addEventListener("scroll", update);

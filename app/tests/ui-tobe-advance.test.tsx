@@ -98,6 +98,9 @@ describe("立替（画面）", () => {
   it("新しい支出：総額 4,000円・自分の分 1,000円で保存すると、金額 1,000円・総額 4,000円。自分の分が総額以上なら保存しない", async () => {
     await mount((d) => d, () => <M.sheet.TxSheet req={{ mode: "new", type: "expense", date: "2026-11-28" }} onClose={() => {}} />);
     fireEvent.change(await screen.findByLabelText("金額（円）"), { target: { value: "4000" } });
+    // 新しい入力では、立替などは「詳細」にたたんである（2026-11-28）
+    expect(screen.queryByLabelText(/立替/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /詳細/ }));
     const mine = screen.getByLabelText(/立替/);
     fireEvent.change(mine, { target: { value: "4000" } });
     fireEvent.click(screen.getByText("保存する"));
@@ -118,5 +121,25 @@ describe("立替（画面）", () => {
     fireEvent.click(screen.getByText("保存する"));
     expect(await screen.findByText(/もう ¥2,000 返してもらっています/)).toBeTruthy();
     expect(seen.d!.transactions.find((t) => t.id === "adv")).toMatchObject({ amount: 1000, advanceGross: 4000 });
+  });
+});
+
+describe("入力の詳細をたたむ（2026-11-28「入力の画面が長い」）", () => {
+  it("新しい支出：支払方法・メモは「詳細」の中。押すと出る。直すとき・値が入っているときは初めから開く", async () => {
+    await mount((d) => ({ ...d, transactions: [tx({ id: "t1", note: "" })] }), () => <M.sheet.TxSheet req={{ mode: "new", type: "expense" }} onClose={() => {}} />);
+    await screen.findByLabelText("金額（円）");
+    expect(screen.queryByLabelText(/支払方法/)).toBeNull();
+    expect(screen.queryByLabelText(/メモ/)).toBeNull();
+    const btn = screen.getByRole("button", { name: /詳細/ });
+    expect(btn.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(btn);
+    expect(screen.getByLabelText(/支払方法/)).toBeTruthy();
+    expect(screen.getByLabelText(/メモ/)).toBeTruthy();
+    cleanup();
+    await mount((d) => d, () => <M.sheet.TxSheet req={{ mode: "new", type: "expense", initial: { note: "https://example.com" } }} onClose={() => {}} />);
+    expect(((await screen.findByLabelText(/メモ/)) as HTMLTextAreaElement).value).toBe("https://example.com");
+    cleanup();
+    await mount((d) => ({ ...d, transactions: [tx({ id: "t1" })] }), () => <M.sheet.TxSheet req={{ mode: "edit", id: "t1" }} onClose={() => {}} />);
+    expect(await screen.findByLabelText(/支払方法/)).toBeTruthy();
   });
 });

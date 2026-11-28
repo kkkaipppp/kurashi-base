@@ -1,0 +1,26 @@
+import { describe, expect, it } from "vitest";
+import config from "../capacitor.config";
+
+// 平尾さん 2026-11-28：iPhone アプリの下（ホームバーの所）が黒く空いて見える → アプリの背景を下のボタンの並び（白）と同じにする
+describe("iPhone アプリの背景", () => {
+  it("中身の外（上下の空けた所）は白。中身は今までどおり重ならない", () => {
+    expect(config.ios?.backgroundColor).toBe("#ffffff");
+    expect(config.ios?.contentInset).toBe("always");
+  });
+});
+
+// 平尾さん 2026-11-28 の写真：初めの倍率 0.88 では iPhone で縮まず、横幅だけ広がって右が切れた → 倍率は 1、縮めるのは zoom
+import { readFileSync } from "node:fs";
+describe("自分用の画面の縮め方", () => {
+  it("倍率は 1（右が切れない）。自分用は zoom 0.88 と最大の倍率 1（入力で自動の拡大をしない）", () => {
+    const layout = readFileSync("src/app/layout.tsx", "utf8");
+    expect(layout).toContain("initialScale: 1,");
+    expect(layout).not.toMatch(/initialScale: IS_PERSONAL/);
+    expect(layout).toContain("...(IS_PERSONAL ? { maximumScale: 1 } : {})");
+    const css = readFileSync("src/app/globals.css", "utf8");
+    expect(css).toMatch(/html\[data-edition="personal"\] \{\s*zoom: 0\.88;/);
+  });
+  it("入力のシートの高さは zoom で割る（割らないと下にすき間が出る）", () => {
+    expect(readFileSync("src/components/Sheet.tsx", "utf8")).toContain("setVp({ top: v.offsetTop / z, height: v.height / z })");
+  });
+});
