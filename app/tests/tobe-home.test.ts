@@ -9,7 +9,7 @@ const page = readFileSync("src/app/page.tsx", "utf8");
 describe("To-Be ホーム（自分用）", () => {
   it("初めの並びは 今日の予定 → 今日やること → 今月の残り予算 → 次の支払い → 確認すること。重なるカードは隠す（編集で出せる）", () => {
     expect(layoutFor(emptyData("2026-11-28T00:00:00.000Z").prefs.home, null, true)).toEqual(["today", "todo", "budget", "nextFixed", "navi"]);
-    expect(defaultLayout().hidden).toEqual(["todayAll", "insight", "recent"]);
+    expect(defaultLayout().hidden).toEqual(["todayAll", "week", "insight", "recent"]); // 2026-11-28「この先7日」は初めは隠す
     const label = Object.fromEntries(HOME_CARDS.map((c) => [c.id, c.label]));
     expect([label.today, label.todo, label.budget, label.nextFixed, label.navi]).toEqual(["今日の予定", "今日やること", "今月の残り予算", "次の支払い", "確認すること"]);
   });

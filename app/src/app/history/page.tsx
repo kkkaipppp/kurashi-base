@@ -13,6 +13,10 @@ import { FEATURES } from "@/lib/edition";
 import { useUI } from "@/components/UIContext";
 import { TxRow } from "@/components/Rows";
 import { Card, Empty, IconChevronL, IconChevronR, IconSearch, PageHeader, inputCls } from "@/components/ui";
+import dynamic from "next/dynamic";
+
+// 絞り込んだ記録のカテゴリをまとめて変える（To-Be 02 家計簿「一括編集」。自分用。2026-11-28）
+const BulkRecategorize = process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(() => import("@/components/BulkRecategorize").then((m) => m.BulkRecategorize)) : () => null;
 
 /** 振り返りなどからの ?m=YYYY-MM&cat=<id> を、絞り込みに反映する */
 function QuerySync({ onApply }: { onApply: (m: string | null, cat: string | null) => void }) {
@@ -189,6 +193,11 @@ export default function HistoryPage() {
             >
               絞り込みを解除
             </button>
+          </div>
+        )}
+        {filtered && list.length > 1 && (
+          <div className="mt-1 flex justify-end">
+            <BulkRecategorize list={list} />
           </div>
         )}
       </div>

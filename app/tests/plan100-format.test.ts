@@ -177,20 +177,21 @@ describe("E ホームのカードの並び（自分用）", () => {
   it("知らないカードは無視し、足りないカードは最後に足す。はじめは To-Be 05 の並び（今日の予定・やること・今月の残り予算・次の支払い・確認すること）で、重なるカードは隠す", () => {
     const l = currentLayout({ ...prefs(), order: ["recent", "未来のカード", "budget", "recent"] });
     expect(l.order.slice(0, 2)).toEqual(["recent", "budget"]);
-    expect(l.order).toHaveLength(8);
-    expect(currentLayout(prefs()).hidden).toEqual(["todayAll", "insight", "recent"]);
+    expect(l.order).toHaveLength(9); // 2026-11-28「この先7日」を足した
+    expect(currentLayout(prefs()).hidden).toEqual(["todayAll", "week", "insight", "recent"]);
     expect(layoutFor(prefs(), null, true)).toEqual(["today", "todo", "budget", "nextFixed", "navi"]);
   });
   it("並べ替え・隠す・はじめに戻す。編集中は、その並びで見える（プレビュー）", () => {
     let l = defaultLayout();
     l = toggleCard(l, "recent");
-    l = moveCard(moveCard(moveCard(l, "recent", -1), "recent", -1), "recent", -1);
+    // 2026-11-28「この先7日」（隠れている）が navi の後ろに入ったので、4回上げて navi を追い越す（点検 中4：見えているカードを追い越すことを確かめる）
+    l = moveCard(moveCard(moveCard(moveCard(l, "recent", -1), "recent", -1), "recent", -1), "recent", -1);
     l = toggleCard(l, "todo");
     const shown = layoutFor(prefs(), l, true);
     expect(shown).not.toContain("todo");
     expect(shown).toEqual(["today", "budget", "nextFixed", "recent", "navi"]);
     expect(moveCard(l, "today", -1)).toBe(l); // いちばん上より上へは動かない
-    expect(defaultLayout()).toEqual({ order: currentLayout(prefs()).order, hidden: ["todayAll", "insight", "recent"] });
+    expect(defaultLayout()).toEqual({ order: currentLayout(prefs()).order, hidden: ["todayAll", "week", "insight", "recent"] });
   });
   it("保存は、並び・隠したもの・今までの設定（次の固定費・確認したいこと）に分けて書く", async () => {
     const calls: unknown[] = [];
@@ -199,7 +200,7 @@ describe("E ホームのカードの並び（自分用）", () => {
     };
     expect((await saveLayout(store, { order: defaultLayout().order, hidden: ["today", "nextFixed"] })).ok).toBe(true); // 保存は完了を待つ（o11 A06）
     // 1回の保存で書く（途中で失敗して一部だけ変わらない）
-    expect(calls).toEqual([["layout", 8, ["today"], { nextRecurring: false, needsReview: true }]]);
+    expect(calls).toEqual([["layout", 9, ["today"], { nextRecurring: false, needsReview: true }]]);
   });
   it("自分用だけ読み込む（公開版のホームは今のまま）", () => {
     const s = src("app/page.tsx");

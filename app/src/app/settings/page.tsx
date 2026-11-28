@@ -35,6 +35,8 @@ const CsvGenericPanel = PERSONAL_BUILD ? dynamic(() => import("@/components/CsvG
 const MenuVisibilityCard = PERSONAL_BUILD ? dynamic(() => import("@/components/MenuVisibilityCard").then((m) => m.MenuVisibilityCard)) : null;
 // 下のメニュー・追加のよく使う種類・起動時の画面（o31 F001・F002・D006。自分用だけ）
 const NavSettingsCard = PERSONAL_BUILD ? dynamic(() => import("@/components/NavSettingsCard").then((m) => m.NavSettingsCard)) : null;
+// 文字の大きさと色（To-Be 02 設定。自分用。2026-11-28）
+const AppearanceCard = PERSONAL_BUILD ? dynamic(() => import("@/components/AppearanceCard").then((m) => m.AppearanceCard)) : null;
 const StartScreenCard = PERSONAL_BUILD ? dynamic(() => import("@/components/StartScreenCard").then((m) => m.StartScreenCard)) : null;
 const ImportHistoryCard = PERSONAL_BUILD ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
 const DataHealthCard = PERSONAL_BUILD ? dynamic(() => import("@/components/DataHealthCard").then((m) => m.DataHealthCard)) : null;
@@ -43,7 +45,7 @@ const CategoryTools = PERSONAL_BUILD ? dynamic(() => import("@/components/Catego
 /** 自分用の設定の6つの区切り（o31 01）。中身は今ある設定をそのまま使う（設定を消さない・増やさない） */
 const SETTING_GROUPS: [string, string, string][] = [
   ["set-general", "一般", "起動時の画面"],
-  ["set-display", "表示", "下のメニュー・メニューに出す機能・ホーム"],
+  ["set-display", "表示", `${process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? "文字の大きさと色・" : ""}下のメニュー・メニューに出す機能・ホーム`],
   ["set-money", "家計簿", "予算・カテゴリ"],
   ["set-connect", "外部連携", "カレンダー・CSV の取り込み"],
   ["set-data", "データ管理", "バックアップ・復元・取り込みの履歴・点検・削除"],
@@ -867,6 +869,7 @@ export default function SettingsPage() {
           {group === "set-general" && StartScreenCard && <StartScreenCard />}
           {group === "set-display" && (
             <>
+              {AppearanceCard && <AppearanceCard />}
               {NavSettingsCard && <NavSettingsCard />}
               {MenuVisibilityCard && <MenuVisibilityCard />}
               {blkHome}

@@ -123,3 +123,26 @@ html[data-edition="personal"] body {
 html[data-edition="personal"] {
   --z: 0.88;
 }
+/* 自分用：文字の大きさ（設定の「表示」。lib/appearance.ts）。画面全体の倍率を上げる。--z も同じ値にして、上下の余白と入力の高さを合わせる */
+html[data-edition="personal"][data-text="large"] {
+  zoom: 0.97;
+  --z: 0.97;
+}
+html[data-edition="personal"][data-text="xlarge"] {
+  zoom: 1.06;
+  --z: 1.06;
+}
+/* 自分用：色（設定の「表示」）。生成り＝やわらかい白の地。くっきり＝文字と線を濃く */
+html[data-edition="personal"][data-theme="warm"] {
+  --bg: #f6f4ef;
+  --surface: #fffdf9;
+  --surface-2: #f1eee7;
+  --line: #e4e0d6;
+}
+html[data-edition="personal"][data-theme="contrast"] {
+  --ink: #000000;
+  --ink-2: #333333;
+  --ink-3: #444444;
+  --line: #808080; /* 入力欄の枠が白・薄いグレーの地で 3:1 を超える（白 3.9:1、#f4f5f7 3.6:1。点検 中5） */
+  --brand: #1a3c6b;
+}

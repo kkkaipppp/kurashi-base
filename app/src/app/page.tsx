@@ -31,6 +31,8 @@ const BUDGET_HINT_AFTER = 10;
 const HomeEditor = PERSONAL ? dynamic(() => import("@/components/HomeLayout").then((m) => m.HomeEditor)) : null;
 const SuggestionsCard = PERSONAL ? dynamic(() => import("@/components/SuggestionsCard").then((m) => m.SuggestionsCard)) : null;
 const TodayAll = PERSONAL ? dynamic(() => import("@/components/HomeLayout").then((m) => m.TodayAll)) : null;
+// この先7日（To-Be 02 ホーム「週の見通し」。自分用。初めは隠す）
+const WeekAheadCard = PERSONAL ? dynamic(() => import("@/components/LookAhead").then((m) => m.WeekAheadCard)) : null;
 
 /** 日付の変わり目（0時）でホームの「今日」を更新する */
 function useToday(): string {
@@ -398,6 +400,7 @@ export default function HomePage() {
         )}
     </>
   ),
+    week: WeekAheadCard ? <WeekAheadCard today={today} /> : null,
     todayAll: TodayAll ? (
       <>
         <TodayAll today={today} />

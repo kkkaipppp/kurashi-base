@@ -78,6 +78,9 @@ export function inboxCount(data: AppData): number {
   return data.transactions.filter((t) => un.has(t.categoryId)).length;
 }
 
+/** まとめてカテゴリを変えるときに外す記録：収支に数えない記録（カードの引き落とし・振替・経費・返金・精算）。カテゴリの意味が違う（2026-11-28 点検 中2） */
+export const keepCategory = (t: Pick<Transaction, "countAs" | "refundOf" | "settles" | "claim">): boolean => t.countAs === "transfer" || !!t.refundOf || !!t.settles || !!t.claim;
+
 /** 選んだ記録のカテゴリだけを変える（種類が違うカテゴリ・非表示のカテゴリには移さない） */
 export function recategorize(d: AppData, txIds: string[], toCategoryId: string, ts: string): { ok: true; next: AppData; changed: number } | { ok: false; error: string } {
   const to = d.categories.find((c) => c.id === toCategoryId);

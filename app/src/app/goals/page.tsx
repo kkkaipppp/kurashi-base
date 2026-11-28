@@ -1,5 +1,7 @@
 "use client";
 
+import dynamic from "next/dynamic";
+
 import { CollectionPage, numberFromDraft, type CollectionConfig } from "@/components/CollectionPage";
 import { formatDateJa, todayStr } from "@/lib/date";
 import { bool, numStr, str } from "@/lib/draft";
@@ -13,6 +15,8 @@ import { GoalConditionsButton, VERDICT_LABEL, goalVerdict } from "@/components/G
 
 // 版の値を、このファイルの中で直接比べる（公開版の組み立てから、自分用の入力を外すため）
 const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+// 年のふりかえり（To-Be 02 目標「年間振り返り」。自分用。2026-11-28）
+const YearReviewCard = PERSONAL_BUILD ? dynamic(() => import("@/components/LookAhead").then((m) => m.YearReviewCard)) : () => null;
 /** 数値目標か（数の欄を出すかどうか） */
 const isNumberGoal = (d: Parameters<typeof str>[0]) => str(d, "kind") === "number";
 
@@ -79,8 +83,17 @@ const config: CollectionConfig<"goals"> = {
     const items = list
       .map((g) => ({ g, text: goalPaceText(goalPace(g, today), g.unit, (n) => n.toLocaleString("ja-JP")) }))
       .filter((x) => x.text && !x.g.done && !x.g.pausedAt);
-    if (items.length === 0) return null;
+    // 1〜3月は去年の分も出す（点検 低4）
+    const review = PERSONAL_BUILD ? (
+      <>
+        <YearReviewCard year={today.slice(0, 4)} />
+        {Number(today.slice(5, 7)) <= 3 && <YearReviewCard year={String(Number(today.slice(0, 4)) - 1)} />}
+      </>
+    ) : null;
+    if (items.length === 0) return review;
     return (
+      <>
+      {review}
       <Card className="py-3">
         <h2 className="mb-1 text-[17px] font-bold">必要なペース</h2>
         <ul className="space-y-1.5">
@@ -93,6 +106,7 @@ const config: CollectionConfig<"goals"> = {
         </ul>
         <p className="mt-2 text-[12px] text-ink-3">目標の数・今の数・期限から計算した目安です（残り ÷ 期限までの日数 × 30日、切り上げ）。</p>
       </Card>
+      </>
     );
   },
   sort: (a, b) => Number(a.done) - Number(b.done) || (a.deadline || "9999").localeCompare(b.deadline || "9999"),

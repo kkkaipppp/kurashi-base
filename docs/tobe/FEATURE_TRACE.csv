@@ -8,7 +8,7 @@ F006,ホーム,確認すること,あり,"src/app/page.tsx,src/lib/navi.ts,src/l
 F007,ホーム,次の予定,あり,src/app/page.tsx,lib.test.ts,両方,今日の予定が無いとき、60日先までで次の1件,ホーム,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F008,ホーム,ホーム編集,あり,"src/app/page.tsx,src/components/HomeLayout.tsx,src/lib/homeLayout.ts",plan100-format.test.ts,personal,並び替えと隠す。公開版は設定のオン・オフ3つだけ,ホーム,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F009,ホーム,再開支援,一部,"src/components/OrphanDraft.tsx,src/lib/sheetDraft.ts,src/components/StudyTimer.tsx","plan100.test.ts,o29-acceptance.test.ts",両方,入力の書きかけと勉強の前回の続きはある。ホームでの再開の案内は無い,ホーム,今の部分を残す。足りない部分は未着手,,未更新,一部あり
-F010,ホーム,週の見通し,一部,"src/components/CalendarViews.tsx,src/components/WeeklyReviewCard.tsx","o31-calendar-views.test.ts,weekly-review.test.ts",personal,週表示と週の振り返りはある。ホームに先の週の見通しは無い,ホーム,今の部分を残す。足りない部分は未着手,,未更新,一部あり
+F010,ホーム,週の見通し,一部,"src/components/CalendarViews.tsx,src/components/WeeklyReviewCard.tsx","o31-calendar-views.test.ts,weekly-review.test.ts",personal,週表示と週の振り返りはある。ホームに先の週の見通しは無い,ホーム,自分用：ホームのカード「この先7日」（予定の数・固定費の支払い・期限の数）。初めは隠す（編集で出す）,tobe-display-1128.test.ts,未更新,今回作った・試験あり・実機未確認
 F011,カレンダー,月週日年,一部,"src/app/calendar/page.tsx,src/components/CalendarViews.tsx",o31-calendar-views.test.ts,両方,月表示は両方、週と一覧は自分用。日・年は無い,カレンダー,自分用に「日」「年」を足した（日・週・月・年・一覧）。公開版は月だけのまま,o31-calendar-views.test.ts（日・年）・ui-tobe-views.test.tsx（年の表示）,未更新,今回作った・試験あり・実機未確認
 F012,カレンダー,年月指定,一部,src/app/calendar/page.tsx,search-state.test.ts,両方,前後の月と ?d= だけ,カレンダー,自分用：見出しを押して年月を選ぶ（input type=month。1900〜2099年・崩れた値は無視）,o31-calendar-views.test.ts（年月の入力は形の崩れた値では動かない）,未更新,今回作った・試験あり・実機未確認
 F013,カレンダー,今日へ,あり,src/app/calendar/page.tsx,,両方,「今日」ボタン,カレンダー,今の機能を残す（回帰は npm run check）,,未更新,既存・試験なし
@@ -16,16 +16,16 @@ F014,カレンダー,終日,あり,"src/components/EventSheet.tsx,src/lib/types.
 F015,カレンダー,複数日,あり,"src/components/EventSheet.tsx,src/lib/aggregate.ts",lib.test.ts,両方,,カレンダー,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F016,カレンダー,繰り返し,あり,"src/components/EventSheet.tsx,src/lib/aggregate.ts","v2.test.ts,ics-import.test.ts",両方,毎週・毎月・毎年と終了日,カレンダー,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F017,カレンダー,仮予定,なし,,,なし,,カレンダー,未着手,,未更新,未着手
-F018,カレンダー,日程未定,なし,,,なし,計画は日にち無しで持て「日程未定」は後ろに並ぶ（tobe-plan.test.ts 並び）。予定は日付が必須で、カレンダーに日程未定は出ない,カレンダー,未着手,,未更新,一部あり
+F018,カレンダー,日程未定,なし,,,なし,計画は日にち無しで持て「日程未定」は後ろに並ぶ（tobe-plan.test.ts 並び）。予定は日付が必須で、カレンダーに日程未定は出ない,カレンダー,自分用：カレンダーの下に「日程未定」（日にちの無い計画・期限もやる日も無いやること）。たたんで出す,tobe-calendar-1128.test.ts,未更新,今回作った・試験あり・実機未確認
 F019,カレンダー,場所・経路,あり,"src/components/EventSheet.tsx,src/lib/externalLinks.ts",external-links.test.ts,両方,Googleマップの経路リンク,カレンダー,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F020,カレンダー,移動時間,あり,"src/components/EventSheet.tsx,src/lib/eventOps.ts",event-ops.test.ts,personal,出発の目安,カレンダー,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F021,カレンダー,予定費用,あり,"src/components/EventSheet.tsx,src/lib/eventExpense.ts","a2-input-less.test.ts,a3-allowance-breakdown.test.ts",両方,,カレンダー,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F022,カレンダー,重複警告,なし,,,なし,,カレンダー,未着手,,未更新,未着手
 F023,カレンダー,空き時間,あり,"src/components/FreeTimeCard.tsx,src/lib/freeTime.ts",free-time.test.ts,personal,8:00〜22:00,カレンダー,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F024,カレンダー,表示密度,一部,src/app/calendar/page.tsx,,両方,マスに出すものの切り替えだけ,カレンダー,今の部分を残す。足りない部分は未着手,,未更新,一部あり
-F025,カレンダー,休日・誕生日,一部,"src/lib/holidays.ts,src/app/calendar/page.tsx",holidays.test.ts,両方,祝日のみ,カレンダー,今の部分を残す。足りない部分は未着手,,未更新,一部あり
+F025,カレンダー,休日・誕生日,一部,"src/lib/holidays.ts,src/app/calendar/page.tsx",holidays.test.ts,両方,祝日のみ,カレンダー,自分用：予定の入力に「誕生日・記念日にする（毎年・終日）」。新しい1日の予定だけ。2/29 はうるう年でない年は 2/28。祝日は前から,tobe-calendar-1128.test.ts・ui-tobe-calendar-1128.test.tsx,未更新,今回作った・試験あり・実機未確認
 F026,カレンダー,タイムゾーン,なし,src/lib/ics.ts,ics.test.ts,なし,端末の時刻のまま,カレンダー,未着手,,未更新,未着手
-F027,カレンダー,期限と実施日,一部,"src/lib/deadlines.ts,src/lib/eventOps.ts,src/components/EventActions.tsx","event-ops.test.ts,task-event.test.ts",両方,実施日を別に持つ項目は無い,カレンダー,今の部分を残す。足りない部分は未着手,,未更新,一部あり
+F027,カレンダー,期限と実施日,一部,"src/lib/deadlines.ts,src/lib/eventOps.ts,src/components/EventActions.tsx","event-ops.test.ts,task-event.test.ts",両方,実施日を別に持つ項目は無い,カレンダー,自分用：やることのやる日（Task.doDate。期限とは別）。カレンダーに「やる日」。予定にするとやる日に作る。時刻は持てない,tobe-calendar-1128.test.ts,未更新,今回作った・試験あり・実機未確認
 F028,カレンダー,タスク一括整理,なし,,,なし,,カレンダー,未着手,,未更新,未着手
 F029,カレンダー,ICS入出力,あり,"src/app/settings/page.tsx,src/lib/ics.ts,src/lib/icsImport.ts","ics.test.ts,ics-import.test.ts,calendar-export.test.ts",両方,公開済み,カレンダー,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F030,カレンダー,外部同期,一部,"src/components/WidgetSync.tsx,src/lib/calendarExport.ts,src/lib/nativeCalendar.ts","a5-native-calendar.test.ts,calendar-export.test.ts,a07-native-sync-status.test.ts",personal,iPhone カレンダーへ一方向。Google 同期は無い,カレンダー,Google 同期（OAuth）が要る。規約・費用・鍵の保護を確かめる前なので未提供。手で URL を入れる形は計画の候補で使える,根拠：OPEN_ISSUES.md,未更新,承認待ち（Google カレンダーの直接同期：OAuth・最小の権限・鍵の保管）
@@ -48,9 +48,9 @@ F046,家計簿,収支,あり,"src/app/report/page.tsx,src/lib/aggregate.ts,src/l
 F047,家計簿,週月年集計,あり,"src/app/report/page.tsx,src/components/PeriodReport.tsx,src/lib/periods.ts",periods.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F048,家計簿,カテゴリ内訳,あり,"src/app/report/page.tsx,src/lib/report.ts",report.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F049,家計簿,検索,あり,"src/app/history/page.tsx,src/app/search/page.tsx,src/lib/search.ts","search.test.ts,search-state.test.ts",両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-F050,家計簿,一括編集,一部,"src/app/inbox/page.tsx,src/lib/inbox.ts",inbox.test.ts,両方,「その他」をまとめて変えるだけ,家計簿,今の部分を残す。足りない部分は未着手,,未更新,一部あり
+F050,家計簿,一括編集,一部,"src/app/inbox/page.tsx,src/lib/inbox.ts",inbox.test.ts,両方,「その他」をまとめて変えるだけ,家計簿,自分用：記録の一覧で支出だけ・収入だけに絞ったとき、カテゴリをまとめて変える（取り消しで戻せる）,tobe-display-1128.test.ts（関数）・画面の試験なし,未更新,今回作った・試験あり・実機未確認
 F051,家計簿,月予算,あり,"src/app/settings/page.tsx,src/lib/ledger.ts",budget-basis-public.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-F052,家計簿,給料日予算,なし,,,なし,,家計簿,未着手,,未更新,未着手
+F052,家計簿,給料日予算,なし,,,なし,,家計簿,自分用：給料日（budget.payday）。家計簿の予算に給料日〜次の給料日の前日の使った額・残り・1日あたり。月末を超える給料日は月末,tobe-payday-points.test.ts,未更新,今回作った・試験あり・実機未確認
 F053,家計簿,年間予算,なし,,,なし,,家計簿,未着手,,未更新,未着手
 F054,家計簿,特別支出,なし,,,なし,,家計簿,未着手,,未更新,未着手
 F055,家計簿,予算履歴,なし,src/lib/lifeChange.ts,life-change.test.ts,なし,,家計簿,未着手,,未更新,未着手
@@ -70,7 +70,7 @@ F068,家計簿,経費,なし,,,なし,,家計簿,未着手,,未更新,未着手
 F069,家計簿,返金,あり,"src/components/TxSheet.tsx,src/lib/refund.ts","refund.test.ts,ledger-core.test.ts",personal,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F070,家計簿,分割払い,なし,src/components/TxSheet.tsx,,なし,,家計簿,未着手,,未更新,未着手
 F071,家計簿,外貨,なし,src/lib/types.ts,,なし,,家計簿,未着手,,未更新,未着手
-F072,家計簿,ポイント期限,なし,,,なし,,家計簿,未着手,,未更新,未着手
+F072,家計簿,ポイント期限,なし,,,なし,,家計簿,自分用：新しい一覧 points（/points）。期限の30日前からホームの確認に出す（残り0・期限なし・過ぎたものは出さない）,tobe-payday-points.test.ts,未更新,今回作った・試験あり・実機未確認
 F073,家計簿,活動別集計,一部,"src/app/trips/page.tsx,src/lib/tripMemo.ts",a06-ledger-screens.test.ts,personal,旅行ごとだけ,家計簿,旅行ごとに加えて、計画ごとのかかったお金,tobe-plan.test.ts,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F074,家計簿,欠測期間,なし,src/lib/forecast.ts,forecast.test.ts,なし,,家計簿,未着手,,未更新,未着手
 F075,家計簿,予算シナリオ,あり,"src/app/decide/page.tsx,src/lib/scenarios.ts",scenarios.test.ts,両方,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
@@ -82,7 +82,7 @@ F080,計画,回答集計,なし,,,なし,,メニュー→計画,日程調整の�
 F081,計画,お店探し,一部,"src/app/trips/page.tsx,src/lib/externalLinks.ts",external-links.test.ts,両方,Google 検索を開くだけ,メニュー→計画,店探し APIが要る。規約・費用・鍵の保護を確かめる前なので未提供。手で URL を入れる形は計画の候補で使える,根拠：OPEN_ISSUES.md・DECISIONS_TOBE.md D-T03,未更新,承認待ち（お店探しの API：規約・費用・鍵の保護。今は Google 検索を開くだけ）
 F082,計画,集合場所比較,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
 F083,計画,候補比較,なし,,,personal,,メニュー→計画,計画の「〇〇を比べる」：候補の名前・URL・目安の金額・これに決める（1つだけ）,tobe-plan.test.ts（候補と「これに決める」）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
-F084,計画,予約情報,一部,src/components/EventSheet.tsx,external-links.test.ts,両方,予定の URL とメモだけ,メニュー→計画,今の部分を残す。足りない部分は未着手,,未更新,一部あり
+F084,計画,予約情報,一部,src/components/EventSheet.tsx,external-links.test.ts,両方,予定の URL とメモだけ,メニュー→計画,自分用：新しい一覧 reservations（/reservations）。予約番号・利用日・状態（未予約・予約済み・キャンセル済み。本人が選ぶ）・金額の目安・URL。計画とつなぐ画面は未着手,tobe-household.test.ts,未更新,今回作った・試験あり・実機未確認
 F085,計画,確定と予定連携,なし,,,personal,,メニュー→計画,日にちを「予定に入れる」：同じ計画から1件（保存の列の中で確かめる）。計画の日にちを変えると、つないだ1日の予定を同じ ID のまま移す。カレンダーで直してもつながりは残る。共有先への反映は無い,tobe-plan.test.ts（予定は1件・直してもつながりは残る）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F086,計画,決定共有,なし,,,なし,,メニュー→計画,共有の仕組み（サーバー）が要る。費用・外部送信の承認と実現性の確認の前なので未提供（画面に出さない）,根拠：components/PollSection.tsx の決める処理は外へ送らない,未更新,承認待ち（共有：決めた日を回答者に知らせる仕組みの承認。今は端末の中で決めるだけ）
 F087,計画,精算連携,なし,,,personal,,メニュー→計画,計画のお金：予算（見込み）・かかったお金（家計簿と同じ数え方。返金のあとの金額・旅行につないだ支出も入る）・残り。精算・割り勘は無い,tobe-plan.test.ts（見込み・返金・旅行の計画）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
@@ -94,13 +94,13 @@ F092,計画,旅程,あり,"src/app/trips/page.tsx,src/components/EventSheet.tsx"
 F093,計画,持ち物,あり,"src/components/EventSheet.tsx,src/lib/types.ts",v5-data.test.ts,両方,,メニュー→計画,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F094,計画,観光順,一部,src/app/trips/page.tsx,,両方,時刻順だけ,メニュー→計画,今の部分を残す。足りない部分は未着手,,未更新,一部あり
 F095,計画,出発逆算,あり,"src/lib/eventOps.ts,src/components/EventSheet.tsx",event-ops.test.ts,personal,,メニュー→計画,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-F096,計画,キャンセル期限,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
+F096,計画,キャンセル期限,なし,,,なし,,メニュー→計画,自分用：予約の無料キャンセルの期限。予約済みのものは3日前からホームの確認に出す（今日まで・明日まで・あとN日）,tobe-household.test.ts,未更新,今回作った・試験あり・実機未確認
 F097,計画,旅程共有,なし,,,なし,,メニュー→計画,共有の仕組み（サーバー）が要る。費用・外部送信の承認と実現性の確認の前なので未提供（画面に出さない）,根拠：OPEN_ISSUES.md,未更新,承認待ち（共有：旅程を外に置く承認）
 F098,計画,旅行費用,あり,"src/app/trips/page.tsx,src/components/TxSheet.tsx",a06-ledger-screens.test.ts,両方,,メニュー→計画,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F099,計画,引っ越し手続き,一部,"src/app/life/page.tsx,src/lib/lifeChange.ts",life-change.test.ts,personal,固定費と予算の変更計画だけ,メニュー→計画,今の部分を残す。足りない部分は未着手,,未更新,一部あり
 F100,計画,物件比較,なし,,,personal,,メニュー→計画,計画の種類「引っ越し」の「物件を比べる」,tobe-plan.test.ts（種類ごとの候補の名前）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F101,計画,内見,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
-F102,計画,家事分担,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
+F102,計画,家事分担,なし,,,なし,,メニュー→計画,自分用：新しい一覧 chores（/chores）。誰が・どのくらいおき・最後にやった日。「やった」で今日に,tobe-household.test.ts,未更新,今回作った・試験あり・実機未確認
 F103,計画,冠婚葬祭,なし,,,personal,,メニュー→計画,「自由に作る」計画で入れられる。専用の項目は無い,なし（種類「自由に作る」の試験で代用しない）,未更新,今回作った・専用の試験なし・実機未確認
 F104,計画,転職先比較,なし,,,personal,,メニュー→計画,計画の種類「転職」の「応募先を比べる」,tobe-plan.test.ts（種類ごとの候補の名前）,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F105,計画,面接,なし,,,なし,,メニュー→計画,未着手,,未更新,未着手
@@ -129,7 +129,7 @@ F127,目標,達成履歴,一部,"src/components/GoalConditions.tsx,src/lib/goalC
 F128,目標,休止再開,なし,,,なし,,メニュー→目標,自分用：目標の休止（pausedAt）と再開。休止中はホームの確認・提案・今日の期限・カレンダーに出さない。決定 S3-2,tobe-stage3.test.ts（S3-2）・ui-tobe-stage3.test.tsx,未更新,今回作った・試験あり・実機未確認
 F129,目標,期限変更,あり,src/app/goals/page.tsx,goal-plan.test.ts,両方,履歴は残らない,メニュー→目標,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F130,目標,再計画,一部,"src/app/goals/page.tsx,src/lib/goalPlan.ts",goal-plan.test.ts,personal,どこまでが To-Be の「再計画」かは確かめていない（不明）,メニュー→目標,今の部分を残す。足りない部分は未着手,,未更新,一部あり
-F131,目標,年間振り返り,なし,,,なし,,メニュー→目標,未着手,,未更新,未着手
+F131,目標,年間振り返り,なし,,,なし,,メニュー→目標,自分用：目標の画面に「年のふりかえり」（達成した目標・勉強の時間・旅行・支出・収入）,tobe-display-1128.test.ts,未更新,今回作った・試験あり・実機未確認
 F132,資産,資産,あり,src/app/assets/page.tsx,"backup-roundtrip.test.ts,golden-fixtures.test.ts",両方,,メニュー→資産,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F133,資産,負債,一部,src/app/assets/page.tsx,balance.test.ts,personal,,メニュー→資産,自分用：負債（ローン・借入）を debt の印で持つ（前の版は「その他」として読める）。決定 S3-1,tobe-stage3.test.ts（S3-1・保存の形）・ui-tobe-stage3.test.tsx,未更新,今回作った・試験あり・実機未確認
 F134,資産,純資産,なし,src/app/assets/page.tsx,,なし,,メニュー→資産,自分用：純資産＝資産 − 負債（評価額が空欄は数えない）,tobe-stage3.test.ts（純資産）・ui-tobe-stage3.test.tsx,未更新,今回作った・試験あり・実機未確認
@@ -155,7 +155,7 @@ F153,メモ,固定,あり,src/app/notes/page.tsx,,両方,,メニュー→メモ,
 F154,メモ,タグ,なし,,,なし,,メニュー→メモ,未着手,,未更新,未着手
 F155,メモ,関連記録,一部,"src/app/notes/page.tsx,src/app/calendar/page.tsx",,両方,メモに日付があるだけ。予定・支出などとつなぐ項目は無い,メニュー→メモ,今の部分を残す。足りない部分は未着手,,未更新,一部あり
 F156,書類,領収書,一部,"src/app/documents/page.tsx,src/app/import/page.tsx",,両方,レシートを見て入力（/import）と書類の記録はあるが、領収書の画像の保管（添付 F163）は無い,メニュー→書類,今の部分を残す。足りない部分は未着手,,未更新,一部あり
-F157,書類,予約情報,一部,src/components/EventSheet.tsx,,両方,予定の URL・メモで代用。予約番号などの専用の項目は無い,メニュー→書類,今の部分を残す。足りない部分は未着手,,未更新,一部あり
+F157,書類,予約情報,一部,src/components/EventSheet.tsx,,両方,予定の URL・メモで代用。予約番号などの専用の項目は無い,メニュー→書類,自分用：予約の一覧（F084）に予約番号の欄,tobe-household.test.ts,未更新,今回作った・試験あり・実機未確認
 F158,書類,契約書,一部,src/app/documents/page.tsx,,両方,書類の分類・期限・保管場所・メモだけ。ファイルの添付（F163）は無い,メニュー→書類,今の部分を残す。足りない部分は未着手,,未更新,一部あり
 F159,書類,証明書,一部,src/app/documents/page.tsx,,両方,書類の分類・期限・保管場所・メモだけ。ファイルの添付（F163）は無い,メニュー→書類,今の部分を残す。足りない部分は未着手,,未更新,一部あり
 F160,書類,保証書,一部,src/app/documents/page.tsx,,両方,書類の分類・期限・保管場所・メモだけ。ファイルの添付（F163）は無い,メニュー→書類,今の部分を残す。足りない部分は未着手,,未更新,一部あり
@@ -168,7 +168,7 @@ F166,設定・共通,カテゴリ追加・変更・統合,あり,"src/app/settin
 F167,設定・共通,タグ,なし,,,なし,,設定・使い方,未着手,,未更新,未着手
 F168,設定・共通,表示・順序,あり,"src/components/NavSettingsCard.tsx,src/components/MenuVisibilityCard.tsx,src/lib/homeLayout.ts","o31-nav.test.ts,menu-hidden.test.ts,o29-shell.test.ts",personal,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F169,設定・共通,通知,あり,"src/components/NotifyCard.tsx,src/lib/reminders.ts,ios/App/App/WidgetBridgePlugin.swift","reminders.test.ts,notify-native.test.ts",personal,iPhone アプリだけ,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-F170,設定・共通,テーマ・文字サイズ,なし,,,なし,,設定・使い方,未着手,,未更新,未着手
+F170,設定・共通,テーマ・文字サイズ,なし,,,なし,,設定・使い方,自分用：設定の表示に文字の大きさ（3段）と色（白・生成り・くっきり）。端末だけ。暗い色は未着手,tobe-display-1128.test.ts,未更新,今回作った・試験あり・実機未確認
 F171,設定・共通,バックアップ,あり,"src/app/settings/page.tsx,src/lib/backup.ts","backup-roundtrip.test.ts,adr002-size-notice.test.ts",両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F172,設定・共通,復元,あり,"src/app/settings/page.tsx,src/lib/backup.ts,src/lib/restoreView.ts","restore-safety.test.ts,backup-roundtrip.test.ts",両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F173,設定・共通,CSV,一部,"src/app/settings/page.tsx,src/lib/csvImport.ts,src/lib/csvGeneric.ts","csv-import.test.ts,csv-generic.test.ts,csv-mf-shape.test.ts",両方,書き出しは無い,設定・使い方,今の部分を残す。足りない部分は未着手,,未更新,一部あり
@@ -181,8 +181,8 @@ F179,設定・共通,ウィジェット,あり,"src/components/WidgetSync.tsx,sr
 F180,設定・共通,使い方,あり,src/app/guide/page.tsx,"copy-v5.test.ts,approval5-public-copy.test.ts",両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,自分用の使い方に「メニューと計画」を足した,既存・回帰試験あり
 F181,設定・共通,練習,なし,,,なし,,設定・使い方,未着手,,未更新,未着手
 F182,設定・共通,機種変更,一部,"src/app/guide/page.tsx,src/lib/platform.ts",,personal,自分用の使い方に機種変更・入れ直しの手順（app/guide/page.tsx）。公開版の手順・アプリの中の移す操作は無い,設定・使い方,今の部分を残す。足りない部分は未着手,,未更新,一部あり
-F183,設定・共通,買い足すもの,なし,,,なし,,設定・使い方,未着手,,未更新,未着手
-F184,設定・共通,ゴミ出し,なし,,,なし,,設定・使い方,未着手,,未更新,未着手
+F183,設定・共通,買い足すもの,なし,,,なし,,設定・使い方,自分用：新しい一覧 stock（/stock。メニューのメモ）。切れた・買った,tobe-household.test.ts,未更新,今回作った・試験あり・実機未確認
+F184,設定・共通,ゴミ出し,なし,,,なし,,設定・使い方,自分用：新しい一覧 garbage（/garbage。メニューのメモ）。曜日・第何週。今日・明日をホームの確認に出す。祝日の変更は入っていない,tobe-household.test.ts,未更新,今回作った・試験あり・実機未確認
 F185,設定・共通,共有権限,なし,src/app/share/page.tsx,,なし,,設定・使い方,共有の仕組み（サーバー）が要る。費用・外部送信の承認と実現性の確認の前なので未提供（画面に出さない）,根拠：OPEN_ISSUES.md,未更新,承認待ち（共有：共有権限の設計と外に置く中身の承認）
 F186,設定・共通,公開版制御,あり,"src/lib/edition.ts,src/lib/menuGroups.ts","edition.test.ts,a06-personal.test.ts,beta-final-guard.test.ts",両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 X001,AI,AIに相談（/ai）,なし,src/app/ai/page.tsx,,両方,準備中の説明だけ,（出さない）,未着手,,未更新,未着手

@@ -9,7 +9,7 @@ import type { SaveResult } from "./storage";
  * - 「次の固定費」「確認したいこと」の表示は、今までの設定（nextRecurring / needsReview）と同じものとして扱う
  * - 「＋」とデータを守る大事な案内は、カードではないのでいつも出る
  */
-export type HomeCardId = "budget" | "todayAll" | "today" | "nextFixed" | "todo" | "navi" | "insight" | "recent";
+export type HomeCardId = "budget" | "todayAll" | "today" | "nextFixed" | "todo" | "navi" | "week" | "insight" | "recent";
 
 export const HOME_CARDS: { id: HomeCardId; label: string; desc: string }[] = [
   { id: "budget", label: "今月の残り予算", desc: "予算・使った額（投資を除く）・1日あたり" },
@@ -18,16 +18,20 @@ export const HOME_CARDS: { id: HomeCardId; label: string; desc: string }[] = [
   { id: "nextFixed", label: "次の支払い", desc: "いちばん近い固定費の支払い" },
   { id: "todo", label: "今日やること", desc: "期限が今日までのやること（無い日は出ない）" },
   { id: "navi", label: "確認すること", desc: "期限・予算・バックアップの案内" },
+  // 自分用だけ（版の値を直接比べる。公開版の組み立てに文字を入れない）
+  ...(process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? [{ id: "week" as const, label: "この先7日", desc: "明日から7日の予定・支払い・期限の数" }] : []),
   { id: "insight", label: "支出の変化", desc: "先月と比べて変わったこと" },
   { id: "recent", label: "最近の記録", desc: "新しい支出・収入3件" },
 ];
-const KNOWN = new Set<string>(HOME_CARDS.map((c) => c.id));
+const KNOWN = new Set<string>([...HOME_CARDS.map((c) => c.id), "week"]);
 
 export const PUBLIC_ORDER: HomeCardId[] = ["budget", "today", "nextFixed", "todo", "navi", "insight", "recent"];
 // 自分用の初めの並びは To-Be 05「今日の予定／やること／今月の残り予算／次の支払い／確認すること」（2026-11-28。保存した並びは変えない）
-export const PERSONAL_DEFAULT_ORDER: HomeCardId[] = ["today", "todo", "budget", "nextFixed", "navi", "todayAll", "insight", "recent"];
+export const PERSONAL_DEFAULT_ORDER: HomeCardId[] = ["today", "todo", "budget", "nextFixed", "navi", "week", "todayAll", "insight", "recent"];
 /** 「今日のまとめ」は今日の予定・やることと中身が重なる。支出の変化・最近の記録は家計簿にある（To-Be 02「重複数値なし」）。はじめは隠す（編集で出せる） */
-export const PERSONAL_DEFAULT_HIDDEN: HomeCardId[] = ["todayAll", "insight", "recent"];
+export const PERSONAL_DEFAULT_HIDDEN: HomeCardId[] = ["todayAll", "week", "insight", "recent"];
+/** あとから足したカード。保存した並びに無ければ、隠して足す（勝手にホームを増やさない。編集で出せる。2026-11-28） */
+const ADDED_LATER = new Set<HomeCardId>(["week"]);
 
 export interface LayoutDraft {
   order: HomeCardId[];
@@ -39,8 +43,13 @@ const known = (xs: readonly string[] | undefined): HomeCardId[] => [...new Set((
 /** 保存してある並び（知らないカードを除き、足りないカードを最後に足す） */
 export function currentLayout(prefs: HomePrefs): LayoutDraft {
   const order = known(prefs.order ?? PERSONAL_DEFAULT_ORDER);
-  for (const id of PERSONAL_DEFAULT_ORDER) if (!order.includes(id)) order.push(id);
-  const hidden: HomeCardId[] = known(prefs.hidden ?? PERSONAL_DEFAULT_HIDDEN).filter((id) => id !== "nextFixed" && id !== "navi");
+  const added: HomeCardId[] = [];
+  for (const id of PERSONAL_DEFAULT_ORDER)
+    if (!order.includes(id)) {
+      order.push(id);
+      if (prefs.order && ADDED_LATER.has(id)) added.push(id);
+    }
+  const hidden: HomeCardId[] = [...new Set([...known(prefs.hidden ?? PERSONAL_DEFAULT_HIDDEN), ...added])].filter((id) => id !== "nextFixed" && id !== "navi");
   if (!prefs.nextRecurring) hidden.push("nextFixed");
   if (!prefs.needsReview) hidden.push("navi");
   return { order, hidden };

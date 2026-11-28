@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useUI } from "./UIContext";
+import { AppearanceSync } from "./AppearanceCard";
 import { IconBook, IconCalendar, IconChart, IconFlag, IconGrid, IconHome, IconList, IconMap, IconNote, IconPlus, IconRepeat, IconSearch, IconWallet } from "./ui";
 import { useNavPrefs } from "./useNavPrefs";
 import { activeNav, navItem, type NavId } from "@/lib/navPrefs";
@@ -16,6 +17,7 @@ export function PersonalShell() {
   return (
     <>
       <StartRedirect />
+      <AppearanceSync />
       <RecentTracker />
       <TabBar />
     </>

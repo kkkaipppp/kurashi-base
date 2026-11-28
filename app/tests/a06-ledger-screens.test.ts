@@ -232,6 +232,7 @@ describe("A06：手で決めた期待値", () => {
       "lib/periods.ts": [6, "台帳の出来事（CountedEntry）を足す"],
       "lib/monthBreakdown.ts": [8, "台帳の出来事と NISA の記録を足す（特別支出の分も。2026-11-28）"],
       "lib/specialBudget.ts": [1, "その年の特別支出（台帳の出来事を足す。2026-11-28）"],
+      "lib/lookAhead.ts": [3, "この先7日の固定費の支払い（一部払いは残り）と、年のふりかえりの支出・投資・収入（台帳の出来事 ledgerEntries を足す）。2026-11-28"],
       "lib/paydayBudget.ts": [1, "給料日からの期間に使った額（台帳の出来事を isBudgetExpense で足す。2026-11-28）"],
       "lib/weeklyReview.ts": [4, "台帳の出来事を足す・固定費の予定"],
       "lib/report.ts": [3, "台帳の出来事を足す"],
