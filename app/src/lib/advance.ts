@@ -61,7 +61,7 @@ export function openAdvances(d: Pick<AppData, "transactions">): { tx: Transactio
 }
 
 /** 精算：返してもらった額を記録する（収支に数えない）。残りより多い額・0円・日付の誤りは断る */
-export function applySettlement(d: AppData, txId: string, amount: number, date: string, id: string, ts: string): AdvanceResult {
+export function applySettlement(d: AppData, txId: string, amount: number, date: string, id: string, ts: string, accountId?: string): AdvanceResult {
   if (!id.trim() || d.transactions.some((t) => t.id === id)) return { ok: false, error: "精算の記録を保存できませんでした。もう一度お試しください" };
   const orig = d.transactions.find((t) => t.id === txId);
   if (!orig) return { ok: false, error: "立替の記録が見つかりません（ほかのタブなどで削除されています）" };
@@ -85,6 +85,8 @@ export function applySettlement(d: AppData, txId: string, amount: number, date: 
     source: "manual",
     countAs: "transfer",
     settles: orig.id,
+    // 返してもらったお金が入った口座（選ばなければ元の支出の口座。口座が無ければ付けない。2026-11-28 点検 高1）
+    ...((accountId ?? orig.accountId) && (d.accounts ?? []).some((a) => a.id === (accountId ?? orig.accountId)) ? { accountId: accountId ?? orig.accountId } : {}),
     createdAt: ts,
     updatedAt: ts,
   };

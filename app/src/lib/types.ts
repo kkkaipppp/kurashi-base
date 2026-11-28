@@ -21,6 +21,8 @@ export interface Transaction {
   /** 100点化で追加（どれも任意。古い記録には無い。形式の番号は 2 のまま） */
   countAs?: "life" | "invest" | "transfer"; // この記録だけの数え方（カテゴリの分類より優先。lib/classify.ts）。transfer＝収支に数えない（カード引落・口座間の移動など。NEXT v21 X03）
   tripId?: string; // 旅行の支出（Trip.id）
+  accountId?: string; // 払った・入った口座・カード・電子マネー（Account.id。自分用・任意。2026-11-28。lib/accounts.ts）
+  toAccountId?: string; // 口座間の振替・カードの引き落とし：お金が入る先（Account.id。countAs=transfer と一緒に持つ）
   recurringDue?: string; // 一部の支払いのとき、どの支払日の分か（取り消しで別の回の払い分を巻き込まないため）
   recurringPartial?: boolean; // 固定費の「一部の支払い」として記録した（残りは、まだ払っていない。NEXT v21 X02）
   transferKind?: "card"; // 収支に数えない記録のうち「カード引き落とし」のとき（残高の目安に使う。NEXT v21 X05。lib/balance.ts）
@@ -248,6 +250,28 @@ export interface Note {
   updatedAt: string;
 }
 
+/**
+ * 口座・カード・電子マネー（自分用。2026-11-28。lib/accounts.ts）。
+ * 残高の目安＝照合した残高（baseBalance・baseDate）＋その日より後の記録。カードは使った額を「引き落とし待ち」として数える
+ */
+export interface Account {
+  id: string;
+  name: string;
+  kind: "bank" | "card" | "emoney" | "cash";
+  /** カードの締め日・引き落とし日（1〜31。月末を超える日は月末。カード以外は null） */
+  closingDay: number | null;
+  payDay: number | null;
+  /** 照合した残高（カードは、その日の引き落とし待ちの額）と、その日（"" = 未照合） */
+  baseBalance: number | null;
+  baseDate: string;
+  /** 照合した時刻（同じ日のあとから入れた記録を数えるため。任意） */
+  baseAt?: string;
+  note: string;
+  archived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** 欲しいもの（自分用。2026-11-28）。買ったら「買った」にする（支出は家計簿に記録する。二重に数えない） */
 export interface Wish {
   id: string;
@@ -419,11 +443,12 @@ export interface Collections {
   studyLogs: StudyLog[];
   goals: Goal[];
   wishes: Wish[];
+  accounts: Account[];
 }
 
 export type CollectionKey = keyof Collections;
 export type ItemOf<K extends CollectionKey> = Collections[K][number];
-export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals", "wishes"];
+export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals", "wishes", "accounts"];
 
 export interface AppData extends Collections {
   schemaVersion: 2;

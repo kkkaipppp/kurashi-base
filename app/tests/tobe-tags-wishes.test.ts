@@ -34,6 +34,6 @@ describe("保存の形：タグ・欲しいもの", () => {
     const bad = JSON.parse(JSON.stringify(d));
     bad.notes[0].tags = [""];
     expect(validateAppData(bad).ok).toBe(false);
-    expect(COLLECTION_KEYS.at(-1)).toBe("wishes");
+    expect(COLLECTION_KEYS).toContain("wishes");
   });
 });

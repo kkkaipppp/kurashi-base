@@ -39,6 +39,8 @@ const UpcomingPayments = PERSONAL_MONEY ? dynamic(() => import("@/components/Mon
 const SpecialBudgetCard = PERSONAL_MONEY ? dynamic(() => import("@/components/SpecialBudget").then((m) => m.SpecialBudgetCard)) : ({ month: _month }: { month?: string }) => (void _month, null);
 // 支払方法ごとの支出（自分用。To-Be 02 家計簿「口座/カード/電子マネー」。2026-11-28）
 const PayBreakdown = PERSONAL_MONEY ? dynamic(() => import("@/components/PayBreakdown").then((m) => m.PayBreakdown)) : () => null;
+// 口座ごとの残高の目安とカードの次の引き落とし（自分用。2026-11-28）
+const AccountsSummary = PERSONAL_MONEY ? dynamic(() => import("@/components/AccountsSummary").then((m) => m.AccountsSummary)) : () => null;
 // 立替で返してもらう分（自分用。To-Be 2026-11-28）
 const OwedAdvances = PERSONAL_MONEY ? dynamic(() => import("@/components/OwedAdvances").then((m) => m.OwedAdvances)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
@@ -174,7 +176,9 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
           <MoneySummary month={month} />
           {view === "pay" && <UpcomingPayments />}
           {view === "pay" && <OwedAdvances />}
-          {view === "pay" && <CashBalanceCard month={month} />}
+          {view === "pay" && <AccountsSummary />}
+          {/* 口座を合わせて使っているときは、口座ごとの目安だけを出す（数え方の違う目安を2つ並べない。点検 中3） */}
+          {view === "pay" && !(data.accounts ?? []).some((a) => !a.archived && a.baseDate) && <CashBalanceCard month={month} />}
           {view === "list" && (
             <>
               <MonthTxList month={month} />

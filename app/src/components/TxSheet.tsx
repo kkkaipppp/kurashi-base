@@ -61,6 +61,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         ...(editing.claim ? { claim: true } : {}),
         ...(editing.template ? { template: true } : {}),
         ...(editing.special ? { special: true } : {}),
+        accountId: editing.accountId ?? "",
+        toAccountId: editing.toAccountId ?? "",
         categoryId: editing.categoryId,
         merchant: editing.merchant,
         paymentMethod: editing.paymentMethod,
@@ -297,6 +299,9 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         ...(claim ? { claim: true as const } : editing?.claim ? { claim: undefined } : {}),
         // 入力のひな形（自分用だけ触る）
         ...(EXTRA && draft.template ? { template: true as const } : EXTRA && editing?.template ? { template: undefined } : {}),
+        // 口座・カード（自分用だけ触る。消えた口座は持たない）
+        ...(EXTRA ? { accountId: draft.accountId && data.accounts.some((a) => a.id === draft.accountId) ? draft.accountId : undefined } : {}),
+        ...(EXTRA ? { toAccountId: !claim && (draft.countAs === "transfer" || draft.countAs === "transfer-card") && draft.toAccountId && draft.toAccountId !== draft.accountId && data.accounts.some((a) => a.id === draft.toAccountId) ? draft.toAccountId : undefined } : {}),
         // 特別支出（自分用だけ触る。経費・収入には付けない）
         ...(EXTRA && draft.type === "expense" && !claim && draft.special ? { special: true as const } : EXTRA && editing?.special ? { special: undefined } : {}),
         categoryId: draft.categoryId,
@@ -620,6 +625,30 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
             <input type="checkbox" checked={!!draft.template} onChange={(e) => set("template", e.target.checked)} className="size-5 accent-[var(--brand)]" />
           </label>
         )}
+        {EXTRA && data.accounts.some((a) => !a.archived) && (
+          <Field label={draft.countAs === "transfer" || draft.countAs === "transfer-card" ? "出る口座・カード" : draft.type === "income" ? "入った口座" : "払った口座・カード"} optional htmlFor="tx-acct">
+            <select id="tx-acct" value={draft.accountId ?? ""} onChange={(e) => set("accountId", e.target.value)} className={inputCls}>
+              <option value="">指定しない</option>
+              {data.accounts.filter((a) => !a.archived || a.id === draft.accountId).map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
+        {EXTRA && data.accounts.some((a) => !a.archived) && (draft.countAs === "transfer" || draft.countAs === "transfer-card") && !draft.claim && (
+          <Field label="入る口座・カード（振替・引き落とし）" optional htmlFor="tx-to" hint="カードの引き落としなら、入る先にカードを選びます（カードの引き落とし待ちが減ります）">
+            <select id="tx-to" value={draft.toAccountId ?? ""} onChange={(e) => set("toAccountId", e.target.value)} className={inputCls}>
+              <option value="">指定しない</option>
+              {data.accounts.filter((a) => (!a.archived || a.id === draft.toAccountId) && a.id !== draft.accountId).map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
           <textarea id="tx-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
         </Field>
@@ -773,6 +802,7 @@ function SettleBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [amt, setAmt] = useState(String(left));
   const [date, setDate] = useState(todayStr());
+  const [acct, setAcct] = useState(tx.accountId ?? "");
   const lockRef = useRef(false);
   if (left <= 0) return <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">立替は全部返してもらいました（{formatYen(got)}）。</p>;
   if (!open)
@@ -793,17 +823,17 @@ function SettleBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
     try {
       const p = parseAmount(amt);
       const n = p.ok ? p.value : NaN;
-      const pre = applySettlement(data, tx.id, n, date, newId("tx"), new Date().toISOString());
+      const pre = applySettlement(data, tx.id, n, date, newId("tx"), new Date().toISOString(), acct || undefined);
       if (!pre.ok) return ui.toast(pre.error, "error");
       const ts = new Date().toISOString();
       const sid = newId("tx");
       // 保存の列の中で、最新のデータに対してもう一度確かめる（別のタブで精算したときに、二重に返してもらわない）
       const res = await store.commit(
         (d) => {
-          const x = applySettlement(d, tx.id, n, date, sid, ts);
+          const x = applySettlement(d, tx.id, n, date, sid, ts, acct || undefined);
           return x.ok ? x.next : d;
         },
-        { check: (d) => { const x = applySettlement(d, tx.id, n, date, sid, ts); return x.ok ? null : x.error; } },
+        { check: (d) => { const x = applySettlement(d, tx.id, n, date, sid, ts, acct || undefined); return x.ok ? null : x.error; } },
       );
       ui.toast(res.ok ? "返してもらった分を記録しました" : res.error, res.ok ? "ok" : "error");
       if (res.ok) onDone();
@@ -816,6 +846,16 @@ function SettleBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
       <p className="text-[13px] font-semibold">返してもらった額（残り {formatYen(left)} まで）</p>
       <input inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} className={inputCls} aria-label="返してもらった額" maxLength={14} />
       <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} aria-label="返してもらった日" />
+      {data.accounts.some((a) => !a.archived) && (
+        <select value={acct} onChange={(e) => setAcct(e.target.value)} className={inputCls} aria-label="返してもらったお金が入った口座">
+          <option value="">口座を指定しない</option>
+          {data.accounts.filter((a) => !a.archived || a.id === acct).map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+      )}
       <p className="text-[12px] text-ink-3">収入には数えません（立替の分が戻っただけ）。精算の記録を消すと、返してもらう分が元に戻ります。</p>
       <div className="flex gap-2">
         <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>

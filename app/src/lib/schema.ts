@@ -36,6 +36,8 @@ export function migrate(raw: unknown): unknown {
   if (d.schemaVersion === 2 && d.plans === undefined) d = { ...d, plans: [] };
   // 2026-11-28：欲しいものの一覧（無ければ空で足す。今ある記録は変えない。足さないと、今の記録を「一部が見つかりません」で断ってしまう）
   if (d.schemaVersion === 2 && d.wishes === undefined) d = { ...d, wishes: [] };
+  // 2026-11-28：口座・カードの一覧（無ければ空で足す）
+  if (d.schemaVersion === 2 && d.accounts === undefined) d = { ...d, accounts: [] };
   return d;
 }
 
@@ -172,6 +174,7 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
       pausedAt: optional(isDate),
     },
   },
+  accounts: { label: "口座・カード", fields: { name: isStr, kind: oneOf("bank", "card", "emoney", "cash"), closingDay: (v) => v === null || (Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 31), payDay: (v) => v === null || (Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 31), baseBalance: (v) => v === null || Number.isInteger(v), baseDate: okDateOrBlank, baseAt: optional(isStr), note: isStr, archived: isBool } },
   wishes: { label: "欲しいもの", fields: { name: isStr, price: numOrNull, url: isHttpOrBlank, priority: oneOf("high", "mid", "low"), status: oneOf("want", "bought", "dropped"), note: isStr } },
 };
 
@@ -198,7 +201,7 @@ export function validateAppData(input: unknown): R {
       !isStr(t.date) || !isValidDateStr(t.date) || !isAmt(t.amount) || !isStr(t.categoryId) ||
       !isStr(t.merchant) || !isStr(t.paymentMethod) || !isStr(t.note) || !isStr(t.createdAt) ||
       // 100点化で足した任意の項目（無くてもよい。あれば形を確かめる）
-      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross) || !optional(isStr)(t.planId) || !optional(isAmt)(t.advanceGross) || !optional(isStr)(t.settles) || !optional((v) => v === true)(t.claim) || !optional((v) => v === true)(t.template) || !optional((v) => v === true)(t.special)
+      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross) || !optional(isStr)(t.planId) || !optional(isAmt)(t.advanceGross) || !optional(isStr)(t.settles) || !optional((v) => v === true)(t.claim) || !optional((v) => v === true)(t.template) || !optional((v) => v === true)(t.special) || !optional(isStr)(t.accountId) || !optional(isStr)(t.toAccountId)
     )
       return { ok: false, error: "支出・収入のデータが壊れています" };
     if (ids.has(t.id)) return { ok: false, error: "支出・収入の記録が二重に入っています" };

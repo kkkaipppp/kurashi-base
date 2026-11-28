@@ -48,6 +48,7 @@ export const COUNT_LABELS: Record<keyof Counts, string> = {
   studyLogs: "勉強の記録",
   goals: "目標",
   wishes: "欲しいもの",
+  accounts: "口座・カード",
 };
 
 export function buildBackup(data: AppData, nowIso: string = new Date().toISOString()): BackupFile {

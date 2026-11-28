@@ -28,6 +28,10 @@ export interface TxDraft {
   template?: boolean;
   /** 特別支出 */
   special?: boolean;
+  /** 払った・入った口座・カード（"" = 指定なし） */
+  accountId?: string;
+  /** 振替・引き落としで入る先 */
+  toAccountId?: string;
 }
 
 export function validateTx(
