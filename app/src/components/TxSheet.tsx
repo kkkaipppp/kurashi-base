@@ -30,6 +30,8 @@ export type TxSheetRequest =
       recurringId?: string;
       title?: string;
       previewUrl?: string; // 画像取込時：見ながら入力するためのプレビュー
+      /** 貼り付けから始めた1回きりの入力（自分用）：書きかけの控えを読まない・上書きしない */
+      oneShot?: boolean;
       onSaved?: () => void;
     };
 
@@ -101,7 +103,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   // 下書きの控え（100点化の指示 B）。新しい入力は targetId=null、編集は記録の ID。
   // 画像・固定費からの記録は1回きりなので控えない
   const draftTarget = editing?.id ?? null;
-  const keepDraft = req.mode === "edit" || (!req.previewUrl && !req.recurringId);
+  const keepDraft = req.mode === "edit" || (!req.previewUrl && !req.recurringId && !req.oneShot);
   const [pending] = useState(() => (keepDraft ? loadSheetDraft<TxDraft>("tx", draftTarget) : null));
   const [resumeAsked, setResumeAsked] = useState(false);
   const resumed = useRef(false);

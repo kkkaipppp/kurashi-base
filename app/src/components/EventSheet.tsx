@@ -25,7 +25,7 @@ import { EVENT_KINDS, type CalendarEvent, type CheckItem, type EventKind } from 
 export type EventSheetRequest =
   | { mode: "view"; id: string; /** どの日の回を見ているか（繰り返しの予定の完了に使う） */ day?: string } // 予定の詳細（押したときに開く）
   | { mode: "edit"; id: string }
-  | { mode: "new"; date?: string; tripId?: string; /** 複製：この予定の内容を引き継いで新しい予定にする（完了・実績は引き継がない。NEXT v21 CAL:C05） */ copyOf?: string };
+  | { mode: "new"; date?: string; tripId?: string; /** 複製：この予定の内容を引き継いで新しい予定にする（完了・実績は引き継がない。NEXT v21 CAL:C05） */ copyOf?: string; /** 貼り付けた文章から読んだ候補（自分用。入力の初めの値に入れるだけ。保存は本人） */ prefill?: { title: string; time?: string; url?: string; note?: string } };
 
 /** 詳細（場所・URL・持ち物など）の入力。予定名と日時だけで保存でき、あとから足せる */
 interface Extra {
@@ -284,6 +284,8 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
   const trips = data.trips ?? [];
   // 複製のとき：元の予定（内容だけ引き継ぐ。新しい ID で保存される）
   const copySrc = !editing && newReq?.copyOf ? data.events.find((e) => e.id === newReq.copyOf) : undefined;
+  // 複製・貼り付けからのときは、下書きの控えを使わない・上書きしない（空の新しい入力の下書きを壊さない）
+  const noDraft = !!copySrc || (!editing && !!newReq?.prefill);
 
   const initial = useMemo<EventDraft>(() => {
     if (copySrc) {
@@ -296,12 +298,19 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     }
     const trip = newReq?.tripId ? trips.find((t) => t.id === newReq.tripId) : undefined;
     const d = newReq?.date ?? trip?.startDate ?? todayStr();
+    const pf = newReq?.prefill;
+    if (pf) {
+      // 時刻が読めたら、その時刻から1時間。読めなければ終日（時刻を勝手に決めない）
+      const t = pf.time && /^([01]\d|2[0-3]):[0-5]\d$/.test(pf.time) ? pf.time : null;
+      const end = t ? `${String(Math.min(23, Number(t.slice(0, 2)) + 1)).padStart(2, "0")}:${t.slice(3)}` : "11:00";
+      return { title: Array.from(pf.title).slice(0, 100).join(""), startDate: d, endDate: d, allDay: !t, startTime: t ?? "10:00", endTime: t && end > t ? end : t ? "23:59" : end, note: pf.note ?? "", repeat: "none", repeatUntil: "" };
+    }
     return { title: "", startDate: d, endDate: d, allDay: false, startTime: "10:00", endTime: "11:00", note: "", repeat: "none", repeatUntil: "" };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // 持ち物は、複製のときは未チェックに戻す
   const initialExtra = useMemo(() => {
-    if (!copySrc) return extraOf(editing, newReq?.tripId ?? "");
+    if (!copySrc) return { ...extraOf(editing, newReq?.tripId ?? ""), ...(newReq?.prefill?.url ? { url: newReq.prefill.url } : {}) };
     const x = extraOf(copySrc);
     return { ...x, items: x.items.map((i) => ({ ...i, id: newId("it"), done: false })) };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -322,12 +331,12 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
   type Saved = { draft: EventDraft; extra: Extra; newItem?: string };
   const draftTarget = editing?.id ?? null;
   // 複製のときは、下書きの控えを使わない・上書きしない（空の新しい入力の下書きを壊さない）
-  const [pending] = useState(() => (copySrc ? null : loadSheetDraft<Saved>("event", draftTarget)));
+  const [pending] = useState(() => (noDraft ? null : loadSheetDraft<Saved>("event", draftTarget)));
   const [resumeAsked, setResumeAsked] = useState(false);
   const resumed = useRef(false);
   const [draftSaveFailed, setDraftSaveFailed] = useState(false);
   useEffect(() => {
-    if (saved.current || copySrc) return;
+    if (saved.current || noDraft) return;
     // 前の下書きに答えるまでは控えない（答える前に打った分で、前の下書きを消さない）
     if (pending && !resumeAsked) return;
      
@@ -392,7 +401,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
     if (busy) return;
     if (dirty && !(await ui.confirm({ title: "入力内容を破棄しますか？", body: "保存していない変更は失われます。", ok: "破棄する", danger: true })))
       return;
-    if ((dirty || resumed.current) && !(pending && !resumeAsked) && !copySrc) clearSheetDraft("event", draftTarget);
+    if ((dirty || resumed.current) && !(pending && !resumeAsked) && !noDraft) clearSheetDraft("event", draftTarget);
     onClose();
   };
 
@@ -454,7 +463,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
       saved.current = true;
       // 保存がうまくいったときだけ下書きを消す（前の下書きに答えていないときは、それは残す）
       // 複製のときは、通常の「新しい予定」の下書きを消さない（点検役の指摘）
-      if (!copySrc && (!(pending && !resumeAsked) || asNew)) clearSheetDraft("event", draftTarget);
+      if (!noDraft && (!(pending && !resumeAsked) || asNew)) clearSheetDraft("event", draftTarget);
       ui.toast(asNew ? "新しい予定として保存しました" : editing ? "保存しました" : "予定を追加しました");
       onClose();
     } finally {

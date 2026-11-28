@@ -199,8 +199,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
           key={add.key}
           date={add.date}
           onClose={() => setAdd(null)}
-          openTx={(type, date, initial) => setTx({ mode: "new", type, date, ...(initial ? { initial } : {}), key: ++seq.current })}
-          openEvent={(date) => setEv({ mode: "new", date, key: ++seq.current })}
+          openTx={(type, date, initial, oneShot) => setTx({ mode: "new", type, date, ...(initial ? { initial } : {}), ...(oneShot ? { oneShot } : {}), key: ++seq.current })}
+          openEvent={(date, prefill) => setEv({ mode: "new", date, ...(prefill ? { prefill } : {}), key: ++seq.current })}
         />
       )}
       {add && !PersonalAddSheet && (

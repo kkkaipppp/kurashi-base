@@ -220,8 +220,10 @@ describe("予定の複製（自分用。CAL:C05）", () => {
     expect(s()).toContain("{IS_PERSONAL && (");
   });
   it("複製のときは、書きかけの控えを使わず、上書きもしない（空の新しい入力の書きかけを壊さない）", () => {
-    expect(s()).toContain("copySrc ? null : loadSheetDraft");
-    expect(s()).toContain("if (saved.current || copySrc) return;");
+    // 複製（と、貼り付けからの入力）は noDraft にまとめた（To-Be 段階2 ＋）
+    expect(s()).toContain("const noDraft = !!copySrc ||");
+    expect(s()).toContain("noDraft ? null : loadSheetDraft");
+    expect(s()).toContain("if (saved.current || noDraft) return;");
   });
 });
 
@@ -282,8 +284,8 @@ describe("点検の直し（第2回）", () => {
   });
   it("予定の複製では、通常の「新しい予定」の書きかけを消さない。投資への一括変更は、確認の文に数え方の変化を書く", () => {
     const ev = src("components/EventSheet.tsx");
-    expect(ev).toContain("&& !copySrc) clearSheetDraft(");
-    expect(ev).toContain("if (!copySrc && (!(pending && !resumeAsked) || asNew)) clearSheetDraft(");
+    expect(ev).toContain("&& !noDraft) clearSheetDraft(");
+    expect(ev).toContain("if (!noDraft && (!(pending && !resumeAsked) || asNew)) clearSheetDraft(");
     expect(src("app/inbox/page.tsx")).toContain("ホームの「使った額」が変わります"); // 言葉を直した（2026-11-25 画面の言葉の見直し）
   });
 });

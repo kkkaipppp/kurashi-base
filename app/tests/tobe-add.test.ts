@@ -36,7 +36,8 @@ describe("追加の「前の記録から」", () => {
     expect(from).toContain("openTx(t.type, date, {");
     expect(from).not.toMatch(/store\.|commit|addTx|saveTx/);
     const ctx = readFileSync("src/components/UIContext.tsx", "utf8");
-    expect(ctx).toContain("openTx={(type, date, initial) => setTx({ mode: \"new\", type, date, ...(initial ? { initial } : {}), key: ++seq.current })}");
+    // 貼り付けからは oneShot（書きかけの控えを使わない）を足した。保存はしない（入力のシートを開くだけ）
+    expect(ctx).toContain("openTx={(type, date, initial, oneShot) => setTx({ mode: \"new\", type, date, ...(initial ? { initial } : {}), ...(oneShot ? { oneShot } : {}), key: ++seq.current })}");
     expect(ctx).toContain("{add && !PersonalAddSheet && (");
   });
 });
