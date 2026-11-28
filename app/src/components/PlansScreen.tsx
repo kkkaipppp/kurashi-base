@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Button, Empty, Field, IconChevronL, IconChevronR, PageHeader, inputCls } from "@/components/ui";
+import { Button, Empty, Field, IconChevronR, PageHeader, inputCls } from "@/components/ui";
 import { useUI } from "@/components/UIContext";
 import { useData, useStore } from "@/lib/store";
 import { newId } from "@/lib/defaults";
@@ -117,7 +117,7 @@ function PlanCreate({ onDone }: { onDone: (id: string | null) => void }) {
   if (!type)
     return (
       <main className="space-y-4">
-        <PageHeader title="計画を作る" right={<Button variant="ghost" onClick={() => onDone(null)}>やめる</Button>} />
+        <PageHeader title="計画を作る" onBack={() => onDone(null)} minimal />
         <ul className="divide-y divide-line border-y border-line">
           {PLAN_TYPES.map((t) => (
             <li key={t.type}>
@@ -144,7 +144,7 @@ function PlanCreate({ onDone }: { onDone: (id: string | null) => void }) {
   };
   return (
     <main className="space-y-4">
-      <PageHeader title={PLAN_TYPE_LABEL[type]} right={<Button variant="ghost" onClick={() => setType(null)}>種類を選び直す</Button>} />
+      <PageHeader title={PLAN_TYPE_LABEL[type]} onBack={() => setType(null)} minimal />
       <Field label="計画の名前" htmlFor="plan-title" error={error ?? undefined}>
         <input id="plan-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={type === "gathering" ? "例：忘年会" : type === "trip" ? "例：京都旅行" : ""} className={inputCls} aria-invalid={!!error} maxLength={100} />
       </Field>
@@ -184,16 +184,8 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
 
   return (
     <main className="space-y-6">
-      <PageHeader
-        title={plan.title}
-        sub={<p className="text-[13px] text-ink-3">{PLAN_TYPE_LABEL[plan.type]}</p>}
-        right={
-          <Button variant="ghost" onClick={onBack} aria-label="計画の一覧に戻る">
-            <IconChevronL className="size-5" />
-            一覧
-          </Button>
-        }
-      />
+      {/* 戻るは見出しの左の1つだけ（押すと計画の一覧へ。2026-11-28 洗い出し 1） */}
+      <PageHeader title={plan.title} sub={<p className="truncate text-[13px] text-ink-3">{PLAN_TYPE_LABEL[plan.type]}</p>} onBack={onBack} minimal />
 
       <Field label="計画の名前" htmlFor="pl-title">
         <input

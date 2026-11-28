@@ -71,6 +71,8 @@ function SearchInner() {
   return (
     <main className="space-y-3">
       <PageHeader title="検索" />
+      {/* 自分用：入力欄と種類の絞り込みを見出しの下に固定（結果をスクロールしても直せる。2026-11-28 洗い出し 8） */}
+      <div className={process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? "sticky top-14 z-[9] -mx-4 space-y-2 bg-bg/95 px-4 pb-2 backdrop-blur" : "space-y-3"}>
       <div className="relative">
         <IconSearch className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-ink-3" />
         <input
@@ -83,11 +85,7 @@ function SearchInner() {
           className={`${inputCls} pl-10`}
         />
       </div>
-      <p className="px-1 text-[12px] text-ink-3">この端末の記録だけを探します。例：「スーパー 12月」と入れると、両方を含むものが出ます。数字だけを入れると、同じ金額の記録も出ます。</p>
-      {q.trim() === "" ? null : groups.length === 0 ? (
-        <Empty>「{q.trim()}」に合うものは見つかりません</Empty>
-      ) : (
-        <>
+      {q.trim() !== "" && groups.length > 0 && (
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="種類で絞り込む">
             {[{ kind: "", label: "すべて" }, ...allGroups.map((g) => ({ kind: g.kind as string, label: `${g.label} ${g.total}` }))].map((c) => (
               <button
@@ -101,6 +99,13 @@ function SearchInner() {
               </button>
             ))}
           </div>
+      )}
+      </div>
+      <p className="px-1 text-[12px] text-ink-3">この端末の記録だけを探します。例：「スーパー 12月」と入れると、両方を含むものが出ます。数字だけを入れると、同じ金額の記録も出ます。</p>
+      {q.trim() === "" ? null : groups.length === 0 ? (
+        <Empty>「{q.trim()}」に合うものは見つかりません</Empty>
+      ) : (
+        <>
           <p role="status" className="num px-1 text-[13px] font-semibold text-ink-2">{total}件</p>
           {groups.map((g) => {
             const showAll = open[g.kind];

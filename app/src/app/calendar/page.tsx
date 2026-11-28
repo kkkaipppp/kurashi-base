@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { IS_PERSONAL } from "@/lib/edition";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { dayFromSearch, searchWithDay } from "@/lib/searchState";
 import { deadlineDays, deadlinesOn } from "@/lib/deadlines";
@@ -69,6 +69,12 @@ function CalendarInner() {
   const initialDay = dayFromSearch(params.toString()) || today;
   const [month, setMonth] = useState(monthKey(initialDay));
   const [selected, setSelected] = useState(initialDay);
+  // 自分用：月の表で日を押したら、その日の予定とお金の所まで動かす（表の下に隠れて変化が見えなかった。2026-11-28 洗い出し 4）
+  const dayRef = useRef<HTMLElement>(null);
+  const pickDay = (d: string) => {
+    setSelected(d);
+    if (PERSONAL_BUILD) requestAnimationFrame(() => dayRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
   useEffect(() => {
     const next = searchWithDay(window.location.search, selected, today);
     if (next !== window.location.search) window.history.replaceState(window.history.state, "", `${window.location.pathname}${next}`);
@@ -264,7 +270,7 @@ function CalendarInner() {
                     <td key={d} className="h-px p-0 align-top">
                       <button
                         type="button"
-                        onClick={() => setSelected(d)}
+                        onClick={() => pickDay(d)}
                         aria-pressed={isSel}
                         aria-label={label}
                         className={`flex h-full min-h-[66px] w-full flex-col items-center rounded-xl pt-1 pb-1 transition ${
@@ -339,7 +345,7 @@ function CalendarInner() {
         )}
       </Card>
 
-      <section className="mt-4 space-y-3" aria-label="選んだ日の予定とお金">
+      <section ref={dayRef} className="mt-4 scroll-mt-4 space-y-3" aria-label="選んだ日の予定とお金">
         <div className="space-y-2">
           <h2 className="text-[17px] font-bold">
             {formatDateJa(selected, true)}

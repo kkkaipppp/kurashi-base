@@ -57,13 +57,18 @@ export const GROUPS: { title: string; items: MenuItem[] }[] = [
       { href: "/settings", label: "設定", desc: "予算・表示・カテゴリ・データの削除" },
     ],
   },
-  {
-    title: "準備中（まだ使えません）",
-    items: [
-      { href: "/share", label: "共有", desc: "家族と一緒に使う", soon: true },
-      { href: "/ai", label: "AIに相談", desc: "記録をもとに相談する", soon: true },
-      { href: "/integrations", label: "外部サービス連携", desc: "銀行・カレンダーなどとつなぐ", soon: true },
-      ...(IS_PERSONAL ? [] : [{ href: "/widget", label: "ウィジェット", desc: "ホーム画面に置く場合の表示を確認", soon: true }]),
-    ],
-  },
+  // 準備中のまとまりは公開版だけ（自分用は To-Be 06 A13「未対応は通常の画面に出さない」。URL で直接開くと「まだ使えません」の説明が出る。2026-11-28）
+  ...(IS_PERSONAL
+    ? []
+    : [
+        {
+          title: "準備中（まだ使えません）",
+          items: [
+            { href: "/share", label: "共有", desc: "家族と一緒に使う", soon: true },
+            { href: "/ai", label: "AIに相談", desc: "記録をもとに相談する", soon: true },
+            { href: "/integrations", label: "外部サービス連携", desc: "銀行・カレンダーなどとつなぐ", soon: true },
+            { href: "/widget", label: "ウィジェット", desc: "ホーム画面に置く場合の表示を確認", soon: true },
+          ],
+        },
+      ]),
 ];

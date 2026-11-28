@@ -135,6 +135,8 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
     <Wrap className="space-y-4">
       {!embedded && <PageHeader title={TITLE} />}
 
+      {/* 自分用：月の送りと「収支・予算・支払い」を見出しの下に固定（スクロールしても切り替えられる。2026-11-28 洗い出し 3） */}
+      <div className={PERSONAL_MONEY && !embedded ? "sticky top-14 z-[9] -mx-4 space-y-1 bg-bg/95 px-4 pb-2 backdrop-blur" : ""}>
       <Card className="py-2">
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => setMonth(addMonthsToKey(month, -1))} aria-label="前の月" className="inline-flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
@@ -146,10 +148,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
           </button>
         </div>
       </Card>
-
       {PERSONAL_MONEY && (
-        <>
-          <MoneySummary month={month} />
           <div className="grid grid-cols-3 gap-1 rounded-lg bg-surface-2 p-1" role="radiogroup" aria-label="表示">
             {(
               [
@@ -163,6 +162,12 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
               </button>
             ))}
           </div>
+      )}
+      </div>
+
+      {PERSONAL_MONEY && (
+        <>
+          <MoneySummary month={month} />
           {view === "pay" && <UpcomingPayments />}
           {view === "pay" && <OwedAdvances />}
           {view === "pay" && <CashBalanceCard month={month} />}

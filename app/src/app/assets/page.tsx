@@ -88,8 +88,9 @@ const config: CollectionConfig<"assets"> = {
         {PERSONAL_BUILD && trend.length >= 2 && (
           <Card className="py-3">
             <h2 className="text-[13px] font-semibold text-ink-2">純資産の推移（月末。評価額を直したときの記録から）</h2>
-            <ul className="mt-1 divide-y divide-line text-[14px]">
-              {trend.map((p, i) => {
+            {/* 直近3か月だけ出し、残りはたたむ（資産の一覧が画面の外に押し出されないように。2026-11-28 洗い出し 11） */}
+            {(() => {
+              const row = (p: (typeof trend)[number], i: number) => {
                 const diff = i > 0 ? p.net - trend[i - 1].net : null;
                 return (
                   <li key={p.month} className="flex min-h-10 items-center justify-between gap-3">
@@ -100,8 +101,20 @@ const config: CollectionConfig<"assets"> = {
                     </span>
                   </li>
                 );
-              })}
-            </ul>
+              };
+              const cut = Math.max(0, trend.length - 3);
+              return (
+                <>
+                  {cut > 0 && (
+                    <details className="mt-1 text-[14px]">
+                      <summary className="flex min-h-11 cursor-pointer items-center text-[13px] font-semibold text-ink-3">前の{cut}か月を見る</summary>
+                      <ul className="divide-y divide-line">{trend.slice(0, cut).map((p, i) => row(p, i))}</ul>
+                    </details>
+                  )}
+                  <ul className="mt-1 divide-y divide-line text-[14px]">{trend.slice(cut).map((p, i) => row(p, i + cut))}</ul>
+                </>
+              );
+            })()}
             <p className="mt-1 text-[12px] text-ink-3">その月末に評価額が分かる記録だけで計算しています（評価額を直すたびに、前の値が残ります）。</p>
           </Card>
         )}

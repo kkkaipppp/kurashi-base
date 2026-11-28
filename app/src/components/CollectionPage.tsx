@@ -158,7 +158,16 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
         </Button>
       </div>
       {blocked && <p className="text-[13px] text-ink-3">{blocked}</p>}
-      {config.intro && <div className="text-[13px] text-ink-3">{config.intro}</div>}
+      {/* 自分用：説明は「この画面について」にたたむ（毎回全文を出さない。2026-11-28 洗い出し 13・14） */}
+      {config.intro &&
+        (process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? (
+          <details className="text-[13px] text-ink-3">
+            <summary className="flex min-h-11 cursor-pointer items-center font-semibold">この画面について</summary>
+            <div className="pb-1">{config.intro}</div>
+          </details>
+        ) : (
+          <div className="text-[13px] text-ink-3">{config.intro}</div>
+        ))}
       {config.header?.({ data, today, list })}
       {list.length === 0 ? (
         <Empty action={!blocked && <Button onClick={add}>{config.addLabel ?? `${config.noun}を追加`}</Button>}>{config.emptyText}</Empty>

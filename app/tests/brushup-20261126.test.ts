@@ -11,7 +11,8 @@ describe("磨き込み：高", () => {
     // o31 F003：メニューの一覧は app/menu/page.tsx から lib/menuGroups.ts に移した（中身は同じ。見る場所だけ変えた）
     const menu = code("lib/menuGroups.ts");
     expect(menu).toMatch(/IS_PERSONAL\s*\?\s*\{ href: "\/import", label: "レシートを見て入力", desc: "レシートの写真から/);
-    expect(menu).toContain('...(IS_PERSONAL ? [] : [{ href: "/widget"');
+    // 2026-11-28：自分用では「準備中」のまとまりごと出さない（To-Be A13）。ウィジェットは公開版の準備中のまとまりの中だけ
+    expect(menu).toMatch(/\.\.\.\(IS_PERSONAL\s*\?\s*\[\]\s*:\s*\[[\s\S]*?title: "準備中（まだ使えません）"[\s\S]*?href: "\/widget"/);
     const widget = code("app/widget/page.tsx");
     expect(widget).toMatch(/IS_PERSONAL \? \(\s*<section[\s\S]*?ホーム画面を長押し/);
     expect(widget).toContain("まだ対応していません"); // 公開版の文

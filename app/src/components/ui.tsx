@@ -104,20 +104,26 @@ export function focusFirstInvalid() {
 export const inputCls =
   "block w-full min-w-0 max-w-full min-h-11 rounded-xl border border-line bg-surface px-3 py-2 text-ink placeholder:text-ink-3 aria-[invalid=true]:border-danger aria-[invalid=true]:bg-expense-soft/40";
 
-export function PageHeader({ title, right, sub }: { title: string; right?: ReactNode; sub?: ReactNode }) {
+/**
+ * 画面の見出し（上に固定）。自分用は左に「戻る」。
+ * onBack：画面の中で開いた詳細（計画・旅行など）では、「戻る」で一覧に戻す（URL を戻すと画面ごと抜けるため。2026-11-28 洗い出し 1）。
+ * minimal：詳細では検索・メニューのボタンを出さない（題名の幅を空ける）
+ */
+export function PageHeader({ title, right, sub, onBack, minimal }: { title: string; right?: ReactNode; sub?: ReactNode; onBack?: () => void; minimal?: boolean }) {
   return (
     <header className="sticky top-0 z-10 -mx-4 mb-3 flex min-h-14 items-center justify-between gap-2 bg-bg/95 px-4 pt-2 backdrop-blur">
       <div className="flex min-w-0 items-center gap-1">
-        {process.env.NEXT_PUBLIC_KB_EDITION === "personal" && <BackButton />}
+        {process.env.NEXT_PUBLIC_KB_EDITION === "personal" && <BackButton onBack={onBack} />}
         <div className="min-w-0">
-          <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+          {/* 題名は1行で切る（長い名前で見出しの高さが変わらないように） */}
+          <h1 className={`text-xl font-bold tracking-tight ${IS_PERSONAL ? "truncate" : ""}`}>{title}</h1>
           {sub}
         </div>
       </div>
       {IS_PERSONAL ? (
         <div className="flex shrink-0 items-center gap-1">
           {right}
-          <GlobalActions />
+          {!minimal && <GlobalActions />}
         </div>
       ) : (
         right
@@ -133,14 +139,14 @@ export const TOP_PATHS = ["/", "/calendar", "/report", "/menu"];
  * 自分用：見出しの左の「戻る」（平尾さん 2026-11-28「一個前に行くページの戻るボタンが欲しい」）。
  * 一つ前の画面に戻る。アプリを開いてすぐで前が無いときは、メニューへ。下のボタンで開く画面には出さない
  */
-export function BackButton() {
+export function BackButton({ onBack }: { onBack?: () => void } = {}) {
   const path = usePathname();
   const router = useRouter();
-  if (TOP_PATHS.includes(path)) return null;
+  if (!onBack && TOP_PATHS.includes(path)) return null;
   return (
     <button
       type="button"
-      onClick={() => (typeof window !== "undefined" && window.history.length > 1 ? router.back() : router.push("/menu"))}
+      onClick={() => (onBack ? onBack() : typeof window !== "undefined" && window.history.length > 1 ? router.back() : router.push("/menu"))}
       aria-label="前の画面に戻る"
       className="-ml-2 inline-flex min-h-11 shrink-0 items-center rounded-lg pr-1 text-[15px] font-semibold text-brand hover:bg-surface-2"
     >

@@ -140,55 +140,9 @@ function TripDetail({ trip, onBack, onEdit, onOpenTrip }: { trip: Trip; onBack: 
   // 前の作り（メモに「旅行：名前」）で入れた支出は、候補として出して、本人が「つなぐ」を押したときだけつなぐ
   const memoCands = IS_PERSONAL ? tripMemoCandidates(data.transactions, trip) : [];
 
-  return (
+  // 調べる・コピー（自分用はたたむ。2026-11-28 洗い出し 2：上に積みすぎて行程が画面の外に出た）
+  const tools = (
     <>
-      <div className="flex items-center gap-1 pt-1">
-        <button type="button" onClick={onBack} className="inline-flex min-h-11 items-center rounded-xl pr-2 text-[14px] font-semibold text-brand">
-          <IconChevronL className="size-4" />
-          旅行の一覧
-        </button>
-      </div>
-      <Card>
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="text-[20px] leading-snug font-bold break-words">{trip.title}</h1>
-            <p className="text-[14px] text-ink-2">
-              {formatDateJa(trip.startDate, true)}〜{formatDateJa(trip.endDate)}（{days.length}日間）
-            </p>
-            {trip.destination && <p className="text-[14px] text-ink-2">行き先：{trip.destination}</p>}
-          </div>
-          <Button variant="secondary" onClick={onEdit} className="min-h-11 shrink-0 px-3 text-[14px]">
-            編集
-          </Button>
-        </div>
-        {(trip.budget != null || costTotal > 0) && (
-          <p className="num mt-2 text-[13px] text-ink-2">
-            {trip.budget != null && <>予算 {formatYen(trip.budget)}　</>}
-            {costTotal > 0 && <>行程の費用の目安 {formatYen(costTotal)}</>}
-          </p>
-        )}
-        {IS_PERSONAL && (linkedTx.length > 0 || trip.budget != null) && (
-          <p className="num mt-1 text-[13px] font-semibold text-ink-2">
-            記録した支出 {formatYen(spentTotal)}
-            {trip.budget != null && <span className={spentTotal > trip.budget ? "text-danger" : ""}>（予算の残り {formatYen(trip.budget - spentTotal)}）</span>}
-          </p>
-        )}
-        {/* 旅行の支出をすぐ記録（レビュー o1 の P17）。公開版はメモに旅行の名前を入れるだけ、自分用は旅行の ID でつなぐ */}
-        <button
-          type="button"
-          onClick={() =>
-            ui.openTx({
-              mode: "new",
-              type: "expense",
-              date: today >= trip.startDate && today <= trip.endDate ? today : trip.startDate,
-              initial: IS_PERSONAL ? { tripId: trip.id } : { note: `旅行：${trip.title}` },
-            })
-          }
-          className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-soft text-[14px] font-semibold text-brand"
-        >
-          ＋ この旅行の支出を追加
-        </button>
-        {trip.note && <p className="mt-2 text-[14px] whitespace-pre-wrap break-words">{trip.note}</p>}
         {TripCopy && (
           <>
             <button type="button" onClick={() => setCopying(true)} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl border border-line text-[14px] font-semibold text-ink-2">
@@ -226,6 +180,86 @@ function TripDetail({ trip, onBack, onEdit, onOpenTrip }: { trip: Trip; onBack: 
           </div>
           <p className="text-[12px] text-ink-3">Google の検索結果が開きます。</p>
         </div>
+    </>
+  );
+  return (
+    <>
+      {PERSONAL_BUILD ? (
+        // 自分用：見出しを上に固定（題名・日程・編集）。戻るは見出しの左の1つ（旅行の一覧へ）
+        <PageHeader
+          title={trip.title}
+          sub={
+            <p className="truncate text-[13px] text-ink-2">
+              {formatDateJa(trip.startDate, true)}〜{formatDateJa(trip.endDate)}（{days.length}日間）{trip.destination ? `・${trip.destination}` : ""}
+            </p>
+          }
+          right={
+            <Button variant="secondary" onClick={onEdit} className="min-h-11 shrink-0 px-3 text-[14px]">
+              編集
+            </Button>
+          }
+          onBack={onBack}
+          minimal
+        />
+      ) : (
+        <div className="flex items-center gap-1 pt-1">
+          <button type="button" onClick={onBack} className="inline-flex min-h-11 items-center rounded-xl pr-2 text-[14px] font-semibold text-brand">
+            <IconChevronL className="size-4" />
+            旅行の一覧
+          </button>
+        </div>
+      )}
+      <Card>
+        {!PERSONAL_BUILD && (
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-[20px] leading-snug font-bold break-words">{trip.title}</h1>
+            <p className="text-[14px] text-ink-2">
+              {formatDateJa(trip.startDate, true)}〜{formatDateJa(trip.endDate)}（{days.length}日間）
+            </p>
+            {trip.destination && <p className="text-[14px] text-ink-2">行き先：{trip.destination}</p>}
+          </div>
+          <Button variant="secondary" onClick={onEdit} className="min-h-11 shrink-0 px-3 text-[14px]">
+            編集
+          </Button>
+        </div>
+        )}
+        {(trip.budget != null || costTotal > 0) && (
+          <p className="num mt-2 text-[13px] text-ink-2">
+            {trip.budget != null && <>予算 {formatYen(trip.budget)}　</>}
+            {costTotal > 0 && <>行程の費用の目安 {formatYen(costTotal)}</>}
+          </p>
+        )}
+        {IS_PERSONAL && (linkedTx.length > 0 || trip.budget != null) && (
+          <p className="num mt-1 text-[13px] font-semibold text-ink-2">
+            記録した支出 {formatYen(spentTotal)}
+            {trip.budget != null && <span className={spentTotal > trip.budget ? "text-danger" : ""}>（予算の残り {formatYen(trip.budget - spentTotal)}）</span>}
+          </p>
+        )}
+        {/* 旅行の支出をすぐ記録（レビュー o1 の P17）。公開版はメモに旅行の名前を入れるだけ、自分用は旅行の ID でつなぐ */}
+        <button
+          type="button"
+          onClick={() =>
+            ui.openTx({
+              mode: "new",
+              type: "expense",
+              date: today >= trip.startDate && today <= trip.endDate ? today : trip.startDate,
+              initial: IS_PERSONAL ? { tripId: trip.id } : { note: `旅行：${trip.title}` },
+            })
+          }
+          className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-soft text-[14px] font-semibold text-brand"
+        >
+          ＋ この旅行の支出を追加
+        </button>
+        {trip.note && <p className="mt-2 text-[14px] whitespace-pre-wrap break-words">{trip.note}</p>}
+        {PERSONAL_BUILD ? (
+          <details className="mt-2">
+            <summary className="flex min-h-11 cursor-pointer items-center text-[14px] font-semibold text-ink-2">調べる・この旅行を元に作る</summary>
+            {tools}
+          </details>
+        ) : (
+          tools
+        )}
       </Card>
 
       {IS_PERSONAL && (linkedTx.length > 0 || memoCands.length > 0) && <TripSpending trip={trip} linked={linkedTx} cands={memoCands} />}
