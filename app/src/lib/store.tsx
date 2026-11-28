@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { newId } from "./defaults";
+import { todayStr } from "./date";
 import { applyRecurringPayment, applyTxUpdate, mergeCategoryData, partialMark, revertPartialPayment, setTxTripData, unlinkTripFromTx } from "./dataOps";
 import { deleteTxWithRefunds, undoRefund } from "./refund";
 import { replaceEventEditableFields } from "./eventMerge";
@@ -22,7 +23,7 @@ export type { SaveResult };
 
 const ID_PREFIX: Record<CollectionKey, string> = {
   nisa: "nisa", notes: "note", tasks: "task", assets: "asset", contracts: "ct", health: "hl",
-  documents: "doc", studySubjects: "subj", studyLogs: "slog", goals: "goal",
+  documents: "doc", studySubjects: "subj", studyLogs: "slog", goals: "goal", wishes: "wish",
 };
 
 type Status = "loading" | "ready" | "corrupt" | "unavailable";
@@ -54,6 +55,8 @@ interface Store {
   updateRecurring: (id: string, r: RecurringInput, snapshot?: string) => P;
   deleteRecurring: (id: string) => P;
   setBudget: (monthly: number | null) => P;
+  /** 特別支出の年の予算（自分用） */
+  setYearlySpecial: (yearly: number | null) => P;
   setHomePref: (key: HomeToggle, v: boolean) => P;
   /** 自分用のホームのカードの並びと、隠したカード（100点化 E） */
   setHomeLayout: (order: string[], hidden: string[], flags: { nextRecurring: boolean; needsReview: boolean }) => P;
@@ -215,7 +218,13 @@ export function StoreProvider({ children, repo: repoProp }: { children: React.Re
       updateRecurring: (id, rc, snapshot) =>
         guarded((d) => d.recurring, id, snapshot, (d) => ({ ...d, recurring: d.recurring.map((x) => (x.id === id ? { ...x, ...rc, id, updatedAt: now() } : x)) })),
       deleteRecurring: (id) => commit((d) => ({ ...d, recurring: d.recurring.filter((x) => x.id !== id) })),
-      setBudget: (monthly) => commit((d) => ({ ...d, budget: { monthly } })),
+      // 月の予算を変えたら、変えた日と新しい額を履歴に残す（ほかの予算の項目は残す。2026-11-28）
+      setBudget: (monthly) =>
+        commit((d) => ({
+          ...d,
+          budget: { ...d.budget, monthly, ...(d.budget.monthly !== monthly ? { history: [...(d.budget.history ?? []), { at: todayStr(), monthly }].slice(-24) } : {}) },
+        })),
+      setYearlySpecial: (yearlySpecial) => commit((d) => ({ ...d, budget: { ...d.budget, yearlySpecial } })),
       setHomePref: (key, v) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, [key]: v } } })),
       setMenuHidden: (hrefs) => commit((d) => ({ ...d, prefs: { ...d.prefs, menuHidden: [...new Set(hrefs)] } })),
       setHomeLayout: (order, hidden, flags) => commit((d) => ({ ...d, prefs: { ...d.prefs, home: { ...d.prefs.home, ...flags, order: [...order], hidden: [...hidden] } } })),

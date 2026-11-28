@@ -19,6 +19,7 @@ export function hubCategories(): HubCategory[] {
     { href: "/trips", label: "旅行", count: (d) => (d.trips ?? []).filter((t) => t.endDate >= todayStr()).length },
     ...(FEATURES.lifeChange ? [{ href: "/life", label: "引っ越し・転職のお金" }] : []),
     ...(FEATURES.decide ? [{ href: "/decide", label: "買う前に確認" }] : []),
+    { href: "/wishes", label: "欲しいもの", count: (d) => (d.wishes ?? []).filter((w) => w.status === "want").length },
   ];
   return [
     { key: "plan", label: "計画", icon: "plan", items: plan },

@@ -42,7 +42,7 @@ export function applyRefund(d: AppData, txId: string, amount: number, date: stri
   if (!orig) return { ok: false, error: "元の記録が見つかりません" };
   if (orig.type !== "expense") return { ok: false, error: "返金にできるのは、支出の記録だけです" };
   if (orig.refundOf) return { ok: false, error: "返金の記録を、さらに返金にはできません" };
-  if (typeof orig.advanceGross === "number") return { ok: false, error: "この記録は返金にできません" }; // 立替（lib/advance.ts）は返金と重ねない
+  if (typeof orig.advanceGross === "number" || orig.claim) return { ok: false, error: "この記録は返金にできません" }; // 立替（lib/advance.ts）は返金と重ねない
   // 収支に数えない記録は返金にできない（すでに全額返金したものは、取り消してから）
   if (isMoveOnly(orig) && orig.refundGross === undefined) return { ok: false, error: "収支に数えない記録（カードの引き落とし・口座間の移動など）は、返金にできません" };
   const gross = orig.refundGross ?? orig.amount;

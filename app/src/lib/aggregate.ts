@@ -49,6 +49,12 @@ export function occursOn(e: CalendarEvent, date: string): boolean {
 }
 
 /** その日に掛かる予定（日跨ぎ・繰り返し含む）を、終日→開始時刻順で返す */
+/** 予定の表示名（仮の予定は前に「（仮）」。名前が無ければ「（名前なし）」） */
+export function eventLabel(e: { title: string; tentative?: true }): string {
+  const t = e.title.trim() || "（名前なし）";
+  return e.tentative ? `（仮）${t}` : t;
+}
+
 export function eventsOnDay(events: CalendarEvent[], date: string): CalendarEvent[] {
   return events
     .filter((e) => occursOn(e, date))
@@ -62,4 +68,23 @@ export function eventsOnDay(events: CalendarEvent[], date: string): CalendarEven
 
 export function sortTxDesc(txs: Transaction[]): Transaction[] {
   return [...txs].sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+}
+
+/**
+ * 時間が重なる予定（To-Be 02 カレンダー「重複警告」。2026-11-28）。終日・日をまたぐ予定は数えない（時刻のある1日の予定どうしだけ）。
+ * 警告を出すだけで、保存は止めない
+ */
+export function overlappingEvents(events: CalendarEvent[], draft: { id?: string; startDate: string; endDate: string; allDay: boolean; startTime: string; endTime: string }): CalendarEvent[] {
+  if (draft.allDay || draft.startDate !== draft.endDate || !draft.startTime || !draft.endTime) return [];
+  return events.filter(
+    (e) =>
+      e.id !== draft.id &&
+      !e.allDay &&
+      e.startDate === e.endDate &&
+      !!e.startTime &&
+      !!e.endTime &&
+      occursOn(e, draft.startDate) &&
+      e.startTime < draft.endTime &&
+      draft.startTime < e.endTime,
+  );
 }

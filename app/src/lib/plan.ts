@@ -182,3 +182,16 @@ export function sortPlans(plans: Plan[]): { active: Plan[]; past: Plan[] } {
   const past = plans.filter((p) => !isActivePlan(p)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   return { active, past };
 }
+
+/**
+ * 計画のコピー（To-Be 02 計画「計画コピー」。2026-11-28）：種類・名前（「（コピー）」を付ける）・予算・メモ・候補（決めた印は外す）を写す。
+ * 日にち・状態・予定・やること・支出・日程調整・旅行とのつながりは写さない（新しい計画は「検討中」から）
+ */
+export function copyPlan(d: AppData, srcId: string, newPlanId: string, idFor: () => string, ts: string): AppData {
+  const s = (d.plans ?? []).find((p) => p.id === srcId);
+  if (!s) return d;
+  const title = Array.from(`${s.title}（コピー）`).slice(0, 100).join("");
+  const next = addPlan(d, { type: s.type, title, date: "", budget: s.budget, note: s.note }, newPlanId, ts);
+  if (!s.candidates?.length) return next;
+  return updatePlan(next, newPlanId, { candidates: s.candidates.map((c) => ({ id: idFor(), label: c.label, url: c.url, price: c.price, note: c.note })) }, ts);
+}

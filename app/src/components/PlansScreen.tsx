@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, Empty, Field, IconChevronR, PageHeader, inputCls } from "@/components/ui";
 import { PollSection } from "@/components/PollSection";
+import { SplitBox } from "@/components/SplitBox";
 import { useUI } from "@/components/UIContext";
 import { useData, useStore } from "@/lib/store";
 import { newId } from "@/lib/defaults";
@@ -22,6 +23,7 @@ import {
   setPlanDate,
   candidateNoun,
   chooseCandidate,
+  copyPlan,
   deletePlan,
   linkToPlan,
   planView,
@@ -476,6 +478,7 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
             ))}
           </ul>
         )}
+        <SplitBox txs={v.transactions} save={save} />
         {unlinkedExpenses.length > 0 && (
           <Field label="支出の記録をつなぐ" htmlFor="pl-tx" hint="家計簿に記録した支出から選びます（新しい順に30件）">
             <select id="pl-tx" value="" onChange={(e) => e.target.value && void save((d) => linkToPlan(d, "transaction", e.target.value, plan.id, ts()), "支出をつなぎました")} className={inputCls}>
@@ -501,6 +504,17 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
         />
       </Field>
 
+      <Button
+        variant="secondary"
+        className="w-full"
+        onClick={async () => {
+          // この計画を元に新しい計画を作る（日にち・予定・支出は写さない。2026-11-28）
+          const nid = newId("pl");
+          if (await save((d) => copyPlan(d, plan.id, nid, () => newId("cand"), ts()), `「${plan.title}（コピー）」を作りました（計画の一覧にあります）`)) onBack();
+        }}
+      >
+        この計画を元に新しく作る
+      </Button>
       <Button
         variant="danger"
         className="w-full"

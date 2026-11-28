@@ -9,7 +9,7 @@ import { dayFromSearch, searchWithDay } from "@/lib/searchState";
 import { deadlineDays, deadlinesOn } from "@/lib/deadlines";
 import { formatMinutes } from "@/lib/life";
 import { useData } from "@/lib/store";
-import { daySummary, eventsOnDay, summarizeMonth } from "@/lib/aggregate";
+import { daySummary, eventLabel, eventsOnDay, summarizeMonth } from "@/lib/aggregate";
 import { addMonthsToKey, formatDateJa, formatMonthJa, monthGrid, monthKey, todayStr } from "@/lib/date";
 import { formatYen } from "@/lib/money";
 import { holidayName } from "@/lib/holidays";
@@ -147,7 +147,7 @@ function CalendarInner() {
       if (!d) continue;
       const s = daySummary(data.transactions, d);
       const evs = eventsOnDay(data.events, d);
-      m.set(d, { exp: s.expense, inc: s.income, ev: evs.length, titles: evs.slice(0, EVENT_TITLES_IN_CELL).map((e) => e.title.trim() || "（名前なし）") });
+      m.set(d, { exp: s.expense, inc: s.income, ev: evs.length, titles: evs.slice(0, EVENT_TITLES_IN_CELL).map((e) => eventLabel(e)) });
     }
     return m;
   }, [weeks, data.transactions, data.events]);

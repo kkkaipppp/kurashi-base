@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet } from "./Sheet";
 import { Button, Field, focusFirstInvalid, inputCls } from "./ui";
 import { useUI } from "./UIContext";
+import { overlappingEvents } from "@/lib/aggregate";
 import { eventTimeLabel } from "./Rows";
 import { useData, useStore } from "@/lib/store";
 import { validateEvent, type EventDraft, type FieldErrors } from "@/lib/validate";
@@ -39,6 +40,8 @@ interface Extra {
   travel: string;
   /** 関連する目標（自分用。"" = なし） */
   goalId: string;
+  /** 仮の予定（自分用） */
+  tentative: boolean;
 }
 
 const extraOf = (e?: CalendarEvent, tripId = ""): Extra => ({
@@ -50,10 +53,11 @@ const extraOf = (e?: CalendarEvent, tripId = ""): Extra => ({
   cost: e?.cost != null ? String(e.cost) : "",
   travel: e?.travelMinutes ? String(e.travelMinutes) : "",
   goalId: e?.goalId ?? "",
+  tentative: !!e?.tentative,
 });
 
 const hasExtra = (x: Extra, d: EventDraft) =>
-  !!(x.location || x.url || x.items.length || x.tripId || x.kind || x.cost || x.travel || x.goalId || d.note || (d.repeat && d.repeat !== "none"));
+  !!(x.location || x.url || x.items.length || x.tripId || x.kind || x.cost || x.travel || x.goalId || x.tentative || d.note || (d.repeat && d.repeat !== "none"));
 
 export function EventSheet({ req, onClose }: { req: EventSheetRequest; onClose: () => void }) {
   const data = useData();
@@ -451,6 +455,8 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
         ...(cost !== null ? { cost } : { cost: undefined }),
         // 目標：選んだ目標が今もあるときだけ（自分用。公開版は、今ある値をそのまま持つ）
         ...(IS_PERSONAL ? (extra.goalId && data.goals.some((g) => g.id === extra.goalId) ? { goalId: extra.goalId } : { goalId: undefined }) : editing?.goalId ? { goalId: editing.goalId } : {}),
+        // 仮の予定（自分用だけ触る。公開版は前の値のまま）
+        ...(IS_PERSONAL ? (extra.tentative ? { tentative: true as const } : { tentative: undefined }) : editing?.tentative ? { tentative: true as const } : {}),
         ...(IS_PERSONAL && travel ? { travelMinutes: travel } : IS_PERSONAL ? { travelMinutes: undefined } : editing?.travelMinutes ? { travelMinutes: editing.travelMinutes } : {}),
       };
       // undefined の項目は保存しない（JSON に残さない）
@@ -674,6 +680,12 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
             </Field>
             <p className="-mt-2 text-[12px] text-ink-3">支出の記録は「＋」からです。</p>
 
+            {process.env.NEXT_PUBLIC_KB_EDITION === "personal" && (
+              <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3">
+                <span className="text-[15px] font-medium">仮の予定（まだ決まっていない）</span>
+                <input type="checkbox" checked={extra.tentative} onChange={(e) => setX("tentative", e.target.checked)} className="size-5 accent-[var(--brand)]" />
+              </label>
+            )}
             {IS_PERSONAL && data.goals.some((g) => !g.done || g.id === extra.goalId) && (
               <Field label="関連する目標" optional htmlFor="ev-goal">
                 <select id="ev-goal" value={extra.goalId} onChange={(e) => setX("goalId", e.target.value)} className={inputCls}>
@@ -735,6 +747,16 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
             </Button>
           </div>
         )}
+        {process.env.NEXT_PUBLIC_KB_EDITION === "personal" && (() => {
+          // 時間が重なる予定（警告だけ。保存は止めない。2026-11-28）
+          const over = overlappingEvents(data.events, { id: editing?.id, ...draft });
+          return over.length > 0 ? (
+            <p role="status" className="rounded-xl bg-warn-soft px-3 py-2 text-[13px] text-ink-2">
+              同じ時間に予定があります：{over.slice(0, 3).map((e) => `${e.startTime}〜${e.endTime} ${e.title || "（名前なし）"}`).join("、")}
+              {over.length > 3 ? ` ほか${over.length - 3}件` : ""}
+            </p>
+          ) : null;
+        })()}
         {saveError && (
           <p role="alert" className="rounded-xl bg-expense-soft px-3 py-2 text-[14px] font-medium text-danger">
             {saveError}（入力した内容は残っています）

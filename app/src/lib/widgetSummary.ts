@@ -1,4 +1,4 @@
-import { eventsOnDay, summarizeMonth } from "./aggregate";
+import { eventLabel, eventsOnDay, summarizeMonth } from "./aggregate";
 import { addDays, monthKey } from "./date";
 import { budgetSpent } from "./ledger";
 import { clipText } from "./clip";
@@ -34,7 +34,7 @@ export function buildWidgetSummary(data: AppData, today: string, nowIso: string)
     updatedAt: nowIso,
     today,
     events: evs.slice(0, WIDGET_EVENTS_MAX).map((e) => ({
-      title: clipText(e.title.trim(), WIDGET_TITLE_MAX) || "（名前なし）",
+      title: clipText(eventLabel(e), WIDGET_TITLE_MAX),
       // 何日も続く予定の2日目以降は、時刻ではなく「終日」として出す（くり返しの予定は毎回その時刻。aggregate.ts の並べ方と同じ判定）
       time: e.allDay || (e.startDate < today && e.startDate !== e.endDate) ? "終日" : e.startTime,
     })),
@@ -43,7 +43,7 @@ export function buildWidgetSummary(data: AppData, today: string, nowIso: string)
       date: addDays(today, 1),
       events: eventsOnDay(data.events, addDays(today, 1))
         .slice(0, WIDGET_EVENTS_MAX)
-        .map((e) => ({ title: clipText(e.title.trim(), WIDGET_TITLE_MAX) || "（名前なし）", time: e.allDay || (e.startDate < addDays(today, 1) && e.startDate !== e.endDate) ? "終日" : e.startTime })),
+        .map((e) => ({ title: clipText(eventLabel(e), WIDGET_TITLE_MAX), time: e.allDay || (e.startDate < addDays(today, 1) && e.startDate !== e.endDate) ? "終日" : e.startTime })),
     },
     monthExpense: sum.expense,
     monthIncome: sum.income,

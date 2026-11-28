@@ -16,7 +16,7 @@ export function OwedAdvances() {
     <section aria-labelledby="owed-adv" className="space-y-1">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="owed-adv" className="text-[16px] font-bold">
-          返してもらう分<span className="ml-1 text-[13px] font-medium text-ink-3">立替</span>
+          返してもらう分<span className="ml-1 text-[13px] font-medium text-ink-3">立替・経費</span>
         </h2>
         <span className="num text-[16px] font-bold">{formatYen(owedTotal(data))}</span>
       </div>
@@ -27,7 +27,7 @@ export function OwedAdvances() {
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{tx.merchant || tx.note || "立替"}</span>
                 <span className="block text-[13px] text-ink-3">
-                  {formatDateJa(tx.date)}・払った {formatYen(tx.advanceGross as number)}・自分の分 {formatYen(tx.amount)}
+                  {tx.claim ? `${formatDateJa(tx.date)}・経費 ${formatYen(tx.amount)}` : `${formatDateJa(tx.date)}・払った ${formatYen(tx.advanceGross as number)}・自分の分 ${formatYen(tx.amount)}`}
                 </span>
               </span>
               <span className="num shrink-0 font-semibold">{formatYen(left)}</span>

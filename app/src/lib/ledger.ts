@@ -34,7 +34,8 @@ export function monthLedger(data: AppData, month: string, today: string, exclude
   const budget = data.budget.monthly ?? null;
   // 投資を除くとき：投資の固定費（積立など）も、自由に使える残りから引かない（生活費の予算と比べる額に入れていないため）
   const cats = categoryMap(data);
-  const spent = excludeInvest ? b.lifeExpense : b.lifeExpense + b.invest;
+  // 特別支出は月の予算と比べない（年の特別支出の予算と比べる。2026-11-28）
+  const spent = (excludeInvest ? b.lifeExpense : b.lifeExpense + b.invest) - b.special;
   const rec = excludeInvest ? data.recurring.filter((r) => !categoryIsInvest(cats.get(r.categoryId))) : data.recurring;
   const a = month === today.slice(0, 7) ? dailyAllowance(budget, spent, rec, today) : null;
   return {
@@ -56,7 +57,9 @@ export function monthLedger(data: AppData, month: string, today: string, exclude
  * ホーム・今日のナビ・振り返り・ウィジェットで同じものを使う（点検役の指摘：画面ごとに数字が食い違っていた）
  */
 export function budgetSpent(data: AppData, month: string, today: string, personal: boolean = IS_PERSONAL): number {
-  return personal ? monthBreakdown(data, month, today).lifeExpense : summarizeMonth(data.transactions, month).expense;
+  if (!personal) return summarizeMonth(data.transactions, month).expense;
+  const b = monthBreakdown(data, month, today);
+  return b.lifeExpense - b.special;
 }
 
 /** 投資として数えているカテゴリの名前（画面に出して、分け方を本人が確かめられるように） */

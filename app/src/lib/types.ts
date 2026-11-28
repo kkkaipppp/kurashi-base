@@ -31,6 +31,9 @@ export interface Transaction {
   planId?: string; // 計画のお金（Plan.id。To-Be 2026-11-27。支出の正本はこの記録で、計画は集めて見るだけ）
   advanceGross?: number; // 立替の支出：実際に払った総額（amount は自分の分。To-Be 2026-11-28。lib/advance.ts）
   settles?: string; // 精算の記録：どの立替の、返してもらった分か（収支に数えない。lib/advance.ts）
+  special?: true; // 特別支出（帰省・車検など）：支出には数えるが、月の予算と比べる額からは外し、年の特別支出の予算と比べる（2026-11-28）
+  template?: true; // 入力のひな形（「追加」の一覧にいつも出す。2026-11-28。lib/txTemplates.ts）
+  claim?: true; // 経費（会社に請求する支出）：全額を返してもらう分にして、支出に数えない（countAs=transfer と一緒に持つ。2026-11-28。lib/advance.ts）
   createdAt: string; // ISO
   updatedAt: string; // ISO
 }
@@ -58,6 +61,7 @@ export interface CalendarEvent {
   doneDates?: string[];
   travelMinutes?: number;
   goalId?: string; // 関連する目標（Goal.id。予定は目標の行動。時間・費用は予定のまま一度だけ数える。NEXT v21 X07）
+  tentative?: true; // 仮の予定（まだ決まっていない。名前の前に「（仮）」。2026-11-28）
   planId?: string; // 計画の予定（Plan.id。To-Be 2026-11-27。計画の日程を決めたときの予定）
   createdAt: string;
   updatedAt: string;
@@ -238,6 +242,21 @@ export interface Note {
   body: string;
   date: string; // "" = 日付なし
   pinned: boolean;
+  /** タグ（自分用。1つ20字まで・10個まで。2026-11-28） */
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 欲しいもの（自分用。2026-11-28）。買ったら「買った」にする（支出は家計簿に記録する。二重に数えない） */
+export interface Wish {
+  id: string;
+  name: string;
+  price: number | null; // 目安の値段（円）
+  url: string;
+  priority: "high" | "mid" | "low";
+  status: "want" | "bought" | "dropped";
+  note: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -399,11 +418,12 @@ export interface Collections {
   studySubjects: StudySubject[];
   studyLogs: StudyLog[];
   goals: Goal[];
+  wishes: Wish[];
 }
 
 export type CollectionKey = keyof Collections;
 export type ItemOf<K extends CollectionKey> = Collections[K][number];
-export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals"];
+export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals", "wishes"];
 
 export interface AppData extends Collections {
   schemaVersion: 2;
@@ -415,7 +435,13 @@ export interface AppData extends Collections {
   trips: Trip[];
   /** To-Be（2026-11-27）：計画。古い記録には無い（読み込むときに空で足す。schema.ts の migrate） */
   plans: Plan[];
-  budget: { monthly: number | null }; // 毎月の支出予算（円）。null = 未設定
+  budget: {
+    monthly: number | null; // 毎月の支出予算（円）。null = 未設定
+    /** 特別支出（帰省・車検など）の年の予算（円。自分用・任意。2026-11-28） */
+    yearlySpecial?: number | null;
+    /** 月の予算を変えた記録（変えた日と新しい額。新しいものが後ろ。最大 24 件。自分用・任意） */
+    history?: { at: string; monthly: number | null }[];
+  };
   prefs: { home: HomePrefs; /** メニューに出さない機能の道筋（任意。非表示でも記録は消えない。NEXT v21 X16・D11） */ menuHidden?: string[] };
   meta: { createdAt: string; lastBackupAt: string | null; /** 取り込みの履歴（任意。100点化以降に追加） */ imports?: ImportBatch[]; /** 生活変化の計画と履歴（任意。NEXT v21 B03。lib/lifeChange.ts） */ lifeChanges?: LifeChange[] };
 }

@@ -12,7 +12,10 @@ import type { AppData, Transaction } from "./types";
  */
 export type AdvanceResult = { ok: true; next: AppData } | { ok: false; error: string };
 
-export const isAdvance = (t: Pick<Transaction, "advanceGross" | "amount">): boolean => typeof t.advanceGross === "number" && t.advanceGross > t.amount;
+export const isAdvance = (t: Pick<Transaction, "advanceGross" | "amount"> & { claim?: true }): boolean => t.claim === true || (typeof t.advanceGross === "number" && t.advanceGross > t.amount);
+
+/** 返してもらう分のもと：経費は払った全額、立替は総額 − 自分の分 */
+export const owedBase = (t: Pick<Transaction, "advanceGross" | "amount"> & { claim?: true }): number => (t.claim ? t.amount : (t.advanceGross ?? t.amount) - t.amount);
 
 /** 精算の記録（収支に数えない形のものだけ。数え方の無い精算は、手で直したデータとして点検に出す） */
 const isSettlement = (t: Transaction) => !!t.settles && t.type === "income" && t.countAs === "transfer";
@@ -29,7 +32,7 @@ export function settleProblems(d: Pick<AppData, "transactions">): string[] {
     if (!t.settles) continue;
     const a = byId.get(t.settles);
     if (!a || a.type !== "expense" || !isAdvance(a) || !isSettlement(t)) bad.push(t.id);
-    else if (settledTotal(d, a.id) > (a.advanceGross as number) - a.amount) bad.push(t.id);
+    else if (settledTotal(d, a.id) > owedBase(a)) bad.push(t.id);
   }
   return bad;
 }
@@ -37,7 +40,7 @@ export function settleProblems(d: Pick<AppData, "transactions">): string[] {
 /** 返してもらう分の残り */
 export function owedLeft(d: Pick<AppData, "transactions">, tx: Transaction): number {
   if (!isAdvance(tx)) return 0;
-  return Math.max(0, (tx.advanceGross as number) - tx.amount - settledTotal(d, tx.id));
+  return Math.max(0, owedBase(tx) - settledTotal(d, tx.id));
 }
 
 /** 入力の確かめ：総額と自分の分（円の整数）。自分の分は 1 円以上・総額より少ない */
@@ -91,4 +94,24 @@ export function applySettlement(d: AppData, txId: string, amount: number, date: 
 /** 返してもらう分の合計 */
 export function owedTotal(d: Pick<AppData, "transactions">): number {
   return openAdvances(d).reduce((a, x) => a + x.left, 0);
+}
+
+/**
+ * 割り勘（To-Be 02 家計簿・計画の精算。決定 2026-11-28）：払った支出を人数で割り、自分の分だけを支出に数える（残りは立替の「返してもらう分」）。
+ * 自分の分は切り上げ（返してもらう分の合計が払った額を超えないように）。人数は 2〜50 人
+ */
+export function splitShare(amount: number, people: number): number {
+  return Math.ceil(amount / people);
+}
+
+export function splitTx(d: AppData, txId: string, people: number, ts: string): AdvanceResult {
+  const t = d.transactions.find((x) => x.id === txId);
+  if (!t) return { ok: false, error: "支出の記録が見つかりません（ほかのタブなどで削除されています）" };
+  if (t.type !== "expense" || t.countAs === "transfer" || t.refundOf || t.refundGross !== undefined || t.settles || isAdvance(t)) return { ok: false, error: "この記録は割り勘にできません（返金・立替・経費・収支に数えない記録）" };
+  if (t.recurringId) return { ok: false, error: "固定費の支払いは、割り勘にできません" };
+  if (!Number.isInteger(people) || people < 2 || people > 50) return { ok: false, error: "人数は 2〜50 人で入れてください" };
+  const mine = splitShare(t.amount, people);
+  const err = checkAdvance(t.amount, mine);
+  if (err) return { ok: false, error: "金額が小さすぎて割れません" };
+  return { ok: true, next: { ...d, transactions: d.transactions.map((x) => (x.id === txId ? { ...x, amount: mine, advanceGross: t.amount, updatedAt: ts } : x)) } };
 }

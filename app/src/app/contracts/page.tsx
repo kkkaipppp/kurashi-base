@@ -91,7 +91,7 @@ const config: CollectionConfig<"contracts"> = {
     const monthly = active.reduce((s, c) => s + monthlyOf(money(c)), 0);
     return (
       <Card className="flex items-center justify-between py-3">
-        <span className="text-[14px] font-semibold text-ink-2">契約中の支払い（月あたりの目安）</span>
+        <span className="text-[14px] font-semibold text-ink-2">契約中の支払い（月あたりの目安）{PERSONAL_BUILD && <span className="num block text-[12px] font-medium text-ink-3">年あたり {formatYen(monthly * 12)}</span>}</span>
         <span className="num text-lg font-bold">{formatYen(monthly)}</span>
       </Card>
     );

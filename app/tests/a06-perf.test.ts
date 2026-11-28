@@ -51,7 +51,8 @@ describe("A06：1.5万件での速さ（前の実装と並べて）", () => {
   const d = big();
   const today = "2026-11-25";
   const cases: [string, () => unknown, () => unknown][] = [
-    ["月の内訳", () => nMb.monthBreakdown(d, "2026-11", today), () => oMb.monthBreakdown(d, "2026-11", today)],
+    // 2026-11-28 から特別支出（special）を足した。前の実装には無いので外して比べる
+    ["月の内訳", () => ({ ...nMb.monthBreakdown(d, "2026-11", today), special: undefined }), () => oMb.monthBreakdown(d, "2026-11", today)],
     ["年の画面（月の内訳×12）", () => { for (let i = 1; i <= 12; i++) nMb.monthBreakdown(d, `2026-${String(i).padStart(2, "0")}`, today); }, () => { for (let i = 1; i <= 12; i++) oMb.monthBreakdown(d, `2026-${String(i).padStart(2, "0")}`, today); }],
     ["週の見直し", () => nWr.weeklyReview(d, "2026-11-23", today), () => oWr.weeklyReview(d, "2026-11-23", today)],
     ["月末の見込みのグラフ", () => nFc.forecastCurve(d, today), () => oFc.forecastCurve(d, today)],

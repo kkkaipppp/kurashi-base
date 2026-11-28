@@ -28,7 +28,8 @@ export function weeklyReview(data: AppData, from: string, today: string, exclude
   const to = addDays(from, 6);
   const upTo = today < to ? today : to; // 今週は、今日まで
   const entries = ledgerEntries(data);
-  const pick = isBudgetExpense(excludeInvest);
+  // 特別支出も「使ったお金」に入れる（月の予算と比べる額からは外すが、ここは使った額。2026-11-28 点検 中2）
+  const pick = (e: Parameters<ReturnType<typeof isBudgetExpense>>[0]) => isBudgetExpense(excludeInvest)({ ...e, special: false });
   const life = (a: string, b: string) => entries.filter((t) => pick(t) && t.date >= a && t.date <= b);
   const cur = life(from, upTo);
   const spent = cur.reduce((s, t) => s + t.amount, 0);

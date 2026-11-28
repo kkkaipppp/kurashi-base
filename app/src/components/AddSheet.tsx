@@ -9,7 +9,7 @@ import { ADD_KINDS, addOrder, type AddKindId } from "@/lib/navPrefs";
 import { useMemo, useState } from "react";
 import { useData } from "@/lib/store";
 import { formatYen } from "@/lib/money";
-import { recentTemplates, type TxTemplate } from "@/lib/txTemplates";
+import { pinnedTemplates, recentTemplates, type TxTemplate } from "@/lib/txTemplates";
 import { PASTE_MAX, parsePasted, type PasteGuess } from "@/lib/pasteParse";
 
 /** 日付を入力の初めの値に使う種類（ほかは日付を出さない。点検 指摘3） */
@@ -36,7 +36,9 @@ export function PersonalAddSheet({
   const router = useRouter();
   const { fav } = useNavPrefs();
   const data = useData();
-  const templates = useMemo(() => recentTemplates(data.transactions), [data.transactions]);
+  // ひな形（いつも出す）と、前の記録から（ひな形と同じ中身は出さない）
+  const pinned = useMemo(() => pinnedTemplates(data.transactions), [data.transactions]);
+  const templates = useMemo(() => recentTemplates(data.transactions, 3, new Set(pinned.map((p) => p.key))), [data.transactions, pinned]);
   const catName = (id: string) => data.categories.find((c) => c.id === id)?.name ?? "";
   // 前の記録から：同じ中身で入力を始める（日付は選んだ日。保存は入力の中で本人が押したとき）
   const fromTemplate = (t: TxTemplate) => {
@@ -71,11 +73,14 @@ export function PersonalAddSheet({
       >
         写真（レシート）から始める
       </button>
-      {templates.length > 0 && (
-        <>
-          <h3 className="mt-4 mb-1 text-[14px] font-semibold text-ink-3">前の記録から</h3>
-          <ul className="divide-y divide-line border-y border-line" aria-label="前の記録から入力を始める">
-            {templates.map((t) => (
+      {[
+        ["ひな形", "ひな形から入力を始める", pinned],
+        ["前の記録から", "前の記録から入力を始める", templates],
+      ].map(([heading, label, list]) => (list as TxTemplate[]).length > 0 && (
+        <section key={heading as string}>
+          <h3 className="mt-4 mb-1 text-[14px] font-semibold text-ink-3">{heading as string}</h3>
+          <ul className="divide-y divide-line border-y border-line" aria-label={label as string}>
+            {(list as TxTemplate[]).map((t) => (
               <li key={t.key}>
                 <button type="button" onClick={() => fromTemplate(t)} className="flex min-h-12 w-full items-center gap-3 px-1 text-left hover:bg-surface-2">
                   <span className="min-w-0 flex-1 truncate text-[15px]">
@@ -90,8 +95,8 @@ export function PersonalAddSheet({
               </li>
             ))}
           </ul>
-        </>
-      )}
+        </section>
+      ))}
     </AddSheet>
   );
 }

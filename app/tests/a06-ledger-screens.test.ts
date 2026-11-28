@@ -50,7 +50,10 @@ describe("A06：切り替えの前と後で、すべての集計が同じ答え�
       }
       for (const today of TODAYS) {
         const mo = today.slice(0, 7);
-        expect(nMb.monthBreakdown(d, mo, today)).toEqual(oMb.monthBreakdown(d, mo, today));
+        // 2026-11-28 から special（特別支出）を足した。前の実装には無い（この合成データには特別支出が無いので 0）
+        const nb = nMb.monthBreakdown(d, mo, today);
+        expect(nb.special).toBe(0);
+        expect({ ...nb, special: undefined }).toEqual(oMb.monthBreakdown(d, mo, today));
         const w = nPer.weekRange(today);
         expect(nPer.summarizePeriod(T, w.from, w.to)).toEqual(oPer.summarizePeriod(T, w.from, w.to));
         expect(nPer.dailyInWeek(T, w.from)).toEqual(oPer.dailyInWeek(T, w.from));
@@ -227,14 +230,15 @@ describe("A06：手で決めた期待値", () => {
       "lib/ledgerCore.ts": [7, "台帳そのもの"],
       "lib/aggregate.ts": [0, "台帳の出来事を sumEntries で足す"],
       "lib/periods.ts": [6, "台帳の出来事（CountedEntry）を足す"],
-      "lib/monthBreakdown.ts": [7, "台帳の出来事と NISA の記録を足す"],
+      "lib/monthBreakdown.ts": [8, "台帳の出来事と NISA の記録を足す（特別支出の分も。2026-11-28）"],
+      "lib/specialBudget.ts": [1, "その年の特別支出（台帳の出来事を足す。2026-11-28）"],
       "lib/weeklyReview.ts": [4, "台帳の出来事を足す・固定費の予定"],
       "lib/report.ts": [3, "台帳の出来事を足す"],
       "lib/forecast.ts": [5, "台帳の出来事と、固定費の予定を足す・今日より後の日付の記録を見込みの線のその日に載せる（承認待ち⑤）"],
-      "lib/balance.ts": [4, "台帳の出来事（ledgerEvents）を足す（精算は立替の分までに抑えて足す。To-Be 2026-11-28）"],
+      "lib/balance.ts": [6, "台帳の出来事（ledgerEvents）を足す（精算は立替の分までに抑えて足す。To-Be 2026-11-28）。経費の払った額（現金・カード）"],
       "lib/refund.ts": [2, "返金の記録の合計（台帳の保存則と同じ）"],
       "lib/payBreakdown.ts": [2, "支払方法ごとの支出（共通台帳の収支に数える支出を、支払方法で分けて足す。To-Be 2026-11-28）"],
-      "lib/advance.ts": [1, "立替の精算の記録の合計（収支には数えない。To-Be 2026-11-28）"],
+      "lib/advance.ts": [2, "立替の精算の記録の合計（と割り勘の自分の分の計算）（収支には数えない。To-Be 2026-11-28）"],
       "lib/allowance.ts": [1, "固定費の予定（記録ではない）"],
       "lib/nisa.ts": [1, "NISA の記録（収支ではない）"],
       "lib/inbox.ts": [1, "未整理の記録の店ごとの合計（整理の目安。収支ではない）"],

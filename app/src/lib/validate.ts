@@ -22,6 +22,12 @@ export interface TxDraft {
   linkPartial?: boolean;
   /** 立替の自分の分（"" = 立替でない）。amount は払った総額（To-Be 2026-11-28。lib/advance.ts） */
   advanceMine?: string;
+  /** 経費（会社に請求する）。true なら支出に数えず、全額を返してもらう分にする */
+  claim?: boolean;
+  /** 入力のひな形にする */
+  template?: boolean;
+  /** 特別支出 */
+  special?: boolean;
 }
 
 export function validateTx(

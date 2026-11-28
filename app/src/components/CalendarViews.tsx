@@ -2,7 +2,7 @@
 
 import { addDays, formatDateJa, monthGrid } from "@/lib/date";
 import { useMemo } from "react";
-import { daySummary, eventsOnDay, summarizeMonth } from "@/lib/aggregate";
+import { daySummary, eventLabel, eventsOnDay, summarizeMonth } from "@/lib/aggregate";
 import { deadlinesOn } from "@/lib/deadlines";
 import { formatYen } from "@/lib/money";
 import { holidayName } from "@/lib/holidays";
@@ -102,7 +102,7 @@ function DayRow({ d, selected, today, showEv, showMoney, onPick }: { d: string; 
           {evs.map((e) => (
             <span key={e.id} className="block truncate text-[14px]">
               <span className="num mr-1 text-ink-3">{eventTimeLabel(e, d)}</span>
-              {e.title.trim() || "（名前なし）"}
+              {eventLabel(e)}
             </span>
           ))}
           {dl.map((x) => (

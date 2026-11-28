@@ -53,7 +53,7 @@ export function applyLifeChange(d: AppData, id: string, ts: string): ApplyResult
   const items = c.items.map((it): LifeItem => {
     if (!matches(cur, it)) return { ...it, applied: false };
     applied++;
-    if (it.kind === "budget") cur = { ...cur, budget: { monthly: it.after } };
+    if (it.kind === "budget") cur = { ...cur, budget: withMonthly(cur.budget, it.after, ts) };
     else if (it.kind === "recurringAmount") cur = { ...cur, recurring: cur.recurring.map((r) => (r.id === it.recurringId ? { ...r, amount: it.after, updatedAt: ts } : r)) };
     else cur = { ...cur, recurring: cur.recurring.map((r) => (r.id === it.recurringId ? { ...r, active: false, updatedAt: ts } : r)) };
     return { ...it, applied: true };
@@ -61,6 +61,12 @@ export function applyLifeChange(d: AppData, id: string, ts: string): ApplyResult
   const status: LifeChange["status"] = applied > 0 ? "applied" : "planned";
   const changes = listChanges(cur).map((x) => (x.id === id ? { ...x, items, status, ...(applied > 0 ? { appliedAt: ts } : {}) } : x));
   return { next: { ...cur, meta: { ...cur.meta, lifeChanges: changes } }, applied, skipped: c.items.length - applied };
+}
+
+/** 月の予算だけを変える（ほかの予算の項目は残す。変わったら履歴に残す。2026-11-28 点検 高1） */
+function withMonthly(b: AppData["budget"], monthly: number | null, ts: string): AppData["budget"] {
+  if (b.monthly === monthly) return b;
+  return { ...b, monthly, history: [...(b.history ?? []), { at: ts.slice(0, 10), monthly }].slice(-24) };
 }
 
 /** 取り消す：適用した項目のうち、いまの値が「変更後」のままのものだけ、元に戻す（その後に本人が変えたものは触らない）。履歴は残す */
@@ -71,7 +77,7 @@ export function undoLifeChange(d: AppData, id: string, ts: string): AppData {
   for (const it of c.items) {
     if (!it.applied) continue;
     if (it.kind === "budget") {
-      if (cur.budget.monthly === it.after) cur = { ...cur, budget: { monthly: it.before } };
+      if (cur.budget.monthly === it.after) cur = { ...cur, budget: withMonthly(cur.budget, it.before, ts) };
     } else if (it.kind === "recurringAmount") {
       cur = { ...cur, recurring: cur.recurring.map((r) => (r.id === it.recurringId && r.amount === it.after ? { ...r, amount: it.before, updatedAt: ts } : r)) };
     } else {

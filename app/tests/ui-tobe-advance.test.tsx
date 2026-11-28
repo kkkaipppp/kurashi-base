@@ -128,18 +128,47 @@ describe("入力の詳細をたたむ（2026-11-28「入力の画面が長い」
   it("新しい支出：支払方法・メモは「詳細」の中。押すと出る。直すとき・値が入っているときは初めから開く", async () => {
     await mount((d) => ({ ...d, transactions: [tx({ id: "t1", note: "" })] }), () => <M.sheet.TxSheet req={{ mode: "new", type: "expense" }} onClose={() => {}} />);
     await screen.findByLabelText("金額（円）");
-    expect(screen.queryByLabelText(/支払方法/)).toBeNull();
+    expect(screen.queryByRole("combobox", { name: /支払方法/ })).toBeNull();
     expect(screen.queryByLabelText(/メモ/)).toBeNull();
     const btn = screen.getByRole("button", { name: /詳細/ });
     expect(btn.getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(btn);
-    expect(screen.getByLabelText(/支払方法/)).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: /支払方法/ })).toBeTruthy();
     expect(screen.getByLabelText(/メモ/)).toBeTruthy();
     cleanup();
     await mount((d) => d, () => <M.sheet.TxSheet req={{ mode: "new", type: "expense", initial: { note: "https://example.com" } }} onClose={() => {}} />);
     expect(((await screen.findByLabelText(/メモ/)) as HTMLTextAreaElement).value).toBe("https://example.com");
     cleanup();
     await mount((d) => ({ ...d, transactions: [tx({ id: "t1" })] }), () => <M.sheet.TxSheet req={{ mode: "edit", id: "t1" }} onClose={() => {}} />);
-    expect(await screen.findByLabelText(/支払方法/)).toBeTruthy();
+    expect(await screen.findByRole("combobox", { name: /支払方法/ })).toBeTruthy();
+  });
+});
+
+describe("経費（画面）", () => {
+  it("新しい支出で「経費」に印を付けて保存すると、経費の印と「収支に数えない」。立替の欄は隠れる", async () => {
+    await mount((d) => d, () => <M.sheet.TxSheet req={{ mode: "new", type: "expense", date: "2026-11-28" }} onClose={() => {}} />);
+    fireEvent.change(await screen.findByLabelText("金額（円）"), { target: { value: "5000" } });
+    fireEvent.click(screen.getByRole("button", { name: /詳細/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /経費/ }));
+    expect(screen.queryByLabelText(/立替/)).toBeNull();
+    fireEvent.click(screen.getByText("保存する"));
+    await waitFor(() => expect(seen.d?.transactions.length).toBe(1));
+    expect(seen.d!.transactions[0]).toMatchObject({ amount: 5000, claim: true, countAs: "transfer" });
+    expect(seen.d!.transactions[0].advanceGross).toBeUndefined();
+  });
+
+  it("精算がある経費は、経費をやめたり、返してもらった額より金額を下げたりできない（点検 中3）", async () => {
+    await mount(
+      (d) => ({ ...d, transactions: [tx({ id: "cl", amount: 5000, claim: true, countAs: "transfer" }), tx({ id: "s", type: "income", amount: 3000, countAs: "transfer", settles: "cl", categoryId: "inc-1" })] }),
+      () => <M.sheet.TxSheet req={{ mode: "edit", id: "cl" }} onClose={() => {}} />,
+    );
+    fireEvent.click(await screen.findByRole("checkbox", { name: /経費/ }));
+    fireEvent.click(screen.getByText("保存する"));
+    expect(await screen.findByText(/もう ¥3,000 返してもらっています/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("checkbox", { name: /経費/ }));
+    fireEvent.change(screen.getByLabelText("金額（円）"), { target: { value: "2000" } });
+    fireEvent.click(screen.getByText("保存する"));
+    await waitFor(() => expect(screen.getAllByText(/もう ¥3,000 返してもらっています/).length).toBeGreaterThan(0));
+    expect(seen.d!.transactions.find((t) => t.id === "cl")).toMatchObject({ amount: 5000, claim: true });
   });
 });

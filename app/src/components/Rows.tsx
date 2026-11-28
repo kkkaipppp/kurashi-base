@@ -2,6 +2,7 @@
 
 import { isDoneOn, occurrenceKey } from "@/lib/eventOps";
 import { formatDateJa } from "@/lib/date";
+import { eventLabel } from "@/lib/aggregate";
 import { formatYen } from "@/lib/money";
 import { useData } from "@/lib/store";
 import { paymentLabel, type CalendarEvent, type Transaction } from "@/lib/types";
@@ -76,7 +77,7 @@ export function EventRow({ ev, day }: { ev: CalendarEvent; day?: string }) {
           <span className={`block break-words text-base font-semibold ${done ? "line-through" : ""}`}>
             {done && <span className="sr-only">完了：</span>}
             {done && "✓ "}
-            {ev.title}
+            {eventLabel(ev)}
           </span>
           <span className="block break-words text-[13px] text-ink-3">
             {eventTimeLabel(ev, day)}

@@ -11,6 +11,7 @@ export interface MonthBreakdown {
   variable: number;
   invest: number; // 投資のカテゴリの支出
   lifeExpense: number; // 投資を除いた支出
+  special: number; // そのうち特別支出（月の予算と比べない。2026-11-28）
   income: number;
   lifeBalance: number; // 収入 − 生活の支出
   nisaBuy: number; // その月の NISA の買付
@@ -32,12 +33,14 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
   let variable = 0;
   let invest = 0;
   let income = 0;
+  let special = 0;
   for (const t of entries) {
     if (t.date.slice(0, 7) !== key) continue;
     if (t.kind === "income") {
       income += t.amount;
       continue;
     }
+    if (t.special && !t.invest) special += t.amount;
     if (t.invest) invest += t.amount;
     else if (t.fixed) fixed += t.amount;
     else variable += t.amount;
@@ -74,5 +77,5 @@ export function monthBreakdown(data: AppData, key: string, today: string): Month
   const diffTotal = diffs.reduce((s, x) => s + x.diff, 0);
 
   const lifeExpense = fixed + variable;
-  return { fixed, variable, invest, lifeExpense, income, lifeBalance: income - lifeExpense, nisaBuy, nisaSell, increases, decreases, diffTotal, hasPrev };
+  return { fixed, variable, invest, lifeExpense, special, income, lifeBalance: income - lifeExpense, nisaBuy, nisaSell, increases, decreases, diffTotal, hasPrev };
 }

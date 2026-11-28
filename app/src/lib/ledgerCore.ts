@@ -14,8 +14,9 @@ import type { AppData, Transaction } from "./types";
  * 今の集計（summarizeMonth・monthBreakdown）と同じ答えになることを、並行比較の試験で確かめる（tests/ledger-core.test.ts）。
  */
 export type LedgerEvent =
-  | { kind: "purchase"; txId: string; date: string; gross: number; net: number; categoryId: string; invest: boolean; fixed: boolean; card: boolean; fullyRefunded: boolean; /** 立替で友達の分として払った額（収支に数えない。残高の目安では出ていく） */ advanced?: number }
+  | { kind: "purchase"; txId: string; date: string; gross: number; net: number; categoryId: string; invest: boolean; fixed: boolean; card: boolean; fullyRefunded: boolean; /** 立替で友達の分として払った額（収支に数えない。残高の目安では出ていく） */ advanced?: number; /** 特別支出（月の予算と比べない） */ special?: boolean }
   | { kind: "settlement"; txId: string; of: string; date: string; amount: number }
+  | { kind: "claim"; txId: string; date: string; amount: number; card: boolean }
   | { kind: "refund"; txId: string; of: string; date: string; amount: number }
   | { kind: "income"; txId: string; date: string; amount: number; categoryId: string }
   | { kind: "cardSettlement"; txId: string; date: string; amount: number }
@@ -38,6 +39,8 @@ function toEvent(t: Transaction, cats: ReturnType<typeof categoryMap>, recurring
     if (t.countAs === "transfer") return { kind: "transfer", txId: t.id, date: t.date, amount: t.amount, direction: "in" };
     return { kind: "income", txId: t.id, date: t.date, amount: t.amount, categoryId: t.categoryId };
   }
+  // 経費（会社に請求する）：収支に数えない。残高の目安では払った額が出ていく（精算で戻る）
+  if (t.claim) return { kind: "claim", txId: t.id, date: t.date, amount: t.amount, card: t.paymentMethod === "card" };
   // 全額返金された購入（数え方が transfer で、元の額の控えがある）は、購入として残し、net を 0 にする
   if (t.countAs === "transfer" && t.refundGross !== undefined) {
     const was = t.refundWas ? { ...t, countAs: t.refundWas } : { ...t, countAs: undefined };
@@ -48,7 +51,7 @@ function toEvent(t: Transaction, cats: ReturnType<typeof categoryMap>, recurring
     return { kind: "transfer", txId: t.id, date: t.date, amount: t.amount, direction: "out" };
   }
   const advanced = typeof t.advanceGross === "number" && t.advanceGross > t.amount && t.refundGross === undefined ? t.advanceGross - t.amount : 0;
-  return { kind: "purchase", txId: t.id, date: t.date, gross: t.refundGross ?? t.amount, net: t.amount, categoryId: t.categoryId, invest: txIsInvest(t, cats), fixed: txIsFixed(t, recurring), card: t.paymentMethod === "card", fullyRefunded: false, ...(advanced ? { advanced } : {}) };
+  return { kind: "purchase", txId: t.id, date: t.date, gross: t.refundGross ?? t.amount, net: t.amount, categoryId: t.categoryId, invest: txIsInvest(t, cats), fixed: txIsFixed(t, recurring), card: t.paymentMethod === "card", fullyRefunded: false, ...(advanced ? { advanced } : {}), ...(t.special ? { special: true } : {}) };
 }
 
 const inMonth = (date: string, month: string) => date.slice(0, 7) === month;
@@ -119,13 +122,15 @@ export interface CountedEntry {
   categoryId: string;
   invest: boolean;
   fixed: boolean;
+  /** 特別支出（月の予算と比べない。2026-11-28） */
+  special?: boolean;
 }
 
 export function countedEntries(events: LedgerEvent[]): CountedEntry[] {
   const out: CountedEntry[] = [];
   for (const e of events) {
     if (e.kind === "purchase") {
-      if (!e.fullyRefunded) out.push({ txId: e.txId, date: e.date, kind: "expense", amount: e.net, categoryId: e.categoryId, invest: e.invest, fixed: e.fixed });
+      if (!e.fullyRefunded) out.push({ txId: e.txId, date: e.date, kind: "expense", amount: e.net, categoryId: e.categoryId, invest: e.invest, fixed: e.fixed, ...(e.special ? { special: true } : {}) });
     } else if (e.kind === "income") out.push({ txId: e.txId, date: e.date, kind: "income", amount: e.amount, categoryId: e.categoryId, invest: false, fixed: false });
   }
   return out;
@@ -154,7 +159,7 @@ export function ledgerEntries(d: Pick<AppData, "transactions" | "categories" | "
       continue;
     }
     const fixed = t.type === "expense" && (!!t.recurringId || !!fixedAmounts.get(t.categoryId)?.has(t.amount));
-    out.push({ txId: t.id, date: t.date, kind: "expense", amount: t.amount, categoryId: t.categoryId, invest: txIsInvest(t, cats), fixed });
+    out.push({ txId: t.id, date: t.date, kind: "expense", amount: t.amount, categoryId: t.categoryId, invest: txIsInvest(t, cats), fixed, ...(t.special ? { special: true } : {}) });
   }
   return out;
 }
@@ -199,4 +204,5 @@ export const isLifeExpense = (e: CountedEntry) => e.kind === "expense" && !e.inv
 export const BUDGET_EXCLUDES_INVEST: boolean = IS_PERSONAL;
 
 /** 予算と比べる支出か（excludeInvest が true なら投資を除く） */
-export const isBudgetExpense = (excludeInvest: boolean) => (e: CountedEntry) => e.kind === "expense" && (!excludeInvest || !e.invest);
+/** 特別支出は月の予算と比べない（年の特別支出の予算と比べる） */
+export const isBudgetExpense = (excludeInvest: boolean) => (e: CountedEntry) => e.kind === "expense" && !(e.special && !e.invest) && (!excludeInvest || !e.invest);

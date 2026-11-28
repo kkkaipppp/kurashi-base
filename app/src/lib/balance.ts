@@ -59,6 +59,7 @@ export function cashBalance(d: AppData, today: string): BalanceResult {
   // 精算は、立替の友達の分までしか数えない（指し先の無い・多すぎる精算で残高を増やさない。点検 中2）
   const advLeft = new Map<string, number>();
   for (const e of events) if (e.kind === "purchase" && e.advanced) advLeft.set(e.txId, e.advanced);
+  for (const e of events) if (e.kind === "claim") advLeft.set(e.txId, e.amount);
   let income = 0;
   let spend = 0;
   let refunded = 0;
@@ -86,6 +87,12 @@ export function cashBalance(d: AppData, today: string): BalanceResult {
       if (!isCard.has(e.of)) continue;
       if (isCard.get(e.of)) cardRefunded += e.amount;
       else refunded += e.amount;
+    } else if (e.kind === "claim") {
+      // 経費：払った額が出ていく（カードなら引き落とし待ち）。収支には数えない
+      if (e.card) {
+        cardBought += e.amount;
+        cardActivity = true;
+      } else advancedOut += e.amount;
     } else if (e.kind === "settlement") {
       const room = advLeft.get(e.of) ?? 0;
       const take = Math.min(room, e.amount);

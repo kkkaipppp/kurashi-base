@@ -65,7 +65,8 @@ export default function HomePage() {
   // 自分用は、予算と比べるのを「投資を除いた生活費」に。ホーム・振り返り・1日あたりで同じ計算（lib/ledger.ts。100点化の指示 D）。
   // 公開版は今までどおり、すべての支出と比べる
   const ledger = PERSONAL ? monthLedger(data, month, today) : null;
-  const spentForBudget = ledger ? ledger.lifeExpense : sum.expense;
+  // 予算と比べる額（自分用は投資と特別支出を除く。lib/ledger.ts の monthLedger と同じ）
+  const spentForBudget = ledger ? ledger.spent : sum.expense;
   const remaining = remainingBudget(data.budget.monthly, spentForBudget);
   const todayEvents = eventsOnDay(data.events, today);
   const todaySpent = daySummary(data.transactions, today).expense;

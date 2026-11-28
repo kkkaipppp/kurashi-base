@@ -64,6 +64,8 @@ export interface CollectionConfig<K extends CollectionKey> {
   initial: (ctx: { today: string; data: AppData }) => Draft;
   /** 新しく追加するときの「ひな形」（押すと入力の初めの値に入れるだけ。保存の形は変えない。To-Be 段階3） */
   presets?: { id: string; label: string; draft: Draft }[];
+  /** タグで絞り込む（自分用のメモなど。タグがある記録が1つ以上あるときだけ、一覧の上に出す） */
+  tagsOf?: (item: ItemOf<K>) => string[];
   /** 保存済みの項目 → 入力の初期値 */
   toDraft: (item: ItemOf<K>) => Draft;
   /** 入力 → 保存する項目（検証済みの値を渡す） */
@@ -130,10 +132,13 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
   const data = useData();
   const today = todayStr();
   const [editing, setEditing] = useState<{ id?: string; key: number; date?: string } | null>(null);
-  const list = useMemo(() => {
+  const [tag, setTag] = useState<string | null>(null);
+  const allList = useMemo(() => {
     const l = [...(data[config.key] as ItemOf<K>[])];
     return config.sort ? l.sort(config.sort) : l;
   }, [data, config]);
+  const allTags = useMemo(() => (config.tagsOf ? [...new Set(allList.flatMap((x) => config.tagsOf!(x)))].sort((a, b) => a.localeCompare(b, "ja")) : []), [allList, config]);
+  const list = useMemo(() => (tag && config.tagsOf ? allList.filter((x) => config.tagsOf!(x).includes(tag)) : allList), [allList, tag, config]);
 
   const groups = useMemo(() => {
     if (!config.groupBy) return [["", list]] as [string, ItemOf<K>[]][];
@@ -169,6 +174,15 @@ export function CollectionSection<K extends CollectionKey>({ config, heading }: 
           <div className="text-[13px] text-ink-3">{config.intro}</div>
         ))}
       {config.header?.({ data, today, list })}
+      {allTags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label="タグで絞り込む">
+          {[null, ...allTags].map((t) => (
+            <button key={t ?? "all"} type="button" aria-pressed={tag === t} onClick={() => setTag(t)} className={`min-h-11 rounded-full border px-3 text-[13px] font-semibold ${tag === t ? "border-brand bg-brand-soft text-brand" : "border-line text-ink-2"}`}>
+              {t === null ? "すべて" : `#${t}`}
+            </button>
+          ))}
+        </div>
+      )}
       {list.length === 0 ? (
         <Empty action={!blocked && <Button onClick={add}>{config.addLabel ?? `${config.noun}を追加`}</Button>}>{config.emptyText}</Empty>
       ) : (

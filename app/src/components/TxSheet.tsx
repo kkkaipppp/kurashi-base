@@ -56,13 +56,17 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         type: editing.type,
         date: editing.date,
         // 立替は、入力では払った総額と自分の分に分けて見せる（保存は amount＝自分の分）
-        amount: String(isAdvance(editing) ? (editing.advanceGross as number) : editing.amount),
-        ...(isAdvance(editing) ? { advanceMine: String(editing.amount) } : {}),
+        amount: String(isAdvance(editing) && !editing.claim ? (editing.advanceGross as number) : editing.amount),
+        ...(isAdvance(editing) && !editing.claim ? { advanceMine: String(editing.amount) } : {}),
+        ...(editing.claim ? { claim: true } : {}),
+        ...(editing.template ? { template: true } : {}),
+        ...(editing.special ? { special: true } : {}),
         categoryId: editing.categoryId,
         merchant: editing.merchant,
         paymentMethod: editing.paymentMethod,
         note: editing.note,
-        countAs: editing.countAs === "transfer" && editing.transferKind === "card" ? "transfer-card" : (editing.countAs ?? ""),
+        // 経費は数え方を「収支に数えない」で持つが、入力では経費の印で見せる（数え方の欄は空）
+        countAs: editing.claim ? "" : editing.countAs === "transfer" && editing.transferKind === "card" ? "transfer-card" : (editing.countAs ?? ""),
         tripId: editing.tripId ?? "",
         linkRecurringId: "",
         linkPartial: false,
@@ -212,7 +216,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (lock.current) return;
     // 返金の記録は直せない（元の支出と金額が合わなくなるため）。削除すれば、元の支出が元に戻る
     // 公開版には立替の欄が無い。復元などで入った立替・精算の記録は、公開版では直さない（総額に戻したり、ふつうの収入にしたりしない）
-    if (!EXTRA && (editing?.advanceGross !== undefined || editing?.settles)) {
+    if (!EXTRA && (editing?.advanceGross !== undefined || editing?.settles || editing?.claim)) {
       setSaveError("この記録は、この画面では直せません");
       return;
     }
@@ -235,7 +239,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         return;
       }
       // 立替（自分用）：入力の金額は払った総額。保存では amount＝自分の分、advanceGross＝総額
-      const mineStr = draft.type === "expense" ? (draft.advanceMine ?? "").trim() : "";
+      const claim = EXTRA && draft.type === "expense" && !!draft.claim;
+      const mineStr = draft.type === "expense" && !claim ? (draft.advanceMine ?? "").trim() : "";
       let advance: { gross: number; mine: number } | null = null;
       if (EXTRA && mineStr) {
         const pm = parseAmount(mineStr);
@@ -256,9 +261,14 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         advance = { gross: v.amount, mine: (pm as { ok: true; value: number }).value };
       }
       // 返してもらった分がある立替は、返してもらった額より「返してもらう分」を少なくできない・立替をやめられない
-      if (EXTRA && editing && !asNew && editing.advanceGross !== undefined) {
+      if (claim && (draft.linkRecurringId || editing?.recurringId || (req.mode === "new" && req.recurringId))) {
+        setSaveError("固定費の支払いは、経費にできません");
+        return;
+      }
+      if (EXTRA && editing && !asNew && (editing.advanceGross !== undefined || editing.claim)) {
         const got = settledTotal(data, editing.id);
-        if (got > 0 && (!advance || advance.gross - advance.mine < got)) {
+        const owedNow = claim ? v.amount : advance ? advance.gross - advance.mine : 0;
+        if (got > 0 && owedNow < got) {
           setSaveError(`もう ${formatYen(got)} 返してもらっています。立替をやめる・返してもらう分を減らすときは、先に精算の記録を削除してください`);
           return;
         }
@@ -284,6 +294,11 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         date: draft.date,
         amount: advance ? advance.mine : v.amount,
         ...(advance ? { advanceGross: advance.gross } : editing?.advanceGross !== undefined ? { advanceGross: undefined } : {}),
+        ...(claim ? { claim: true as const } : editing?.claim ? { claim: undefined } : {}),
+        // 入力のひな形（自分用だけ触る）
+        ...(EXTRA && draft.template ? { template: true as const } : EXTRA && editing?.template ? { template: undefined } : {}),
+        // 特別支出（自分用だけ触る。経費・収入には付けない）
+        ...(EXTRA && draft.type === "expense" && !claim && draft.special ? { special: true as const } : EXTRA && editing?.special ? { special: undefined } : {}),
         categoryId: draft.categoryId,
         merchant: draft.merchant.trim(),
         paymentMethod: draft.paymentMethod,
@@ -299,8 +314,9 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         // 残り（予定額 − すでに払った分）より少ないときだけ（チェック欄の表示条件と同じ）。全部払い終わる額なら、一部の印は付けない
         ...(linkOk && draft.linkPartial && v.amount < remainingOf(data.recurring.find((r) => r.id === linkOk)) ? { recurringPartial: true } : {}),
         // 数え方・旅行は、空なら持たない（編集で外したときは store が消す）
-        countAs: draft.type === "expense" && draft.countAs ? (draft.countAs === "transfer-card" ? "transfer" : draft.countAs) : undefined,
-        transferKind: draft.type === "expense" && draft.countAs === "transfer-card" ? "card" : undefined,
+        // 経費は「収支に数えない」で持つ（どの集計にも入らない。lib/advance.ts）
+        countAs: claim ? "transfer" : draft.type === "expense" && draft.countAs ? (draft.countAs === "transfer-card" ? "transfer" : draft.countAs) : undefined,
+        transferKind: !claim && draft.type === "expense" && draft.countAs === "transfer-card" ? "card" : undefined,
         tripId: draft.tripId && (data.trips ?? []).some((t) => t.id === draft.tripId) ? draft.tripId : undefined,
       };
       if (input.countAs === undefined && !editing?.countAs) delete input.countAs;
@@ -567,16 +583,43 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         )}
 
         {EXTRA && draft.type === "expense" && editing?.refundGross === undefined && (
+          <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3">
+            <span>
+              <span className="block text-[15px] font-medium">経費（会社に請求する）</span>
+              <span className="block text-[12px] text-ink-3">支出に数えず、全額を「返してもらう分」にします</span>
+            </span>
+            <input type="checkbox" checked={!!draft.claim} onChange={(e) => set("claim", e.target.checked)} className="size-5 accent-[var(--brand)]" />
+          </label>
+        )}
+        {EXTRA && draft.type === "expense" && !draft.claim && editing?.refundGross === undefined && (
           <Field label="立替（友達の分も払った）" optional htmlFor="tx-adv" error={errors.advanceMine}>
             <input id="tx-adv" inputMode="numeric" value={draft.advanceMine ?? ""} onChange={(e) => set("advanceMine", e.target.value)} className={inputCls} placeholder="自分の分の金額" maxLength={14} aria-describedby="tx-adv-help" />
             <p id="tx-adv-help" className="mt-1 text-[12px] text-ink-3">上の金額は払った総額のまま。支出に数えるのは自分の分だけで、残りは「返してもらう分」になります。</p>
           </Field>
         )}
         {EXTRA && editing && editing.type === "expense" && isAdvance(editing) && <SettleBox tx={editing} onDone={onClose} />}
-        {EXTRA && editing && editing.type === "expense" && !editing.refundOf && editing.advanceGross === undefined && <RefundBox tx={editing} onDone={onClose} />}
+        {EXTRA && editing && editing.type === "expense" && !editing.refundOf && editing.advanceGross === undefined && !editing.claim && <RefundBox tx={editing} onDone={onClose} />}
         {EXTRA && editing?.settles && <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">この記録は精算（立替を返してもらった）です。集計では、収入にも支出にも入りません。削除すると、返してもらう分が元に戻ります。</p>}
         {EXTRA && editing?.refundOf && <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">この記録は返金です。元の支出の額を減らしています（集計では、収入にも支出にも入りません）。削除すると、元の支出が元に戻ります。</p>}
 
+        {EXTRA && draft.type === "expense" && !draft.claim && (
+          <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3">
+            <span>
+              <span className="block text-[15px] font-medium">特別支出（帰省・車検など）</span>
+              <span className="block text-[12px] text-ink-3">毎月の予算と比べず、年の特別支出の予算と比べます</span>
+            </span>
+            <input type="checkbox" checked={!!draft.special} onChange={(e) => set("special", e.target.checked)} className="size-5 accent-[var(--brand)]" />
+          </label>
+        )}
+        {EXTRA && draft.type && !draft.claim && !(draft.advanceMine ?? "").trim() && (
+          <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3">
+            <span>
+              <span className="block text-[15px] font-medium">ひな形にする</span>
+              <span className="block text-[12px] text-ink-3">「追加」の一覧の「ひな形」にいつも出します（店名・カテゴリ・金額・支払方法）</span>
+            </span>
+            <input type="checkbox" checked={!!draft.template} onChange={(e) => set("template", e.target.checked)} className="size-5 accent-[var(--brand)]" />
+          </label>
+        )}
         <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
           <textarea id="tx-note" rows={2} value={draft.note} onChange={(e) => set("note", e.target.value)} className={inputCls} maxLength={500} />
         </Field>
