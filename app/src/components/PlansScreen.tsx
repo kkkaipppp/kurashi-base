@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, Empty, Field, IconChevronR, PageHeader, inputCls } from "@/components/ui";
+import { PollSection } from "@/components/PollSection";
 import { useUI } from "@/components/UIContext";
 import { useData, useStore } from "@/lib/store";
 import { newId } from "@/lib/defaults";
@@ -262,6 +263,8 @@ function PlanDetail({ plan, onBack }: { plan: Plan; onBack: () => void }) {
           ))}
         </ul>
       )}
+
+      <PollSection plan={plan} save={save} />
 
       <section aria-labelledby="pl-next">
         <h2 id="pl-next" className="mb-1 text-[16px] font-bold">

@@ -145,6 +145,8 @@ export default function HomePage() {
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/20" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-valuetext={data.budget.monthly ? `予算の${Math.round((spentForBudget / data.budget.monthly) * 100)}%${spentForBudget > data.budget.monthly ? "（超過）" : ""}` : undefined} aria-label="予算の使用率">
                 <div className={`h-full rounded-full ${remaining < 0 ? "bg-[#ffb4a6]" : "bg-white"}`} style={{ width: `${pct}%` }} />
               </div>
+              {/* 自分用は、予算と使った額の行・固定費の説明を「計算の内訳」に任せる（数字を2つにする。2026-11-28 洗い出し 6） */}
+              {!(PERSONAL && allowance) && (
               <div className="mt-2 flex items-center justify-between gap-2">
                 <p className="num text-[12px] opacity-90">
                   予算 {formatYen(data.budget.monthly ?? 0)}・使った額{ledger ? "（投資を除く）" : ""} {formatYen(spentForBudget)}
@@ -153,6 +155,7 @@ export default function HomePage() {
                   家計簿
                 </Link>
               </div>
+              )}
               {allowance && (
                 <p className="num mt-2 rounded-xl bg-white/15 px-3 py-2 text-[13px]">
                   {allowance.freeLeft < 0 ? (
@@ -165,9 +168,11 @@ export default function HomePage() {
                       月末まで（{allowance.daysLeft}日）<strong className="text-[16px]">1日あたり {formatYen(allowance.perDay)}</strong> 使えます
                     </>
                   )}
+                  {!PERSONAL && (
                   <span className="block text-[12px] opacity-90">
                     {allowance.unpaidFixed > 0 ? `まだ記録していない今月の固定費 ${formatYen(allowance.unpaidFixed)} を引いた額です` : "今月の固定費は記録済みです"}
                   </span>
+                  )}
                 </p>
               )}
               {allowance && <AllowanceDetails today={today} />}

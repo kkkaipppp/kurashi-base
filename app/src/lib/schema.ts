@@ -93,6 +93,11 @@ const isCondList = (v: unknown) =>
   );
 const isMoneyOrNull = (v: unknown) => v === null || (Number.isInteger(v) && (v as number) >= 0 && (v as number) <= MAX_AMOUNT);
 
+/** 日程調整の回答リンクの控え（To-Be 段階4。2026-11-28） */
+const isPoll = (v: unknown) =>
+  isObj(v) && isStr(v.id) && isStr(v.ownerKey) && isStr(v.title) && isDate(v.closesAt) && oneOf("draft", "open", "closed")(v.status) && isStr(v.createdAt) &&
+  Array.isArray(v.options) && v.options.length <= 20 && v.options.every((o) => isObj(o) && isStr(o.id) && isDate(o.date) && isStr(o.label));
+
 /** To-Be（2026-11-27）の計画。候補は任意 */
 const isCandidate = (c: unknown) =>
   isObj(c) && isStr(c.id) && isStr(c.label) && isHttpOrBlank(c.url) && isMoneyOrNull(c.price) && isStr(c.note) && optional(isBool)(c.chosen);
@@ -101,7 +106,7 @@ const isPlan = (p: unknown): p is Record<string, unknown> =>
   oneOf("gathering", "trip", "move", "shopping", "business", "job", "free")(p.type) &&
   oneOf("considering", "preparing", "done", "canceled")(p.status) &&
   okDateOrBlank(p.date) && isMoneyOrNull(p.budget) && isStr(p.note) && optional(isStr)(p.tripId) &&
-  optional((v) => Array.isArray(v) && v.every(isCandidate))(p.candidates) && isStr(p.createdAt) && isStr(p.updatedAt);
+  optional((v) => Array.isArray(v) && v.every(isCandidate))(p.candidates) && optional(isPoll)(p.poll) && isStr(p.createdAt) && isStr(p.updatedAt);
 
 /** v5 で予定に足した任意の項目（無くてもよい。あれば形を確かめる） */
 const EVENT_V5: Record<string, (v: unknown) => boolean> = {

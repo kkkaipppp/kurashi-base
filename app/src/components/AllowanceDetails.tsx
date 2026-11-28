@@ -15,7 +15,7 @@ export function AllowanceDetails({ today }: { today: string }) {
   if (!b) return null;
   return (
     <details className="mt-2 rounded-xl bg-white/15 px-3 text-[13px]">
-      <summary className="flex min-h-11 cursor-pointer items-center font-semibold">この数字の内訳を見る</summary>
+      <summary className="flex min-h-11 cursor-pointer items-center font-semibold">{process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? "計算の内訳（予算・使った額・固定費）" : "この数字の内訳を見る"}</summary>
       <dl className="num space-y-1 pb-2">
         <div className="flex justify-between gap-2">
           <dt>今月の予算</dt>

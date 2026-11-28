@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useData, useStore } from "@/lib/store";
 import { parseAmount, formatYen } from "@/lib/money";
 import { applyRestore, backupFileName, backupSizeNotice, buildBackup, countData, COUNT_LABELS, MAX_BACKUP_BYTES, parseBackup, type RestorePreview } from "@/lib/backup";
@@ -50,6 +50,18 @@ const SETTING_GROUPS: [string, string, string][] = [
   ["set-about", "アプリ情報", "このアプリについて"],
 ];
 
+/** 前からの「/settings#〜」のリンクを、区切りの画面に読み替える */
+const HASH_GROUP: Record<string, string> = {
+  budget: "set-money",
+  categories: "set-money",
+  backup: "set-data",
+  danger: "set-data",
+  menu: "set-display",
+  nav: "set-display",
+  "calendar-file": "set-connect",
+  "csv-import": "set-connect",
+};
+
 function GroupLabel({ id, children }: { id: string; children: string }) {
   if (!GROUPS) return null;
   return (
@@ -62,6 +74,16 @@ function GroupLabel({ id, children }: { id: string; children: string }) {
 
 export default function SettingsPage() {
   const nativeApp = useIsNativeApp();
+  const [group, setGroup] = useState<string | null>(null);
+  // 前からの「/settings#budget」などのリンクは、その区切りを開いてから、その場所へ動かす
+  useEffect(() => {
+    if (!PERSONAL_BUILD) return;
+    const h = location.hash.slice(1);
+    const g = SETTING_GROUPS.some(([id]) => id === h) ? h : HASH_GROUP[h];
+    if (!g) return;
+    setGroup(g); // eslint-disable-line react-hooks/set-state-in-effect
+    requestAnimationFrame(() => document.getElementById(h)?.scrollIntoView());
+  }, []);
   const data = useData();
   const store = useStore();
   const ui = useUI();
@@ -812,42 +834,49 @@ export default function SettingsPage() {
     </>
   );
 
+  // 自分用：設定は区切りごとの画面（一覧で選ぶと、その区切りだけを出す。見出しの「戻る」で一覧へ。2026-11-28 洗い出し 5）
+  const groupLabel = group ? SETTING_GROUPS.find(([id]) => id === group)?.[1] : undefined;
   return (
     <main className="space-y-4">
-      <PageHeader title="設定" />
+      <PageHeader title={PERSONAL_BUILD && groupLabel ? groupLabel : "設定"} onBack={PERSONAL_BUILD && group ? () => setGroup(null) : undefined} />
       {PERSONAL_BUILD ? (
-        <>
+        group === null ? (
           <nav aria-label="設定の区切り">
             <ul className="divide-y divide-line border-y border-line">
               {SETTING_GROUPS.map(([id, label, desc]) => (
                 <li key={id}>
-                  <a href={`#${id}`} className="flex min-h-12 items-center justify-between gap-3 py-1 hover:bg-surface-2">
+                  <button type="button" onClick={() => { setGroup(id); window.scrollTo(0, 0); }} className="flex min-h-12 w-full items-center justify-between gap-3 py-1 text-left hover:bg-surface-2">
                     <span>
                       <span className="block text-[16px] font-semibold">{label}</span>
                       <span className="block text-[13px] text-ink-3">{desc}</span>
                     </span>
                     <span aria-hidden="true" className="text-ink-3">›</span>
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
           </nav>
-          <GroupLabel id="set-general">一般</GroupLabel>
-          {StartScreenCard && <StartScreenCard />}
-          <GroupLabel id="set-display">表示</GroupLabel>
-          {NavSettingsCard && <NavSettingsCard />}
-          {MenuVisibilityCard && <MenuVisibilityCard />}
-          {blkHome}
-          <GroupLabel id="set-money">家計簿</GroupLabel>
-          {blkBudget}
-          {blkCategories}
-          <GroupLabel id="set-connect">外部連携</GroupLabel>
-          {blkConnect}
-          <GroupLabel id="set-data">データ管理</GroupLabel>
-          {blkData}
-          <GroupLabel id="set-about">アプリ情報</GroupLabel>
-          {blkAbout}
+        ) : (
+        <>
+          {group === "set-general" && StartScreenCard && <StartScreenCard />}
+          {group === "set-display" && (
+            <>
+              {NavSettingsCard && <NavSettingsCard />}
+              {MenuVisibilityCard && <MenuVisibilityCard />}
+              {blkHome}
+            </>
+          )}
+          {group === "set-money" && (
+            <>
+              {blkBudget}
+              {blkCategories}
+            </>
+          )}
+          {group === "set-connect" && blkConnect}
+          {group === "set-data" && blkData}
+          {group === "set-about" && blkAbout}
         </>
+        )
       ) : (
         <>
       {/* 設定の目次（レビュー o1 の P15：長いので、日常の設定とデータの管理を分けて飛べるように） */}

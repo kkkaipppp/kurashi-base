@@ -16,6 +16,9 @@ const PERSONAL_SHELL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const PersonalShell = PERSONAL_SHELL ? dynamic(() => import("./PersonalShell").then((m) => m.PersonalShell), { ssr: false }) : null;
 
 export function AppShell({ children }: { children: ReactNode }) {
+  // 日程調整の回答のページ（友達が開く）は、アプリの枠・端末の記録の読み込みを使わない（To-Be 段階4。点検 中5）
+  const path = usePathname();
+  if (path === "/a" || path.startsWith("/a/")) return <div className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pb-10">{children}</div>;
   return (
     <StoreProvider>
       <Gate>{children}</Gate>

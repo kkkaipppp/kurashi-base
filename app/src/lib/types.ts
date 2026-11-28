@@ -106,6 +106,16 @@ export interface Plan {
   note: string;
   tripId?: string;
   candidates?: PlanCandidate[];
+  /** 日程調整の回答リンク（To-Be 段階4。2026-11-28 S-5 で保存の形の変更を許可）。ownerKey は端末の外へ出さない（lib/share/poll.ts） */
+  poll?: {
+    id: string;
+    ownerKey: string;
+    title: string;
+    options: { id: string; date: string; label: string }[];
+    closesAt: string;
+    status: "draft" | "open" | "closed";
+    createdAt: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

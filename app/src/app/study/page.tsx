@@ -19,6 +19,8 @@ import dynamic from "next/dynamic";
 // 自分用：今日の勉強時間・前回の続き・タイマー（o31 F015・D017）。公開版の組み立てには入れない
 const StudyTop = process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? dynamic(() => import("@/components/StudyTimer").then((m) => m.StudyTop)) : () => null;
 // 自分用：本棚（教材の状態・量）と受験の回（o31 F012・F013）
+// 自分用：勉強のカードの補足をたたむ（版の値を直接比べる）
+const STUDY_FOLD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const SHELF = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const StudyShelf = SHELF ? dynamic(() => import("@/components/StudyShelf").then((m) => m.StudyShelf)) : () => null;
 
@@ -141,23 +143,6 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
           </Button>
         </div>
 
-        <p className="num mt-2 text-[13px] text-ink-2">
-          合計 {formatMinutes(st.totalMinutes)}
-          {s.targetHours ? `／${s.targetHours}時間（${st.targetPct}%）` : ""}
-        </p>
-        <p className="num text-[13px] text-ink-2">
-          この7日間 {formatMinutes(st.weekMinutes)}
-          {/* 1週間の目安と比べる（レビュー o1 の P18） */}
-          {target.kind === "ok" && (
-            <span className={st.weekMinutes >= target.minutes * 7 ? "text-brand" : ""}>／1週間の目安 {formatMinutes(target.minutes * 7)}</span>
-          )}
-        </p>
-        {s.targetHours ? (
-          <div className="mt-1 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={st.targetPct ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label="目標の勉強時間に対する進み具合">
-            <div className="h-full rounded-full bg-brand" style={{ width: `${st.targetPct ?? 0}%` }} />
-          </div>
-        ) : null}
-
         {!s.archived && (
           <div className="mt-3 rounded-xl bg-brand-soft px-3 py-2 text-[14px]">
             {target.kind === "ok" && (
@@ -188,6 +173,28 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
             </div>
           </div>
         )}
+
+        {/* 自分用：合計・7日間・目安の出典・参考書・外部のリンクは「くわしく」にたたむ（カードを短くする。2026-11-28 洗い出し 12） */}
+        {STUDY_FOLD ? (
+          <details className="mt-3">
+            <summary className="flex min-h-11 cursor-pointer items-center text-[14px] font-semibold text-ink-2">くわしく（合計・この7日間・参考書・リンク）</summary>
+            <>
+        <p className="num mt-2 text-[13px] text-ink-2">
+          合計 {formatMinutes(st.totalMinutes)}
+          {s.targetHours ? `／${s.targetHours}時間（${st.targetPct}%）` : ""}
+        </p>
+        <p className="num text-[13px] text-ink-2">
+          この7日間 {formatMinutes(st.weekMinutes)}
+          {/* 1週間の目安と比べる（レビュー o1 の P18） */}
+          {target.kind === "ok" && (
+            <span className={st.weekMinutes >= target.minutes * 7 ? "text-brand" : ""}>／1週間の目安 {formatMinutes(target.minutes * 7)}</span>
+          )}
+        </p>
+        {s.targetHours ? (
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={st.targetPct ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label="目標の勉強時間に対する進み具合">
+            <div className="h-full rounded-full bg-brand" style={{ width: `${st.targetPct ?? 0}%` }} />
+          </div>
+        ) : null}
 
         {cert?.targetHoursHint && (
           <p className="mt-3 text-[12px] text-ink-3">
@@ -236,6 +243,76 @@ function SubjectCard({ s, today, onEdit }: { s: StudySubject; today: string; onE
             </a>
           )}
         </div>
+            </>
+          </details>
+        ) : (
+          <>
+        <p className="num mt-2 text-[13px] text-ink-2">
+          合計 {formatMinutes(st.totalMinutes)}
+          {s.targetHours ? `／${s.targetHours}時間（${st.targetPct}%）` : ""}
+        </p>
+        <p className="num text-[13px] text-ink-2">
+          この7日間 {formatMinutes(st.weekMinutes)}
+          {/* 1週間の目安と比べる（レビュー o1 の P18） */}
+          {target.kind === "ok" && (
+            <span className={st.weekMinutes >= target.minutes * 7 ? "text-brand" : ""}>／1週間の目安 {formatMinutes(target.minutes * 7)}</span>
+          )}
+        </p>
+        {s.targetHours ? (
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={st.targetPct ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label="目標の勉強時間に対する進み具合">
+            <div className="h-full rounded-full bg-brand" style={{ width: `${st.targetPct ?? 0}%` }} />
+          </div>
+        ) : null}
+
+        {cert?.targetHoursHint && (
+          <p className="mt-3 text-[12px] text-ink-3">
+            勉強時間の目安：{cert.targetHoursHint.min}〜{cert.targetHoursHint.max}時間（
+            <a href={cert.targetHoursHint.source} target="_blank" rel="noopener noreferrer" className="underline">
+              出典：{sourceLabel(cert.targetHoursHint.source)}
+            </a>
+            ）。学習の経験で大きく変わります。
+          </p>
+        )}
+
+        {SHELF && <StudyShelf s={s} />}
+        {!SHELF && (s.books?.length ?? 0) > 0 && (
+          <div className="mt-3">
+            <p className="mb-1 text-[12px] font-semibold text-ink-3">参考書</p>
+            <ul className="space-y-1">
+              {s.books!.map((b) => {
+                const href = b.url ? safeExternalLink(b.url) : null;
+                return (
+                  <li key={b.id} className="text-[14px]">
+                    {href ? (
+                      <a href={href} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand underline">
+                        {b.title}
+                      </a>
+                    ) : (
+                      <span className="font-semibold">{b.title}</span>
+                    )}
+                    {b.note && <span className="ml-1 text-[12px] text-ink-3">{b.note}</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <a href={bookSearch(`${s.name} 参考書`) ?? "#"} target="_blank" rel="noopener noreferrer" className={linkCls}>
+            参考書を探す（Amazon）
+          </a>
+          <a href={noteSearch(`${s.name} 勉強法`) ?? "#"} target="_blank" rel="noopener noreferrer" className={linkCls}>
+            noteで勉強法を探す
+          </a>
+          {cert && (
+            <a href={cert.officialExamURL} target="_blank" rel="noopener noreferrer" className={linkCls}>
+              試験の公式ページ
+            </a>
+          )}
+        </div>
+          </>
+        )}
       </Card>
     </li>
   );
