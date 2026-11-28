@@ -248,6 +248,8 @@ export interface Note {
   pinned: boolean;
   /** タグ（自分用。1つ20字まで・10個まで。2026-11-28） */
   tags?: string[];
+  /** 写真の保管場所（写真そのものは持たない。決定 Q33 ①。自分用・任意。2026-11-28） */
+  photoPlace?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -435,6 +437,8 @@ export interface LifeDocument {
   expiry: string; // 期限（"" = なし）
   place: string; // 保管場所（ファイル本体は保存しない）
   note: string;
+  /** 写真・スキャンの保管場所（写真そのものは持たない。決定 Q33 ①。自分用・任意） */
+  photoPlace?: string;
   createdAt: string;
   updatedAt: string;
 }

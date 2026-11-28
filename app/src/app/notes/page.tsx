@@ -29,13 +29,14 @@ const config: CollectionConfig<"notes"> = {
     { name: "date", label: "日付", optional: true, type: "date", half: true },
     { name: "pinned", label: "上に固定", type: "checkbox", half: true },
     ...(PERSONAL_BUILD ? [{ name: "tags", label: "タグ", optional: true, type: "text" as const, placeholder: "例：旅行、家族（読点で区切る）" }] : []),
+    ...(PERSONAL_BUILD ? [{ name: "photoPlace", label: "写真の保管場所", optional: true, type: "text" as const, placeholder: "例：iPhone の写真「レシート」アルバム", hint: "写真はこのアプリには入れません（端末の容量を守るため）。iPhone の写真などに置き、どこにあるかを書いておきます" }] : []),
   ],
   initial: ({ today }) => ({ title: "", body: "", date: today, pinned: false }),
   // 「追加」・カレンダーから選んだ日で始める（o31 F002。再点検 L-1）
   newDateField: "date",
-  toDraft: (n) => ({ title: n.title, body: n.body, date: n.date, pinned: n.pinned, tags: (n.tags ?? []).join("、") }),
+  toDraft: (n) => ({ title: n.title, body: n.body, date: n.date, pinned: n.pinned, tags: (n.tags ?? []).join("、"), photoPlace: n.photoPlace ?? "" }),
   // タグは自分用だけ触る（公開版は項目を触らない＝あるタグはそのまま残る）
-  fromDraft: (d) => ({ title: str(d, "title"), body: str(d, "body"), date: str(d, "date"), pinned: bool(d, "pinned"), ...(PERSONAL_BUILD ? { tags: parseTags(str(d, "tags")).length ? parseTags(str(d, "tags")) : undefined } : {}) }),
+  fromDraft: (d) => ({ title: str(d, "title"), body: str(d, "body"), date: str(d, "date"), pinned: bool(d, "pinned"), ...(PERSONAL_BUILD ? { tags: parseTags(str(d, "tags")).length ? parseTags(str(d, "tags")) : undefined, photoPlace: str(d, "photoPlace").trim().slice(0, 200) || undefined } : {}) }),
   ...(PERSONAL_BUILD ? { tagsOf: (n: { tags?: string[] }) => n.tags ?? [] } : {}),
   validate: (d) => (!str(d, "title") && !str(d, "body") ? { body: "タイトルか本文を入力してください" } : ({} as Record<string, string>)),
   // 固定したもの → 日付の新しい順 → 日付なし
