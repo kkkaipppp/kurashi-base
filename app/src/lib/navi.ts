@@ -54,7 +54,7 @@ export function buildNavi(data: AppData, today: string): NaviItem[] {
   }
 
   for (const g of data.goals) {
-    if (g.done) continue;
+    if (g.done || g.pausedAt) continue; // 休止中の目標は出さない（To-Be 2026-11-28）
     const d = daysLeft(g.deadline, today);
     if (d === null || d > 7) continue;
     items.push({ key: `goal-${g.id}`, tone: d < 0 ? "warn" : "today", title: g.title, sub: `目標・${dueLabel(d)}・達成率${goalProgress(g)}%`, href: `/goals?open=${g.id}` });

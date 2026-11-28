@@ -60,7 +60,7 @@ export function buildTodayItems(data: AppData, today: string): TodayItem[] {
   for (const c of data.contracts)
     if (c.status === "active" && c.renewalDate === today) out.push({ key: `ct-${c.id}`, sort: "3", time: "期限", title: `${c.name}の更新日`, sub: "契約", href: `/contracts?open=${c.id}` });
   for (const d of data.documents) if (d.expiry === today) out.push({ key: `doc-${d.id}`, sort: "3", time: "期限", title: `${d.title}の期限`, sub: "書類", href: `/documents?open=${d.id}` });
-  for (const g of data.goals) if (!g.done && g.deadline === today) out.push({ key: `goal-${g.id}`, sort: "3", time: "期限", title: g.title, sub: "目標の期限", href: `/goals?open=${g.id}` });
+  for (const g of data.goals) if (!g.done && !g.pausedAt && g.deadline === today) out.push({ key: `goal-${g.id}`, sort: "3", time: "期限", title: g.title, sub: "目標の期限", href: `/goals?open=${g.id}` });
   for (const s of data.studySubjects) if (!s.archived && s.examDate === today) out.push({ key: `study-${s.id}`, sort: "1", time: "試験", title: `${s.name}の試験日`, sub: "資格", href: `/study?open=${s.id}` });
   return out.sort((a, b) => a.sort.localeCompare(b.sort));
 }

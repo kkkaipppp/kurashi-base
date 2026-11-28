@@ -68,6 +68,8 @@ export interface CollectionConfig<K extends CollectionKey> {
   toDraft: (item: ItemOf<K>) => Draft;
   /** 入力 → 保存する項目（検証済みの値を渡す） */
   fromDraft: (d: Draft) => ItemInput<K>;
+  /** 保存の直前に、前の記録から足す項目（資産の推移など。To-Be 2026-11-28） */
+  beforeSave?: (prev: ItemOf<K> | undefined, next: ItemInput<K>) => ItemInput<K>;
   /** 追加の検証（項目名 → エラー文） */
   validate?: (d: Draft) => Record<string, string>;
   row: (item: ItemOf<K>, ctx: { today: string; data: AppData }) => RowView;
@@ -246,7 +248,8 @@ function ItemSheet<K extends CollectionKey>({ config, id, date, onClose }: { con
     setErrors(real);
     if (Object.keys(real).length) return focusFirstInvalid();
     lock.current = true;
-    const item = config.fromDraft(draft);
+    const drafted = config.fromDraft(draft);
+    const item = config.beforeSave ? config.beforeSave(cur, drafted) : drafted;
     const r = await (cur ? store.updateItem(config.key, (cur as { id: string }).id, item, editSnapshot.current) : store.addItem(config.key, item));
     if (!r.ok) {
       lock.current = false;

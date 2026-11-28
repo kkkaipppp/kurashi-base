@@ -122,8 +122,8 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
   nisa: { label: "NISA", fields: { date: isDate, kind: oneOf("buy", "sell"), frame: oneOf("tsumitate", "growth"), amount: (v) => isAmt(v), name: isStr, note: isStr } },
   notes: { label: "生活記録・メモ", fields: { title: isStr, body: isStr, date: okDateOrBlank, pinned: isBool } },
   tasks: { label: "やること", fields: { title: isStr, due: okDateOrBlank, done: isBool, note: isStr, eventId: optional(isStr), planId: optional(isStr) } },
-  assets: { label: "資産", fields: { name: isStr, kind: oneOf("cash", "investment", "nisa", "pension", "insurance", "property", "other"), value: numOrNull, asOf: okDateOrBlank, note: isStr, cardDebt: optional(isAmt) } },
-  contracts: { label: "契約", fields: { name: isStr, provider: isStr, amount: numOrNull, cycle: oneOf("monthly", "yearly", "none"), renewalDate: okDateOrBlank, status: oneOf("active", "cancelled"), note: isStr } },
+  assets: { label: "資産", fields: { name: isStr, kind: oneOf("cash", "investment", "nisa", "pension", "insurance", "property", "other"), value: numOrNull, asOf: okDateOrBlank, note: isStr, cardDebt: optional(isAmt), debt: optional((v) => v === true), history: optional((v) => Array.isArray(v) && v.length <= 100 && v.every((p) => isObj(p) && isDate(p.asOf) && isNum(p.value))) } },
+  contracts: { label: "契約", fields: { name: isStr, provider: isStr, amount: numOrNull, cycle: oneOf("monthly", "yearly", "none"), renewalDate: okDateOrBlank, status: oneOf("active", "cancelled"), note: isStr, recurringId: optional(isStr) } },
   health: { label: "健康記録", fields: { date: isDate, item: isStr, value: numOrNull, unit: isStr, note: isStr } },
   documents: { label: "書類", fields: { title: isStr, category: isStr, expiry: okDateOrBlank, place: isStr, note: isStr } },
   studySubjects: { label: "勉強（資格）", fields: { name: isStr, examDate: okDateOrBlank, targetHours: (v) => v === null || (isNum(v) && (v as number) > 0), archived: isBool, catalogId: optional(isStr), books: optional(isBookList), exams: optional(isExamList), reviewDays: optional((v) => Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 365) } },
@@ -161,6 +161,7 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
       condMode: optional(oneOf("and", "or")),
       parentId: optional(isStr),
       achievements: optional((v) => Array.isArray(v) && v.every((a) => isObj(a) && isIso(a.at) && oneOf("met", "unmet", "unknown")(a.verdict) && isCondList(a.conditions))),
+      pausedAt: optional(isDate),
     },
   },
 };

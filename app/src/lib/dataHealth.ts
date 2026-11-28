@@ -1,4 +1,5 @@
 import { settleProblems } from "./advance";
+import { danglingContracts } from "./contractLink";
 import { daysBetween } from "./date";
 import { inboxCount } from "./inbox";
 import { ledgerEvents, refundConservationErrors } from "./ledgerCore";
@@ -37,6 +38,7 @@ export function dataHealth(d: AppData, today: string): HealthFinding[] {
     add({ id: "refund-orphan", level: "warn", text: "元の支出が見つからない返金の記録があります（元の支出が消えた可能性。残高には数えていません）", count: d.transactions.filter((t) => t.refundOf && !purchaseIds.has(t.refundOf)).length, href: "/history" });
     add({ id: "settle-bad", level: "warn", text: "立替が見つからない・数え方が違う・返してもらう分より多い精算の記録があります（残高には、立替の分までしか数えていません）", count: settleProblems(d).length, href: "/history" });
   }
+  add({ id: "ct-rec", level: "info", text: "つないだ固定費が見つからない契約があります（固定費を消した可能性。契約は残っています）", count: danglingContracts(d.contracts, d.recurring).length, href: "/contracts" });
   add({ id: "tx-rec", level: "info", text: "固定費につないだ支出のうち、その固定費がもうないものがあります（固定費を消した可能性。記録は残っています）", count: d.transactions.filter((t) => t.recurringId && !recIds.has(t.recurringId)).length });
 
   // 二重かもしれない記録：同じ日・種類・金額・店名の記録が2件以上（自動では消さない）

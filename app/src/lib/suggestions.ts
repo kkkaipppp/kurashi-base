@@ -48,6 +48,7 @@ export function suggestions(d: AppData, today: string, opt: SuggestionOptions): 
   }
 
   for (const g of d.goals) {
+    if (g.pausedAt) continue; // 休止中の目標は出さない（点検 中2）
     const p = goalPace(g, today);
     if (!p.ok || p.days > GOAL_AHEAD_DAYS) continue;
     all.push({ key: `goal:${g.id}`, title: `目標「${g.title}」の期限まで${p.days}日`, why: `残り ${p.remaining.toLocaleString("ja-JP")}${g.unit}`, href: `/goals?open=${g.id}`, score: 600 - p.days * 10 });
@@ -55,7 +56,7 @@ export function suggestions(d: AppData, today: string, opt: SuggestionOptions): 
 
   // 目標の節目（やることの日付）：3日以内・過ぎたもの（終わっていないものだけ）
   for (const g of d.goals) {
-    if (g.done) continue;
+    if (g.done || g.pausedAt) continue;
     for (const st of g.steps ?? []) {
       if (st.done || !st.due) continue;
       const days = daysBetween(today, st.due);

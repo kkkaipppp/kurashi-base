@@ -255,6 +255,10 @@ export interface Asset {
   asOf: string; // 評価日（"" = 未入力）
   /** 種類が「現金」のとき：評価日の時点の、カードの未払い（任意。残高の目安で、引き落とし前のカード払いに足す。NEXT v22 G0） */
   cardDebt?: number;
+  /** 負債（ローン・借入）。評価額は正の数で持ち、純資産で引く。種類は増やさず印で持つ（前の版が種類で断らず読めるように。前の版では「その他」として出る。To-Be 2026-11-28） */
+  debt?: true;
+  /** 評価額の推移（前の評価日と額。評価日の古い順に最大 24 件。To-Be 2026-11-28。lib/assetTrend.ts） */
+  history?: { asOf: string; value: number }[];
   note: string;
   createdAt: string;
   updatedAt: string;
@@ -268,6 +272,8 @@ export interface Contract {
   cycle: "monthly" | "yearly" | "none";
   renewalDate: string; // 更新日（"" = 未入力）
   status: "active" | "cancelled";
+  /** つないだ固定費（Recurring.id。本人が選んだときだけ。金額・周期は固定費の側が正本。To-Be 2026-11-28） */
+  recurringId?: string;
   note: string;
   createdAt: string;
   updatedAt: string;
@@ -354,6 +360,8 @@ export interface Goal {
   parentId?: string;
   /** 達成の記録（そのときの条件の写し。あとで条件を変えても残る） */
   achievements?: { at: string; verdict: "met" | "unmet" | "unknown"; conditions: GoalConditionData[] }[];
+  /** 休止した日（YYYY-MM-DD。休止中はホームの確認・ペースに出さない。再開で消す。To-Be 2026-11-28） */
+  pausedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

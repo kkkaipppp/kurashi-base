@@ -1,7 +1,7 @@
 "use client";
 
 import { CollectionPage, numberFromDraft, type CollectionConfig } from "@/components/CollectionPage";
-import { formatDateJa } from "@/lib/date";
+import { formatDateJa, todayStr } from "@/lib/date";
 import { bool, numStr, str } from "@/lib/draft";
 import { daysLeft, dueLabel, goalProgress } from "@/lib/life";
 import { goalPace, goalPaceText } from "@/lib/goalPlan";
@@ -34,6 +34,8 @@ const config: CollectionConfig<"goals"> = {
     // やること（自分用）。1行に1つ。終わったものは、行の先頭に ✓
     ...(PERSONAL_BUILD ? [{ name: "steps", label: "やること", optional: true, type: "textarea" as const, hint: "1行に1つずつ書きます。終わったら、行の頭に ✓ を付けます。いつまでかを決めるなら、行の終わりに @2026-12-20 のように書きます" }] : []),
     { name: "done", label: "達成", type: "checkbox" },
+    // 休止（自分用。To-Be 2026-11-28 S3-2）：休止中はホームの確認・期限・必要なペースに出さない。外すと再開
+    ...(PERSONAL_BUILD ? [{ name: "paused", label: "休止中（しばらく休む）", type: "checkbox" as const }] : []),
   ],
   initial: () => ({ title: "", kind: "number", current: "0", target: "", unit: "", deadline: "", note: "", done: false }),
   // 種類のひな形（To-Be 02 目標：資格/勉強・貯金・習慣・運動・読書・キャリア・自由作成。自分用）。種類と単位を入れるだけで、保存の形は今のまま
@@ -51,7 +53,7 @@ const config: CollectionConfig<"goals"> = {
         ],
       }
     : {}),
-  toDraft: (g) => ({ title: g.title, kind: g.kind, current: String(g.current), target: numStr(g.target), unit: g.unit, deadline: g.deadline, note: g.note, steps: stepsToText(g.steps), done: g.done }),
+  toDraft: (g) => ({ title: g.title, kind: g.kind, current: String(g.current), target: numStr(g.target), unit: g.unit, deadline: g.deadline, note: g.note, steps: stepsToText(g.steps), done: g.done, paused: !!g.pausedAt, pausedAt: g.pausedAt ?? "" }),
   fromDraft: (d) => ({
     title: str(d, "title"),
     kind: str(d, "kind") as "number" | "check",
@@ -63,6 +65,8 @@ const config: CollectionConfig<"goals"> = {
     // 自分用だけ。空なら、やることなし（公開版は、この項目を触らない＝あるものはそのまま残る）
     ...(PERSONAL_BUILD ? { steps: parseSteps(str(d, "steps")).length > 0 ? parseSteps(str(d, "steps")) : undefined } : {}),
     done: bool(d, "done"),
+    // 休止は自分用だけ触る（公開版は項目を触らない＝あるものはそのまま残る）。休止した日は、前から休止中ならその日のまま
+    ...(PERSONAL_BUILD ? { pausedAt: bool(d, "paused") ? str(d, "pausedAt") || todayStr() : undefined } : {}),
   }),
   validate: (d) => {
     if (str(d, "kind") !== "number") return {} as Record<string, string>;
@@ -74,7 +78,7 @@ const config: CollectionConfig<"goals"> = {
     if (!IS_PERSONAL) return null;
     const items = list
       .map((g) => ({ g, text: goalPaceText(goalPace(g, today), g.unit, (n) => n.toLocaleString("ja-JP")) }))
-      .filter((x) => x.text && !x.g.done);
+      .filter((x) => x.text && !x.g.done && !x.g.pausedAt);
     if (items.length === 0) return null;
     return (
       <Card className="py-3">
@@ -109,8 +113,8 @@ const config: CollectionConfig<"goals"> = {
         // 自分用：達成条件のまとめた結果（o31 F018。条件が無ければ出さない）
         (PERSONAL_BUILD && goalVerdict(g, today) ? `・条件：${VERDICT_LABEL[goalVerdict(g, today)!]}` : "") +
         (PERSONAL_BUILD && g.parentId && data.goals.some((x) => x.id === g.parentId) ? `・親：${data.goals.find((x) => x.id === g.parentId)!.title}` : ""),
-      muted: g.done,
-      badge: g.done ? { text: "達成", tone: "ok" } : d !== null && d < 0 ? { text: dueLabel(d), tone: "warn" } : undefined,
+      muted: g.done || (PERSONAL_BUILD && !!g.pausedAt),
+      badge: g.done ? { text: "達成", tone: "ok" } : PERSONAL_BUILD && g.pausedAt ? { text: `休止中（${formatDateJa(g.pausedAt)}から）`, tone: "info" } : d !== null && d < 0 ? { text: dueLabel(d), tone: "warn" } : undefined,
       right: (
         <span className="flex items-center gap-2">
           <span className="h-1.5 w-14 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
