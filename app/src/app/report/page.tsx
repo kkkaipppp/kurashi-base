@@ -35,6 +35,8 @@ const TITLE = "家計簿";
 const MoneySummary = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.MoneySummary)) : () => null;
 const MonthTxList = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.MonthTxList)) : () => null;
 const UpcomingPayments = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.UpcomingPayments)) : () => null;
+// 支払方法ごとの支出（自分用。To-Be 02 家計簿「口座/カード/電子マネー」。2026-11-28）
+const PayBreakdown = PERSONAL_MONEY ? dynamic(() => import("@/components/PayBreakdown").then((m) => m.PayBreakdown)) : () => null;
 // 立替で返してもらう分（自分用。To-Be 2026-11-28）
 const OwedAdvances = PERSONAL_MONEY ? dynamic(() => import("@/components/OwedAdvances").then((m) => m.OwedAdvances)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
@@ -200,6 +202,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
         </Empty>
       ) : (
         <>
+          {PERSONAL_MONEY && <PayBreakdown month={month} />}
           {!PERSONAL_MONEY && (
           <Card>
             <p className="text-[13px] font-semibold text-ink-2">この月の支出</p>

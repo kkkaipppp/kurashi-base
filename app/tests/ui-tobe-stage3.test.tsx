@@ -124,7 +124,7 @@ describe("段階3（画面）", () => {
     expect(await screen.findByText("¥3,300/月")).toBeTruthy();
     expect(screen.getByText("固定費が止まっていません")).toBeTruthy();
     expect(screen.getByText(/固定費「スマホ代」とつないでいます/)).toBeTruthy();
-    expect(seen.d!.contracts[0]).toMatchObject({ recurringId: "r", status: "cancelled", amount: 2500 });
+    await waitFor(() => expect(seen.d!.contracts[0]).toMatchObject({ recurringId: "r", status: "cancelled", amount: 2500 }));
     expect(seen.d!.recurring[0].active).toBe(true);
   });
 });

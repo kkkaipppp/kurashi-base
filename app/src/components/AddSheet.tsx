@@ -60,6 +60,17 @@ export function PersonalAddSheet({
   return (
     <AddSheet path={path} date={date} fav={fav} onClose={onClose} onPick={pick}>
       <PastePanel onStart={fromPaste} />
+      {/* 写真（レシート）から：読み取りの候補を確かめてから保存する画面へ（To-Be 02 ＋「写真」。iPhone アプリでは文字の読み取りつき） */}
+      <button
+        type="button"
+        onClick={() => {
+          onClose();
+          router.push("/import");
+        }}
+        className="mt-2 flex min-h-12 w-full items-center rounded-xl border border-line px-3 text-left text-[15px] hover:bg-surface-2"
+      >
+        写真（レシート）から始める
+      </button>
       {templates.length > 0 && (
         <>
           <h3 className="mt-4 mb-1 text-[14px] font-semibold text-ink-3">前の記録から</h3>
