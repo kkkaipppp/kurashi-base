@@ -34,7 +34,7 @@ export function hubCategories(): HubCategory[] {
         { href: "/study", label: "資格・勉強", count: (d) => d.studySubjects.filter((s) => !s.archived).length },
       ],
     },
-    { key: "asset", label: "資産", icon: "asset", items: [{ href: "/assets", label: "資産・NISA", count: (d) => d.assets.length + d.nisa.length }, { href: "/accounts", label: "口座・カード", count: (d) => (d.accounts ?? []).filter((a) => !a.archived).length }, { href: "/points", label: "ポイント", count: (d) => (d.points ?? []).length }] },
+    { key: "asset", label: "資産", icon: "asset", items: [{ href: "/assets", label: "資産・NISA", count: (d) => d.assets.length + d.nisa.length }, { href: "/accounts", label: "口座・カード", count: (d) => (d.accounts ?? []).filter((a) => !a.archived).length }, { href: "/points", label: "ポイント", count: (d) => (d.points ?? []).length }, { href: "/installments", label: "分割払い", count: (d) => (d.installments ?? []).length }] },
     {
       key: "contract",
       label: "契約・固定費",

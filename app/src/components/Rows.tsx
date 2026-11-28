@@ -4,6 +4,7 @@ import { isDoneOn, occurrenceKey } from "@/lib/eventOps";
 import { formatDateJa } from "@/lib/date";
 import { eventLabel } from "@/lib/aggregate";
 import { formatYen } from "@/lib/money";
+import { formatForeign } from "@/lib/fxFormat";
 import { useData } from "@/lib/store";
 import { paymentLabel, type CalendarEvent, type Transaction } from "@/lib/types";
 import { useUI } from "./UIContext";
@@ -16,7 +17,7 @@ export function TxRow({ tx, showDate = false }: { tx: Transaction; showDate?: bo
   const cat = data.categories.find((c) => c.id === tx.categoryId)?.name ?? "（不明なカテゴリ）";
   const exp = tx.type === "expense";
   const moveOnly = tx.countAs === "transfer";
-  const sub = [showDate ? formatDateJa(tx.date) : "", moveOnly ? "収支に数えない" : "", tx.merchant ? cat : "", tx.paymentMethod ? paymentLabel(tx.paymentMethod) : "", SOURCE_LABEL[tx.source]]
+  const sub = [showDate ? formatDateJa(tx.date) : "", moveOnly ? "収支に数えない" : "", tx.merchant ? cat : "", tx.paymentMethod ? paymentLabel(tx.paymentMethod) : "", SOURCE_LABEL[tx.source], process.env.NEXT_PUBLIC_KB_EDITION === "personal" && tx.fx ? formatForeign(tx.fx) : ""]
     .filter(Boolean)
     .join("・");
   return (

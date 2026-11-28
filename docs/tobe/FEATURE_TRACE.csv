@@ -68,8 +68,8 @@ F066,家計簿,割り勘,なし,,,なし,,家計簿,未着手,,未更新,未着�
 F067,家計簿,立替,なし,,,なし,,家計簿,自分用：支出の「立替（友達の分も払った）」・「返してもらった」で精算（収支に数えない）・家計簿の支払いに返してもらう分。決定 P-1・P-2,tobe-advance.test.ts・ui-tobe-advance.test.tsx・ui-tobe-advance-public.test.tsx,未更新,今回作った・試験あり・実機未確認
 F068,家計簿,経費,なし,,,なし,,家計簿,未着手,,未更新,未着手
 F069,家計簿,返金,あり,"src/components/TxSheet.tsx,src/lib/refund.ts","refund.test.ts,ledger-core.test.ts",personal,,家計簿,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
-F070,家計簿,分割払い,なし,src/components/TxSheet.tsx,,なし,,家計簿,未着手,,未更新,未着手
-F071,家計簿,外貨,なし,src/lib/types.ts,,なし,,家計簿,未着手,,未更新,未着手
+F070,家計簿,分割払い,なし,src/components/TxSheet.tsx,,なし,,家計簿,自分用：新しい一覧 installments（/installments。総額・回数・1回目の支払日・残り・次の支払い）。収支に数えない控え,tobe-fx-installments.test.ts,未更新,今回作った・試験あり・実機未確認
+F071,家計簿,外貨,なし,src/lib/types.ts,,なし,,家計簿,自分用：記録に外貨の控え（Transaction.fx。最小単位＋通貨＋換算の根拠。収支は円のまま）,tobe-fx-installments.test.ts,未更新,今回作った・試験あり・実機未確認
 F072,家計簿,ポイント期限,なし,,,なし,,家計簿,自分用：新しい一覧 points（/points）。期限の30日前からホームの確認に出す（残り0・期限なし・過ぎたものは出さない）,tobe-payday-points.test.ts,未更新,今回作った・試験あり・実機未確認
 F073,家計簿,活動別集計,一部,"src/app/trips/page.tsx,src/lib/tripMemo.ts",a06-ledger-screens.test.ts,personal,旅行ごとだけ,家計簿,旅行ごとに加えて、計画ごとのかかったお金,tobe-plan.test.ts,自分用の使い方「メニューと計画」に一部,今回作った・試験あり・実機未確認
 F074,家計簿,欠測期間,なし,src/lib/forecast.ts,forecast.test.ts,なし,,家計簿,未着手,,未更新,未着手
@@ -150,7 +150,7 @@ F148,健康,測定,あり,src/app/health/page.tsx,v5-data.test.ts,両方,グラ�
 F149,健康,医療費,一部,src/lib/defaults.ts,,両方,支出のカテゴリ「医療・健康」だけ（lib/defaults.ts）。医療費の集計（控除用）は無い,メニュー→健康,今の部分を残す。足りない部分は未着手,,未更新,一部あり
 F150,メモ,自由記述,あり,src/app/notes/page.tsx,,両方,,メニュー→メモ,今の機能を残す（回帰は npm run check）,,未更新,既存・試験なし
 F151,メモ,URL,なし,src/app/notes/page.tsx,,なし,,メニュー→メモ,未着手,,未更新,未着手
-F152,メモ,写真,なし,,,なし,,メニュー→メモ,未着手,,未更新,未着手
+F152,メモ,写真,なし,,,なし,,メニュー→メモ,決定 Q33 ①：保管場所だけ書く（これから作る）,,未更新,未着手
 F153,メモ,固定,あり,src/app/notes/page.tsx,,両方,,メニュー→メモ,今の機能を残す（回帰は npm run check）,,未更新,既存・試験なし
 F154,メモ,タグ,なし,,,なし,,メニュー→メモ,未着手,,未更新,未着手
 F155,メモ,関連記録,一部,"src/app/notes/page.tsx,src/app/calendar/page.tsx",,両方,メモに日付があるだけ。予定・支出などとつなぐ項目は無い,メニュー→メモ,今の部分を残す。足りない部分は未着手,,未更新,一部あり
@@ -179,7 +179,7 @@ F177,設定・共通,元に戻す,あり,"src/app/settings/page.tsx,src/lib/stor
 F178,設定・共通,外部連携,一部,"src/app/integrations/page.tsx,src/components/NativeStatusCard.tsx",a07-native-boundary.test.ts,両方,ファイルで取り込む（CSV・ICS・レシート）と iPhone の連携だけ。外のサービスに直接つなぐものは無い（つなぐには承認が要る）,設定・使い方,今の部分を残す。足りない部分は未着手,,未更新,一部あり
 F179,設定・共通,ウィジェット,あり,"src/components/WidgetSync.tsx,src/lib/widgetSummary.ts,ios/App/KurashiWidget/KurashiWidget.swift","widget-summary.test.ts,a07-payload-limits.test.ts",personal,,設定・使い方,今の機能を残す（回帰は npm run check）,,未更新,既存・回帰試験あり
 F180,設定・共通,使い方,あり,src/app/guide/page.tsx,"copy-v5.test.ts,approval5-public-copy.test.ts",両方,,設定・使い方,今の機能を残す（回帰は npm run check）,,自分用の使い方に「メニューと計画」を足した,既存・回帰試験あり
-F181,設定・共通,練習,なし,,,なし,,設定・使い方,未着手,,未更新,未着手
+F181,設定・共通,練習,なし,,,なし,,設定・使い方,決定 Q34 ①：保存しない練習（これから作る）,,未更新,未着手
 F182,設定・共通,機種変更,一部,"src/app/guide/page.tsx,src/lib/platform.ts",,personal,自分用の使い方に機種変更・入れ直しの手順（app/guide/page.tsx）。公開版の手順・アプリの中の移す操作は無い,設定・使い方,今の部分を残す。足りない部分は未着手,,未更新,一部あり
 F183,設定・共通,買い足すもの,なし,,,なし,,設定・使い方,自分用：新しい一覧 stock（/stock。メニューのメモ）。切れた・買った,tobe-household.test.ts,未更新,今回作った・試験あり・実機未確認
 F184,設定・共通,ゴミ出し,なし,,,なし,,設定・使い方,自分用：新しい一覧 garbage（/garbage。メニューのメモ）。曜日・第何週。今日・明日をホームの確認に出す。祝日の変更は入っていない,tobe-household.test.ts,未更新,今回作った・試験あり・実機未確認

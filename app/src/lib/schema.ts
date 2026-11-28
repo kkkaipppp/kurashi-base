@@ -15,6 +15,12 @@ const isNum = (v: unknown) => typeof v === "number" && Number.isFinite(v);
 const numOrNull = (v: unknown) => v === null || isNum(v);
 const oneOf = (...xs: string[]) => (v: unknown) => isStr(v) && xs.includes(v);
 const intList = (min: number, max: number) => (v: unknown) => Array.isArray(v) && v.length <= 7 && v.every((x) => Number.isInteger(x) && x >= min && x <= max) && new Set(v).size === v.length;
+// 外貨の控え（lib/fx.ts）：通貨は英字3つ、最小単位は1以上の整数、桁は 0〜3
+const isFx = (v: unknown) => {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+  const f = v as Record<string, unknown>;
+  return typeof f.currency === "string" && /^[A-Z]{3}$/.test(f.currency) && Number.isSafeInteger(f.minor) && (f.minor as number) > 0 && Number.isInteger(f.digits) && (f.digits as number) >= 0 && (f.digits as number) <= 3 && typeof f.basis === "string" && f.basis.length <= 200;
+};
 const isAmt = (v: unknown) => Number.isInteger(v) && (v as number) > 0 && (v as number) <= MAX_AMOUNT;
 
 export const CURRENT_SCHEMA = 2;
@@ -42,7 +48,7 @@ export function migrate(raw: unknown): unknown {
   // 2026-11-28：ポイントの一覧（無ければ空で足す）
   if (d.schemaVersion === 2 && d.points === undefined) d = { ...d, points: [] };
   // 2026-11-28：予約・家事・買い足すもの・ゴミ出し（無ければ空で足す）
-  for (const k of ["reservations", "chores", "stock", "garbage"] as const) if (d.schemaVersion === 2 && d[k] === undefined) d = { ...d, [k]: [] };
+  for (const k of ["reservations", "chores", "stock", "garbage", "installments"] as const) if (d.schemaVersion === 2 && d[k] === undefined) d = { ...d, [k]: [] };
   return d;
 }
 
@@ -184,6 +190,7 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
   chores: { label: "家事", fields: { name: isStr, who: isStr, cycle: oneOf("daily", "weekly", "monthly", "none"), lastDone: okDateOrBlank, note: isStr } },
   stock: { label: "買い足すもの", fields: { name: isStr, need: isBool, note: isStr } },
   garbage: { label: "ゴミ出し", fields: { name: isStr, weekdays: intList(0, 6), weeks: intList(1, 5), note: isStr } },
+  installments: { label: "分割払い", fields: { name: isStr, total: isAmt, count: (v: unknown) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 120, firstDate: isDate, note: isStr } },
   points: { label: "ポイント", fields: { name: isStr, balance: (v: unknown) => v === null || (Number.isInteger(v) && (v as number) >= 0), expiry: okDateOrBlank, note: isStr } },
   wishes: { label: "欲しいもの", fields: { name: isStr, price: numOrNull, url: isHttpOrBlank, priority: oneOf("high", "mid", "low"), status: oneOf("want", "bought", "dropped"), note: isStr } },
 };
@@ -211,7 +218,7 @@ export function validateAppData(input: unknown): R {
       !isStr(t.date) || !isValidDateStr(t.date) || !isAmt(t.amount) || !isStr(t.categoryId) ||
       !isStr(t.merchant) || !isStr(t.paymentMethod) || !isStr(t.note) || !isStr(t.createdAt) ||
       // 100点化で足した任意の項目（無くてもよい。あれば形を確かめる）
-      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross) || !optional(isStr)(t.planId) || !optional(isAmt)(t.advanceGross) || !optional(isStr)(t.settles) || !optional((v) => v === true)(t.claim) || !optional((v) => v === true)(t.template) || !optional((v) => v === true)(t.special) || !optional(isStr)(t.accountId) || !optional(isStr)(t.toAccountId)
+      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross) || !optional(isStr)(t.planId) || !optional(isAmt)(t.advanceGross) || !optional(isStr)(t.settles) || !optional((v) => v === true)(t.claim) || !optional((v) => v === true)(t.template) || !optional((v) => v === true)(t.special) || !optional(isStr)(t.accountId) || !optional(isStr)(t.toAccountId) || !optional(isFx)(t.fx)
     )
       return { ok: false, error: "支出・収入のデータが壊れています" };
     if (ids.has(t.id)) return { ok: false, error: "支出・収入の記録が二重に入っています" };

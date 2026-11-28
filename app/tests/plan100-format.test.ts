@@ -235,7 +235,8 @@ describe("F 旅行と支出を ID でつなぐ（メモは候補として確か�
 describe("点検の直し（100点化 D・E・F）", () => {
   it("続けて追加・種別の切り替えで、固定費のつなぎを次に残さない。保存の直前にも今の候補か確かめる", () => {
     const s = src("components/TxSheet.tsx");
-    expect(s).toContain('const next: TxDraft = { ...draft, amount: "", merchant: "", note: "", linkRecurringId: "" };');
+    // 2026-11-28：外貨の欄も次に残さない（外貨・分割払いの点検 中1）
+    expect(s).toContain('const next: TxDraft = { ...draft, amount: "", merchant: "", note: "", linkRecurringId: "", fxCurrency: "", fxAmount: "", fxBasis: "" };');
     expect(s).toContain('categoryId: first, linkRecurringId: "", countAs: ""');
     expect(s).toContain(".some((r) => r.id === draft.linkRecurringId)");
   });

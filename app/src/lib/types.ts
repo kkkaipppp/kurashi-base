@@ -11,6 +11,8 @@ export interface Transaction {
   date: string; // YYYY-MM-DD
   amount: number; // 正の整数（円）
   currency: "JPY";
+  /** 外貨で払ったときの控え（自分用・任意。amount は換算した円のまま。lib/fx.ts。2026-11-28） */
+  fx?: ForeignAmount;
   categoryId: string;
   merchant: string;
   paymentMethod: string; // "" = 未指定
@@ -272,6 +274,26 @@ export interface Account {
   updatedAt: string;
 }
 
+/** 分割払い（自分用。2026-11-28）。支払いの予定の控え（収支に数えない。買ったときの支出は家計簿に1回） */
+export interface Installment {
+  id: string;
+  name: string;
+  total: number; // 支払う総額（手数料込み・円）
+  count: number; // 回数
+  firstDate: string; // 1回目の支払日
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 外貨の額（最小単位の整数・通貨・小数の桁・換算の根拠） */
+export interface ForeignAmount {
+  currency: string;
+  minor: number;
+  digits: number;
+  basis: string;
+}
+
 /** ポイント（自分用。2026-11-28）。期限が近づいたら、ホームの確認に出す */
 export interface PointCard {
   id: string;
@@ -512,11 +534,12 @@ export interface Collections {
   chores: Chore[];
   stock: StockItem[];
   garbage: GarbageDay[];
+  installments: Installment[];
 }
 
 export type CollectionKey = keyof Collections;
 export type ItemOf<K extends CollectionKey> = Collections[K][number];
-export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals", "wishes", "accounts", "points", "reservations", "chores", "stock", "garbage"];
+export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals", "wishes", "accounts", "points", "reservations", "chores", "stock", "garbage", "installments"];
 
 export interface AppData extends Collections {
   schemaVersion: 2;

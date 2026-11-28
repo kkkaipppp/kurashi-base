@@ -32,6 +32,10 @@ export interface TxDraft {
   accountId?: string;
   /** 振替・引き落としで入る先 */
   toAccountId?: string;
+  /** 外貨（"" = 円だけ）・外貨の額・換算の根拠 */
+  fxCurrency?: string;
+  fxAmount?: string;
+  fxBasis?: string;
 }
 
 export function validateTx(

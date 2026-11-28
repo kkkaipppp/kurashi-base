@@ -6,6 +6,7 @@ import { Button, Field, IconAlert, IconChevronD, inputCls } from "./ui";
 import { useUI } from "./UIContext";
 import { useData, useStore, type TxInput } from "@/lib/store";
 import { validateTx, type FieldErrors, type TxDraft } from "@/lib/validate";
+import { CURRENCIES, currencyOf, foreignToInput, parseForeign } from "@/lib/fx";
 import { findDuplicates, type DupCandidate } from "@/lib/duplicates";
 import { addDays, formatDateJa, todayStr } from "@/lib/date";
 import { formatYen } from "@/lib/money";
@@ -63,6 +64,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         ...(editing.special ? { special: true } : {}),
         accountId: editing.accountId ?? "",
         toAccountId: editing.toAccountId ?? "",
+        ...(editing.fx ? { fxCurrency: editing.fx.currency, fxAmount: foreignToInput(editing.fx), fxBasis: editing.fx.basis } : {}),
         categoryId: editing.categoryId,
         merchant: editing.merchant,
         paymentMethod: editing.paymentMethod,
@@ -97,7 +99,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   // 自分用：支払方法・数え方・旅行・固定費・立替・メモは「詳細」にたたむ（平尾さん 2026-11-28「入力の画面が長い」。To-Be 02「詳細は折りたたみ」）。
   // 直すとき・どれかに値が入っているときは、初めから開く
   const [moreOpen, setMoreOpen] = useState(
-    () => !EXTRA || req.mode === "edit" || !!(initialDraft.paymentMethod || initialDraft.note || initialDraft.countAs || initialDraft.tripId || initialDraft.advanceMine || (req.mode === "new" && req.recurringId)),
+    () => !EXTRA || req.mode === "edit" || !!(initialDraft.paymentMethod || initialDraft.note || initialDraft.countAs || initialDraft.tripId || initialDraft.advanceMine || initialDraft.fxCurrency || (req.mode === "new" && req.recurringId)),
   );
   // 「続けて追加」のあとは、その時点の空の入力を基準にする（何も入力していなければ閉じるときに確認しない）
   const [base, setBase] = useState<TxDraft>(initialDraft);
@@ -240,6 +242,24 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         setErrors(v.errors);
         return;
       }
+      // 外貨（自分用）：通貨を選んだら外貨の額が要る。円の金額はそのまま（換算したあと）
+      let fx: { currency: string; minor: number; digits: number; basis: string } | null = null;
+      let keepFx = false;
+      if (EXTRA && draft.fxCurrency) {
+        const c = currencyOf(draft.fxCurrency);
+        if (!c && editing?.fx && editing.fx.currency === draft.fxCurrency) {
+          // この版の一覧に無い通貨（復元などで入ったもの）は、外貨の控えをそのまま残す（ほかの項目は直せる。点検 低1）
+          keepFx = true;
+        } else {
+          const minor = c ? parseForeign(draft.fxAmount ?? "", c.code) : null;
+          if (minor === null || !c) {
+            setMoreOpen(true);
+            setErrors({ fxAmount: !c ? "通貨を選び直してください" : `外貨の額を入れてください（例：12.50。小数は${c.digits}桁まで・カンマは3桁ごと）` });
+            return;
+          }
+          fx = { currency: c.code, minor, digits: c.digits, basis: (draft.fxBasis ?? "").trim().slice(0, 100) };
+        }
+      }
       // 立替（自分用）：入力の金額は払った総額。保存では amount＝自分の分、advanceGross＝総額
       const claim = EXTRA && draft.type === "expense" && !!draft.claim;
       const mineStr = draft.type === "expense" && !claim ? (draft.advanceMine ?? "").trim() : "";
@@ -302,6 +322,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         // 口座・カード（自分用だけ触る。消えた口座は持たない）
         ...(EXTRA ? { accountId: draft.accountId && data.accounts.some((a) => a.id === draft.accountId) ? draft.accountId : undefined } : {}),
         ...(EXTRA ? { toAccountId: !claim && (draft.countAs === "transfer" || draft.countAs === "transfer-card") && draft.toAccountId && draft.toAccountId !== draft.accountId && data.accounts.some((a) => a.id === draft.toAccountId) ? draft.toAccountId : undefined } : {}),
+        // 外貨の控え（自分用だけ触る）
+        ...(EXTRA && !keepFx ? { fx: fx ?? undefined } : {}),
         // 特別支出（自分用だけ触る。経費・収入には付けない）
         ...(EXTRA && draft.type === "expense" && !claim && draft.special ? { special: true as const } : EXTRA && editing?.special ? { special: undefined } : {}),
         categoryId: draft.categoryId,
@@ -346,7 +368,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
       if (keepOpen && canContinue) {
         // 日付・種別・カテゴリ・支払方法はそのまま、金額・店名・メモだけ空にして次の1件へ
         // 固定費のつなぎは1件ごと（次の1件に残すと、同じ固定費の支払日が2回進む。点検役の指摘）
-        const next: TxDraft = { ...draft, amount: "", merchant: "", note: "", linkRecurringId: "" };
+        // 外貨は1件ごと（次の記録に残さない。点検 中1）
+        const next: TxDraft = { ...draft, amount: "", merchant: "", note: "", linkRecurringId: "", fxCurrency: "", fxAmount: "", fxBasis: "" };
         setDraft(next);
         setBase(next);
         setErrors({});
@@ -562,7 +585,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         {EXTRA && !(moreOpen || errors.advanceMine || errors.note) ? (
           <button type="button" onClick={() => setMoreOpen(true)} aria-expanded="false" className="flex min-h-12 w-full items-center justify-between rounded-xl border border-line px-3 text-left text-[15px] hover:bg-surface-2">
             <span>
-              詳細<span className="ml-2 text-[13px] text-ink-3">支払方法・数え方・旅行・立替・メモ</span>
+              詳細<span className="ml-2 text-[13px] text-ink-3">支払方法・数え方・旅行・立替・外貨・メモ</span>
             </span>
             <IconChevronD className="size-5 text-ink-3" />
           </button>
@@ -607,6 +630,32 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
         {EXTRA && editing?.settles && <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">この記録は精算（立替を返してもらった）です。集計では、収入にも支出にも入りません。削除すると、返してもらう分が元に戻ります。</p>}
         {EXTRA && editing?.refundOf && <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">この記録は返金です。元の支出の額を減らしています（集計では、収入にも支出にも入りません）。削除すると、元の支出が元に戻ります。</p>}
 
+        {EXTRA && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="外貨" optional htmlFor="tx-fxc" hint="金額（円）は、換算したあとの額を入れます">
+              <select id="tx-fxc" value={draft.fxCurrency ?? ""} onChange={(e) => set("fxCurrency", e.target.value)} className={inputCls}>
+                <option value="">円だけ</option>
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code}（{c.label}）
+                  </option>
+                ))}
+              </select>
+            </Field>
+            {draft.fxCurrency && (
+              <Field label="外貨の額" htmlFor="tx-fxa" error={errors.fxAmount}>
+                <input id="tx-fxa" inputMode="decimal" value={draft.fxAmount ?? ""} onChange={(e) => set("fxAmount", e.target.value)} placeholder="例：12.50" className={`${inputCls} num`} aria-invalid={!!errors.fxAmount} />
+              </Field>
+            )}
+            {draft.fxCurrency && (
+              <div className="col-span-2">
+                <Field label="換算の根拠" optional htmlFor="tx-fxb">
+                  <input id="tx-fxb" value={draft.fxBasis ?? ""} onChange={(e) => set("fxBasis", e.target.value)} placeholder="例：カードの明細 1USD=150.20円" className={inputCls} maxLength={100} />
+                </Field>
+              </div>
+            )}
+          </div>
+        )}
         {EXTRA && draft.type === "expense" && !draft.claim && (
           <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3">
             <span>
