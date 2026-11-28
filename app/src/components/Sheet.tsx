@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { IconX } from "./ui";
 
+// 自分用：画面いっぱいに出し、ボタン（保存など）は見出しのすぐ下に置く。キーボードが出ても、見出しとボタンは動かず、中だけがスクロールする
+// （平尾さん 2026-11-28「保存ボタンごと動くのうざい・入り切らない」。版の値を直接比べ、公開版の組み立ては今のまま）
+const FULL = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
+
 /** 下から出るシート（スマホ）／中央モーダル（PC）。Esc・背景タップで onRequestClose */
 export function Sheet({
   title,
@@ -93,7 +97,7 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative flex max-h-[92%] w-full max-w-[480px] flex-col rounded-t-3xl bg-bg shadow-xl sm:rounded-3xl"
+        className={`relative flex w-full max-w-[480px] flex-col rounded-t-3xl bg-bg shadow-xl sm:rounded-3xl ${FULL ? "h-[calc(100%-0.5rem)] sm:h-[92%]" : "max-h-[92%]"}`}
       >
         <div className="flex min-h-14 items-center justify-between border-b border-line px-4">
           <h2 className="text-[17px] font-bold">{title}</h2>
@@ -107,8 +111,9 @@ export function Sheet({
             <IconX />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 py-4">{children}</div>
-        {footer && <div className="border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{footer}</div>}
+        {FULL && footer && <div className="border-b border-line px-4 py-2">{footer}</div>}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">{children}</div>
+        {!FULL && footer && <div className="border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{footer}</div>}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { isValidDateStr } from "@/lib/date";
 
@@ -13,9 +13,17 @@ function Inner({ ids, onOpen }: { ids: string[]; onOpen: (id: string, date?: str
   const router = useRouter();
   const path = usePathname();
   const id = sp.get("open");
+  // 同じ open では1回だけ開く（URL から open を外し終わるまでの間に、記録の一覧が描き直されて何度も開き、更新が止まらなくなった。2026-11-28 旅行の ?open=new）
+  const handled = useRef<string | null>(null);
   useEffect(() => {
+    if (!id) {
+      handled.current = null;
+      return;
+    }
     // open=new は新しく追加するシートを開く（＋ボタンの「タスク」から）
-    if (!id || (id !== "new" && !ids.includes(id))) return;
+    if (id !== "new" && !ids.includes(id)) return;
+    if (handled.current === id) return;
+    handled.current = id;
     // open=new&date=YYYY-MM-DD：＋の「タスク」を、カレンダーで選んだ日から始める（期限の初めの値。磨き込み 2026-11-26）
     const date = sp.get("date");
     onOpen(id, id === "new" && date && isValidDateStr(date) ? date : undefined);

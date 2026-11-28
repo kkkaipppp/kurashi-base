@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUI } from "./UIContext";
 import { IconBook, IconCalendar, IconChart, IconFlag, IconGrid, IconHome, IconList, IconMap, IconNote, IconPlus, IconRepeat, IconSearch, IconWallet } from "./ui";
 import { useNavPrefs } from "./useNavPrefs";
@@ -82,9 +82,25 @@ const NAV_ICON: Record<NavId, typeof IconHome> = {
  * 自分用の下のメニュー（o31 F001・F002）：利用者が選んだ 1〜4 個の画面と、真ん中に固定の「追加」（To-Be 02。前半は半分を切り上げた数）。
  * 「追加」は種類の一覧を開く（今の画面の種類とお気に入りが先頭）。画面の中の直接の追加（「この日に追加」など）は今までどおり
  */
+/** キーボードが出ているか（見えている高さが、画面の高さより大きく減ったとき） */
+function useKeyboardOpen(): boolean {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const v = window.visualViewport;
+    if (!v) return;
+    const update = () => setOpen(v.height < window.innerHeight * 0.75);
+    update();
+    v.addEventListener("resize", update);
+    return () => v.removeEventListener("resize", update);
+  }, []);
+  return open;
+}
+
 function TabBar() {
   const path = usePathname();
   const ui = useUI();
+  // キーボードが出ている間は、下のボタンの並びを隠す（キーボードに押されて画面の途中に動くのを見せない。平尾さん 2026-11-28）
+  const keyboard = useKeyboardOpen();
   const { nav } = useNavPrefs();
   const current = activeNav(path, nav);
   const half = Math.ceil(nav.length / 2);
@@ -108,7 +124,7 @@ function TabBar() {
   };
   return (
     <>
-      <nav aria-label="メイン" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]">
+      <nav aria-label="メイン" hidden={keyboard} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto flex max-w-[480px] items-stretch px-1">
           {nav.slice(0, half).map(tab)}
           {/* 真ん中に固定の「追加」（To-Be 02・Q-T01 ①。前は o31 C001 の右端） */}

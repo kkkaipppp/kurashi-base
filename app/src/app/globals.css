@@ -108,3 +108,8 @@ input[type="time"]::-webkit-date-and-time-value {
 html[data-edition="personal"] {
   zoom: 0.88;
 }
+/* 自分用：画面の端で引っ張っても、全体（下のボタンの並びごと）が動かないようにする（平尾さん 2026-11-28「一番下のやつは動かないように」） */
+html[data-edition="personal"],
+html[data-edition="personal"] body {
+  overscroll-behavior: none;
+}
