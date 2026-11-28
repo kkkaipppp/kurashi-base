@@ -113,3 +113,13 @@ html[data-edition="personal"],
 html[data-edition="personal"] body {
   overscroll-behavior: none;
 }
+
+/* 画面の上下の余白（iPhone の時計・ホームバーの所）。自分用は zoom で縮めているので、縮める前の幅に戻して使う（縮めたままだと少し重なる） */
+:root {
+  --z: 1;
+  --sat: calc(env(safe-area-inset-top, 0px) / var(--z));
+  --sab: calc(env(safe-area-inset-bottom, 0px) / var(--z));
+}
+html[data-edition="personal"] {
+  --z: 0.88;
+}

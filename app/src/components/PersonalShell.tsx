@@ -124,7 +124,7 @@ function TabBar() {
   };
   return (
     <>
-      <nav aria-label="メイン" hidden={keyboard} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]">
+      <nav aria-label="メイン" hidden={keyboard} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[var(--sab)]">
         <div className="mx-auto flex max-w-[480px] items-stretch px-1">
           {nav.slice(0, half).map(tab)}
           {/* 真ん中に固定の「追加」（To-Be 02・Q-T01 ①。前は o31 C001 の右端） */}

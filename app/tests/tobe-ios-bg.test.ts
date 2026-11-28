@@ -3,9 +3,17 @@ import config from "../capacitor.config";
 
 // 平尾さん 2026-11-28：iPhone アプリの下（ホームバーの所）が黒く空いて見える → アプリの背景を下のボタンの並び（白）と同じにする
 describe("iPhone アプリの背景", () => {
-  it("中身の外（上下の空けた所）は白。中身は今までどおり重ならない", () => {
+  it("背景は白。2026-11-28 から画面いっぱいに描き（contentInset never）、上下の余白は画面の側で取る（下のボタンの並びがスクロールで動かない）", () => {
     expect(config.ios?.backgroundColor).toBe("#ffffff");
-    expect(config.ios?.contentInset).toBe("always");
+    expect(config.ios?.contentInset).toBe("never");
+    const layout = readFileSync("src/app/layout.tsx", "utf8");
+    expect(layout).toContain('viewportFit: "cover"');
+    const css = readFileSync("src/app/globals.css", "utf8");
+    expect(css).toContain("--sat: calc(env(safe-area-inset-top, 0px) / var(--z));");
+    expect(css).toContain("--sab: calc(env(safe-area-inset-bottom, 0px) / var(--z));");
+    expect(readFileSync("src/components/PersonalShell.tsx", "utf8")).toContain("pb-[var(--sab)]");
+    expect(readFileSync("src/components/ui.tsx", "utf8")).toContain("sticky top-[var(--sat)]");
+    expect(readFileSync("src/components/AppShell.tsx", "utf8")).toContain("pt-[var(--sat)] pb-[calc(7rem+var(--sab))]");
   });
 });
 
@@ -16,7 +24,7 @@ describe("自分用の画面の縮め方", () => {
     const layout = readFileSync("src/app/layout.tsx", "utf8");
     expect(layout).toContain("initialScale: 1,");
     expect(layout).not.toMatch(/initialScale: IS_PERSONAL/);
-    expect(layout).toContain("...(IS_PERSONAL ? { maximumScale: 1 } : {})");
+    expect(layout).toContain("...(IS_PERSONAL ? { maximumScale: 1, ");
     const css = readFileSync("src/app/globals.css", "utf8");
     expect(css).toMatch(/html\[data-edition="personal"\] \{\s*zoom: 0\.88;/);
   });

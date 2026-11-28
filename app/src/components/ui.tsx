@@ -111,7 +111,7 @@ export const inputCls =
  */
 export function PageHeader({ title, right, sub, onBack, minimal }: { title: string; right?: ReactNode; sub?: ReactNode; onBack?: () => void; minimal?: boolean }) {
   return (
-    <header className="sticky top-0 z-10 -mx-4 mb-3 flex min-h-14 items-center justify-between gap-2 bg-bg/95 px-4 pt-2 backdrop-blur">
+    <header className="sticky top-[var(--sat)] z-10 -mx-4 mb-3 flex min-h-14 items-center justify-between gap-2 bg-bg/95 px-4 pt-2 backdrop-blur">
       <div className="flex min-w-0 items-center gap-1">
         {process.env.NEXT_PUBLIC_KB_EDITION === "personal" && <BackButton onBack={onBack} />}
         <div className="min-w-0">

@@ -60,8 +60,8 @@ describe("画面の中で開いた詳細の「戻る」（2026-11-28 洗い出�
     const trips = fs.readFileSync("src/app/trips/page.tsx", "utf8");
     expect(trips).toContain("onBack={onBack}");
     expect(trips).toContain("調べる・この旅行を元に作る");
-    expect(fs.readFileSync("src/app/report/page.tsx", "utf8")).toContain('"sticky top-14 z-[9]');
-    expect(fs.readFileSync("src/app/search/page.tsx", "utf8")).toContain('"sticky top-14 z-[9]');
+    expect(fs.readFileSync("src/app/report/page.tsx", "utf8")).toContain('"sticky top-[calc(var(--sat)+3.5rem)] z-[9]');
+    expect(fs.readFileSync("src/app/search/page.tsx", "utf8")).toContain('"sticky top-[calc(var(--sat)+3.5rem)] z-[9]');
     expect(fs.readFileSync("src/components/CollectionPage.tsx", "utf8")).toContain("この画面について");
     expect(fs.readFileSync("src/app/calendar/page.tsx", "utf8")).toContain("onClick={() => pickDay(d)}");
   });

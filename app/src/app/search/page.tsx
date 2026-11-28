@@ -72,7 +72,7 @@ function SearchInner() {
     <main className="space-y-3">
       <PageHeader title="検索" />
       {/* 自分用：入力欄と種類の絞り込みを見出しの下に固定（結果をスクロールしても直せる。2026-11-28 洗い出し 8） */}
-      <div className={process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? "sticky top-14 z-[9] -mx-4 space-y-2 bg-bg/95 px-4 pb-2 backdrop-blur" : "space-y-3"}>
+      <div className={process.env.NEXT_PUBLIC_KB_EDITION === "personal" ? "sticky top-[calc(var(--sat)+3.5rem)] z-[9] -mx-4 space-y-2 bg-bg/95 px-4 pb-2 backdrop-blur" : "space-y-3"}>
       <div className="relative">
         <IconSearch className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-ink-3" />
         <input

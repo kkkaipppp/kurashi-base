@@ -40,7 +40,8 @@ function Gate({ children }: { children: ReactNode }) {
   return (
     <UIProvider>
       <WidgetSync />
-      <div className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pb-28">{children}</div>
+      {/* 上は時計の所の余白（自分用。公開版は 0）、下は下のボタンの並び＋ホームバーの所 */}
+      <div className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pt-[var(--sat)] pb-[calc(7rem+var(--sab))]">{children}</div>
       {PersonalShell ? <PersonalShell /> : <BottomNav />}
     </UIProvider>
   );
@@ -136,7 +137,7 @@ function BottomNav() {
     );
   };
   return (
-    <nav aria-label="メイン" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav aria-label="メイン" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[var(--sab)] backdrop-blur">
       <div className="mx-auto flex max-w-[480px] items-stretch px-2">
         {NAV.slice(0, 2).map(item)}
         <div className="flex flex-1 items-center justify-center">

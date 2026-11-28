@@ -31,7 +31,7 @@ describe("自分用の入力の画面（シート）", () => {
     const order = [...dialog.querySelectorAll("h2, button, p")].map((e) => e.textContent);
     expect(order.indexOf("保存する")).toBeLessThan(order.indexOf("中身"));
     expect(order.indexOf("旅行を追加")).toBeLessThan(order.indexOf("保存する"));
-    expect(dialog.className).toContain("h-[calc(100%-0.5rem)]");
+    expect(dialog.className).toContain("h-[calc(100%-0.5rem-var(--sat))]");
   });
 });
 

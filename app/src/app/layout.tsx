@@ -18,7 +18,8 @@ export const viewport: Viewport = {
   // 2026-11-28：初めの倍率（initial-scale）で縮めると、iPhone で横幅だけ広がって縮まず、右が切れた（平尾さんの写真）。
   // 倍率は 1 のままにして、globals.css の zoom で縮める。入力欄に触れたときの自動の拡大は、最大の倍率 1 で止める。公開版は今のまま
   initialScale: 1,
-  ...(IS_PERSONAL ? { maximumScale: 1 } : {}),
+  // 自分用は画面いっぱいに描く（時計とホームバーの所の余白は globals.css の --sat・--sab で取る）
+  ...(IS_PERSONAL ? { maximumScale: 1, viewportFit: "cover" as const } : {}),
   themeColor: IS_PERSONAL ? "#ffffff" : "#f6f4ef",
 };
 
