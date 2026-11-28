@@ -27,6 +27,10 @@ export type BalanceResult =
       spend: number;
       /** 現金の買い物の返金で戻った額（返金の日） */
       refunded: number;
+      /** 立替で友達の分として現金・口座から払った額（買った日。収支には数えない） */
+      advancedOut: number;
+      /** 立替を返してもらった額（精算の日。収支には数えない） */
+      settledIn: number;
       cardSettled: number;
       /** 引き落とし前のカード払い＝基準の日のカード未払い＋基準の日より後のカード払い−引き落とし（マイナスにならない） */
       cardPending: number;
@@ -52,6 +56,9 @@ export function cashBalance(d: AppData, today: string): BalanceResult {
   const events = ledgerEvents(d);
   const isCard = new Map<string, boolean>();
   for (const e of events) if (e.kind === "purchase") isCard.set(e.txId, e.card);
+  // 精算は、立替の友達の分までしか数えない（指し先の無い・多すぎる精算で残高を増やさない。点検 中2）
+  const advLeft = new Map<string, number>();
+  for (const e of events) if (e.kind === "purchase" && e.advanced) advLeft.set(e.txId, e.advanced);
   let income = 0;
   let spend = 0;
   let refunded = 0;
@@ -59,20 +66,31 @@ export function cashBalance(d: AppData, today: string): BalanceResult {
   let cardBought = 0;
   let cardRefunded = 0;
   let cardActivity = false;
+  let advancedOut = 0;
+  let settledIn = 0;
   for (const e of events) {
     if (e.date <= b.asOf || e.date > today) continue;
     if (e.kind === "income") income += e.amount;
     else if (e.kind === "purchase") {
+      // 立替は、友達の分も実際に払っている（カードなら引き落とし待ち、現金なら残高から出る）
       if (e.card) {
-        cardBought += e.gross;
+        cardBought += e.gross + (e.advanced ?? 0);
         cardActivity = true;
       }
-      else spend += e.gross;
+      else {
+        spend += e.gross;
+        advancedOut += e.advanced ?? 0;
+      }
     } else if (e.kind === "refund") {
       // 元の支出が見つからない返金は、足さない（データの点検で「要確認」に出す。再点検 高1）
       if (!isCard.has(e.of)) continue;
       if (isCard.get(e.of)) cardRefunded += e.amount;
       else refunded += e.amount;
+    } else if (e.kind === "settlement") {
+      const room = advLeft.get(e.of) ?? 0;
+      const take = Math.min(room, e.amount);
+      advLeft.set(e.of, room - take);
+      settledIn += take;
     } else if (e.kind === "cardSettlement") {
       cardSettled += e.amount;
       cardActivity = true;
@@ -83,6 +101,6 @@ export function cashBalance(d: AppData, today: string): BalanceResult {
   const known = typeof b.cardDebt === "number";
   const debt0 = known ? (b.cardDebt as number) : 0;
   const cardPending = Math.max(0, debt0 + cardBought - cardRefunded - cardSettled);
-  const balance = value + income + refunded - spend - cardSettled;
-  return { ok: true, base: { name: b.name, value, asOf: b.asOf, cardDebt: known ? debt0 : null }, cardPendingKnown: known, cardActivity, income, spend, refunded, cardSettled, cardPending, balance, afterCard: balance - cardPending };
+  const balance = value + income + refunded + settledIn - spend - advancedOut - cardSettled;
+  return { ok: true, base: { name: b.name, value, asOf: b.asOf, cardDebt: known ? debt0 : null }, cardPendingKnown: known, cardActivity, income, spend, refunded, advancedOut, settledIn, cardSettled, cardPending, balance, afterCard: balance - cardPending };
 }

@@ -25,6 +25,8 @@ export interface DupInput {
   paymentMethod: string;
   sourceFingerprint?: string;
   excludeId?: string; // 編集中の自分自身は除外
+  /** 立替の総額（amount は自分の分）。総額でも比べる（To-Be 2026-11-28 点検 中1） */
+  advanceGross?: number;
 }
 
 export function findDuplicates(input: DupInput, txs: Transaction[]): DupCandidate[] {
@@ -36,7 +38,9 @@ export function findDuplicates(input: DupInput, txs: Transaction[]): DupCandidat
       out.push({ tx: t, reason: "同じ画像から追加した記録があります", strength: "exact" });
       continue;
     }
-    if (t.type !== input.type || t.amount !== input.amount) continue;
+    // 立替は金額が自分の分なので、払った総額でも比べる（カード明細の総額と、立替の記録を見比べられるように）
+    const sameAmount = t.amount === input.amount || (t.advanceGross ?? t.amount) === (input.advanceGross ?? input.amount);
+    if (t.type !== input.type || !sameAmount) continue;
     const gap = Math.abs(daysBetween(t.date, input.date));
     if (gap > 1) continue;
     // 金額一致＋日付近接に加え、店名か決済手段のどちらかが一致したときだけ候補にする

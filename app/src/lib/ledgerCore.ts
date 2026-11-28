@@ -14,7 +14,8 @@ import type { AppData, Transaction } from "./types";
  * 今の集計（summarizeMonth・monthBreakdown）と同じ答えになることを、並行比較の試験で確かめる（tests/ledger-core.test.ts）。
  */
 export type LedgerEvent =
-  | { kind: "purchase"; txId: string; date: string; gross: number; net: number; categoryId: string; invest: boolean; fixed: boolean; card: boolean; fullyRefunded: boolean }
+  | { kind: "purchase"; txId: string; date: string; gross: number; net: number; categoryId: string; invest: boolean; fixed: boolean; card: boolean; fullyRefunded: boolean; /** 立替で友達の分として払った額（収支に数えない。残高の目安では出ていく） */ advanced?: number }
+  | { kind: "settlement"; txId: string; of: string; date: string; amount: number }
   | { kind: "refund"; txId: string; of: string; date: string; amount: number }
   | { kind: "income"; txId: string; date: string; amount: number; categoryId: string }
   | { kind: "cardSettlement"; txId: string; date: string; amount: number }
@@ -32,6 +33,8 @@ function toEvent(t: Transaction, cats: ReturnType<typeof categoryMap>, recurring
     // 返金の記録は「収支に数えない」（countAs=transfer）で作る。付いていないもの（手で直したデータなど）は、今の集計と同じく収入として扱い、
     // 元の購入の保存則が合わなくなるので、データの点検で「要確認」に出る（勝手に直さない。独立点検 中1）
     if (t.refundOf && t.countAs === "transfer") return { kind: "refund", txId: t.id, of: t.refundOf, date: t.date, amount: t.amount };
+    // 精算（立替を返してもらった）。収支に数えない。残高の目安では入ってくる（lib/advance.ts）
+    if (t.settles && t.countAs === "transfer") return { kind: "settlement", txId: t.id, of: t.settles, date: t.date, amount: t.amount };
     if (t.countAs === "transfer") return { kind: "transfer", txId: t.id, date: t.date, amount: t.amount, direction: "in" };
     return { kind: "income", txId: t.id, date: t.date, amount: t.amount, categoryId: t.categoryId };
   }
@@ -44,7 +47,8 @@ function toEvent(t: Transaction, cats: ReturnType<typeof categoryMap>, recurring
     if (t.transferKind === "card") return { kind: "cardSettlement", txId: t.id, date: t.date, amount: t.amount };
     return { kind: "transfer", txId: t.id, date: t.date, amount: t.amount, direction: "out" };
   }
-  return { kind: "purchase", txId: t.id, date: t.date, gross: t.refundGross ?? t.amount, net: t.amount, categoryId: t.categoryId, invest: txIsInvest(t, cats), fixed: txIsFixed(t, recurring), card: t.paymentMethod === "card", fullyRefunded: false };
+  const advanced = typeof t.advanceGross === "number" && t.advanceGross > t.amount && t.refundGross === undefined ? t.advanceGross - t.amount : 0;
+  return { kind: "purchase", txId: t.id, date: t.date, gross: t.refundGross ?? t.amount, net: t.amount, categoryId: t.categoryId, invest: txIsInvest(t, cats), fixed: txIsFixed(t, recurring), card: t.paymentMethod === "card", fullyRefunded: false, ...(advanced ? { advanced } : {}) };
 }
 
 const inMonth = (date: string, month: string) => date.slice(0, 7) === month;

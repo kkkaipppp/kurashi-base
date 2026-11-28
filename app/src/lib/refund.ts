@@ -42,6 +42,7 @@ export function applyRefund(d: AppData, txId: string, amount: number, date: stri
   if (!orig) return { ok: false, error: "元の記録が見つかりません" };
   if (orig.type !== "expense") return { ok: false, error: "返金にできるのは、支出の記録だけです" };
   if (orig.refundOf) return { ok: false, error: "返金の記録を、さらに返金にはできません" };
+  if (typeof orig.advanceGross === "number") return { ok: false, error: "この記録は返金にできません" }; // 立替（lib/advance.ts）は返金と重ねない
   // 収支に数えない記録は返金にできない（すでに全額返金したものは、取り消してから）
   if (isMoveOnly(orig) && orig.refundGross === undefined) return { ok: false, error: "収支に数えない記録（カードの引き落とし・口座間の移動など）は、返金にできません" };
   const gross = orig.refundGross ?? orig.amount;
@@ -72,9 +73,9 @@ export function applyRefund(d: AppData, txId: string, amount: number, date: stri
   return { ok: true, next: settle({ ...d, transactions: [...withGross, refund] }, orig.id, ts) };
 }
 
-/** 返金のある支出を消す：その支出の返金の記録も一緒に消す（元の支出がない返金を残さない。再点検 高1） */
+/** 返金のある支出を消す：その支出の返金の記録も一緒に消す（元の支出がない返金を残さない。再点検 高1）。立替の精算の記録も一緒に消す */
 export function deleteTxWithRefunds(d: AppData, txId: string): AppData {
-  return { ...d, transactions: d.transactions.filter((t) => t.id !== txId && t.refundOf !== txId) };
+  return { ...d, transactions: d.transactions.filter((t) => t.id !== txId && t.refundOf !== txId && t.settles !== txId) };
 }
 
 /** 返金の記録を取り消す：その記録を消して、元の支出を計算し直す（ほかの返金は、そのまま残る）。元の記録がもうなければ、返金の記録だけ消す */

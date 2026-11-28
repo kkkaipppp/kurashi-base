@@ -35,6 +35,8 @@ const TITLE = "家計簿";
 const MoneySummary = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.MoneySummary)) : () => null;
 const MonthTxList = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.MonthTxList)) : () => null;
 const UpcomingPayments = PERSONAL_MONEY ? dynamic(() => import("@/components/MoneyMonth").then((m) => m.UpcomingPayments)) : () => null;
+// 立替で返してもらう分（自分用。To-Be 2026-11-28）
+const OwedAdvances = PERSONAL_MONEY ? dynamic(() => import("@/components/OwedAdvances").then((m) => m.OwedAdvances)) : () => null;
 const MonthBreakdownCard = MONTH_BREAKDOWN ? dynamic(() => import("@/components/MonthBreakdownCard").then((m) => m.MonthBreakdownCard)) : () => null;
 
 // 円グラフの色（カテゴリの順に使う。意味は持たせず、凡例と金額で読めるようにする）
@@ -162,6 +164,7 @@ function MonthReportPage({ embedded = false }: { embedded?: boolean }) {
             ))}
           </div>
           {view === "pay" && <UpcomingPayments />}
+          {view === "pay" && <OwedAdvances />}
           {view === "pay" && <CashBalanceCard month={month} />}
           {view === "list" && (
             <>

@@ -14,6 +14,7 @@ import { OrphanDraft } from "./OrphanDraft";
 import { categoryIsInvest, fixedCandidates } from "@/lib/classify";
 import { PAYMENT_METHODS, type Transaction, type TxSource, type TxType } from "@/lib/types";
 import { applyRefund, refundedTotal } from "@/lib/refund";
+import { applySettlement, checkAdvance, isAdvance, owedLeft, settledTotal } from "@/lib/advance";
 import { newId } from "@/lib/defaults";
 import { parseAmount } from "@/lib/money";
 import { categoryForMerchant, recentMerchants } from "@/lib/merchantSuggest";
@@ -54,7 +55,9 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
       return {
         type: editing.type,
         date: editing.date,
-        amount: String(editing.amount),
+        // 立替は、入力では払った総額と自分の分に分けて見せる（保存は amount＝自分の分）
+        amount: String(isAdvance(editing) ? (editing.advanceGross as number) : editing.amount),
+        ...(isAdvance(editing) ? { advanceMine: String(editing.amount) } : {}),
         categoryId: editing.categoryId,
         merchant: editing.merchant,
         paymentMethod: editing.paymentMethod,
@@ -203,6 +206,16 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
   const save = async (force = false, keepOpen = false, asNew = false) => {
     if (lock.current) return;
     // 返金の記録は直せない（元の支出と金額が合わなくなるため）。削除すれば、元の支出が元に戻る
+    // 公開版には立替の欄が無い。復元などで入った立替・精算の記録は、公開版では直さない（総額に戻したり、ふつうの収入にしたりしない）
+    if (!EXTRA && (editing?.advanceGross !== undefined || editing?.settles)) {
+      setSaveError("この記録は、この画面では直せません");
+      return;
+    }
+    // 精算の記録は、新しい記録としても保存しない（元の立替が消えたあとに、ふつうの収入にならないように。点検 中3）
+    if (EXTRA && editing?.settles) {
+      setSaveError(asNew ? "精算の記録は、新しい記録として保存できません（元の立替が消えています）" : "精算の記録は、直せません。削除すると、返してもらう分が元に戻ります");
+      return;
+    }
     if (editing?.refundOf && !asNew) {
       setSaveError("返金の記録は、直せません。削除すると、元の支出が元に戻ります。返金し直すときは、元の支出から返金してください");
       return;
@@ -215,6 +228,35 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
       if (!v.ok) {
         setErrors(v.errors);
         return;
+      }
+      // 立替（自分用）：入力の金額は払った総額。保存では amount＝自分の分、advanceGross＝総額
+      const mineStr = draft.type === "expense" ? (draft.advanceMine ?? "").trim() : "";
+      let advance: { gross: number; mine: number } | null = null;
+      if (EXTRA && mineStr) {
+        const pm = parseAmount(mineStr);
+        const err = pm.ok ? checkAdvance(v.amount, pm.value) : "自分の分は、1円以上の整数で入れてください";
+        if (err) {
+          setErrors({ advanceMine: err });
+          return;
+        }
+        if (draft.countAs === "transfer" || draft.countAs === "transfer-card") {
+          setSaveError("収支に数えない記録は、立替にできません");
+          return;
+        }
+        // 固定費の一部払いは払った額で数えるので、自分の分だけの金額と食い違う（点検 低5）
+        if (draft.linkRecurringId || editing?.recurringId || (req.mode === "new" && req.recurringId)) {
+          setSaveError("固定費の支払いは、立替にできません");
+          return;
+        }
+        advance = { gross: v.amount, mine: (pm as { ok: true; value: number }).value };
+      }
+      // 返してもらった分がある立替は、返してもらった額より「返してもらう分」を少なくできない・立替をやめられない
+      if (EXTRA && editing && !asNew && editing.advanceGross !== undefined) {
+        const got = settledTotal(data, editing.id);
+        if (got > 0 && (!advance || advance.gross - advance.mine < got)) {
+          setSaveError(`もう ${formatYen(got)} 返してもらっています。立替をやめる・返してもらう分を減らすときは、先に精算の記録を削除してください`);
+          return;
+        }
       }
       // 返金のある支出の金額は直せない（返金の記録から計算し直す仕組みのため）。直すときは、返金の記録を消して（元に戻る）から
       if (editing?.refundGross !== undefined && !asNew) {
@@ -235,7 +277,8 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
       const input: TxInput = {
         type: draft.type,
         date: draft.date,
-        amount: v.amount,
+        amount: advance ? advance.mine : v.amount,
+        ...(advance ? { advanceGross: advance.gross } : editing?.advanceGross !== undefined ? { advanceGross: undefined } : {}),
         categoryId: draft.categoryId,
         merchant: draft.merchant.trim(),
         paymentMethod: draft.paymentMethod,
@@ -300,7 +343,7 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
     if (!editing) return;
     const ok = await ui.confirm({
       title: `この${editing.type === "expense" ? "支出" : "収入"}を削除しますか？`,
-      body: `${formatDateJa(editing.date)} ${formatYen(editing.amount)}（${catName(editing.categoryId)}）\n${refundedTotal(data, editing.id) > 0 ? "この支出の返金の記録も、一緒に削除します。\n" : ""}削除すると元に戻せません。`,
+      body: `${formatDateJa(editing.date)} ${formatYen(editing.amount)}（${catName(editing.categoryId)}）\n${refundedTotal(data, editing.id) > 0 ? "この支出の返金の記録も、一緒に削除します。\n" : ""}${EXTRA && settledTotal(data, editing.id) > 0 ? "この立替の精算（返してもらった）の記録も、一緒に削除します。\n" : ""}削除すると元に戻せません。`,
       ok: "削除する",
       danger: true,
     });
@@ -509,7 +552,15 @@ export function TxSheet({ req, onClose }: { req: TxSheetRequest; onClose: () => 
           <TxExtras draft={draft} set={set} editingRecurringId={editing?.recurringId ?? (req.mode === "new" ? req.recurringId : undefined)} />
         )}
 
-        {EXTRA && editing && editing.type === "expense" && !editing.refundOf && <RefundBox tx={editing} onDone={onClose} />}
+        {EXTRA && draft.type === "expense" && editing?.refundGross === undefined && (
+          <Field label="立替（友達の分も払った）" optional htmlFor="tx-adv" error={errors.advanceMine}>
+            <input id="tx-adv" inputMode="numeric" value={draft.advanceMine ?? ""} onChange={(e) => set("advanceMine", e.target.value)} className={inputCls} placeholder="自分の分の金額" maxLength={14} aria-describedby="tx-adv-help" />
+            <p id="tx-adv-help" className="mt-1 text-[12px] text-ink-3">上の金額は払った総額のまま。支出に数えるのは自分の分だけで、残りは「返してもらう分」になります。</p>
+          </Field>
+        )}
+        {EXTRA && editing && editing.type === "expense" && isAdvance(editing) && <SettleBox tx={editing} onDone={onClose} />}
+        {EXTRA && editing && editing.type === "expense" && !editing.refundOf && editing.advanceGross === undefined && <RefundBox tx={editing} onDone={onClose} />}
+        {EXTRA && editing?.settles && <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">この記録は精算（立替を返してもらった）です。集計では、収入にも支出にも入りません。削除すると、返してもらう分が元に戻ります。</p>}
         {EXTRA && editing?.refundOf && <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">この記録は返金です。元の支出の額を減らしています（集計では、収入にも支出にも入りません）。削除すると、元の支出が元に戻ります。</p>}
 
         <Field label="メモ" optional htmlFor="tx-note" error={errors.note}>
@@ -653,6 +704,72 @@ function TxExtras({
 }
 
 /** 返金を記録する（自分用）。元の支出が、返金の分だけ減る（全額なら収支に数えない）。返金の記録を消すと、元に戻る */
+/** 立替を返してもらった（精算）。収支に数えない記録を足す（lib/advance.ts） */
+function SettleBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
+  const data = useData();
+  const store = useStore();
+  const ui = useUI();
+  const left = owedLeft(data, tx);
+  const got = settledTotal(data, tx.id);
+  const [open, setOpen] = useState(false);
+  const [amt, setAmt] = useState(String(left));
+  const [date, setDate] = useState(todayStr());
+  const lockRef = useRef(false);
+  if (left <= 0) return <p className="rounded-xl bg-surface-2 px-3 py-2 text-[12px] text-ink-2">立替は全部返してもらいました（{formatYen(got)}）。</p>;
+  if (!open)
+    return (
+      <div className="rounded-xl bg-surface-2 px-3 py-2">
+        <p className="mb-1 text-[12px] text-ink-2">
+          返してもらう分：あと {formatYen(left)}
+          {got > 0 ? `（返してもらった ${formatYen(got)}）` : ""}
+        </p>
+        <Button variant="secondary" className="w-full" onClick={() => setOpen(true)}>
+          返してもらった
+        </Button>
+      </div>
+    );
+  const submit = async () => {
+    if (lockRef.current) return;
+    lockRef.current = true;
+    try {
+      const p = parseAmount(amt);
+      const n = p.ok ? p.value : NaN;
+      const pre = applySettlement(data, tx.id, n, date, newId("tx"), new Date().toISOString());
+      if (!pre.ok) return ui.toast(pre.error, "error");
+      const ts = new Date().toISOString();
+      const sid = newId("tx");
+      // 保存の列の中で、最新のデータに対してもう一度確かめる（別のタブで精算したときに、二重に返してもらわない）
+      const res = await store.commit(
+        (d) => {
+          const x = applySettlement(d, tx.id, n, date, sid, ts);
+          return x.ok ? x.next : d;
+        },
+        { check: (d) => { const x = applySettlement(d, tx.id, n, date, sid, ts); return x.ok ? null : x.error; } },
+      );
+      ui.toast(res.ok ? "返してもらった分を記録しました" : res.error, res.ok ? "ok" : "error");
+      if (res.ok) onDone();
+    } finally {
+      lockRef.current = false;
+    }
+  };
+  return (
+    <div className="space-y-2 rounded-xl border border-line px-3 py-3">
+      <p className="text-[13px] font-semibold">返してもらった額（残り {formatYen(left)} まで）</p>
+      <input inputMode="numeric" value={amt} onChange={(e) => setAmt(e.target.value)} className={inputCls} aria-label="返してもらった額" maxLength={14} />
+      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} aria-label="返してもらった日" />
+      <p className="text-[12px] text-ink-3">収入には数えません（立替の分が戻っただけ）。精算の記録を消すと、返してもらう分が元に戻ります。</p>
+      <div className="flex gap-2">
+        <Button variant="secondary" className="flex-1" onClick={() => setOpen(false)}>
+          やめる
+        </Button>
+        <Button className="flex-1" onClick={submit}>
+          記録する
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function RefundBox({ tx, onDone }: { tx: Transaction; onDone: () => void }) {
   const data = useData();
   const store = useStore();

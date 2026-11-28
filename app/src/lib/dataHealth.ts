@@ -1,3 +1,4 @@
+import { settleProblems } from "./advance";
 import { daysBetween } from "./date";
 import { inboxCount } from "./inbox";
 import { ledgerEvents, refundConservationErrors } from "./ledgerCore";
@@ -34,6 +35,7 @@ export function dataHealth(d: AppData, today: string): HealthFinding[] {
   {
     const purchaseIds = new Set(d.transactions.map((t) => t.id));
     add({ id: "refund-orphan", level: "warn", text: "元の支出が見つからない返金の記録があります（元の支出が消えた可能性。残高には数えていません）", count: d.transactions.filter((t) => t.refundOf && !purchaseIds.has(t.refundOf)).length, href: "/history" });
+    add({ id: "settle-bad", level: "warn", text: "立替が見つからない・数え方が違う・返してもらう分より多い精算の記録があります（残高には、立替の分までしか数えていません）", count: settleProblems(d).length, href: "/history" });
   }
   add({ id: "tx-rec", level: "info", text: "固定費につないだ支出のうち、その固定費がもうないものがあります（固定費を消した可能性。記録は残っています）", count: d.transactions.filter((t) => t.recurringId && !recIds.has(t.recurringId)).length });
 
@@ -41,7 +43,7 @@ export function dataHealth(d: AppData, today: string): HealthFinding[] {
   const seen = new Map<string, number>();
   for (const t of d.transactions) {
     if (!t.merchant.trim()) continue;
-    const k = `${t.date}|${t.type}|${t.amount}|${t.merchant.normalize("NFKC").trim().toLowerCase()}`;
+    const k = `${t.date}|${t.type}|${t.advanceGross ?? t.amount}|${t.merchant.normalize("NFKC").trim().toLowerCase()}`; // 立替は払った総額で比べる
     seen.set(k, (seen.get(k) ?? 0) + 1);
   }
   const dupGroups = [...seen.values()].filter((n) => n > 1);

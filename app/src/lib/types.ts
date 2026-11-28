@@ -29,6 +29,8 @@ export interface Transaction {
   refundWas?: "life" | "invest"; // 返金がある支出：返金の前の数え方の控え
   importBatchId?: string; // 取り込みの単位（CSV の取り込みごと。取り消しに使う。NEXT v21 CSV:C08）
   planId?: string; // 計画のお金（Plan.id。To-Be 2026-11-27。支出の正本はこの記録で、計画は集めて見るだけ）
+  advanceGross?: number; // 立替の支出：実際に払った総額（amount は自分の分。To-Be 2026-11-28。lib/advance.ts）
+  settles?: string; // 精算の記録：どの立替の、返してもらった分か（収支に数えない。lib/advance.ts）
   createdAt: string; // ISO
   updatedAt: string; // ISO
 }

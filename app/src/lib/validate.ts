@@ -20,6 +20,8 @@ export interface TxDraft {
   linkRecurringId?: string;
   /** つなぐ固定費の、一部だけの支払い（残りは、まだ。NEXT v21 X02） */
   linkPartial?: boolean;
+  /** 立替の自分の分（"" = 立替でない）。amount は払った総額（To-Be 2026-11-28。lib/advance.ts） */
+  advanceMine?: string;
 }
 
 export function validateTx(

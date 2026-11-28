@@ -188,7 +188,7 @@ export function validateAppData(input: unknown): R {
       !isStr(t.date) || !isValidDateStr(t.date) || !isAmt(t.amount) || !isStr(t.categoryId) ||
       !isStr(t.merchant) || !isStr(t.paymentMethod) || !isStr(t.note) || !isStr(t.createdAt) ||
       // 100点化で足した任意の項目（無くてもよい。あれば形を確かめる）
-      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross) || !optional(isStr)(t.planId)
+      !optional(oneOf("life", "invest", "transfer"))(t.countAs) || !optional(isStr)(t.tripId) || !optional(isStr)(t.importBatchId) || !optional(isBool)(t.recurringPartial) || !optional(isStr)(t.recurringDue) || !optional(isStr)(t.recurringId) || !optional(isStr)(t.refundOf) || !optional(oneOf("card"))(t.transferKind) || !optional(oneOf("life", "invest"))(t.refundWas) || !optional(isAmt)(t.refundGross) || !optional(isStr)(t.planId) || !optional(isAmt)(t.advanceGross) || !optional(isStr)(t.settles)
     )
       return { ok: false, error: "支出・収入のデータが壊れています" };
     if (ids.has(t.id)) return { ok: false, error: "支出・収入の記録が二重に入っています" };
