@@ -62,6 +62,8 @@ export interface CollectionConfig<K extends CollectionKey> {
   addBlocked?: (data: AppData) => string | null;
   /** 新規作成時の初期値 */
   initial: (ctx: { today: string; data: AppData }) => Draft;
+  /** 新しく追加するときの「ひな形」（押すと入力の初めの値に入れるだけ。保存の形は変えない。To-Be 段階3） */
+  presets?: { id: string; label: string; draft: Draft }[];
   /** 保存済みの項目 → 入力の初期値 */
   toDraft: (item: ItemOf<K>) => Draft;
   /** 入力 → 保存する項目（検証済みの値を渡す） */
@@ -219,6 +221,8 @@ function ItemSheet<K extends CollectionKey>({ config, id, date, onClose }: { con
   const fields = typeof config.fields === "function" ? config.fields({ data }) : config.fields;
   const [draft, setDraft] = useState<Draft>(initial);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // 押したひな形（押していなければ null）。ひな形が入れた欄を手で変えたら、押していない扱いに戻す（点検 中1）
+  const [picked, setPicked] = useState<string | null>(null);
   // 編集を始めたときの記録。保存の直前に今の記録と比べ、別のタブで変わっていたら上書きしない
   const editSnapshot = useRef(cur ? JSON.stringify(cur) : undefined);
   const lock = useRef(false);
@@ -226,6 +230,7 @@ function ItemSheet<K extends CollectionKey>({ config, id, date, onClose }: { con
 
   const set = (name: string, v: string | boolean) => {
     setDraft((d) => ({ ...d, [name]: v }));
+    if (picked && config.presets?.find((p) => p.id === picked)?.draft[name] !== undefined) setPicked(null);
     if (errors[name]) setErrors((e) => ({ ...e, [name]: "" }));
   };
 
@@ -297,6 +302,35 @@ function ItemSheet<K extends CollectionKey>({ config, id, date, onClose }: { con
           save();
         }}
       >
+        {/* ひな形は今は自分用だけ（公開版の組み立てに入れない） */}
+        {process.env.NEXT_PUBLIC_KB_EDITION === "personal" && !cur && config.presets && config.presets.length > 0 && (
+          <div className="col-span-2">
+            <p id={`preset-${config.key}`} className="mb-1 text-[14px] font-semibold text-ink-3">
+              ひな形（押すと下の欄に入ります）
+            </p>
+            <div role="group" aria-labelledby={`preset-${config.key}`} className="flex flex-wrap gap-1.5">
+              {config.presets.map((p) => {
+                const on = picked === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      setDraft((d) => ({ ...d, ...p.draft }));
+                      setPicked(p.id);
+                      // ひな形が入れた欄のエラーだけ消す（ほかの欄のエラーは残す。点検 低2）
+                      setErrors((e) => Object.fromEntries(Object.entries(e).filter(([k]) => !(k in p.draft))));
+                    }}
+                    className={`min-h-11 rounded-full border px-3 text-[14px] font-semibold ${on ? "border-brand bg-brand-soft text-brand" : "border-line bg-surface text-ink-2"}`}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {fields.map((f) => {
           if (f.showWhen && !f.showWhen(draft)) return null;
           const fid = `f-${config.key}-${f.name}`;

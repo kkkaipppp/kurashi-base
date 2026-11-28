@@ -36,6 +36,21 @@ const config: CollectionConfig<"goals"> = {
     { name: "done", label: "達成", type: "checkbox" },
   ],
   initial: () => ({ title: "", kind: "number", current: "0", target: "", unit: "", deadline: "", note: "", done: false }),
+  // 種類のひな形（To-Be 02 目標：資格/勉強・貯金・習慣・運動・読書・キャリア・自由作成。自分用）。種類と単位を入れるだけで、保存の形は今のまま
+  ...(PERSONAL_BUILD
+    ? {
+        presets: [
+          { id: "saving", label: "貯金", draft: { kind: "number", unit: "円" } },
+          { id: "reading", label: "読書", draft: { kind: "number", unit: "冊" } },
+          { id: "exercise", label: "運動", draft: { kind: "number", unit: "回" } },
+          { id: "habit", label: "習慣", draft: { kind: "number", unit: "日" } },
+          // 達成目標・自由は単位に触らない（手で入れた単位を消さない。点検 低1）
+          { id: "study", label: "資格・勉強", draft: { kind: "check" } },
+          { id: "career", label: "キャリア", draft: { kind: "check" } },
+          { id: "free", label: "自由", draft: { kind: "number" } },
+        ],
+      }
+    : {}),
   toDraft: (g) => ({ title: g.title, kind: g.kind, current: String(g.current), target: numStr(g.target), unit: g.unit, deadline: g.deadline, note: g.note, steps: stepsToText(g.steps), done: g.done }),
   fromDraft: (d) => ({
     title: str(d, "title"),

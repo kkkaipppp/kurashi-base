@@ -7,7 +7,11 @@ import { Button, Field, inputCls } from "./ui";
 import { useData, useStore } from "@/lib/store";
 import { newId } from "@/lib/defaults";
 import { OP_LABEL, combine, goalSaveError, judge, liveParentId, periodOpen, snapshotAchievement, toNumber, wouldCycle, type Op, type Verdict } from "@/lib/goalCond";
-import { todayStr } from "@/lib/date";
+import { formatDateJa, todayStr } from "@/lib/date";
+
+/** 達成の記録の時刻（UTC）を、日本時間の日付にする（端末の時刻帯に左右されない。点検 中2） */
+const jstDate = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+const fmtN = (n: number) => n.toLocaleString("ja-JP");
 import type { Goal, GoalConditionData } from "@/lib/types";
 
 // 目標そのものの「達成」（done）と区別するため、条件は「満たす・満たさない」と言う（点検 指摘9）
@@ -173,7 +177,26 @@ function GoalConditionsSheet({ goal, onClose }: { goal: Goal; onClose: () => voi
           </select>
         </Field>
         {open && conds.some((c) => c.op === "<=" || c.op === "range") && <p className="text-[14px] text-ink-3">「以下」と「範囲」の条件は、期限の日が終わるまで未判定です（上限を超えたときは、その時点で満たしません）。</p>}
-        {(goal.achievements?.length ?? 0) > 0 && <p className="text-[14px] text-ink-3">達成の記録：{goal.achievements!.length}回（そのときの条件のまま残ります）</p>}
+        {(goal.achievements?.length ?? 0) > 0 && (
+          <section aria-labelledby="goal-ach" className="space-y-1">
+            <h3 id="goal-ach" className="text-[14px] font-semibold text-ink-3">
+              達成の記録：{goal.achievements!.length}回（そのときの条件のまま残ります）
+            </h3>
+            <ul className="divide-y divide-line border-y border-line text-[14px]">
+              {[...goal.achievements!].reverse().map((a, i) => (
+                <li key={`${a.at}-${i}`} className="py-2">
+                  <span className="font-semibold">{formatDateJa(jstDate(a.at), true)}</span>
+                  <span className="ml-2 text-ink-3">{VERDICT_LABEL[a.verdict]}</span>
+                  {a.conditions.length > 0 && (
+                    <span className="block text-ink-3">
+                      {a.conditions.map((c) => `${c.label || "条件"} ${c.op === "range" ? `${fmtN(c.target)}〜${c.targetMax != null ? fmtN(c.targetMax) : ""}${c.unit}${OP_LABEL.range}` : `${fmtN(c.target)}${c.unit} ${OP_LABEL[c.op]}`}`).join("・")}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {error && (
           <p role="alert" className="text-[14px] font-medium text-danger">
             {error}
