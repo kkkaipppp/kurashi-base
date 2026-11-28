@@ -20,6 +20,8 @@ export function hubCategories(): HubCategory[] {
     ...(FEATURES.lifeChange ? [{ href: "/life", label: "引っ越し・転職のお金" }] : []),
     ...(FEATURES.decide ? [{ href: "/decide", label: "買う前に確認" }] : []),
     { href: "/wishes", label: "欲しいもの", count: (d) => (d.wishes ?? []).filter((w) => w.status === "want").length },
+    { href: "/reservations", label: "予約", count: (d) => (d.reservations ?? []).filter((r) => r.status === "booked").length },
+    { href: "/chores", label: "家事分担", count: (d) => (d.chores ?? []).length },
   ];
   return [
     { key: "plan", label: "計画", icon: "plan", items: plan },
@@ -43,7 +45,7 @@ export function hubCategories(): HubCategory[] {
       ],
     },
     { key: "health", label: "健康", icon: "health", items: [{ href: "/health", label: "健康", count: (d) => d.health.length }] },
-    { key: "memo", label: "メモ", icon: "memo", items: [{ href: "/notes", label: "メモ", count: (d) => d.notes.length }] },
+    { key: "memo", label: "メモ", icon: "memo", items: [{ href: "/notes", label: "メモ", count: (d) => d.notes.length }, { href: "/stock", label: "買い足すもの", count: (d) => (d.stock ?? []).filter((s) => s.need).length }, { href: "/garbage", label: "ゴミ出し", count: (d) => (d.garbage ?? []).length }] },
     { key: "document", label: "書類", icon: "document", items: [{ href: "/documents", label: "書類", count: (d) => d.documents.length }] },
   ];
 }

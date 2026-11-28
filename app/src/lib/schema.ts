@@ -14,6 +14,7 @@ const isBool = (v: unknown) => typeof v === "boolean";
 const isNum = (v: unknown) => typeof v === "number" && Number.isFinite(v);
 const numOrNull = (v: unknown) => v === null || isNum(v);
 const oneOf = (...xs: string[]) => (v: unknown) => isStr(v) && xs.includes(v);
+const intList = (min: number, max: number) => (v: unknown) => Array.isArray(v) && v.length <= 7 && v.every((x) => Number.isInteger(x) && x >= min && x <= max) && new Set(v).size === v.length;
 const isAmt = (v: unknown) => Number.isInteger(v) && (v as number) > 0 && (v as number) <= MAX_AMOUNT;
 
 export const CURRENT_SCHEMA = 2;
@@ -40,6 +41,8 @@ export function migrate(raw: unknown): unknown {
   if (d.schemaVersion === 2 && d.accounts === undefined) d = { ...d, accounts: [] };
   // 2026-11-28：ポイントの一覧（無ければ空で足す）
   if (d.schemaVersion === 2 && d.points === undefined) d = { ...d, points: [] };
+  // 2026-11-28：予約・家事・買い足すもの・ゴミ出し（無ければ空で足す）
+  for (const k of ["reservations", "chores", "stock", "garbage"] as const) if (d.schemaVersion === 2 && d[k] === undefined) d = { ...d, [k]: [] };
   return d;
 }
 
@@ -177,6 +180,10 @@ const SPECS: Record<CollectionKey, { label: string; fields: Record<string, (v: u
     },
   },
   accounts: { label: "口座・カード", fields: { name: isStr, kind: oneOf("bank", "card", "emoney", "cash"), closingDay: (v) => v === null || (Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 31), payDay: (v) => v === null || (Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 31), baseBalance: (v) => v === null || Number.isInteger(v), baseDate: okDateOrBlank, baseAt: optional(isStr), note: isStr, archived: isBool } },
+  reservations: { label: "予約", fields: { name: isStr, kind: oneOf("hotel", "flight", "train", "restaurant", "other"), date: okDateOrBlank, status: oneOf("none", "booked", "canceled"), ref: isStr, cancelBy: okDateOrBlank, amount: (v: unknown) => v === null || isAmt(v), url: isHttpOrBlank, planId: optional(isStr), note: isStr } },
+  chores: { label: "家事", fields: { name: isStr, who: isStr, cycle: oneOf("daily", "weekly", "monthly", "none"), lastDone: okDateOrBlank, note: isStr } },
+  stock: { label: "買い足すもの", fields: { name: isStr, need: isBool, note: isStr } },
+  garbage: { label: "ゴミ出し", fields: { name: isStr, weekdays: intList(0, 6), weeks: intList(1, 5), note: isStr } },
   points: { label: "ポイント", fields: { name: isStr, balance: (v: unknown) => v === null || (Number.isInteger(v) && (v as number) >= 0), expiry: okDateOrBlank, note: isStr } },
   wishes: { label: "欲しいもの", fields: { name: isStr, price: numOrNull, url: isHttpOrBlank, priority: oneOf("high", "mid", "low"), status: oneOf("want", "bought", "dropped"), note: isStr } },
 };

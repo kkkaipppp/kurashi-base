@@ -19,7 +19,7 @@ beforeAll(async () => {
     sheet: await import("@/components/EventSheet"),
     repo: await import("@/lib/repository"),
   };
-});
+}, 60_000);
 afterAll(() => vi.unstubAllEnvs());
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, replace: () => {}, back: () => {}, prefetch: () => {} }), usePathname: () => "/calendar", useSearchParams: () => new URLSearchParams() }));

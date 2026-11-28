@@ -22,6 +22,7 @@ export function dropDanglingPlanLinks(d: AppData): { data: AppData; dropped: num
   const events = unlink(d.events);
   const tasks = unlink(d.tasks);
   const transactions = unlink(d.transactions);
+  const reservations = unlink(d.reservations ?? []);
   const planList = (d.plans ?? []).some((p) => p.tripId && !trips.has(p.tripId))
     ? (d.plans ?? []).map((p) => {
         if (!p.tripId || trips.has(p.tripId)) return p;
@@ -30,5 +31,5 @@ export function dropDanglingPlanLinks(d: AppData): { data: AppData; dropped: num
         return rest as Plan;
       })
     : d.plans;
-  return dropped ? { data: { ...d, events, tasks, transactions, plans: planList }, dropped } : { data: d, dropped: 0 };
+  return dropped ? { data: { ...d, events, tasks, transactions, ...(d.reservations ? { reservations } : {}), plans: planList }, dropped } : { data: d, dropped: 0 };
 }

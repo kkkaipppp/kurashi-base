@@ -23,7 +23,7 @@ export type { SaveResult };
 
 const ID_PREFIX: Record<CollectionKey, string> = {
   nisa: "nisa", notes: "note", tasks: "task", assets: "asset", contracts: "ct", health: "hl",
-  documents: "doc", studySubjects: "subj", studyLogs: "slog", goals: "goal", wishes: "wish", accounts: "acct", points: "pt",
+  documents: "doc", studySubjects: "subj", studyLogs: "slog", goals: "goal", wishes: "wish", accounts: "acct", points: "pt", reservations: "rsv", chores: "chore", stock: "stock", garbage: "gbg",
 };
 
 type Status = "loading" | "ready" | "corrupt" | "unavailable";

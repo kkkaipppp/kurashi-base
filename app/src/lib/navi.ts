@@ -1,9 +1,10 @@
 import { remainingBudget } from "./aggregate";
 import { IS_PERSONAL } from "./edition";
 import { budgetSpent } from "./ledger";
-import { daysBetween, formatDateJa, monthKey } from "./date";
+import { addDays, daysBetween, formatDateJa, monthKey } from "./date";
 import { formatYen } from "./money";
 import { daysLeft, dueLabel, formatMinutes, goalProgress, studyStats } from "./life";
+import { cancelDaysLeft, cancelText, garbageOn } from "./household";
 import { COLLECTION_KEYS, type AppData } from "./types";
 
 // 「今日のナビ」：今日やること・気にしておくことを、記録されたデータからだけ集める（推測で作らない）
@@ -65,6 +66,20 @@ export function buildNavi(data: AppData, today: string): NaviItem[] {
     const d = daysBetween(today, c.renewalDate);
     if (d < 0) items.push({ key: `ct-${c.id}`, tone: "warn", title: `${c.name}の更新日を過ぎています`, sub: "契約・更新するか確認してください", href: `/contracts?open=${c.id}` });
     else if (d <= WITHIN_DAYS) items.push({ key: `ct-${c.id}`, tone: d <= 7 ? "today" : "info", title: `${c.name}の更新まであと${d}日`, sub: `契約・${formatDateJa(c.renewalDate)}`, href: `/contracts?open=${c.id}` });
+  }
+
+  // 無料キャンセルの期限（3日前から）と、今日・明日のゴミ出し（自分用。2026-11-28）
+  if (process.env.NEXT_PUBLIC_KB_EDITION === "personal") {
+    for (const r of data.reservations ?? []) {
+      const d = cancelDaysLeft(r, today);
+      if (d !== null && d <= 3) items.push({ key: `rsv-${r.id}`, tone: d <= 1 ? "today" : "info", title: cancelText(r.name, d), sub: `予約・${formatDateJa(r.cancelBy)}まで`, href: `/reservations?open=${r.id}` });
+    }
+    const tomorrow = addDays(today, 1);
+    for (const g of data.garbage ?? []) {
+      // 今日も明日もある種類は、両方出す（点検 低-2）
+      if (garbageOn(g, today)) items.push({ key: `gbg-${g.id}-today`, tone: "today", title: `今日は${g.name}の日`, sub: "ゴミ出し", href: "/garbage" });
+      if (garbageOn(g, tomorrow)) items.push({ key: `gbg-${g.id}-tomorrow`, tone: "info", title: `明日は${g.name}の日`, sub: "ゴミ出し", href: "/garbage" });
+    }
   }
 
   // ポイントの期限（自分用。2026-11-28）

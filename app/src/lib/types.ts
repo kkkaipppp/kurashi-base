@@ -283,6 +283,56 @@ export interface PointCard {
   updatedAt: string;
 }
 
+/** 予約（自分用。2026-11-28）。予約済み・キャンセル済みは本人が付ける（外のサイトとはつながっていない） */
+export interface Reservation {
+  id: string;
+  name: string;
+  kind: "hotel" | "flight" | "train" | "restaurant" | "other";
+  date: string; // 利用日（"" = 未定）
+  status: "none" | "booked" | "canceled"; // 未予約・予約済み・キャンセル済み
+  ref: string; // 予約番号
+  cancelBy: string; // 無料キャンセルの期限（"" = なし）
+  amount: number | null; // 金額の目安（支出の記録とは別）
+  url: string;
+  planId?: string;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 家事（自分用。2026-11-28）。誰がやるかと、どのくらいおきか。「やった」でやった日を入れる */
+export interface Chore {
+  id: string;
+  name: string;
+  who: string;
+  cycle: "daily" | "weekly" | "monthly" | "none";
+  lastDone: string; // "" = まだ
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 買い足すもの（自分用。2026-11-28） */
+export interface StockItem {
+  id: string;
+  name: string;
+  need: boolean; // 買い足す
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** ゴミ出しの日（自分用。2026-11-28）。曜日（0=日〜6=土）と、第何週（空 = 毎週） */
+export interface GarbageDay {
+  id: string;
+  name: string;
+  weekdays: number[];
+  weeks: number[];
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** 欲しいもの（自分用。2026-11-28）。買ったら「買った」にする（支出は家計簿に記録する。二重に数えない） */
 export interface Wish {
   id: string;
@@ -458,11 +508,15 @@ export interface Collections {
   wishes: Wish[];
   accounts: Account[];
   points: PointCard[];
+  reservations: Reservation[];
+  chores: Chore[];
+  stock: StockItem[];
+  garbage: GarbageDay[];
 }
 
 export type CollectionKey = keyof Collections;
 export type ItemOf<K extends CollectionKey> = Collections[K][number];
-export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals", "wishes", "accounts", "points"];
+export const COLLECTION_KEYS: CollectionKey[] = ["nisa", "notes", "tasks", "assets", "contracts", "health", "documents", "studySubjects", "studyLogs", "goals", "wishes", "accounts", "points", "reservations", "chores", "stock", "garbage"];
 
 export interface AppData extends Collections {
   schemaVersion: 2;

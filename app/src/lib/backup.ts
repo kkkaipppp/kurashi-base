@@ -50,6 +50,10 @@ export const COUNT_LABELS: Record<keyof Counts, string> = {
   wishes: "欲しいもの",
   accounts: "口座・カード",
   points: "ポイント",
+  reservations: "予約",
+  chores: "家事",
+  stock: "買い足すもの",
+  garbage: "ゴミ出し",
 };
 
 export function buildBackup(data: AppData, nowIso: string = new Date().toISOString()): BackupFile {
