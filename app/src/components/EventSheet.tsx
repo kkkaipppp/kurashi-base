@@ -1,5 +1,6 @@
 "use client";
 
+import { isPractice } from "@/lib/practiceFlag";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet } from "./Sheet";
@@ -536,7 +537,7 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
           </div>
         </div>
       )}
-      {draftSaveFailed && <p className="mb-2 text-[12px] text-warn">下書きを端末に控えられませんでした（保存すれば記録は残ります）。</p>}
+      {draftSaveFailed && !isPractice() && <p className="mb-2 text-[12px] text-warn">下書きを端末に控えられませんでした（保存すれば記録は残ります）。</p>}
       <form
         className="space-y-4"
         noValidate

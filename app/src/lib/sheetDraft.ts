@@ -1,3 +1,4 @@
+import { isPractice } from "./practiceFlag";
 /**
  * 入力の書きかけ（下書き）を、端末の中の別のキーに一時保存する（100点化の指示 B）。
  * 記録の保存の形（kurashi-base:data:v1）は変えない。アプリを閉じても、別の画面へ行っても、
@@ -25,6 +26,8 @@ export interface SheetDraft<T> {
 type KV = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const local = (): KV | null => {
   try {
+    // 練習中（自分用。決定 Q34 ①）は書きかけを控えない（本当の記録の書きかけと混ぜない）
+    if (isPractice()) return null;
     return typeof localStorage === "undefined" ? null : localStorage;
   } catch {
     return null;

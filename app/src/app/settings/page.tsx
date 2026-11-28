@@ -19,6 +19,7 @@ import { useUI } from "@/components/UIContext";
 import { Button, Card, Field, PageHeader, SectionTitle, inputCls } from "@/components/ui";
 import { STORAGE_TEXT, useIsNativeApp } from "@/lib/platform";
 import { NativeStatusCard } from "@/components/NativeStatusCard";
+import { isPractice } from "@/lib/practiceFlag";
 
 // 設定を目的ごとのまとまりに分ける見出し（100点化の指示 C。自分用だけ。公開版は友人β中なので今のまま）
 const GROUPS = IS_PERSONAL;
@@ -37,6 +38,8 @@ const MenuVisibilityCard = PERSONAL_BUILD ? dynamic(() => import("@/components/M
 const NavSettingsCard = PERSONAL_BUILD ? dynamic(() => import("@/components/NavSettingsCard").then((m) => m.NavSettingsCard)) : null;
 // 文字の大きさと色（To-Be 02 設定。自分用。2026-11-28）
 const AppearanceCard = PERSONAL_BUILD ? dynamic(() => import("@/components/AppearanceCard").then((m) => m.AppearanceCard)) : null;
+// 練習用のデータで試す（決定 Q34 ①。保存しない。自分用）
+const PracticeCard = PERSONAL_BUILD ? dynamic(() => import("@/components/PracticeCard").then((m) => m.PracticeCard)) : null;
 const StartScreenCard = PERSONAL_BUILD ? dynamic(() => import("@/components/StartScreenCard").then((m) => m.StartScreenCard)) : null;
 const ImportHistoryCard = PERSONAL_BUILD ? dynamic(() => import("@/components/ImportHistoryCard").then((m) => m.ImportHistoryCard)) : null;
 const DataHealthCard = PERSONAL_BUILD ? dynamic(() => import("@/components/DataHealthCard").then((m) => m.DataHealthCard)) : null;
@@ -145,6 +148,8 @@ export default function SettingsPage() {
 
   // --- バックアップ ---
   const exportBackup = async () => {
+    // 練習中は書き出さない（練習の中身が本物と同じ形のファイルに残らないように。点検 中-3）
+    if (PERSONAL_BUILD && isPractice()) return ui.toast("練習中は書き出せません（練習をやめてから書き出してください）", "error");
     const now = new Date().toISOString();
     const b = buildBackup({ ...data, meta: { ...data.meta, lastBackupAt: now } }, now);
     const blob = new Blob([JSON.stringify(b, null, 2)], { type: "application/json" });
@@ -163,6 +168,7 @@ export default function SettingsPage() {
 
   // --- カレンダー用ファイル（.ics） ---
   const exportCalendar = () => {
+    if (PERSONAL_BUILD && isPractice()) return ui.toast("練習中は書き出せません（練習をやめてから書き出してください）", "error");
     const today = todayStr();
     const items = buildCalendarItems(data, today);
     if (items.length === 0) return ui.toast("書き出す予定・固定費がありません", "error");
@@ -626,7 +632,14 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      <NativeStatusCard />
+      {/* 練習中は iPhone の連携（カレンダー・通知）を変えられないようにする（本当の端末に効くため。点検 中-4） */}
+      {PERSONAL_BUILD && isPractice() ? (
+        <Card>
+          <p className="text-[13px] text-ink-2">練習中は、iPhone のカレンダー・通知の設定を変えられません。練習をやめてから変えてください。</p>
+        </Card>
+      ) : (
+        <NativeStatusCard />
+      )}
 
     </>
   );
@@ -818,6 +831,7 @@ export default function SettingsPage() {
   );
   const blkAbout = (
     <>
+      {PracticeCard && <PracticeCard />}
       <Card>
         <SectionTitle>このアプリについて</SectionTitle>
         <p className="text-[13px] text-ink-2">くらしベース（KURASHI BASE）β版（試用版）</p>
@@ -825,7 +839,7 @@ export default function SettingsPage() {
         {PERSONAL_BUILD ? (
           // 自分用：iPhone アプリでは文字の読み取り・通知・ウィジェットが使えるので、「まだ対応していない」に入れない（磨き込み 2026-11-26）
           <ul className="mt-1 list-disc space-y-1 pl-5 text-[13px] text-ink-3">
-            <li>繰り返し予定の1回分だけの変更、分割払いの記録</li>
+            <li>繰り返し予定の1回分だけの変更</li>
             <li>端末どうしの同期・共有・AI・ほかのサービスとのつながり（メニューの「準備中」に説明があります）</li>
             <li>iPhone のショートカット</li>
             <li>文字の読み取り・通知・ウィジェットは iPhone アプリの中だけ（パソコンのブラウザでは使えません）</li>

@@ -1,5 +1,6 @@
 "use client";
 
+import { isPractice } from "@/lib/practiceFlag";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { CollectionSection, numberFromDraft, type CollectionConfig } from "@/components/CollectionPage";
 import { OpenFromQuery } from "@/components/OpenFromQuery";
@@ -84,7 +85,8 @@ export default function StudyPage() {
           </Button>
         }
       />
-      <StudyTop />
+      {/* 練習中は勉強のタイマーを使わない（本当のタイマーを読み書きしない。点検 低-1） */}
+      {process.env.NEXT_PUBLIC_KB_EDITION === "personal" && isPractice() ? <p className="px-1 text-[13px] text-ink-3">練習中は勉強のタイマーを使えません。</p> : <StudyTop />}
       {subjects.length === 0 ? (
         <Card>
           <Empty action={<Button onClick={() => setForm({ key: Date.now() })}>資格を追加する</Button>}>

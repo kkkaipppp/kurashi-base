@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { StoreProvider, useStore } from "@/lib/store";
+import { isPractice, practiceRepository, reloadHome, setPractice } from "@/lib/practice";
+import { todayStr } from "@/lib/date";
 import { LOST_STORE_PREFIX, NO_OLD_RECORDS } from "@/lib/lostStore";
 import { UIProvider, useUI } from "./UIContext";
 import { WidgetSync } from "./WidgetSync";
@@ -18,15 +20,18 @@ const PersonalShell = PERSONAL_SHELL ? dynamic(() => import("./PersonalShell").t
 export function AppShell({ children }: { children: ReactNode }) {
   // 日程調整の回答のページ（友達が開く）は、アプリの枠・端末の記録の読み込みを使わない（To-Be 段階4。点検 中5）
   const path = usePathname();
+  // 練習中（自分用。決定 Q34 ①）は、保存の先を閉じれば消えるメモリーに替える。本当の記録の入れ物には触れない
+  const [practiceRepo] = useState(() => (PERSONAL_SHELL && isPractice() ? practiceRepository(todayStr()) : undefined));
   if (path === "/a" || path.startsWith("/a/")) return <div className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pb-10">{children}</div>;
   return (
-    <StoreProvider>
-      <Gate>{children}</Gate>
+    <StoreProvider repo={practiceRepo}>
+      {/* 練習かどうかは開いたときに1回だけ決める（描き直しで変わらない。点検 中-1） */}
+      <Gate practice={practiceRepo !== undefined}>{children}</Gate>
     </StoreProvider>
   );
 }
 
-function Gate({ children }: { children: ReactNode }) {
+function Gate({ children, practice }: { children: ReactNode; practice: boolean }) {
   const s = useStore();
   if (s.status === "loading") {
     return (
@@ -39,13 +44,34 @@ function Gate({ children }: { children: ReactNode }) {
   if (s.status === "corrupt") return <CorruptScreen />;
   return (
     <UIProvider>
-      <WidgetSync />
+      {/* 練習中は、記録から作る写し（ウィジェット・自動バックアップ・カレンダー・通知）を書かない */}
+      {!practice && <WidgetSync />}
+      {practice && <PracticeBanner />}
       {/* 上は時計の所の余白（自分用。公開版は 0）、下は下のボタンの並び＋ホームバーの所 */}
       <div className="mx-auto min-h-dvh w-full max-w-[480px] px-4 pt-[var(--sat)] pb-[calc(7rem+var(--sab))]">{children}</div>
       {PersonalShell ? <PersonalShell /> : <BottomNav />}
     </UIProvider>
   );
 }
+
+/** 練習中の帯（いつも上に出す）。自分用の版だけ（版を直接比べて、公開版の組み立てに入れない） */
+const PracticeBanner = !PERSONAL_SHELL
+  ? () => null
+  : () => (
+    <div role="status" className="sticky top-0 z-40 flex items-center justify-between gap-2 bg-warn-soft px-4 pt-[var(--sat)] text-[13px] font-semibold text-warn">
+      <span className="py-2">練習中（本当の記録とは別。保存しません）</span>
+      <button
+        type="button"
+        onClick={() => {
+          setPractice(false);
+          reloadHome();
+        }}
+        className="min-h-11 shrink-0 rounded-lg px-2 text-brand underline"
+      >
+        練習をやめる
+      </button>
+    </div>
+  );
 
 function StorageProblem({ title, body, children, browserHint = true }: { title: string; body: string; children?: ReactNode; browserHint?: boolean }) {
   return (

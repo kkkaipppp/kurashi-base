@@ -1,5 +1,6 @@
 "use client";
 
+import { isPractice } from "@/lib/practiceFlag";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Sheet } from "./Sheet";
 import { useUI } from "./UIContext";
@@ -53,6 +54,8 @@ const subscribe = (cb: () => void) => {
 /** タイマーは端末に置く（アプリを閉じても、開き直せば続きから）。書けないときは false */
 function writeTimer(t: TimerState | null): boolean {
   try {
+    // 練習中（決定 Q34 ①）は端末に置かない（本当のタイマーを上書きしない）
+    if (isPractice()) return true;
     if (t) localStorage.setItem(TIMER_KEY, JSON.stringify(t));
     else localStorage.removeItem(TIMER_KEY);
   } catch {

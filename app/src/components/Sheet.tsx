@@ -1,5 +1,6 @@
 "use client";
 
+import { isPractice } from "@/lib/practiceFlag";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { IconX } from "./ui";
 
@@ -101,6 +102,8 @@ export function Sheet({
       >
         <div className="flex min-h-14 items-center justify-between border-b border-line px-4">
           <h2 className="text-[17px] font-bold">{title}</h2>
+          {/* 練習中は入力の画面の上にも出す（帯が隠れるため。点検 中-2） */}
+          {process.env.NEXT_PUBLIC_KB_EDITION === "personal" && isPractice() && <span className="rounded-full bg-warn-soft px-2 py-0.5 text-[12px] font-semibold text-warn">練習中</span>}
           <button
             type="button"
             data-close

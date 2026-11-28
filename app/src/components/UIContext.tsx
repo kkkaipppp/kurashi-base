@@ -1,5 +1,6 @@
 "use client";
 
+import { isPractice } from "@/lib/practiceFlag";
 import dynamic from "next/dynamic";
 import {
   createContext,
@@ -74,7 +75,9 @@ export function UIProvider({ children }: { children: ReactNode }) {
     });
   }, [pathname]);
 
-  const toast = useCallback((msg: string, kind: "ok" | "error" = "ok") => {
+  const toast = useCallback((m: string, kind: "ok" | "error" = "ok") => {
+    // 練習中（自分用。決定 Q34 ①）は「保存しました」などに、保存しないことを書き添える（点検 中-2）
+    const msg = process.env.NEXT_PUBLIC_KB_EDITION === "personal" && kind === "ok" && isPractice() ? `${m}（練習なので保存しません）` : m;
     const id = ++seq.current;
     setToasts((t) => [...t, { id, msg, kind }]);
     setTimeout(
