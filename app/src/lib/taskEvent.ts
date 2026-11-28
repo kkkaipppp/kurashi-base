@@ -7,8 +7,9 @@ import type { AppData, CalendarEvent, Task } from "./types";
  * - 予定にしたタスクは、期限の一覧では二重に出さない（予定として出る）。タスク自体は消さない
  * - タスクの完了・未完了は、つないだ予定の完了と同じに揃える（予定側で完了にしても、タスクは変えない）
  */
-export function taskEventDate(t: Pick<Task, "due">, today: string): string {
-  return t.due || today;
+// やる日があれば、やる日に予定を作る（期限と実施日は別。点検 中1。2026-11-28）
+export function taskEventDate(t: Pick<Task, "due" | "doDate">, today: string): string {
+  return t.doDate || t.due || today;
 }
 
 export function linkedEvent(d: Pick<AppData, "events">, t: Pick<Task, "eventId">): CalendarEvent | null {

@@ -29,6 +29,8 @@ const PERSONAL_BUILD = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 const WeekView = PERSONAL_BUILD ? dynamic(() => import("@/components/CalendarViews").then((m) => m.WeekView)) : () => null;
 const ListView = PERSONAL_BUILD ? dynamic(() => import("@/components/CalendarViews").then((m) => m.ListView)) : () => null;
 const YearView = PERSONAL_BUILD ? dynamic(() => import("@/components/CalendarViews").then((m) => m.YearView)) : () => null;
+// 日程未定（日にちの無い計画・やること。自分用。To-Be 02 カレンダー「日程未定」。2026-11-28）
+const UndatedCard = PERSONAL_BUILD ? dynamic(() => import("@/components/UndatedCard").then((m) => m.UndatedCard)) : () => null;
 // 予定のない時間帯（自分用。NEXT v21 X10）
 const FreeTimeCard = PERSONAL_BUILD ? dynamic(() => import("@/components/FreeTimeCard").then((m) => m.FreeTimeCard)) : null;
 
@@ -437,6 +439,7 @@ function CalendarInner() {
             </ul>
           </Card>
         )}
+        {PERSONAL_BUILD && showEv && <UndatedCard />}
       </section>
     </main>
   );

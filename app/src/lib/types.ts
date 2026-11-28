@@ -300,6 +300,8 @@ export interface Task {
   id: string;
   title: string;
   due: string; // 期限（"" = なし）
+  /** やる日（期限とは別。To-Be 03「期限と実施日時は別」。自分用・任意。2026-11-28） */
+  doDate?: string;
   done: boolean;
   note: string;
   /** 予定にしたとき、その予定の ID（任意。NEXT v21 T06。自分用） */

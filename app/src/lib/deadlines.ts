@@ -1,12 +1,16 @@
 import { taskIsEvent } from "./taskEvent";
 import { formatYen } from "./money";
+import { formatDateJa } from "./date";
 import type { AppData } from "./types";
+
+// やる日は自分用だけ（版の値を直接比べる。公開版に復元したデータにやる日があっても出さない。点検 中2）
+const DO_DATE = process.env.NEXT_PUBLIC_KB_EDITION === "personal";
 
 // カレンダーの日ごとに出す「期限」：タスクの期限・固定費の支払日・契約の更新日・書類の期限・目標の期限
 
 export interface DeadlineItem {
   key: string;
-  kind: "やること" | "固定費" | "契約" | "書類" | "目標" | "試験";
+  kind: "やること" | "やる日" | "固定費" | "契約" | "書類" | "目標" | "試験";
   title: string;
   sub?: string;
   done?: boolean;
@@ -17,6 +21,11 @@ export function deadlinesOn(data: AppData, date: string): DeadlineItem[] {
   const out: DeadlineItem[] = [];
   // 予定にしたタスクは、予定として出る（ここでは二重に出さない）
   for (const t of data.tasks) if (t.due === date && !taskIsEvent(data, t)) out.push({ key: `t-${t.id}`, kind: "やること", title: t.title, done: t.done, href: `/tasks?open=${t.id}` });
+  // やる日（期限と同じ日なら期限だけ出す。終わったものは出さない）
+  if (DO_DATE)
+    for (const t of data.tasks)
+      if (t.doDate === date && t.doDate !== t.due && !t.done && !taskIsEvent(data, t))
+        out.push({ key: `td-${t.id}`, kind: "やる日", title: t.title, sub: t.due ? `${t.due < t.doDate ? "期限を過ぎています・" : ""}期限 ${formatDateJa(t.due, t.due.slice(0, 4) !== t.doDate.slice(0, 4))}` : undefined, href: `/tasks?open=${t.id}` });
   for (const r of data.recurring)
     if (r.active && r.nextDueDate === date) out.push({ key: `r-${r.id}`, kind: "固定費", title: `${r.name}の支払い`, sub: formatYen(r.amount), href: `/recurring?open=${r.id}` });
   for (const c of data.contracts)
@@ -35,6 +44,7 @@ export function deadlineDays(data: AppData, monthKey: string): Set<string> {
   const s = new Set<string>();
   const inMonth = (d: string) => d.startsWith(monthKey);
   for (const t of data.tasks) if (t.due && !t.done && inMonth(t.due)) s.add(t.due);
+  if (DO_DATE) for (const t of data.tasks) if (t.doDate && !t.done && inMonth(t.doDate) && !taskIsEvent(data, t)) s.add(t.doDate);
   for (const r of data.recurring) if (r.active && inMonth(r.nextDueDate)) s.add(r.nextDueDate);
   for (const c of data.contracts) if (c.status === "active" && c.renewalDate && inMonth(c.renewalDate)) s.add(c.renewalDate);
   for (const d of data.documents) if (d.expiry && inMonth(d.expiry)) s.add(d.expiry);

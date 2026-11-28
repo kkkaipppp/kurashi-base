@@ -562,6 +562,21 @@ function EventForm({ editing, req, onClose }: { editing?: CalendarEvent; req: Ev
           <span className="text-[15px] font-medium">終日</span>
           <input type="checkbox" checked={draft.allDay} onChange={(e) => set("allDay", e.target.checked)} className="size-5 accent-[var(--brand)]" />
         </label>
+        {/* 誕生日・記念日：終日で毎年（自分用。To-Be 02 カレンダー「誕生日」。2月29日は、うるう年でない年は2月28日に出る）。
+            前からある予定・日をまたぐ予定・繰り返しの予定は黙って変えない（点検 中3）。押したら繰り返しの欄を開いて見せる */}
+        {PERSONAL_BUILD && !editing && draft.startDate === draft.endDate && (draft.repeat ?? "none") === "none" && (
+          <button
+            type="button"
+            onClick={() => {
+              setDraft((d) => ({ ...d, allDay: true, endDate: d.startDate, repeat: "yearly", repeatUntil: "" }));
+              setErrors({});
+              setShowMore(true);
+            }}
+            className="min-h-11 self-start rounded-full border border-line px-3 text-[14px] font-semibold text-brand hover:bg-surface-2"
+          >
+            誕生日・記念日にする（毎年・終日）
+          </button>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="開始日" htmlFor="ev-sd" error={errors.startDate}>

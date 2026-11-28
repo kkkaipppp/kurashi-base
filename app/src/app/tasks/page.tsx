@@ -71,20 +71,21 @@ const config: CollectionConfig<"tasks"> = {
   fields: [
     { name: "title", label: "内容", type: "text", required: true, placeholder: "例：住民票を取りに行く" },
     { name: "due", label: "期限", optional: true, type: "date" },
+    ...(PERSONAL_BUILD_TASKS ? [{ name: "doDate", label: "やる日（期限とは別）", optional: true, type: "date" as const }] : []),
     { name: "note", label: "メモ", optional: true, type: "textarea" },
     { name: "done", label: "完了", type: "checkbox" },
   ],
-  initial: () => ({ title: "", due: "", note: "", done: false }),
+  initial: () => ({ title: "", due: "", ...(PERSONAL_BUILD_TASKS ? { doDate: "" } : {}), note: "", done: false }),
   newDateField: "due",
-  toDraft: (t) => ({ title: t.title, due: t.due, note: t.note, done: t.done }),
-  fromDraft: (d) => ({ title: str(d, "title"), due: str(d, "due"), note: str(d, "note"), done: bool(d, "done") }),
+  toDraft: (t) => ({ title: t.title, due: t.due, ...(PERSONAL_BUILD_TASKS ? { doDate: t.doDate ?? "" } : {}), note: t.note, done: t.done }),
+  fromDraft: (d) => ({ title: str(d, "title"), due: str(d, "due"), ...(PERSONAL_BUILD_TASKS ? { doDate: str(d, "doDate") || undefined } : {}), note: str(d, "note"), done: bool(d, "done") }),
   // 未完了を先に。期限が近い順、期限なしは後ろ
   sort: (a, b) => Number(a.done) - Number(b.done) || (a.due || "9999").localeCompare(b.due || "9999") || a.createdAt.localeCompare(b.createdAt),
   row: (t, { today }) => {
     const d = daysLeft(t.due, today);
     return {
       title: t.title,
-      sub: t.due ? `${formatDateJa(t.due)}まで` : "期限なし",
+      sub: [PERSONAL_BUILD_TASKS && t.doDate ? `${formatDateJa(t.doDate)}にやる${t.due && t.doDate > t.due ? "（期限より後）" : ""}` : "", t.due ? `${formatDateJa(t.due)}まで` : "期限なし"].filter(Boolean).join("・"),
       muted: t.done,
       badge: t.done ? { text: "完了", tone: "ok" } : d !== null && d < 0 ? { text: dueLabel(d), tone: "warn" } : d === 0 ? { text: "今日まで", tone: "warn" } : undefined,
     };
